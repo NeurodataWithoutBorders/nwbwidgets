@@ -9,17 +9,21 @@ import itk
 import pynwb
 from IPython import display
 from collections import Iterable
+import time
+
+
+def mpl_fig2widget(fig):
+    out = widgets.Output()
+    with out:
+        plt.show(fig)
+    return out
 
 
 def show_annotations1(annotations):
-    out1 = widgets.Output()
-
-    with out1:
-        fig, ax = plt.subplots()
-        ax.plot(annotations.timestamps, np.ones(len(annotations.timestamps)), '.')
-        ax.set_xlabel('time (s)')
-        plt.show(fig)
-    return out1
+    fig, ax = plt.subplots()
+    ax.plot(annotations.timestamps, np.ones(len(annotations.timestamps)), '.')
+    ax.set_xlabel('time (s)')
+    return mpl_fig2widget(fig)
 
 
 def dict2accordion(d):
@@ -193,6 +197,7 @@ def show_spatial_series(node):
 
 
 def show_position(node):
+
     if len(node.spatial_series.keys()) == 1:
         for value in node.spatial_series.values():
             return nwb2widget(value)
@@ -200,25 +205,40 @@ def show_position(node):
         return nwb2widget(node.spatial_series)
 
 
-neurodata_vis = {pynwb.misc.AnnotationSeries: {'text': show_text_fields,
-                                               'times': show_annotations1},
-                 pynwb.core.LabelledDict: dict2accordion,
-                 pynwb.ProcessingModule: lambda x: nwb2widget(x.data_interfaces),
-                 pynwb.core.DynamicTable: show_dynamic_table,
-                 pynwb.ecephys.LFP: show_lfp,
-                 pynwb.behavior.Position: show_position,
-                 pynwb.behavior.SpatialSeries: show_spatial_series,
-                 pynwb.TimeSeries: show_timeseries,
-                 pynwb.core.NWBBaseType: show_neurodata_base}
+neurodata_vis = (
+    (
+        pynwb.misc.AnnotationSeries, (
+            ('text', show_text_fields),
+            ('times', show_annotations1))
+    ),
+    (pynwb.core.LabelledDict, dict2accordion),
+    (pynwb.ProcessingModule, lambda x: nwb2widget(x.data_interfaces)),
+    (pynwb.core.DynamicTable, show_dynamic_table),
+    (pynwb.ecephys.LFP, show_lfp),
+    (pynwb.behavior.Position, show_position),
+    (pynwb.behavior.SpatialSeries, show_spatial_series),
+    (pynwb.TimeSeries, show_timeseries),
+    (pynwb.core.NWBBaseType, show_neurodata_base)
+)
     
 
 def nwb2widget(node,  neurodata_vis=neurodata_vis):
 
-    for ndtype, widget_funcs in neurodata_vis.items():
+    for ndtype, widget_funcs in neurodata_vis:
         if isinstance(node, ndtype):
-            if isinstance(widget_funcs, dict):
-                tab = widgets.Tab(children=[this_func(node) for this_func in widget_funcs.values()])
-                [tab.set_title(i, label) for i, label in enumerate(widget_funcs.keys())]
+            if isinstance(widget_funcs, tuple):
+                children = [widget_funcs[0][1](node)] + [widgets.HTML('Rendering...')
+                                                         for _ in range(len(widget_funcs) - 1)]
+                tab = widgets.Tab(children=children)
+                [tab.set_title(i, label) for i, (label, _) in enumerate(widget_funcs)]
+
+                def on_selected_index(change):
+                    if isinstance(change.owner.children[change.new], widgets.HTML):
+                        children[change.new] = widget_funcs[change.new][1](node)
+                        change.owner.children = children
+
+                tab.observe(on_selected_index, names='selected_index')
+
                 return tab
             else:
                 return widget_funcs(node)
