@@ -10,9 +10,12 @@ import pynwb
 from IPython import display
 from collections import Iterable
 import time
+from bokeh.plotting import figure
+from bokeh.layouts import widgetbox
+from bokeh.models.widgets import Panel
 
 
-def mpl_fig2widget(fig):
+def fig2widget(fig):
     out = widgets.Output()
     with out:
         plt.show(fig)
@@ -23,19 +26,25 @@ def show_annotations1(annotations):
     fig, ax = plt.subplots()
     ax.plot(annotations.timestamps, np.ones(len(annotations.timestamps)), '.')
     ax.set_xlabel('time (s)')
-    return mpl_fig2widget(fig)
+    return fig2widget(fig)
 
 
 def dict2accordion(d):
-    accordion = widgets.Accordion(children=[nwb2widget(x)
-                                            for x in d.values()],
-                                  selected_index=None)
+    children = [widgets.HTML('Rendering...') for _ in d]
+    accordion = widgets.Accordion(children=children, selected_index=None)
     for i, label in enumerate(d):
         if hasattr(d[label], 'description') and d[label].description:
             accordion.set_title(i, label + ': ' + d[label].description)
         else:
             accordion.set_title(i, label)
         accordion.set_title(i, label)
+
+    def on_selected_index(change):
+        if change.new is not None and isinstance(change.owner.children[change.new], widgets.HTML):
+            children[change.new] = nwb2widget(list(d.values())[change.new], neurodata_vis)
+            change.owner.children = children
+
+    accordion.observe(on_selected_index, names='selected_index')
 
     return accordion
 
@@ -60,17 +69,16 @@ def show_timeseries(node):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
     children = [widgets.VBox(info)]
 
-    out1 = widgets.Output()
+    fig, ax = plt.subplots()
+    if node.timestamps:
+        ax.plot(node.timestamps, node.data)
+    else:
+        ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data)
+    ax.set_xlabel('time (s)')
+    if node.unit:
+        ax.set_ylabel(node.unit)
 
-    with out1:
-        fig, ax = plt.subplots()
-        if node.timestamps:
-            ax.plot(node.timestamps, node.data)
-        else:
-            ax.plot(np.arange(len(node.data)) / node.rate, node.data)
-        plt.show(fig)
-
-    children.append(out1)
+    children.append(fig2widget(fig))
 
     return widgets.VBox(children=children)
 
@@ -154,40 +162,36 @@ def show_spatial_series(node):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
     children = [widgets.VBox(info)]
 
-    out1 = widgets.Output()
+    if node.conversion and np.isfinite(node.conversion):
+        data = node.data * node.conversion
+        unit = node.unit
+    else:
+        data = node.data
+        unit = None
 
-    with out1:
-        if node.conversion and np.isfinite(node.conversion):
-            data = node.data * node.conversion
-            unit = node.unit
+    fig, ax = plt.subplots()
+    if data.shape[0] == 1:
+        if node.timestamps:
+            ax.plot(node.timestamps, data)
         else:
-            data = node.data
-            unit = None
+            ax.plot(np.arange(len(data)) / node.rate, data)
+        ax.set_xlabel('t (sec)')
+        if unit:
+            ax.set_xlabel('x ({})'.format(unit))
+        else:
+            ax.set_xlabel('x')
+        ax.set_ylabel('x')
+    elif data.shape[1] == 2:
+        ax.plot(data[:, 0], data[:, 1])
+        if unit:
+            ax.set_xlabel('x ({})'.format(unit))
+            ax.set_ylabel('y ({})'.format(unit))
+        else:
+            ax.set_xlabel('x')
+            ax.set_ylabel('y')
+        ax.axis('equal')
 
-        fig, ax = plt.subplots()
-        if data.shape[0] == 1:
-            if node.timestamps:
-                ax.plot(node.timestamps, data)
-            else:
-                ax.plot(np.arange(len(data)) / node.rate, data)
-            ax.set_xlabel('t (sec)')
-            if unit:
-                ax.set_xlabel('x ({})'.format(unit))
-            else:
-                ax.set_xlabel('x')
-            ax.set_ylabel('x')
-        elif data.shape[1] == 2:
-            ax.plot(data[:, 0], data[:, 1])
-            if unit:
-                ax.set_xlabel('x ({})'.format(unit))
-                ax.set_ylabel('y ({})'.format(unit))
-            else:
-                ax.set_xlabel('x')
-                ax.set_ylabel('y')
-            ax.axis('equal')
-        plt.show(fig)
-
-    children.append(out1)
+    children.append(fig2widget(fig))
 
     tab = widgets.Tab(children=children)
     tab.set_title(0, 'info')
