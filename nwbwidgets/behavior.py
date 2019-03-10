@@ -15,7 +15,7 @@ def show_position(node):
 
 def show_spatial_series(node):
 
-    text_wiget = view.show_text_fields(node, exclude=('timestamp_unit',))
+    text_wiget = view.show_text_fields(node, exclude=('timestamps_unit', 'comments'))
 
     if node.conversion and np.isfinite(node.conversion):
         data = node.data * node.conversion
