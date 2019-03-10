@@ -1,6 +1,8 @@
 # nwb-jupyter-widgets
 Jupyter Widgets for NWB files
 
+authors: Matt McCormick (matt.mccormick@kitware.com) and Ben Dichter (bdichter@lbl.gov)
+
 
 ## Installation
 ```bash
