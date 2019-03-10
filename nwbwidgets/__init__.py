@@ -1,1 +1,1 @@
-from .view import view
+from .view import nwb2widget
