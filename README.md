@@ -1,6 +1,8 @@
 # nwb-jupyter-widgets
 Jupyter Widgets for NWB files
 
+authors: Matt McCormick (matt.mccormick@kitware.com) and Ben Dichter (bdichter@lbl.gov)
+
 
 ## Installation
 ```bash
@@ -18,4 +20,5 @@ nwb = io.read()
 nwb2widget(nwb)
 ```
 
+## Demo
 ![](https://drive.google.com/uc?export=download&id=1JtI2KtT8MielIMvvtgxRzFfBTdc41LiE)
