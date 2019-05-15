@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import pynwb
 from collections import OrderedDict
-from nwbwidgets import behavior, misc, base, ecephys
+from nwbwidgets import behavior, misc, base, ecephys, image
 
 
 def fig2widget(fig):
@@ -50,6 +50,7 @@ neurodata_vis_spec = OrderedDict({
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: behavior.show_spatial_series,
+    pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: base.show_timeseries,
     pynwb.core.NWBBaseType: base.show_neurodata_base
 })
