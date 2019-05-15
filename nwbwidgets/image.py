@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
+import itkwidgets
+import numpy as np
 
 def show_index_series(index_series):
     indexed_timeseries = index_series.indexed_timeseries
@@ -28,3 +30,9 @@ def show_index_series(index_series):
     text_widgets = widgets.VBox(info)
 
     return widgets.HBox([text_widgets, image_widgets])
+
+
+def show_grayscale_image(grayscale_image):
+    return itkwidgets.view(np.array(grayscale_image.data),
+            ui_collapsed=True,
+            cmap='Grayscale')
