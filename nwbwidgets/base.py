@@ -6,7 +6,7 @@ from IPython import display
 from collections import Iterable
 
 
-def show_timeseries(node):
+def show_timeseries(node, **kwargs):
     info = []
     for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
@@ -26,14 +26,14 @@ def show_timeseries(node):
     return widgets.HBox(children=children)
 
 
-def show_dynamic_table(node):
+def show_dynamic_table(node, **kwargs):
     out1 = widgets.Output()
     with out1:
         display.display(node.to_dataframe())
     return out1
 
 
-def show_neurodata_base(node):
+def show_neurodata_base(node, neurodata_vis_spec):
     info = []
     neuro_data = []
     labels = []
@@ -41,7 +41,7 @@ def show_neurodata_base(node):
         if isinstance(value, str):
             info.append(widgets.Text(value=repr(value), description=key, disabled=True))
         elif (isinstance(value, Iterable) and len(value)) or value:
-            neuro_data.append(view.nwb2widget(value))
+            neuro_data.append(view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec))
             labels.append(key)
     accordion = widgets.Accordion(children=neuro_data, selected_index=None)
     for i, label in enumerate(labels):

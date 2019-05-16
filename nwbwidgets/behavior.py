@@ -4,16 +4,16 @@ import matplotlib.pyplot as plt
 from ipywidgets import widgets
 
 
-def show_position(node):
+def show_position(node, neurodata_vis_spec):
 
     if len(node.spatial_series.keys()) == 1:
         for value in node.spatial_series.values():
-            return view.nwb2widget(value)
+            return view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec)
     else:
-        return view.nwb2widget(node.spatial_series)
+        return view.nwb2widget(node.spatial_series, neurodata_vis_spec=neurodata_vis_spec)
 
 
-def show_spatial_series(node):
+def show_spatial_series(node, **kwargs):
 
     text_wiget = view.show_text_fields(node, exclude=('timestamps_unit', 'comments'))
 
