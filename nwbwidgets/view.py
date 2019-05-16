@@ -55,6 +55,7 @@ default_neurodata_vis_spec = OrderedDict({
     pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: behavior.show_spatial_series,
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
+    pynwb.image.ImageSeries: image.show_image_series,
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: base.show_timeseries,
     pynwb.core.NWBBaseType: base.show_neurodata_base
