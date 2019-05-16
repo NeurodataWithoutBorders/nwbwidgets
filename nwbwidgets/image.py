@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import itkwidgets
 import numpy as np
-from nwbwidgets import base
+from nwbwidgets import base, view
+import pynwb
 
-def show_image_series(indexed_timeseries):
+def show_image_series(indexed_timeseries, neurodata_vis_spec):
     output = widgets.Output()
     def show_image(index=0):
         fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
@@ -23,11 +24,13 @@ def show_image_series(indexed_timeseries):
 
     return widgets.VBox([output, slider])
 
-def show_index_series(index_series):
-    series_widget = base.show_timeseries(index_series)
+def show_index_series(index_series, neurodata_vis_spec):
+    show_timeseries = neurodata_vis_spec[pynwb.TimeSeries]
+    series_widget = show_timeseries(index_series)
 
     indexed_timeseries = index_series.indexed_timeseries
-    image_series_widget = show_image_series(indexed_timeseries)
+    image_series_widget = show_image_series(indexed_timeseries,
+            neurodata_vis_spec)
 
     return widgets.VBox([series_widget, image_series_widget])
 
