@@ -2,10 +2,9 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import itkwidgets
 import numpy as np
+from nwbwidgets import base
 
-def show_index_series(index_series):
-    indexed_timeseries = index_series.indexed_timeseries
-
+def show_image_series(indexed_timeseries):
     output = widgets.Output()
     def show_image(index=0):
         fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
@@ -22,15 +21,15 @@ def show_index_series(index_series):
     slider.observe(on_index_change, names='value')
     show_image()
 
-    image_widgets = widgets.VBox([output, slider])
+    return widgets.VBox([output, slider])
 
-    info = []
-    for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
-        info.append(widgets.Text(value=repr(getattr(index_series, key)), description=key, disabled=True))
-    text_widgets = widgets.VBox(info)
+def show_index_series(index_series):
+    series_widget = base.show_timeseries(index_series)
 
-    return widgets.HBox([text_widgets, image_widgets])
+    indexed_timeseries = index_series.indexed_timeseries
+    image_series_widget = show_image_series(indexed_timeseries)
 
+    return widgets.VBox([series_widget, image_series_widget])
 
 def show_grayscale_image(grayscale_image):
     return itkwidgets.view(np.array(grayscale_image.data),
