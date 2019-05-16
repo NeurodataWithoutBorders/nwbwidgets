@@ -5,14 +5,14 @@ from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image
 
 
-def fig2widget(fig):
+def fig2widget(fig, **kwargs):
     out = widgets.Output()
     with out:
         plt.show(fig)
     return out
 
 
-def dict2accordion(d):
+def dict2accordion(d, neurodata_vis_spec):
     children = [widgets.HTML('Rendering...') for _ in d]
     accordion = widgets.Accordion(children=children, selected_index=None)
     for i, label in enumerate(d):
@@ -24,7 +24,7 @@ def dict2accordion(d):
 
     def on_selected_index(change):
         if change.new is not None and isinstance(change.owner.children[change.new], widgets.HTML):
-            children[change.new] = nwb2widget(list(d.values())[change.new])
+            children[change.new] = nwb2widget(list(d.values())[change.new], neurodata_vis_spec=neurodata_vis_spec)
             change.owner.children = children
 
     accordion.observe(on_selected_index, names='selected_index')
@@ -32,7 +32,11 @@ def dict2accordion(d):
     return accordion
 
 
-def show_text_fields(node, exclude=('comments', 'interval')):
+def processing_module(node, neurodata_vis_spec):
+    return nwb2widget(node.data_interfaces, neurodata_vis_spec=neurodata_vis_spec)
+
+
+def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
     info = []
     for key in node.fields:
         if key not in exclude and isinstance(key, (str, float, int)):
@@ -40,12 +44,12 @@ def show_text_fields(node, exclude=('comments', 'interval')):
     return widgets.VBox(info)
 
 
-neurodata_vis_spec = OrderedDict({
+default_neurodata_vis_spec = OrderedDict({
     pynwb.misc.AnnotationSeries: OrderedDict({
         'text': show_text_fields,
         'times': misc.show_annotations}),
     pynwb.core.LabelledDict: dict2accordion,
-    pynwb.ProcessingModule: lambda x: nwb2widget(x.data_interfaces),
+    pynwb.ProcessingModule: processing_module,
     pynwb.core.DynamicTable: base.show_dynamic_table,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.behavior.Position: behavior.show_position,
@@ -66,7 +70,7 @@ def vis2widget(vis):
         raise ValueError('unsupported vis type')
 
 
-def nwb2widget(node,  neurodata_vis_spec=neurodata_vis_spec):
+def nwb2widget(node,  neurodata_vis_spec=default_neurodata_vis_spec):
 
     for ndtype, spec in neurodata_vis_spec.items():
         if isinstance(node, ndtype):
@@ -87,7 +91,7 @@ def nwb2widget(node,  neurodata_vis_spec=neurodata_vis_spec):
 
                 return tab
             elif callable(spec):
-                return vis2widget(spec(node))
+                return vis2widget(spec(node, neurodata_vis_spec=neurodata_vis_spec))
     out1 = widgets.Output()
     with out1:
         print(node)

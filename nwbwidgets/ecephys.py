@@ -7,7 +7,7 @@ import itk
 from scipy.signal import stft
 
 
-def show_lfp(node):
+def show_lfp(node, **kwargs):
     lfp = node.electrical_series['lfp']
     ntabs = 3
     children = [widgets.HTML('Rendering...') for _ in range(ntabs)]
@@ -61,7 +61,7 @@ def show_lfp(node):
     return tab_nest
 
 
-def show_spectrogram(neurodata, channel=0):
+def show_spectrogram(neurodata, channel=0, **kwargs):
     fig, ax = plt.subplots()
     f, t, Zxx = stft(neurodata.data[:, channel], neurodata.rate, nperseg=2*17)
     ax.imshow(np.log(np.abs(Zxx)), aspect='auto', extent=[0, max(t), 0, max(f)], origin='lower')
