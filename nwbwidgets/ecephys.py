@@ -5,9 +5,10 @@ from ipywidgets import widgets
 import itkwidgets
 import itk
 from scipy.signal import stft
+from pynwb.ecephys import LFP
 
 
-def show_lfp(node, **kwargs):
+def show_lfp(node: LFP, **kwargs):
     lfp = node.electrical_series['lfp']
     ntabs = 3
     children = [widgets.HTML('Rendering...') for _ in range(ntabs)]

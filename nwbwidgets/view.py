@@ -3,9 +3,11 @@ import ipywidgets as widgets
 import pynwb
 from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys
+from matplotlib.pyplot import Figure
+from pynwb.base import ProcessingModule
 
 
-def fig2widget(fig, **kwargs):
+def fig2widget(fig: Figure, **kwargs):
     out = widgets.Output()
     with out:
         plt.show(fig)
@@ -32,7 +34,7 @@ def dict2accordion(d, neurodata_vis_spec):
     return accordion
 
 
-def processing_module(node, neurodata_vis_spec):
+def processing_module(node: ProcessingModule, neurodata_vis_spec: OrderedDict):
     return nwb2widget(node.data_interfaces, neurodata_vis_spec=neurodata_vis_spec)
 
 

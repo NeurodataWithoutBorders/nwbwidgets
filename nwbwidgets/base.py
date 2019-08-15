@@ -4,9 +4,12 @@ import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from IPython import display
 from collections import Iterable
+from pynwb import TimeSeries
+from pynwb.core import DynamicTable, NWBBaseType
+from collections import OrderedDict
 
 
-def show_timeseries(node, **kwargs):
+def show_timeseries(node: TimeSeries, **kwargs):
     info = []
     for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
@@ -26,14 +29,14 @@ def show_timeseries(node, **kwargs):
     return widgets.HBox(children=children)
 
 
-def show_dynamic_table(node, **kwargs):
+def show_dynamic_table(node: DynamicTable, **kwargs):
     out1 = widgets.Output()
     with out1:
         display.display(node.to_dataframe())
     return out1
 
 
-def show_neurodata_base(node, neurodata_vis_spec):
+def show_neurodata_base(node: NWBBaseType, neurodata_vis_spec: OrderedDict):
     info = []
     neuro_data = []
     labels = []

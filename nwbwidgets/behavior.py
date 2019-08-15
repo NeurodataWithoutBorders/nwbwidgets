@@ -2,9 +2,10 @@ from nwbwidgets import view
 import numpy as np
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
+from pynwb.behavior import Position, SpatialSeries
 
 
-def show_position(node, neurodata_vis_spec):
+def show_position(node: Position, neurodata_vis_spec):
 
     if len(node.spatial_series.keys()) == 1:
         for value in node.spatial_series.values():
@@ -13,7 +14,7 @@ def show_position(node, neurodata_vis_spec):
         return view.nwb2widget(node.spatial_series, neurodata_vis_spec=neurodata_vis_spec)
 
 
-def show_spatial_series(node, **kwargs):
+def show_spatial_series(node: SpatialSeries, **kwargs):
 
     text_wiget = view.show_text_fields(node, exclude=('timestamps_unit', 'comments'))
 
