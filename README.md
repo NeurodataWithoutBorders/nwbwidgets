@@ -1,5 +1,5 @@
 # nwb-jupyter-widgets
-Jupyter Widgets for NWB files
+Jupyter Widgets for NWB files. This repo defines a structure for navigating the hierarchical structure with widgets in a jupyter notebook. It is designed to work out-of-the-box with NWB:N 2.0 files and to be easy to extend. Currently most of the visualizations are pretty rudimentary, and we would be happy to work with anyone interested in implementing visualizations.
 
 authors: Matt McCormick (matt.mccormick@kitware.com) and Ben Dichter (bdichter@lbl.gov)
 
@@ -22,9 +22,3 @@ nwb2widget(nwb)
 
 ## Demo
 ![](https://drive.google.com/uc?export=download&id=1JtI2KtT8MielIMvvtgxRzFfBTdc41LiE)
-
-
-## Features
-* Works out-of-the-box on data in NWB:N 2.0
-* Can be implemented on a server, so data exploration does not require downloading the data
-* Easily extend with custom data types or custom data visualizations
