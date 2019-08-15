@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import pynwb
 from collections import OrderedDict
-from nwbwidgets import behavior, misc, base, ecephys, image
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys
 
 
 def fig2widget(fig, **kwargs):
@@ -45,6 +45,8 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
 
 
 default_neurodata_vis_spec = OrderedDict({
+    pynwb.ophys.DfOverF: ophys.show_df_over_f,
+    pynwb.ophys.RoiResponseSeries: ophys.show_roi_response_series,
     pynwb.misc.AnnotationSeries: OrderedDict({
         'text': show_text_fields,
         'times': misc.show_annotations}),
