@@ -1,8 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pynwb.ophys import RoiResponseSeries, DfOverF
+from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation
 from pynwb.base import NWBDataInterface
 from collections import OrderedDict
+from .utils.cmaps import linear_transfer_function
+
+
+color_wheel = ['red', 'green', 'black', 'blue', 'magenta', 'yellow']
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: OrderedDict):
@@ -42,3 +46,29 @@ def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_v
         ax.set_title(title)
 
     return fig
+
+
+def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: OrderedDict):
+    import ipyvolume.pylab as p3
+
+    nrois = len(plane_seg)
+
+    fig = p3.figure()
+
+    if 'voxel_mask' in plane_seg:
+        dims = np.array([max(max(plane_seg['voxel_mask'][i][dim]) for i in range(nrois))
+                for dim in ['x', 'y', 'z']]).astype('int') + 1
+        fig = p3.figure()
+        for icolor, color in enumerate(color_wheel):
+            vol = np.zeros(dims)
+            sel = np.arange(icolor, nrois, len(color_wheel))
+            for isel in sel:
+                dat = plane_seg['voxel_mask'][isel]
+                vol[tuple(dat['x'].astype('int')),
+                    tuple(dat['y'].astype('int')),
+                    tuple(dat['z'].astype('int'))] = 1
+            p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
+
+    return fig
+
+

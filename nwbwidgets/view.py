@@ -47,6 +47,7 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
 
 
 default_neurodata_vis_spec = OrderedDict({
+    pynwb.ophys.PlaneSegmentation: ophys.show_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     pynwb.ophys.RoiResponseSeries: ophys.show_roi_response_series,
     pynwb.misc.AnnotationSeries: OrderedDict({
