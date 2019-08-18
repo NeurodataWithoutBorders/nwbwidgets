@@ -6,7 +6,7 @@ with open('README.md') as f:
 
 setup(
     author='Neurodata Without Border (NWB) developers',
-    author_email='matt.mccormick@kitware.com',
+    author_email='ben.dichter@gmail.com',
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
                  'Framework :: Jupyter',
