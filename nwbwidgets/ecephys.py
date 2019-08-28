@@ -9,7 +9,7 @@ from pynwb.ecephys import LFP
 
 
 def show_lfp(node: LFP, **kwargs):
-    lfp = node.electrical_series['lfp']
+    lfp = node.electrical_series['ElectricalSeries']
     ntabs = 3
     children = [widgets.HTML('Rendering...') for _ in range(ntabs)]
 
@@ -67,4 +67,6 @@ def show_spectrogram(neurodata, channel=0, **kwargs):
     f, t, Zxx = stft(neurodata.data[:, channel], neurodata.rate, nperseg=2*17)
     ax.imshow(np.log(np.abs(Zxx)), aspect='auto', extent=[0, max(t), 0, max(f)], origin='lower')
     ax.set_ylim(0, 50)
+    ax.set_xlabel('time')
+    ax.set_ylabel('frequency')
     plt.show(ax.figure())
