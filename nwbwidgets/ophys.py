@@ -78,5 +78,3 @@ def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: OrderedDict)
     fig = p3.figure()
     p3.volshow(vol.data, tf=linear_transfer_function([0, 0, 0], max_opacity=.1))
     return fig
-
-
