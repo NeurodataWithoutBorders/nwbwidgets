@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation
 from pynwb.base import NWBDataInterface
+from ndx_grayscalevolume import GrayscaleVolume
 from collections import OrderedDict
 from .utils.cmaps import linear_transfer_function
 
@@ -49,15 +50,13 @@ def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_v
 
 
 def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: OrderedDict):
-    import ipyvolume.pylab as p3
-
     nrois = len(plane_seg)
 
-    fig = p3.figure()
-
     if 'voxel_mask' in plane_seg:
+        import ipyvolume.pylab as p3
+
         dims = np.array([max(max(plane_seg['voxel_mask'][i][dim]) for i in range(nrois))
-                for dim in ['x', 'y', 'z']]).astype('int') + 1
+                         for dim in ['x', 'y', 'z']]).astype('int') + 1
         fig = p3.figure()
         for icolor, color in enumerate(color_wheel):
             vol = np.zeros(dims)
@@ -68,7 +67,16 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
                     tuple(dat['y'].astype('int')),
                     tuple(dat['z'].astype('int'))] = 1
             p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
+        return fig
+    else:
+        raise NotImplementedError
 
+
+def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: OrderedDict):
+    import ipyvolume.pylab as p3
+
+    fig = p3.figure()
+    p3.volshow(vol.data, tf=linear_transfer_function([0, 0, 0], max_opacity=.1))
     return fig
 
 

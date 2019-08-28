@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import pynwb
+import ndx_grayscalevolume
 from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys
 from matplotlib.pyplot import Figure
@@ -47,6 +48,7 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
 
 
 default_neurodata_vis_spec = OrderedDict({
+    ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
     pynwb.ophys.PlaneSegmentation: ophys.show_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     pynwb.ophys.RoiResponseSeries: ophys.show_roi_response_series,
