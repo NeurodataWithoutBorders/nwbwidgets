@@ -13,7 +13,7 @@ def show_image_series(indexed_timeseries, neurodata_vis_spec: OrderedDict):
 
     def show_image(index=0):
         fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
-        ax.imshow(indexed_timeseries.data[index][:,:], cmap='gray')
+        ax.imshow(indexed_timeseries.data[index][:, :], cmap='gray')
         output.clear_output(wait=True)
         with output:
             plt.show(fig)

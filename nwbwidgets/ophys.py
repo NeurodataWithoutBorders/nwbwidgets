@@ -1,13 +1,48 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation
+from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhotonSeries
 from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
 from collections import OrderedDict
 from .utils.cmaps import linear_transfer_function
+import ipywidgets as widgets
 
 
 color_wheel = ['red', 'green', 'black', 'blue', 'magenta', 'yellow']
+
+
+def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: OrderedDict):
+    output = widgets.Output()
+
+    if len(indexed_timeseries.data.shape) == 3:
+        def show_image(index=0):
+            fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
+            ax.imshow(indexed_timeseries.data[index], cmap='gray')
+            output.clear_output(wait=True)
+            with output:
+                plt.show(fig)
+    elif len(indexed_timeseries.data.shape) == 4:
+        import ipyvolume.pylab as p3
+
+        def show_image(index=0):
+            fig = p3.figure()
+            p3.volshow(indexed_timeseries.data[index], tf=linear_transfer_function([0, 0, 0], max_opacity=.3))
+            output.clear_output(wait=True)
+            with output:
+                p3.show()
+    else:
+        raise NotImplementedError
+
+    def on_index_change(change):
+        show_image(change.new)
+
+    slider = widgets.IntSlider(value=0, min=0,
+                               max=indexed_timeseries.data.shape[0] - 1,
+                               orientation='horizontal')
+    slider.observe(on_index_change, names='value')
+    show_image()
+
+    return widgets.VBox([output, slider])
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: OrderedDict):
