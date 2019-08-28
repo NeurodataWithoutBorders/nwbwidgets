@@ -6,7 +6,7 @@ authors: Matt McCormick (matt.mccormick@kitware.com) and Ben Dichter (bdichter@l
 
 ## Installation
 ```bash
-pip install nwb-jupyter-widgets
+pip install nwbwidgets
 ```
 
 ## Usage
