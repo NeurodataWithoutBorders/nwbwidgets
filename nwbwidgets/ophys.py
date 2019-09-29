@@ -6,6 +6,8 @@ from ndx_grayscalevolume import GrayscaleVolume
 from collections import OrderedDict
 from .utils.cmaps import linear_transfer_function
 import ipywidgets as widgets
+from itertools import cycle
+from matplotlib import colors
 
 
 color_wheel = ['red', 'green', 'black', 'blue', 'magenta', 'yellow']
@@ -103,8 +105,16 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
                     tuple(dat['z'].astype('int'))] = 1
             p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
         return fig
-    else:
-        raise NotImplementedError
+    elif 'image_mask' in plane_seg:
+        data = plane_seg['image_mask'].data
+        img = np.ones(shape=list(data.shape[1:]) + [3])
+        for c, img_mask in zip(cycle(color_wheel), data):
+            img[img_mask.astype(bool), :] = colors.to_rgb(c)
+
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.imshow(img)
+
+        return fig
 
 
 def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: OrderedDict):

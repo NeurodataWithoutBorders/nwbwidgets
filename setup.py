@@ -7,7 +7,7 @@ with open('README.md') as f:
 setup(
     author='Neurodata Without Border (NWB) developers',
     author_email='ben.dichter@gmail.com',
-    version='0.0.2',
+    version='0.0.3',
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
                  'Framework :: Jupyter',
