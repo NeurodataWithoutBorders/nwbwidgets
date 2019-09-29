@@ -66,19 +66,24 @@ def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_v
     :return: matplotlib.pyplot.Figure
     """
     tt = roi_response_series.timestamps
-    mini_data = roi_response_series.data[:, :nchans]
+    data = roi_response_series.data
+    if data.shape[1] == len(tt):  # fix of orientation is incorrect
+        mini_data = data[:nchans, :].T
+    else:
+        mini_data = data[:, :nchans]
 
-    gap = np.median(np.std(mini_data, axis=0)) * 10
+    gap = np.median(np.nanstd(mini_data, axis=0)) * 20
     offsets = np.arange(nchans) * gap
 
     fig, ax = plt.subplots()
     ax.plot(tt, mini_data + offsets)
-    ax.set_ylim(-gap, offsets[-1] + gap)
-    ax.set_xlim(tt[0], tt[-1])
-    ax.set_yticks(offsets)
-    ax.set_yticklabels(np.arange(mini_data.shape[1]))
     ax.set_xlabel('time (s)')
     ax.set_ylabel('traces (first 30)')
+    if np.isfinite(gap):
+        ax.set_ylim(-gap, offsets[-1] + gap)
+        ax.set_xlim(tt[0], tt[-1])
+        ax.set_yticks(offsets)
+        ax.set_yticklabels(np.arange(mini_data.shape[1]))
 
     if title is not None:
         ax.set_title(title)
