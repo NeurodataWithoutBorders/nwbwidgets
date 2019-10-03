@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import pynwb
+import hdmf
 import ndx_grayscalevolume
 from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys
@@ -58,7 +59,7 @@ default_neurodata_vis_spec = OrderedDict({
         'times': misc.show_annotations}),
     pynwb.core.LabelledDict: dict2accordion,
     pynwb.ProcessingModule: processing_module,
-    pynwb.core.DynamicTable: base.show_dynamic_table,
+    hdmf.common.DynamicTable: base.show_dynamic_table,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: OrderedDict({
@@ -69,7 +70,6 @@ default_neurodata_vis_spec = OrderedDict({
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: base.show_timeseries,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
-    pynwb.core.NWBBaseType: base.show_neurodata_base
 })
 
 

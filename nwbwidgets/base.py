@@ -5,8 +5,9 @@ from ipywidgets import widgets
 from IPython import display
 from collections import Iterable
 from pynwb import TimeSeries
-from pynwb.core import DynamicTable, NWBBaseType
+from pynwb.core import NWBDataInterface
 from collections import OrderedDict
+from hdmf.common import DynamicTable
 
 
 def show_timeseries(node: TimeSeries, **kwargs):
@@ -36,7 +37,7 @@ def show_dynamic_table(node: DynamicTable, **kwargs):
     return out1
 
 
-def show_neurodata_base(node: NWBBaseType, neurodata_vis_spec: OrderedDict):
+def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: OrderedDict):
     info = []
     neuro_data = []
     labels = []
