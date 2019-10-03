@@ -5,8 +5,9 @@ from ipywidgets import widgets
 from IPython import display
 from collections import Iterable
 from pynwb import TimeSeries
-from pynwb.core import DynamicTable, NWBBaseType
+#from pynwb.core import NWBBaseType, DynamicTable
 from collections import OrderedDict
+from datetime import datetime
 
 
 def show_timeseries(node: TimeSeries, **kwargs):
@@ -29,20 +30,28 @@ def show_timeseries(node: TimeSeries, **kwargs):
     return widgets.HBox(children=children)
 
 
-def show_dynamic_table(node: DynamicTable, **kwargs):
+# def show_dynamic_table(node: DynamicTable, **kwargs):
+def show_dynamic_table(node, **kwargs):
     out1 = widgets.Output()
     with out1:
         display.display(node.to_dataframe())
     return out1
 
 
-def show_neurodata_base(node: NWBBaseType, neurodata_vis_spec: OrderedDict):
-    info = []
-    neuro_data = []
+#def show_neurodata_base(node: NWBBaseType, neurodata_vis_spec: OrderedDict):
+def show_neurodata_base(node, neurodata_vis_spec):
+    """
+    Gets a pynwb object and returns a Vertical Box containing textual info and
+    an expandable Accordion with it's children.
+    """
+    info = []         # string data type, exposed as a Text widget
+    neuro_data = []   # more complex data types, also with children
     labels = []
     for key, value in node.fields.items():
         if isinstance(value, str):
             info.append(widgets.Text(value=repr(value), description=key, disabled=True))
+        elif isinstance(value, datetime):
+            info.append(widgets.Text(value=str(value), description=key, disabled=True))
         elif (isinstance(value, Iterable) and len(value)) or value:
             neuro_data.append(view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec))
             labels.append(key)

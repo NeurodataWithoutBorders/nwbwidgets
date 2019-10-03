@@ -6,7 +6,7 @@ from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys
 from matplotlib.pyplot import Figure
 from pynwb.base import ProcessingModule
-
+from datetime import datetime
 
 def fig2widget(fig: Figure, **kwargs):
     out = widgets.Output()
@@ -58,7 +58,7 @@ default_neurodata_vis_spec = OrderedDict({
         'times': misc.show_annotations}),
     pynwb.core.LabelledDict: dict2accordion,
     pynwb.ProcessingModule: processing_module,
-    pynwb.core.DynamicTable: base.show_dynamic_table,
+    #pynwb.core.DynamicTable: base.show_dynamic_table,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: OrderedDict({
@@ -68,8 +68,9 @@ default_neurodata_vis_spec = OrderedDict({
     pynwb.image.ImageSeries: image.show_image_series,
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: base.show_timeseries,
-    pynwb.core.NWBDataInterface: base.show_neurodata_base,
-    pynwb.core.NWBBaseType: base.show_neurodata_base
+    #pynwb.core.NWBDataInterface: base.show_neurodata_base,
+    #pynwb.core.NWBBaseType: base.show_neurodata_base
+    pynwb.file.NWBFile: base.show_neurodata_base,
 })
 
 
@@ -83,7 +84,7 @@ def vis2widget(vis):
 
 
 def nwb2widget(node,  neurodata_vis_spec=default_neurodata_vis_spec):
-
+    
     for ndtype, spec in neurodata_vis_spec.items():
         if isinstance(node, ndtype):
             if isinstance(spec, (dict, OrderedDict)):
@@ -108,4 +109,3 @@ def nwb2widget(node,  neurodata_vis_spec=default_neurodata_vis_spec):
     with out1:
         print(node)
     return out1
-
