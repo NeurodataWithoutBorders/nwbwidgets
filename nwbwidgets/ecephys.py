@@ -8,7 +8,7 @@ from pynwb.ecephys import LFP
 
 
 def show_lfp(node: LFP, **kwargs):
-    lfp = node.electrical_series['ElectricalSeries']
+    lfp = list(node.electrical_series.values())[0]
     ntabs = 3
     children = [widgets.HTML('Rendering...') for _ in range(ntabs)]
 
