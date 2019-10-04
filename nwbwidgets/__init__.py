@@ -1,1 +1,2 @@
 from .view import nwb2widget
+from .ephys_viz_interface import ephys_viz_neurodata_vis_spec
