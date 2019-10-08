@@ -9,8 +9,12 @@ from .view import default_neurodata_vis_spec
 import spikeextractors as se
 from pynwb.ecephys import LFP
 
-ephys_viz_neurodata_vis_spec = default_neurodata_vis_spec
+ephys_viz_neurodata_vis_spec = dict()
 def _set_spec():
+    # defaults
+    for key, val in default_neurodata_vis_spec).items():
+        ephys_viz_neurodata_vis_spec[key] = val
+
     ephys_viz_neurodata_vis_spec[pynwb.ecephys.LFP] = show_lfp
 
 def show_lfp(node: LFP, **kwargs):
