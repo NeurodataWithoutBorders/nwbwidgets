@@ -12,7 +12,7 @@ from pynwb.ecephys import LFP
 ephys_viz_neurodata_vis_spec = dict()
 def _set_spec():
     # defaults
-    for key, val in default_neurodata_vis_spec).items():
+    for key, val in default_neurodata_vis_spec.items():
         ephys_viz_neurodata_vis_spec[key] = val
 
     ephys_viz_neurodata_vis_spec[pynwb.ecephys.LFP] = show_lfp
