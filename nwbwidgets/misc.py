@@ -13,3 +13,7 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     ax.plot(annotations.timestamps, np.ones(len(annotations.timestamps)), **kwargs)
     ax.set_xlabel('time (s)')
     return fig
+
+
+def show_units(units, **kwargs):
+    pass

@@ -5,15 +5,24 @@ import itkwidgets
 import itk
 from scipy.signal import stft
 from pynwb.ecephys import LFP
+from nwbwidgets import view
 
 
 def show_lfp(node: LFP, **kwargs):
-    lfp = node.electrical_series['ElectricalSeries']
+    #lfp = node.electrical_series['ElectricalSeries']
+    lfp = list(node.electrical_series.values())[0]
     ntabs = 3
     children = [widgets.HTML('Rendering...') for _ in range(ntabs)]
 
     def on_selected_index(change):
+        # Click on Traces Tab
         if change.new == 1 and isinstance(change.owner.children[1], widgets.HTML):
+            widget_box = show_voltage_traces(lfp)
+            children[1] = widget_box
+            change.owner.children = children
+
+        # Click on Spectrogram Tab
+        if change.new == 2 and isinstance(change.owner.children[1], widgets.HTML):
             slider = widgets.IntSlider(value=0, min=0, max=lfp.data.shape[1] - 1, description='Channel',
                                        orientation='horizontal')
 
@@ -34,7 +43,7 @@ def show_lfp(node: LFP, **kwargs):
 
             viewer = itkwidgets.view(spectrogram, ui_collapsed=True, select_roi=True, annotations=False)
             spect_vbox = widgets.VBox([slider, viewer])
-            children[1] = spect_vbox
+            children[2] = spect_vbox
             change.owner.children = children
             channel_to_spectrogram = {0: spectrogram}
 
@@ -55,10 +64,61 @@ def show_lfp(node: LFP, **kwargs):
     # Use Rendering... as a placeholder
     tab_nest.children = children
     tab_nest.set_title(0, 'Fields')
-    tab_nest.set_title(1, 'Spectrogram')
-    tab_nest.set_title(2, 'test')
+    tab_nest.set_title(1, 'Traces')
+    tab_nest.set_title(2, 'Spectrogram')
     tab_nest.observe(on_selected_index, names='selected_index')
     return tab_nest
+
+
+def show_voltage_traces(lfp):
+    # Produce figure
+    def control_plot(x0, x1, ch0, ch1):
+        fig, ax = plt.subplots()
+        data = lfp.data[x0:x1, ch0:ch1+1]
+        mu_array = np.mean(data, 0)
+        sd_array = np.std(data, 0)
+        offset = np.mean(sd_array)*3.5
+        yticks = [i*offset for i in range(ch1+1-ch0)]
+        for i in range(ch1+1-ch0):
+            ax.plot(data[:, i] - mu_array[i] + yticks[i])
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('Ch #')
+        ax.set_yticks(yticks)
+        ax.set_yticklabels([str(i) for i in range(ch0, ch1+1)])
+        plt.show()
+        return view.fig2widget(fig)
+
+    fs = lfp.rate
+    nSamples = lfp.data.shape[0]
+    nChannels = lfp.data.shape[1]
+
+    # Controls
+    field_lay = widgets.Layout(max_height='40px', max_width='100px',
+                               min_height='30px', min_width='70px')
+    x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000*nSamples/fs-100),
+                                layout=field_lay)
+    x1 = widgets.BoundedIntText(value=10000, min=100, max=int(1000*nSamples/fs),
+                                layout=field_lay)
+    ch0 = widgets.BoundedIntText(value=0, min=0, max=int(nChannels-1), layout=field_lay)
+    ch1 = widgets.BoundedIntText(value=10, min=0, max=int(nChannels-1), layout=field_lay)
+
+    controls = {
+        'x0': x0,
+        'x1': x1,
+        'ch0': ch0,
+        'ch1': ch1
+    }
+    out_fig = widgets.interactive_output(control_plot, controls)
+
+    # Assemble layout box
+    lbl_x = widgets.Label('Time [ms]:', layout=field_lay)
+    lbl_ch = widgets.Label('Ch #:', layout=field_lay)
+    hbox0 = widgets.HBox(children=[lbl_x, x0, x1])
+    hbox1 = widgets.HBox(children=[lbl_ch, ch0, ch1])
+    vbox0 = widgets.VBox(children=[hbox0, hbox1])
+    hbox2 = widgets.HBox(children=[vbox0, out_fig])
+
+    return hbox2
 
 
 def show_spectrogram(neurodata, channel=0, **kwargs):
@@ -69,3 +129,43 @@ def show_spectrogram(neurodata, channel=0, **kwargs):
     ax.set_xlabel('time')
     ax.set_ylabel('frequency')
     plt.show(ax.figure())
+
+
+def show_spike_event_series(ses, **kwargs):
+    def control_plot(spk_ind):
+        fig, ax = plt.subplots()
+        data = ses.data[spk_ind, :, :]
+        for ch in range(nChannels):
+            ax.plot(data[:, ch], color='#d9d9d9')
+        ax.plot(np.mean(data, axis=1), color='k')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Amplitude')
+        plt.show()
+        return view.fig2widget(fig)
+
+    nChannels = ses.data.shape[2]
+    nSpikes = ses.data.shape[0]
+
+    # Controls
+    field_lay = widgets.Layout(max_height='40px', max_width='100px',
+                               min_height='30px', min_width='70px')
+    spk_ind = widgets.BoundedIntText(value=0, min=0, max=nSpikes-1,
+                                     layout=field_lay)
+    controls = {'spk_ind': spk_ind}
+    out_fig = widgets.interactive_output(control_plot, controls)
+
+    # Assemble layout box
+    lbl_spk = widgets.Label('Spike ID:', layout=field_lay)
+    lbl_nspks0 = widgets.Label('N° spikes:', layout=field_lay)
+    lbl_nspks1 = widgets.Label(str(nSpikes), layout=field_lay)
+    lbl_nch0 = widgets.Label('N° channels:', layout=field_lay)
+    lbl_nch1 = widgets.Label(str(nChannels), layout=field_lay)
+    hbox0 = widgets.HBox(children=[lbl_spk, spk_ind])
+    vbox0 = widgets.VBox(children=[
+        widgets.HBox(children=[lbl_nspks0, lbl_nspks1]),
+        widgets.HBox(children=[lbl_nch0, lbl_nch1]),
+        hbox0
+    ])
+    hbox1 = widgets.HBox(children=[vbox0, out_fig])
+
+    return hbox1

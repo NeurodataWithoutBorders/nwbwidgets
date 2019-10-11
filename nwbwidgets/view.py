@@ -67,10 +67,12 @@ default_neurodata_vis_spec = OrderedDict({
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
     pynwb.image.ImageSeries: image.show_image_series,
     pynwb.image.IndexSeries: image.show_index_series,
+    pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
     pynwb.TimeSeries: base.show_timeseries,
     #pynwb.core.NWBDataInterface: base.show_neurodata_base,
     #pynwb.core.NWBBaseType: base.show_neurodata_base
     pynwb.file.NWBFile: base.show_neurodata_base,
+    #pynwb.misc.Units: misc.show_units,
 })
 
 
@@ -84,7 +86,7 @@ def vis2widget(vis):
 
 
 def nwb2widget(node,  neurodata_vis_spec=default_neurodata_vis_spec):
-    
+
     for ndtype, spec in neurodata_vis_spec.items():
         if isinstance(node, ndtype):
             if isinstance(spec, (dict, OrderedDict)):
