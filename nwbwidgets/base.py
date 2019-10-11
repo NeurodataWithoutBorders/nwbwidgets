@@ -52,6 +52,9 @@ def show_neurodata_base(node, neurodata_vis_spec):
             info.append(widgets.Text(value=repr(value), description=key, disabled=True))
         elif isinstance(value, datetime):
             info.append(widgets.Text(value=str(value), description=key, disabled=True))
+        elif key=='related_publications':
+            for pub in value:
+                info.append(widgets.HTML(value="<a href=http://dx.doi.org/"+pub[4:]+">"+pub+"</a>", description=key))
         elif (isinstance(value, Iterable) and len(value)) or value:
             neuro_data.append(view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec))
             labels.append(key)
