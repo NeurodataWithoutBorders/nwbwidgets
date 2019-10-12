@@ -69,6 +69,7 @@ default_neurodata_vis_spec = OrderedDict({
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
     pynwb.TimeSeries: base.show_timeseries,
+    pynwb.file.Subject: base.show_subject,
     #pynwb.core.NWBDataInterface: base.show_neurodata_base,
     #pynwb.core.NWBBaseType: base.show_neurodata_base
     pynwb.file.NWBFile: base.show_neurodata_base,
