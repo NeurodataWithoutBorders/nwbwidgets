@@ -75,18 +75,20 @@ def show_lfp(node: LFP, **kwargs):
 def show_voltage_traces(lfp):
     # Produce figure
     def control_plot(x0, x1, ch0, ch1):
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(18, 10))
         data = lfp.data[x0:x1, ch0:ch1+1]
+        xx = np.arange(x0, x1)
         mu_array = np.mean(data, 0)
         sd_array = np.std(data, 0)
-        offset = np.mean(sd_array)*3.5
+        offset = np.mean(sd_array)*5
         yticks = [i*offset for i in range(ch1+1-ch0)]
         for i in range(ch1+1-ch0):
-            ax.plot(data[:, i] - mu_array[i] + yticks[i])
-        ax.set_xlabel('Time [ms]')
-        ax.set_ylabel('Ch #')
+            ax.plot(xx, data[:, i] - mu_array[i] + yticks[i])
+        ax.set_xlabel('Time [ms]', fontsize=20)
+        ax.set_ylabel('Ch #', fontsize=20)
         ax.set_yticks(yticks)
         ax.set_yticklabels([str(i) for i in range(ch0, ch1+1)])
+        ax.tick_params(axis='both', which='major', labelsize=16)
         plt.show()
         return view.fig2widget(fig)
 
@@ -115,12 +117,10 @@ def show_voltage_traces(lfp):
     # Assemble layout box
     lbl_x = widgets.Label('Time [ms]:', layout=field_lay)
     lbl_ch = widgets.Label('Ch #:', layout=field_lay)
-    hbox0 = widgets.HBox(children=[lbl_x, x0, x1])
-    hbox1 = widgets.HBox(children=[lbl_ch, ch0, ch1])
-    vbox0 = widgets.VBox(children=[hbox0, hbox1])
-    hbox2 = widgets.HBox(children=[vbox0, out_fig])
-
-    return hbox2
+    lbl_blank = widgets.Label('    ', layout=field_lay)
+    hbox0 = widgets.HBox(children=[lbl_x, x0, x1, lbl_blank, lbl_ch, ch0, ch1])
+    vbox = widgets.VBox(children=[hbox0, out_fig])
+    return vbox
 
 
 def show_spectrogram(neurodata, channel=0, **kwargs):
