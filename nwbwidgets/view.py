@@ -73,7 +73,7 @@ default_neurodata_vis_spec = OrderedDict({
     #pynwb.core.NWBDataInterface: base.show_neurodata_base,
     #pynwb.core.NWBBaseType: base.show_neurodata_base
     pynwb.file.NWBFile: base.show_neurodata_base,
-    #pynwb.misc.Units: misc.show_units,
+    pynwb.misc.Units: misc.show_units,
 })
 
 

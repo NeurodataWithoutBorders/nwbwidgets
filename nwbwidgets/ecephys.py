@@ -23,8 +23,10 @@ def show_lfp(node: LFP, **kwargs):
 
         # Click on Spectrogram Tab
         if change.new == 2 and isinstance(change.owner.children[1], widgets.HTML):
-            slider = widgets.IntSlider(value=0, min=0, max=lfp.data.shape[1] - 1, description='Channel',
-                                       orientation='horizontal')
+            #slider = widgets.IntSlider(value=0, min=0, max=lfp.data.shape[1] - 1, description='Channel',
+            #                           orientation='horizontal')
+            ch = widgets.BoundedIntText(value=0, min=0, max=lfp.data.shape[1] - 1,
+                                        description='Channel', continuous_update=False)
 
             def create_spectrogram(channel=0):
                 f, t, Zxx = stft(lfp.data[:, channel], lfp.rate, nperseg=128)
@@ -42,7 +44,7 @@ def show_lfp(node: LFP, **kwargs):
             spectrogram = create_spectrogram(0)
 
             viewer = itkwidgets.view(spectrogram, ui_collapsed=True, select_roi=True, annotations=False)
-            spect_vbox = widgets.VBox([slider, viewer])
+            spect_vbox = widgets.VBox([ch, viewer])
             children[2] = spect_vbox
             change.owner.children = children
             channel_to_spectrogram = {0: spectrogram}
@@ -53,7 +55,7 @@ def show_lfp(node: LFP, **kwargs):
                     channel_to_spectrogram[channel] = create_spectrogram(channel)
                 viewer.image = channel_to_spectrogram[channel]
 
-            slider.observe(on_change_channel, names='value')
+            ch.observe(on_change_channel, names='value')
 
     vbox = []
     for key, value in lfp.fields.items():
