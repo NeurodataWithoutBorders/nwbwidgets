@@ -9,6 +9,7 @@ from pynwb.core import NWBDataInterface
 from collections import OrderedDict
 from hdmf.common import DynamicTable
 from matplotlib.pyplot import Figure
+from datetime import datetime
 
 
 def show_timeseries(node: TimeSeries, **kwargs):
@@ -31,7 +32,20 @@ def show_timeseries(node: TimeSeries, **kwargs):
     return widgets.HBox(children=children)
 
 
-def show_dynamic_table(node: DynamicTable, **kwargs):
+def show_subject(node, **kwargs):
+    field_lay = widgets.Layout(max_height='40px', max_width='150px',
+                               min_height='30px', min_width='70px')
+    info = []
+    for key, val in node.fields.items():
+        lbl_key = widgets.Label(key+':', layout=field_lay)
+        lbl_val = widgets.Label(str(val), layout=field_lay)
+        info.append(widgets.HBox(children=[lbl_key, lbl_val]))
+    vbox = widgets.VBox(info)
+    return vbox
+
+
+# def show_dynamic_table(node: DynamicTable, **kwargs):
+def show_dynamic_table(node, **kwargs):
     out1 = widgets.Output()
     with out1:
         display.display(node.to_dataframe())
@@ -39,12 +53,37 @@ def show_dynamic_table(node: DynamicTable, **kwargs):
 
 
 def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: OrderedDict):
-    info = []
-    neuro_data = []
+    """
+    Gets a pynwb object and returns a Vertical Box containing textual info and
+    an expandable Accordion with it's children.
+    """
+    field_lay = widgets.Layout(max_height='40px', max_width='300px',
+                               min_height='30px', min_width='180px')
+    info = []         # string data type, exposed as a Text widget
+    neuro_data = []   # more complex data types, also with children
     labels = []
     for key, value in node.fields.items():
         if isinstance(value, str):
-            info.append(widgets.Text(value=repr(value), description=key, disabled=True))
+            #info.append(widgets.Text(value=repr(value), description=key, disabled=True))
+            lbl_key = widgets.Label(key+':', layout=field_lay)
+            lbl_val = widgets.Label(value, layout=field_lay)
+            info.append(widgets.HBox(children=[lbl_key, lbl_val]))
+        elif isinstance(value, datetime):
+            #info.append(widgets.Text(value=str(value), description=key, disabled=True))
+            lbl_key = widgets.Label(key+':', layout=field_lay)
+            lbl_val = widgets.Label(str(value), layout=field_lay)
+            info.append(widgets.HBox(children=[lbl_key, lbl_val]))
+        elif key == 'related_publications':
+            for pub in value:
+                info.append(widgets.HTML(value="<a href=http://dx.doi.org/"+pub[4:]+">"+pub+"</a>", description=key))
+        elif key == 'experimenter':
+            lbl_experimenter = widgets.Label('Experimenter:', layout=field_lay)
+            if isinstance(value, (list, tuple)):
+                lbl_names = widgets.Label(', '.join(value), layout=field_lay)
+            else:
+                lbl_names = widgets.Label(value, layout=field_lay)
+            hbox_exp = widgets.HBox(children=[lbl_experimenter, lbl_names])
+            info.append(hbox_exp)
         elif (isinstance(value, Iterable) and len(value)) or value:
             neuro_data.append(view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec))
             labels.append(key)
