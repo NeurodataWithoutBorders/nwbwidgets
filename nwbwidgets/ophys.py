@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhotonSeries
+from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhotonSeries, ImageSegmentation
 from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
 from collections import OrderedDict
@@ -8,6 +8,7 @@ from .utils.cmaps import linear_transfer_function
 import ipywidgets as widgets
 from itertools import cycle
 from matplotlib import colors
+from .base import show_neurodata_base
 
 
 color_wheel = ['red', 'green', 'black', 'blue', 'magenta', 'yellow']
@@ -89,6 +90,13 @@ def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_v
         ax.set_title(title)
 
     return fig
+
+
+def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: OrderedDict):
+    if len(img_seg.plane_segmentations) == 1:
+        return show_plane_segmentation(next(iter(img_seg.plane_segmentations.values())), neurodata_vis_spec)
+    else:
+        return show_neurodata_base(ImageSegmentation, neurodata_vis_spec)
 
 
 def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: OrderedDict):
