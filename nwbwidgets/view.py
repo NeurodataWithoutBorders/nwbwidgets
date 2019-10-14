@@ -1,9 +1,8 @@
-import matplotlib.pyplot as plt
-import ipywidgets as widgets
 import pynwb
 import ndx_grayscalevolume
 from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys
+import hdmf
 
 
 default_neurodata_vis_spec = OrderedDict({
