@@ -3,7 +3,7 @@ import hdmf
 import ndx_grayscalevolume
 from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys
-from .base import nwb2widget, show_text_fields, processing_module
+from .base import show_text_fields, processing_module
 
 
 default_neurodata_vis_spec = OrderedDict({
@@ -32,6 +32,6 @@ default_neurodata_vis_spec = OrderedDict({
 })
 
 
-def show_nwb(node,  neurodata_vis_spec=default_neurodata_vis_spec):
-    return nwb2widget(node, neurodata_vis_spec)
+def nwb2widget(node,  neurodata_vis_spec=default_neurodata_vis_spec):
+    return base.nwb2widget(node, neurodata_vis_spec)
 
