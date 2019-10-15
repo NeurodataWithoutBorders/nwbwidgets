@@ -124,7 +124,7 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
         for c, img_mask in zip(cycle(color_wheel), data):
             img[img_mask.astype(bool), :] = colors.to_rgb(c)
 
-        fig, ax = plt.subplots(figsize=(6, 6))
+        fig, ax = plt.subplots(figsize=(8, 8))
         ax.imshow(img)
 
         return fig

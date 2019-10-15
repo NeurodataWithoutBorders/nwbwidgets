@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
-from .base import dict2accordion
+from nwbwidgets import base
 
 
 def show_position(node: Position, neurodata_vis_spec):
@@ -16,12 +16,12 @@ def show_position(node: Position, neurodata_vis_spec):
 
 
 def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec):
-    return dict2accordion(beh_events.time_series, neurodata_vis_spec, ls='.')
+    return base.dict2accordion(beh_events.time_series, neurodata_vis_spec, ls='.')
 
 
 def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
 
-    text_widget = view.show_text_fields(
+    text_widget = base.show_text_fields(
         node, exclude=('timestamps_unit', 'comments', 'data', 'timestamps', 'interval'))
 
     if node.conversion and np.isfinite(node.conversion):
@@ -64,7 +64,7 @@ def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
                 ax.set_ylabel(dim_label)
         ax.set_xlabel('t (sec)')
 
-    return widgets.HBox([text_widget, view.fig2widget(fig)])
+    return widgets.HBox([text_widget, base.fig2widget(fig)])
 
 
 def show_spatial_series(node: SpatialSeries, **kwargs):

@@ -22,7 +22,8 @@ def show_timeseries(node: TimeSeries, **kwargs):
     if node.timestamps:
         ax.plot(node.timestamps, node.data)
     else:
-        ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data, **kwargs)
+        #ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data, **kwargs)
+        ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data)
     ax.set_xlabel('time (s)')
     if node.unit:
         ax.set_ylabel(node.unit)
