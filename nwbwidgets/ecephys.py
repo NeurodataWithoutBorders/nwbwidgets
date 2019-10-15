@@ -5,7 +5,7 @@ import itkwidgets
 import itk
 from scipy.signal import stft
 from pynwb.ecephys import LFP
-from nwbwidgets import view
+from .base import fig2widget
 
 
 def show_lfp(node: LFP, **kwargs):
@@ -90,7 +90,7 @@ def show_voltage_traces(lfp):
         ax.set_yticklabels([str(i) for i in range(ch0, ch1+1)])
         ax.tick_params(axis='both', which='major', labelsize=16)
         plt.show()
-        return view.fig2widget(fig)
+        return fig2widget(fig)
 
     fs = lfp.rate
     nSamples = lfp.data.shape[0]

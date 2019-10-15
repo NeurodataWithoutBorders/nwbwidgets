@@ -2,7 +2,8 @@ from nwbwidgets import view
 import numpy as np
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
-from pynwb.behavior import Position, SpatialSeries
+from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
+from .base import dict2accordion
 
 
 def show_position(node: Position, neurodata_vis_spec):
@@ -12,6 +13,10 @@ def show_position(node: Position, neurodata_vis_spec):
             return view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec)
     else:
         return view.nwb2widget(node.spatial_series, neurodata_vis_spec=neurodata_vis_spec)
+
+
+def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec):
+    return dict2accordion(beh_events.time_series, neurodata_vis_spec, ls='.')
 
 
 def show_spatial_series_over_time(node: SpatialSeries, **kwargs):

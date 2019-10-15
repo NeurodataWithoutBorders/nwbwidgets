@@ -3,7 +3,7 @@ import numpy as np
 from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets
 import bottleneck as bn
-from nwbwidgets import view
+from nwbwidgets import base
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -30,6 +30,7 @@ def show_units(node, **kwargs):
 
     unit = widgets.BoundedIntText(value=0, min=0, max=node.columns[0][:].shape[0]-1,
                                   description='Unit', layout=field_lay)
+
     def update_x_range(change):
         for ind, ch in enumerate(vbox0.children):
             ch.children[1].value = str(node[node.colnames[ind]][change.new])
@@ -75,7 +76,7 @@ def show_unit_traces(node):
         ax.set_xlim([x0, x1])
         ax.set_ylim([0, peak*1.1])
         plt.show()
-        return view.fig2widget(fig)
+        return base.fig2widget(fig)
 
     field_lay = widgets.Layout(max_height='40px', max_width='100px',
                                min_height='30px', min_width='50px')
