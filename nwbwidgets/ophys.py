@@ -167,6 +167,7 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
                     showlegend=show_leg,
                     text = hovertext,
                     hovertext = 'text',
+                    line = dict(width=.5),
                 )
             )
             fig.update_layout(
