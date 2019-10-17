@@ -9,9 +9,11 @@ import ipywidgets as widgets
 from itertools import cycle
 from matplotlib import colors
 from .base import show_neurodata_base
+from scipy.spatial import ConvexHull
+import plotly.graph_objects as go
 
 
-color_wheel = ['red', 'green', 'black', 'blue', 'magenta', 'yellow']
+color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
 
 def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: OrderedDict):
@@ -119,14 +121,60 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
             p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
         return fig
     elif 'image_mask' in plane_seg:
+        # data = plane_seg['image_mask'].data
+        # img = np.ones(shape=list(data.shape[1:]) + [3])
+        # #for c, img_mask in zip(cycle(color_wheel), data):
+        # for ind, img_mask in enumerate(data):
+        #     c = color_wheel[np.where(neuron_types==plane_seg['neuron_type'][ind])[0][0]]
+        #     img[img_mask.astype(bool), :] = colors.to_rgb(c)
+        #
+        # fig, ax = plt.subplots(figsize=(8, 8))
+        # ax.imshow(img)
+
+        if 'neuron_type' in plane_seg:
+            neuron_types = np.unique(plane_seg['neuron_type'][:])
         data = plane_seg['image_mask'].data
-        img = np.ones(shape=list(data.shape[1:]) + [3])
-        for c, img_mask in zip(cycle(color_wheel), data):
-            img[img_mask.astype(bool), :] = colors.to_rgb(c)
-
-        fig, ax = plt.subplots(figsize=(6, 6))
-        ax.imshow(img)
-
+        nUnits = data.shape[0]
+        fig = go.FigureWidget()
+        aux_leg = []
+        for i in range(nUnits):
+            if plane_seg['neuron_type'][i] not in aux_leg:
+                show_leg = True
+                aux_leg.append(plane_seg['neuron_type'][i])
+            else:
+                show_leg = False
+            c = color_wheel[np.where(neuron_types==plane_seg['neuron_type'][i])[0][0]]
+            # hover text
+            hovertext = '<b>roi_id</b>: '+str(plane_seg['roi_id'][i])
+            rois_cols = list(plane_seg.colnames)
+            rois_cols.remove('roi_id')
+            sec_str = '<br>'.join([col+': '+str(plane_seg[col][i]) for col in rois_cols if isinstance(plane_seg[col][i], (int, float, np.integer, np.float, str))])
+            hovertext += '<br>'+sec_str
+            # form cell borders
+            y, x = np.where(plane_seg['image_mask'][i])
+            arr = np.vstack((x, y)).T
+            hull = ConvexHull(arr)
+            vertices = np.append(hull.vertices, hull.vertices[0])
+            fig.add_trace(
+                go.Scatter(
+                    x=arr[vertices, 0],
+                    y=arr[vertices, 1],
+                    fill='toself',
+                    mode='lines',
+                    line_color=c,
+                    name=plane_seg['neuron_type'][i],
+                    legendgroup=plane_seg['neuron_type'][i],
+                    showlegend=show_leg,
+                    text = hovertext,
+                    hovertext = 'text',
+                    line = dict(width=.5),
+                )
+            )
+            fig.update_layout(
+                width=700, height=500,
+                margin=go.layout.Margin(l=60, r=60, b=60, t=60, pad=1),
+                plot_bgcolor="rgb(245, 245, 245)",
+            )
         return fig
 
 

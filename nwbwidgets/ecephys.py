@@ -135,7 +135,7 @@ def show_spectrogram(neurodata, channel=0, **kwargs):
 
 def show_spike_event_series(ses, **kwargs):
     def control_plot(spk_ind):
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(9, 5))
         data = ses.data[spk_ind, :, :]
         for ch in range(nChannels):
             ax.plot(data[:, ch], color='#d9d9d9')
@@ -143,7 +143,7 @@ def show_spike_event_series(ses, **kwargs):
         ax.set_xlabel('Time')
         ax.set_ylabel('Amplitude')
         plt.show()
-        return view.fig2widget(fig)
+        return fig2widget(fig)
 
     nChannels = ses.data.shape[2]
     nSpikes = ses.data.shape[0]

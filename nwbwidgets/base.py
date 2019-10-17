@@ -22,7 +22,8 @@ def show_timeseries(node: TimeSeries, **kwargs):
     if node.timestamps:
         ax.plot(node.timestamps, node.data)
     else:
-        ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data, **kwargs)
+        #ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data, **kwargs)
+        ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data)
     ax.set_xlabel('time (s)')
     if node.unit:
         ax.set_ylabel(node.unit)
@@ -57,7 +58,7 @@ def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: OrderedDict)
     Gets a pynwb object and returns a Vertical Box containing textual info and
     an expandable Accordion with it's children.
     """
-    field_lay = widgets.Layout(max_height='40px', max_width='300px',
+    field_lay = widgets.Layout(max_height='40px', max_width='500px',
                                min_height='30px', min_width='180px')
     info = []         # string data type, exposed as a Text widget
     neuro_data = []   # more complex data types, also with children
@@ -74,8 +75,12 @@ def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: OrderedDict)
             lbl_val = widgets.Label(str(value), layout=field_lay)
             info.append(widgets.HBox(children=[lbl_key, lbl_val]))
         elif key == 'related_publications':
+            pub_list = []
             for pub in value:
-                info.append(widgets.HTML(value="<a href=http://dx.doi.org/"+pub[4:]+">"+pub+"</a>", description=key))
+                pub_list.append(widgets.HTML(value="<a href=http://dx.doi.org/"+pub[4:]+">"+pub+"</a>"))
+            lbl_key = widgets.Label(key+':', layout=field_lay)
+            pub_list.insert(0, lbl_key)
+            info.append(widgets.HBox(children=pub_list))
         elif key == 'experimenter':
             lbl_experimenter = widgets.Label('Experimenter:', layout=field_lay)
             if isinstance(value, (list, tuple)):
