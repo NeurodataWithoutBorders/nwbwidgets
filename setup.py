@@ -20,7 +20,7 @@ setup(
     description='This is nwb-jupyter-widgets, widgets for viewing the contents of a '
                 'NWB-file in Jupyter Notebooks using ipywidgets.',
     install_requires=['pynwb', 'itkwidgets', 'ipympl', 'ipywidgets>=7.4', 'matplotlib', 'numpy', 'ipyvolume',
-                      'ndx_grayscalevolume', 'bottleneck', 'plotly'],
+                      'ndx_grayscalevolume', 'bottleneck', 'plotly', 'scipy', 'lazy-ops'],
     license='MIT',
     keywords=['jupyter', 'hdf5', 'notebook', 'nwb'],
     long_description=long_description,

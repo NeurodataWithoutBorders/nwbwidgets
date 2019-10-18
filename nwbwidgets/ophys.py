@@ -11,7 +11,8 @@ from matplotlib import colors
 from .base import show_neurodata_base
 from scipy.spatial import ConvexHull
 import plotly.graph_objects as go
-
+from lazy_ops import DatasetView
+from .base import fig2widget
 
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
@@ -68,9 +69,65 @@ def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_v
     :param title: str
     :return: matplotlib.pyplot.Figure
     """
+
+    # data_view = DatasetView(roi_response_series.data)
+    # if roi_response_series.timestamps is not None:
+    #     tt = roi_response_series.timestamps
+    #     nSamples = len(tt)
+    #     if data_view.shape[1] == nSamples:  # fix if orientation is incorrect
+    #         data_view = data_view.lazy_transpose()
+    # else:
+    #     # if no timestamps, there's no way to figure out the proper time dimension,
+    #     # so we have to assume it is properly defined in the first dimension
+    #     nSamples = data_view.shape[0]
+    #     fs = roi_response_series.rate
+    #     tt = np.arange(nSamples)/fs
+    # nRois = data_view.lazy_shape[1]
+    # # Produce figure
+    # def control_plot(roi0, roi1):
+    #     fig, ax = plt.subplots(figsize=(15, 8))
+    #     data_slice = data_view.lazy_slice[:, roi0:roi1+1]
+    #     data = data_slice[:]
+    #     xx = tt[:] #np.arange(x0, x1)
+    #     mu_array = np.nanmean(data, 0)
+    #     sd_array = np.nanstd(data, 0)
+    #     offset = np.mean(sd_array)*5
+    #     yticks = [i*offset for i in range(roi1+1-roi0)]
+    #     for i in range(roi1+1-roi0):
+    #         ax.plot(xx, data[:, i] - mu_array[i] + yticks[i])
+    #     ax.set_xlabel('Time [ms]', fontsize=20)
+    #     ax.set_ylabel('ROI #', fontsize=20)
+    #     ax.set_yticks(yticks)
+    #     ax.set_yticklabels([str(i) for i in range(roi0, roi1+1)])
+    #     ax.tick_params(axis='both', which='major', labelsize=16)
+    #     plt.show()
+    #     return fig2widget(fig)
+    #
+    # # Controls
+    # field_lay = widgets.Layout(max_height='40px', max_width='100px',
+    #                            min_height='30px', min_width='70px')
+    # # x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000*tt[-1]-100),
+    # #                             layout=field_lay)
+    # # x1 = widgets.BoundedIntText(value=100, min=10, max=int(1000*tt[-1]),
+    # #                             layout=field_lay)
+    # roi0 = widgets.BoundedIntText(value=0, min=0, max=int(nRois-1), layout=field_lay)
+    # roi1 = widgets.BoundedIntText(value=10, min=0, max=int(nRois-1), layout=field_lay)
+    # controls = {
+    #     'roi0': roi0,
+    #     'roi1': roi1
+    # }
+    # out_fig = widgets.interactive_output(control_plot, controls)
+    # # Assemble layout box
+    # lbl_x = widgets.Label('Time [ms]:', layout=field_lay)
+    # lbl_roi = widgets.Label('ROI #:', layout=field_lay)
+    # lbl_blank = widgets.Label('    ', layout=field_lay)
+    # hbox0 = widgets.HBox(children=[lbl_roi, roi0, roi1])
+    # vbox = widgets.VBox(children=[hbox0, out_fig])
+    # return vbox
+
     tt = roi_response_series.timestamps
     data = roi_response_series.data
-    if data.shape[1] == len(tt):  # fix of orientation is incorrect
+    if data.shape[1] == len(tt):  # fix if orientation is incorrect
         mini_data = data[:nchans, :].T
     else:
         mini_data = data[:, :nchans]
@@ -138,12 +195,20 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
         fig = go.FigureWidget()
         aux_leg = []
         for i in range(nUnits):
-            if plane_seg['neuron_type'][i] not in aux_leg:
-                show_leg = True
-                aux_leg.append(plane_seg['neuron_type'][i])
+            if 'neuron_type' in plane_seg:
+                if plane_seg['neuron_type'][i] not in aux_leg:
+                    show_leg = True
+                    aux_leg.append(plane_seg['neuron_type'][i])
+                else:
+                    show_leg = False
+                color = color_wheel[np.where(neuron_types==plane_seg['neuron_type'][i])[0][0]]
+                name = plane_seg['neuron_type'][i]
+                legendgroup = plane_seg['neuron_type'][i]
             else:
                 show_leg = False
-            c = color_wheel[np.where(neuron_types==plane_seg['neuron_type'][i])[0][0]]
+                color = color_wheel[i%6]
+                name = ''
+                legendgroup = ''
             # hover text
             hovertext = '<b>roi_id</b>: '+str(plane_seg['roi_id'][i])
             rois_cols = list(plane_seg.colnames)
@@ -161,9 +226,9 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
                     y=arr[vertices, 1],
                     fill='toself',
                     mode='lines',
-                    line_color=c,
-                    name=plane_seg['neuron_type'][i],
-                    legendgroup=plane_seg['neuron_type'][i],
+                    line_color=color,
+                    name=name,
+                    legendgroup=legendgroup,
                     showlegend=show_leg,
                     text = hovertext,
                     hovertext = 'text',
