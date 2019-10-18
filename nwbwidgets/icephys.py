@@ -50,16 +50,19 @@ def show_voltage_traces(node):
         plt.show()
         return fig2widget(fig)
 
-    fs = node.rate
-    nSamples = node.data.shape[0]
     conversion = node.conversion
+    nSamples = node.data.shape[0]
+    if node.timestamps is not None:
+        tt = node.timestamps[:]
+    else:
+        tt = np.arange(0, nSamples)/node.rate
 
     # Controls
     field_lay = widgets.Layout(max_height='40px', max_width='100px',
                                min_height='30px', min_width='70px')
-    x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000*nSamples/fs-100),
+    x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000*tt[-1]),
                                 layout=field_lay)
-    x1 = widgets.BoundedIntText(value=20000, min=100, max=int(1000*nSamples/fs),
+    x1 = widgets.BoundedIntText(value=20000, min=100, max=int(1000*tt[-1]),
                                 layout=field_lay)
     controls = {
         'x0': x0,
