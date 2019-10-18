@@ -89,6 +89,12 @@ def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: OrderedDict)
                 lbl_names = widgets.Label(value, layout=field_lay)
             hbox_exp = widgets.HBox(children=[lbl_experimenter, lbl_names])
             info.append(hbox_exp)
+        elif key == 'keywords':
+            lbl_keywords = widgets.Label('Keywords:', layout=field_lay)
+            kwds = ', '.join([kw for kw in value])
+            lbl_kwdnames = widgets.Label(kwds, layout=field_lay)
+            hbox_kwd = widgets.HBox(children=[lbl_keywords, lbl_kwdnames])
+            info.append(hbox_kwd)
         elif (isinstance(value, Iterable) and len(value)) or value:
             neuro_data.append(view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec))
             labels.append(key)
