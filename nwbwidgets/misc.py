@@ -49,11 +49,20 @@ def show_units(node, **kwargs):
             widget_box = show_unit_traces(node)
             children[1] = widget_box
             change.owner.children = children
+        # Click on Waveforms Tab
+        if change.new == 2 and isinstance(change.owner.children[1], widgets.HTML):
+            widget_box = show_unit_waveforms(node)
+            children[2] = widget_box
+            change.owner.children = children
 
     tab_nest = widgets.Tab()
     tab_nest.children = children
     tab_nest.set_title(0, 'Fields')
     tab_nest.set_title(1, 'Traces')
+    if 'waveform_mean' in node.colnames:
+        children.append(widgets.HTML('Rendering...'))
+        tab_nest.children = children
+        tab_nest.set_title(2, 'Waveforms')
     tab_nest.observe(on_selected_index, names='selected_index')
     return tab_nest
 
@@ -104,6 +113,35 @@ def show_unit_traces(node):
         'x0': x0,
         'x1': x1,
         'window': window
+    }
+    out_fig = widgets.interactive_output(control_plot, controls)
+    vbox = widgets.VBox([hbox0, out_fig])
+    return vbox
+
+
+def show_unit_waveforms(node):
+    def control_plot(unit):
+        fig, ax = plt.subplots(figsize=(18, 10))
+        mean_trace = node['waveform_mean'][unit]
+        xx = np.arange(mean_trace.shape[0])
+        std_trace = node['waveform_sd'][unit]
+        ax.plot(xx, mean_trace, color='k')
+        ax.fill_between(xx, mean_trace+std_trace, mean_trace-std_trace, color='lightgrey')
+        #ax.plot(mean_trace+std_trace, color='lightgrey')
+        #ax.plot(mean_trace-std_trace, color='lightgrey')
+        ax.set_xlabel('Time [ms]', fontsize=20)
+        ax.set_ylabel('Amplitude', fontsize=20)
+        plt.show()
+        return base.fig2widget(fig)
+
+    field_lay = widgets.Layout(max_height='40px', max_width='100px',
+                               min_height='30px', min_width='50px')
+    lbl_unit = widgets.Label('Unit:', layout=field_lay)
+    unit1 = widgets.BoundedIntText(value=0, min=0, max=node.columns[0][:].shape[0]-1,
+                                   layout=field_lay)
+    hbox0 = widgets.HBox(children=[lbl_unit, unit1])
+    controls = {
+        'unit': unit1,
     }
     out_fig = widgets.interactive_output(control_plot, controls)
     vbox = widgets.VBox([hbox0, out_fig])
