@@ -87,14 +87,15 @@ def show_unit_traces(node):
     lbl_blank0 = widgets.Label('       ', layout=field_lay)
     lbl_time = widgets.Label('Time [ms]:', layout=field_lay)
 
+    tIni = (node['spike_times'][0][0]*1000 - 1000).astype('int')
     tEnd = (node['spike_times'][0][-1]*1000 + 1).astype('int')
-    x0 = widgets.BoundedIntText(value=0, min=0, max=tEnd-100,
+    x0 = widgets.BoundedIntText(value=tIni, min=tIni, max=tEnd-100,
                                 layout=field_lay)
-    x1 = widgets.BoundedIntText(value=10000, min=100, max=tEnd,
+    x1 = widgets.BoundedIntText(value=tIni+20000, min=tIni, max=tEnd,
                                 layout=field_lay)
     lbl_blank1 = widgets.Label('       ', layout=field_lay)
     lbl_window = widgets.Label('Window [ms]:', layout=field_lay)
-    window = widgets.BoundedIntText(value=1000, min=10, max=20000,
+    window = widgets.BoundedIntText(value=2000, min=100, max=20000,
                                     layout=field_lay)
     hbox0 = widgets.HBox(children=[lbl_unit, unit1, lbl_blank0, lbl_time,
                                    x0, x1, lbl_blank1, lbl_window, window])
