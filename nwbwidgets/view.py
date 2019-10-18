@@ -1,7 +1,7 @@
 import pynwb
 import ndx_grayscalevolume
 from collections import OrderedDict
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys
 import hdmf
 
 
@@ -16,6 +16,7 @@ default_neurodata_vis_spec = OrderedDict({
     pynwb.ophys.PlaneSegmentation: ophys.show_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     pynwb.ophys.RoiResponseSeries: ophys.show_roi_response_series,
+    pynwb.icephys.PatchClampSeries: icephys.show_patchclamp_series,
     pynwb.misc.AnnotationSeries: OrderedDict({
         'text': base.show_text_fields,
         'times': misc.show_annotations}),
