@@ -127,9 +127,7 @@ def show_unit_waveforms(node):
         std_trace = node['waveform_sd'][unit]
         ax.plot(xx, mean_trace, color='k')
         ax.fill_between(xx, mean_trace+std_trace, mean_trace-std_trace, color='lightgrey')
-        #ax.plot(mean_trace+std_trace, color='lightgrey')
-        #ax.plot(mean_trace-std_trace, color='lightgrey')
-        ax.set_xlabel('Time [ms]', fontsize=20)
+        ax.set_xlabel('Sample', fontsize=20)
         ax.set_ylabel('Amplitude', fontsize=20)
         plt.show()
         return base.fig2widget(fig)
