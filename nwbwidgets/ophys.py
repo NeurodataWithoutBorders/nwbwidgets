@@ -6,8 +6,6 @@ from ndx_grayscalevolume import GrayscaleVolume
 from collections import OrderedDict
 from .utils.cmaps import linear_transfer_function
 import ipywidgets as widgets
-from itertools import cycle
-from matplotlib import colors
 from .base import show_neurodata_base
 from scipy.spatial import ConvexHull
 import plotly.graph_objects as go
@@ -121,16 +119,6 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
             p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
         return fig
     elif 'image_mask' in plane_seg:
-        # data = plane_seg['image_mask'].data
-        # img = np.ones(shape=list(data.shape[1:]) + [3])
-        # #for c, img_mask in zip(cycle(color_wheel), data):
-        # for ind, img_mask in enumerate(data):
-        #     c = color_wheel[np.where(neuron_types==plane_seg['neuron_type'][ind])[0][0]]
-        #     img[img_mask.astype(bool), :] = colors.to_rgb(c)
-        #
-        # fig, ax = plt.subplots(figsize=(8, 8))
-        # ax.imshow(img)
-
         if 'neuron_type' in plane_seg:
             neuron_types = np.unique(plane_seg['neuron_type'][:])
         data = plane_seg['image_mask'].data
