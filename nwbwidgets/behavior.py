@@ -104,7 +104,10 @@ def show_spatial_series(node: SpatialSeries, **kwargs):
         import ipyvolume.pylab as p3
 
         fig = p3.figure()
-        p3.plot(data[:, 0], data[:, 1], data[:, 2], **kwargs)
+        p3.scatter(data[:, 0], data[:, 1], data[:, 2], **kwargs)
+        p3.xlim(np.min(data[:, 0]), np.max(data[:, 0]))
+        p3.ylim(np.min(data[:, 1]), np.max(data[:, 1]))
+        p3.zlim(np.min(data[:, 2]), np.max(data[:, 2]))
 
     else:
         raise NotImplementedError
