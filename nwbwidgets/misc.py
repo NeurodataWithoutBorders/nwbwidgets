@@ -19,7 +19,7 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     return fig
 
 
-def show_units(node, **kwargs):
+def show_unit(node, **kwargs):
     field_lay = widgets.Layout(max_height='40px', max_width='700px',
                                min_height='30px', min_width='120px')
     info = []
@@ -64,8 +64,8 @@ def show_unit_traces(node):
         fig, ax = plt.subplots(figsize=(18, 10))
         spkt = (node['spike_times'][unit][:]*1000).astype('int')
         binned = np.zeros(len(xx))
-        spkt1 = spkt[spkt>x0]
-        spkt1 = spkt1[spkt1<x1]
+        spkt1 = spkt[spkt > x0]
+        spkt1 = spkt1[spkt1 < x1]
         binned[spkt1-x0] = 1
         # Calculates moving average from binned spike times
         smoothed = bn.move_mean(binned, window=window, min_count=100)
