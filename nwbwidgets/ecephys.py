@@ -76,19 +76,22 @@ def show_voltage_traces(lfp):
     # Produce figure
     def control_plot(x0, x1, ch0, ch1):
         fig, ax = plt.subplots(figsize=(18, 10))
-        data = lfp.data[x0:x1, ch0:ch1+1]
-        xx = np.arange(x0, x1)
-        mu_array = np.mean(data, 0)
-        sd_array = np.std(data, 0)
-        offset = np.mean(sd_array)*5
+        istart = int(x0 * lfp.rate)
+        istop = int(x1 * lfp.rate)
+        data = lfp.data[istart:istop, ch0:ch1+1]
+        tt = np.linspace(x0, x1, istop-istart)
+        mu_array = np.nanmean(data, 0)
+        sd_array = np.nanstd(data, 0)
+        offset = np.nanmean(sd_array)*5
         yticks = [i*offset for i in range(ch1+1-ch0)]
         for i in range(ch1+1-ch0):
-            ax.plot(xx, data[:, i] - mu_array[i] + yticks[i])
-        ax.set_xlabel('Time [ms]', fontsize=20)
+            ax.plot(tt, data[:, i] - mu_array[i] + yticks[i])
+        ax.set_xlabel('Time (s)', fontsize=20)
         ax.set_ylabel('Ch #', fontsize=20)
         ax.set_yticks(yticks)
         ax.set_yticklabels([str(i) for i in range(ch0, ch1+1)])
         ax.tick_params(axis='both', which='major', labelsize=16)
+        ax.set_xlim((x0, x1))
         plt.show()
         return fig2widget(fig)
 
@@ -101,7 +104,7 @@ def show_voltage_traces(lfp):
                                min_height='30px', min_width='70px')
     x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000*nSamples/fs-100),
                                 layout=field_lay)
-    x1 = widgets.BoundedIntText(value=10000, min=100, max=int(1000*nSamples/fs),
+    x1 = widgets.BoundedIntText(value=10, min=0, max=int(1000*nSamples/fs),
                                 layout=field_lay)
     ch0 = widgets.BoundedIntText(value=0, min=0, max=int(nChannels-1), layout=field_lay)
     ch1 = widgets.BoundedIntText(value=10, min=0, max=int(nChannels-1), layout=field_lay)
@@ -115,7 +118,7 @@ def show_voltage_traces(lfp):
     out_fig = widgets.interactive_output(control_plot, controls)
 
     # Assemble layout box
-    lbl_x = widgets.Label('Time [ms]:', layout=field_lay)
+    lbl_x = widgets.Label('Time (s):', layout=field_lay)
     lbl_ch = widgets.Label('Ch #:', layout=field_lay)
     lbl_blank = widgets.Label('    ', layout=field_lay)
     hbox0 = widgets.HBox(children=[lbl_x, x0, x1, lbl_blank, lbl_ch, ch0, ch1])

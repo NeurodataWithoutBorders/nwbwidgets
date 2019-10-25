@@ -12,6 +12,13 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 
 
+def show_ts_fields(node):
+    info = []
+    for key in ('description', 'unit', 'resolution', 'conversion'):
+        info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
+    return widgets.VBox(info)
+
+
 def show_timeseries(node: TimeSeries, **kwargs):
     info = []
     for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
