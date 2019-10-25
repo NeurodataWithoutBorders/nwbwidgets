@@ -6,7 +6,9 @@ import hdmf
 
 
 default_neurodata_vis_spec = OrderedDict({
-    pynwb.misc.Units: misc.show_units,
+    pynwb.misc.Units: OrderedDict({
+        'table': base.show_dynamic_table,
+        'traces': misc.show_unit_traces}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_subject,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
