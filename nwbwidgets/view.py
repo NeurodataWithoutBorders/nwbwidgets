@@ -5,7 +5,7 @@ from nwbwidgets import behavior, misc, base, ecephys, image, ophys
 import hdmf
 
 
-default_neurodata_vis_spec = OrderedDict({
+default_neurodata_vis_spec = {
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict({
         'table': base.show_dynamic_table,
@@ -38,7 +38,7 @@ default_neurodata_vis_spec = OrderedDict({
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: base.show_timeseries,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
-})
+}
 
 
 def nwb2widget(node,  neurodata_vis_spec=default_neurodata_vis_spec):

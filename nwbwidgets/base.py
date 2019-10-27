@@ -7,7 +7,6 @@ from collections import Iterable
 from pynwb import TimeSeries, ProcessingModule
 from pynwb.core import NWBDataInterface
 from collections import OrderedDict
-from hdmf.common import DynamicTable
 from matplotlib.pyplot import Figure
 from datetime import datetime
 
@@ -129,26 +128,46 @@ def dict2accordion(d, neurodata_vis_spec, **pass_kwargs):
     return accordion
 
 
+def lazy_tabs(in_dict, node):
+    """Creates a lazy tab object where multiple visualizations can be used for a single node and are generated on the
+    fly
+
+    Parameters
+    ----------
+    in_dict: dict
+        keys are labels for tabs and values are functions
+    node: NWBDataInterface
+        instance of neurodata type to visualize
+
+    Returns
+    -------
+    tab: widget
+
+    """
+    tabs_spec = list(in_dict.items())
+
+    children = [tabs_spec[0][1](node)] + [widgets.HTML('Rendering...')
+                                          for _ in range(len(tabs_spec) - 1)]
+    tab = widgets.Tab(children=children)
+    [tab.set_title(i, label) for i, (label, _) in enumerate(tabs_spec)]
+
+    def on_selected_index(change):
+        if isinstance(change.owner.children[change.new], widgets.HTML):
+            children[change.new] = vis2widget(tabs_spec[change.new][1](node))
+            change.owner.children = children
+
+    tab.observe(on_selected_index, names='selected_index')
+
+    return tab
+
+
 def nwb2widget(node,  neurodata_vis_spec, **pass_kwargs):
 
-    for ndtype, spec in neurodata_vis_spec.items():
-        if isinstance(node, ndtype):
+    for ndtype in type(node).__mro__:
+        if ndtype in neurodata_vis_spec:
+            spec = neurodata_vis_spec[ndtype]
             if isinstance(spec, (dict, OrderedDict)):
-                tabs_spec = list(spec.items())
-
-                children = [tabs_spec[0][1](node)] + [widgets.HTML('Rendering...')
-                                                      for _ in range(len(tabs_spec) - 1)]
-                tab = widgets.Tab(children=children)
-                [tab.set_title(i, label) for i, (label, _) in enumerate(tabs_spec)]
-
-                def on_selected_index(change):
-                    if isinstance(change.owner.children[change.new], widgets.HTML):
-                        children[change.new] = vis2widget(tabs_spec[change.new][1](node))
-                        change.owner.children = children
-
-                tab.observe(on_selected_index, names='selected_index')
-
-                return tab
+                return lazy_tabs(spec, node)
             elif callable(spec):
                 return vis2widget(spec(node, neurodata_vis_spec=neurodata_vis_spec, **pass_kwargs))
     out1 = widgets.Output()
