@@ -135,7 +135,7 @@ def show_unit_waveforms(node):
     field_lay = widgets.Layout(max_height='40px', max_width='100px',
                                min_height='30px', min_width='50px')
     lbl_unit = widgets.Label('Unit:', layout=field_lay)
-    unit1 = widgets.BoundedIntText(value=0, min=0, max=node.columns[0][:].shape[0]-1,
+    unit1 = widgets.BoundedIntText(value=0, min=0, max=node.id[:].shape[0]-1,
                                    layout=field_lay)
     hbox0 = widgets.HBox(children=[lbl_unit, unit1])
     controls = {
