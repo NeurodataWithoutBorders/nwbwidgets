@@ -29,7 +29,7 @@ def show_units(node, **kwargs):
         info.append(widgets.HBox(children=[lbl_key, lbl_val]))
     vbox0 = widgets.VBox(info)
 
-    unit = widgets.BoundedIntText(value=0, min=0, max=node.columns[0][:].shape[0]-1,
+    unit = widgets.BoundedIntText(value=0, min=0, max=node.id[:].shape[0]-1,
                                   description='Unit', layout=field_lay)
 
     def update_x_range(change):
@@ -91,7 +91,7 @@ def show_unit_traces(node):
     field_lay = widgets.Layout(max_height='40px', max_width='100px',
                                min_height='30px', min_width='50px')
     lbl_unit = widgets.Label('Unit:', layout=field_lay)
-    unit1 = widgets.BoundedIntText(value=0, min=0, max=node.columns[0][:].shape[0]-1,
+    unit1 = widgets.BoundedIntText(value=0, min=0, max=node.id[:].shape[0]-1,
                                    layout=field_lay)
     lbl_blank0 = widgets.Label('       ', layout=field_lay)
     lbl_time = widgets.Label('Time [ms]:', layout=field_lay)
