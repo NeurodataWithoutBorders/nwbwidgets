@@ -6,7 +6,6 @@ from IPython import display
 from collections import Iterable
 from pynwb import TimeSeries, ProcessingModule
 from pynwb.core import NWBDataInterface
-from collections import OrderedDict
 from matplotlib.pyplot import Figure
 from datetime import datetime
 
@@ -18,18 +17,34 @@ def show_ts_fields(node):
     return widgets.VBox(info)
 
 
+def get_timeseries_tt(node: TimeSeries):
+    if node.timestamps is not None:
+        return node.timestamps
+    else:
+        return np.arange(len(node.data)) / node.rate + node.starting_time
+
+
+def get_timeseries_in_units(node: TimeSeries):
+    if node.conversion and np.isfinite(node.conversion):
+        data = node.data * node.conversion
+        unit = node.unit
+    else:
+        data = node.data
+        unit = None
+    return data, unit
+
+
 def show_timeseries(node: TimeSeries, **kwargs):
     info = []
     for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
     children = [widgets.VBox(info)]
 
+    tt = get_timeseries_tt(node)
+    data, unit = get_timeseries_in_units(node)
+
     fig, ax = plt.subplots()
-    if node.timestamps:
-        ax.plot(node.timestamps, node.data)
-    else:
-        #ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data, **kwargs)
-        ax.plot(np.arange(len(node.data)) / node.rate + node.starting_time, node.data)
+    ax.plot(tt, data)
     ax.set_xlabel('time (s)')
     if node.unit:
         ax.set_ylabel(node.unit)
@@ -59,7 +74,7 @@ def show_dynamic_table(node, **kwargs):
     return out1
 
 
-def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: OrderedDict):
+def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: dict):
     """
     Gets a pynwb object and returns a Vertical Box containing textual info and
     an expandable Accordion with it's children.
@@ -70,13 +85,7 @@ def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: OrderedDict)
     neuro_data = []   # more complex data types, also with children
     labels = []
     for key, value in node.fields.items():
-        if isinstance(value, str):
-            #info.append(widgets.Text(value=repr(value), description=key, disabled=True))
-            lbl_key = widgets.Label(key+':', layout=field_lay)
-            lbl_val = widgets.Label(value, layout=field_lay)
-            info.append(widgets.HBox(children=[lbl_key, lbl_val]))
-        elif isinstance(value, datetime):
-            #info.append(widgets.Text(value=str(value), description=key, disabled=True))
+        if isinstance(value, (str, datetime)):
             lbl_key = widgets.Label(key+':', layout=field_lay)
             lbl_val = widgets.Label(str(value), layout=field_lay)
             info.append(widgets.HBox(children=[lbl_key, lbl_val]))
@@ -107,7 +116,7 @@ def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: OrderedDict)
     return widgets.VBox(info + [accordion])
 
 
-def dict2accordion(d, neurodata_vis_spec, **pass_kwargs):
+def dict2accordion(d, neurodata_vis_spec: dict, **pass_kwargs):
     children = [widgets.HTML('Rendering...') for _ in d]
     accordion = widgets.Accordion(children=children, selected_index=None)
     for i, label in enumerate(d):
@@ -128,7 +137,7 @@ def dict2accordion(d, neurodata_vis_spec, **pass_kwargs):
     return accordion
 
 
-def lazy_tabs(in_dict, node):
+def lazy_tabs(in_dict: dict, node):
     """Creates a lazy tab object where multiple visualizations can be used for a single node and are generated on the
     fly
 
@@ -161,12 +170,12 @@ def lazy_tabs(in_dict, node):
     return tab
 
 
-def nwb2widget(node,  neurodata_vis_spec, **pass_kwargs):
+def nwb2widget(node,  neurodata_vis_spec: dict, **pass_kwargs):
 
     for ndtype in type(node).__mro__:
         if ndtype in neurodata_vis_spec:
             spec = neurodata_vis_spec[ndtype]
-            if isinstance(spec, (dict, OrderedDict)):
+            if isinstance(spec, dict):
                 return lazy_tabs(spec, node)
             elif callable(spec):
                 return vis2widget(spec(node, neurodata_vis_spec=neurodata_vis_spec, **pass_kwargs))
@@ -192,7 +201,7 @@ def fig2widget(fig: Figure, **kwargs):
     return out
 
 
-def processing_module(node: ProcessingModule, neurodata_vis_spec: OrderedDict):
+def processing_module(node: ProcessingModule, neurodata_vis_spec: dict):
     return nwb2widget(node.data_interfaces, neurodata_vis_spec=neurodata_vis_spec)
 
 

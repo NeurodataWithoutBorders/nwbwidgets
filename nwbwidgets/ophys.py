@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhotonSeries, ImageSegmentation
 from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
-from collections import OrderedDict
 from .utils.cmaps import linear_transfer_function
 import ipywidgets as widgets
 from .base import show_neurodata_base
@@ -14,7 +13,7 @@ import plotly.graph_objects as go
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
 
-def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: OrderedDict):
+def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
     output = widgets.Output()
 
     if len(indexed_timeseries.data.shape) == 3:
@@ -48,7 +47,7 @@ def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_sp
     return widgets.VBox([output, slider])
 
 
-def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: OrderedDict):
+def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
     if len(df_over_f.roi_response_series) == 1:
         title, input = list(df_over_f.roi_response_series.items())[0]
         return neurodata_vis_spec[RoiResponseSeries](input, neurodata_vis_spec, title=title)
@@ -56,7 +55,7 @@ def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: OrderedDict):
         return neurodata_vis_spec[NWBDataInterface](df_over_f, neurodata_vis_spec)
 
 
-def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_vis_spec: OrderedDict,
+def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_vis_spec: dict,
                              nchans: int = 30, title: str = None):
     """
 
@@ -92,14 +91,14 @@ def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_v
     return fig
 
 
-def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: OrderedDict):
+def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: dict):
     if len(img_seg.plane_segmentations) == 1:
         return show_plane_segmentation(next(iter(img_seg.plane_segmentations.values())), neurodata_vis_spec)
     else:
         return show_neurodata_base(ImageSegmentation, neurodata_vis_spec)
 
 
-def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: OrderedDict):
+def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
     nrois = len(plane_seg)
 
     if 'voxel_mask' in plane_seg:
@@ -153,9 +152,9 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
                     name=plane_seg['neuron_type'][i],
                     legendgroup=plane_seg['neuron_type'][i],
                     showlegend=show_leg,
-                    text = hovertext,
-                    hovertext = 'text',
-                    line = dict(width=.5),
+                    text=hovertext,
+                    hovertext='text',
+                    line=dict(width=.5),
                 )
             )
             fig.update_layout(
@@ -166,7 +165,7 @@ def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: Or
         return fig
 
 
-def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: OrderedDict):
+def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
     import ipyvolume.pylab as p3
 
     fig = p3.figure()

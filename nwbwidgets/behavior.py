@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 from nwbwidgets import base
+from .base import get_timeseries_tt, get_timeseries_in_units
 
 
-def show_position(node: Position, neurodata_vis_spec):
+def show_position(node: Position, neurodata_vis_spec: dict):
 
     if len(node.spatial_series.keys()) == 1:
         for value in node.spatial_series.values():
@@ -15,7 +16,7 @@ def show_position(node: Position, neurodata_vis_spec):
         return view.nwb2widget(node.spatial_series, neurodata_vis_spec=neurodata_vis_spec)
 
 
-def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec):
+def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dict):
     return base.dict2accordion(beh_events.time_series, neurodata_vis_spec, ls='.')
 
 
@@ -24,24 +25,18 @@ def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
     text_widget = base.show_text_fields(
         node, exclude=('timestamps_unit', 'comments', 'data', 'timestamps', 'interval'))
 
-    if node.conversion and np.isfinite(node.conversion):
-        data = node.data * node.conversion
-        unit = node.unit
-    else:
-        data = node.data
-        unit = None
+    data, unit = get_timeseries_in_units(node)
 
     if len(data.shape) == 1:
         ndims = 1
     else:
         ndims = data.shape[1]
 
+    tt = get_timeseries_tt(node)
+
     if ndims == 1:
         fig, ax = plt.subplots()
-        if node.timestamps:
-            ax.plot(node.timestamps, data, **kwargs)
-        else:
-            ax.plot(np.arange(len(data)) / node.rate, data, **kwargs)
+        ax.plot(tt, data, **kwargs)
         ax.set_xlabel('t (sec)')
         if unit:
             ax.set_xlabel('x ({})'.format(unit))
@@ -53,10 +48,6 @@ def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
         fig, axs = plt.subplots(ndims, 1, sharex=True)
 
         for i, (ax, dim_label) in enumerate(zip(axs, ('x', 'y', 'z'))):
-            if node.timestamps:
-                tt = node.timestamps
-            else:
-                tt = np.arange(len(data)) / node.rate
             ax.plot(tt, data[:, i], **kwargs)
             if unit:
                 ax.set_ylabel(dim_label + ' ({})'.format(unit))
@@ -69,19 +60,12 @@ def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
 
 def show_spatial_series(node: SpatialSeries, **kwargs):
 
-    if node.conversion and np.isfinite(node.conversion):
-        data = node.data * node.conversion
-        unit = node.unit
-    else:
-        data = node.data
-        unit = None
+    data, unit = get_timeseries_in_units(node)
+    tt = get_timeseries_tt(node)
 
     if data.shape[0] == 1:
         fig, ax = plt.subplots()
-        if node.timestamps:
-            ax.plot(node.timestamps, data, **kwargs)
-        else:
-            ax.plot(np.arange(len(data)) / node.rate, data, **kwargs)
+        ax.plot(tt, data, **kwargs)
         ax.set_xlabel('t (sec)')
         if unit:
             ax.set_xlabel('x ({})'.format(unit))

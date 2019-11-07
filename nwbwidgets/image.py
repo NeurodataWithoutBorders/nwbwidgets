@@ -2,13 +2,11 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import itkwidgets
 import numpy as np
-from nwbwidgets import base, view
 import pynwb
 from pynwb.image import GrayscaleImage
-from collections import OrderedDict
 
 
-def show_image_series(indexed_timeseries, neurodata_vis_spec: OrderedDict):
+def show_image_series(indexed_timeseries, neurodata_vis_spec: dict):
     output = widgets.Output()
 
     def show_image(index=0):
@@ -29,7 +27,7 @@ def show_image_series(indexed_timeseries, neurodata_vis_spec: OrderedDict):
     return widgets.VBox([output, slider])
 
 
-def show_index_series(index_series, neurodata_vis_spec: OrderedDict):
+def show_index_series(index_series, neurodata_vis_spec: dict):
     show_timeseries = neurodata_vis_spec[pynwb.TimeSeries]
     series_widget = show_timeseries(index_series)
 

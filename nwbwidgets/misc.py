@@ -3,8 +3,6 @@ import numpy as np
 from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets
 import bottleneck as bn
-from nwbwidgets import base
-from .base import fig2widget
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -60,42 +58,39 @@ def show_unit(node, **kwargs):
 
 def show_unit_traces(node):
     def control_plot(unit, x0, x1, window):
-        xx = np.arange(x0, x1+1)
         fig, ax = plt.subplots(figsize=(18, 10))
-        spkt = (node['spike_times'][unit][:]*1000).astype('int')
-        binned = np.zeros(len(xx))
+        spkt = np.array(node['spike_times'][unit][:])
+        binned = np.zeros(int(x1-x0)*1000)  # in ms
         spkt1 = spkt[spkt > x0]
         spkt1 = spkt1[spkt1 < x1]
-        binned[spkt1-x0] = 1
+        binned[np.array(spkt1-x0).astype('int')] = 1
         # Calculates moving average from binned spike times
-        smoothed = bn.move_mean(binned, window=window, min_count=100)
-        peak = np.nanmax(1000*smoothed)
-        ax.plot(xx, binned*peak, color='lightgrey')
-        ax.plot(xx, 1000*smoothed, color='k')
-        ax.set_xlabel('Time [ms]', fontsize=20)
-        ax.set_ylabel('Rate [spks/sec]', fontsize=20)
+        smoothed = bn.move_mean(binned, window=window)
+        peak = np.nanmax(smoothed)
+        xx = np.linspace(x0, x1, len(binned))
+        #ax.plot(xx, smoothed, color='k')
+        ax.vlines(spkt, ymin=0, ymax=peak, color='grey', alpha=.5)
+
+        ax.set_xlabel('time (s)', fontsize=20)
+        ax.set_ylabel('rate [spks/sec]', fontsize=20)
         ax.set_xlim([x0, x1])
         ax.set_ylim([0, peak*1.1])
-        plt.show()
-        return base.fig2widget(fig)
+        return fig
 
     field_lay = widgets.Layout(max_height='40px', max_width='100px',
                                min_height='30px', min_width='50px')
     lbl_unit = widgets.Label('Unit:', layout=field_lay)
-    unit1 = widgets.BoundedIntText(value=0, min=0, max=node.columns[0][:].shape[0]-1,
+    unit1 = widgets.BoundedIntText(value=0, min=0, max=len(node.id[:])-1,
                                    layout=field_lay)
     lbl_blank0 = widgets.Label('       ', layout=field_lay)
-    lbl_time = widgets.Label('Time [ms]:', layout=field_lay)
+    lbl_time = widgets.Label('Time (s):', layout=field_lay)
 
-    tEnd = (node['spike_times'][0][-1]*1000 + 1).astype('int')
-    x0 = widgets.BoundedIntText(value=0, min=0, max=tEnd-100,
-                                layout=field_lay)
-    x1 = widgets.BoundedIntText(value=10000, min=100, max=tEnd,
-                                layout=field_lay)
+    tEnd = max(max(node['spike_times'][:]))
+    x0 = widgets.BoundedFloatText(value=0, min=0, max=tEnd, layout=field_lay)
+    x1 = widgets.BoundedFloatText(value=min(10, tEnd), min=0, max=tEnd, layout=field_lay)
     lbl_blank1 = widgets.Label('       ', layout=field_lay)
-    lbl_window = widgets.Label('Window [ms]:', layout=field_lay)
-    window = widgets.BoundedIntText(value=1000, min=10, max=20000,
-                                    layout=field_lay)
+    lbl_window = widgets.Label('Window (ms):', layout=field_lay)
+    window = widgets.BoundedIntText(value=1000, min=1, max=2000, layout=field_lay)
     hbox0 = widgets.HBox(children=[lbl_unit, unit1, lbl_blank0, lbl_time,
                                    x0, x1, lbl_blank1, lbl_window, window])
     controls = {
@@ -157,8 +152,7 @@ def show_decomposition_traces(node):
             ax[bd].set_yticklabels([str(i) for i in range(ch0, ch1+1)])
             ax[bd].tick_params(axis='both', which='major', labelsize=16)
         ax[bd].set_xlabel('Time [ms]', fontsize=20)
-        plt.show()
-        return fig2widget(fig)
+        return fig
 
     nSamples = node.data.shape[0]
     nChannels = node.data.shape[1]

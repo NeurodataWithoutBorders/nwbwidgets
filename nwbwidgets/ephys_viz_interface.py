@@ -4,9 +4,10 @@ from .view import default_neurodata_vis_spec
 import spikeextractors as se
 from pynwb.ecephys import LFP
 
+ephys_viz_neurodata_vis_spec = dict(default_neurodata_vis_spec)
+
 
 def _set_spec():
-    ephys_viz_neurodata_vis_spec = dict(default_neurodata_vis_spec)
     ephys_viz_neurodata_vis_spec[pynwb.ecephys.LFP] = show_lfp
 
 
@@ -49,5 +50,6 @@ class LFPRecordingExtractor(se.RecordingExtractor):
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
         return self._data[start_frame:end_frame, :][:, channel_ids].T
+
 
 _set_spec()
