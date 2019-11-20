@@ -39,10 +39,9 @@ def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
         ax.plot(tt, data, **kwargs)
         ax.set_xlabel('t (sec)')
         if unit:
-            ax.set_xlabel('x ({})'.format(unit))
+            ax.set_ylabel('x ({})'.format(unit))
         else:
-            ax.set_xlabel('x')
-        ax.set_ylabel('x')
+            ax.set_ylabel('x')
 
     else:
         fig, axs = plt.subplots(ndims, 1, sharex=True)

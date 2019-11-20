@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
-import itkwidgets
-import numpy as np
 import pynwb
 from pynwb.image import GrayscaleImage
 
@@ -39,6 +37,8 @@ def show_index_series(index_series, neurodata_vis_spec: dict):
 
 
 def show_grayscale_image(grayscale_image: GrayscaleImage):
-    return itkwidgets.view(np.array(grayscale_image.data),
-                           ui_collapsed=True,
-                           cmap='Grayscale')
+    fig, ax = plt.subplots()
+    plt.imshow(grayscale_image.data[:], 'gray')
+    plt.axis('off')
+
+    return fig
