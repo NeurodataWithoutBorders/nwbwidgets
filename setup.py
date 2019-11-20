@@ -7,7 +7,7 @@ with open('README.md') as f:
 setup(
     author='Neurodata Without Border (NWB) developers',
     author_email='ben.dichter@gmail.com',
-    version='0.0.7',
+    version='0.1.0',
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
                  'Framework :: Jupyter',
@@ -19,7 +19,7 @@ setup(
                  ],
     description='This is nwb-jupyter-widgets, widgets for viewing the contents of a '
                 'NWB-file in Jupyter Notebooks using ipywidgets.',
-    install_requires=['pynwb', 'itkwidgets', 'ipympl', 'ipywidgets>=7.4', 'matplotlib', 'numpy', 'ipyvolume',
+    install_requires=['pynwb', 'ipympl', 'ipywidgets>=7.4', 'matplotlib', 'numpy', 'ipyvolume',
                       'ndx_grayscalevolume', 'bottleneck', 'plotly'],
     license='MIT',
     keywords=['jupyter', 'hdf5', 'notebook', 'nwb'],
