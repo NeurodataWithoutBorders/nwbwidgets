@@ -34,7 +34,7 @@ def get_timeseries_in_units(node: TimeSeries):
     return data, unit
 
 
-def show_timeseries(node: TimeSeries, **kwargs):
+def show_timeseries(node: TimeSeries, neurodata_vis_spec=None, **kwargs):
     info = []
     for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
@@ -44,7 +44,7 @@ def show_timeseries(node: TimeSeries, **kwargs):
     data, unit = get_timeseries_in_units(node)
 
     fig, ax = plt.subplots()
-    ax.plot(tt, data)
+    ax.plot(tt, data, **kwargs)
     ax.set_xlabel('time (s)')
     if node.unit:
         ax.set_ylabel(node.unit)

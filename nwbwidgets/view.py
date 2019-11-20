@@ -6,6 +6,7 @@ import hdmf
 
 
 default_neurodata_vis_spec = {
+    pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict({
         'table': base.show_dynamic_table,
