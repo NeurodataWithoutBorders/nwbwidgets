@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from pynwb.misc import AnnotationSeries
-from ipywidgets import widgets
-import bottleneck as bn
+from ipywidgets import widgets, fixed
+from matplotlib import cm
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -56,51 +56,82 @@ def show_unit(node, **kwargs):
     return tab_nest
 
 
-def show_unit_traces(node):
-    def control_plot(unit, x0, x1, window):
-        fig, ax = plt.subplots(figsize=(18, 10))
-        spkt = np.array(node['spike_times'][unit][:])
-        binned = np.zeros(int(x1-x0)*1000)  # in ms
-        spkt1 = spkt[spkt > x0]
-        spkt1 = spkt1[spkt1 < x1]
-        binned[np.array(spkt1-x0).astype('int')] = 1
-        # Calculates moving average from binned spike times
-        smoothed = bn.move_mean(binned, window=window)
-        peak = np.nanmax(smoothed)
-        xx = np.linspace(x0, x1, len(binned))
-        #ax.plot(xx, smoothed, color='k')
-        ax.vlines(spkt, ymin=0, ymax=peak, color='grey', alpha=.5)
+def show_session_raster(units, time_window, units_window):
+    num_units = units_window[1] - units_window[0]
+    unit_inds = np.arange(units_window[0], units_window[1])
 
-        ax.set_xlabel('time (s)', fontsize=20)
-        ax.set_ylabel('rate [spks/sec]', fontsize=20)
-        ax.set_xlim([x0, x1])
-        ax.set_ylim([0, peak*1.1])
-        return fig
+    spike_times = units['spike_times'][units_window[0]:units_window[1]]
 
-    field_lay = widgets.Layout(max_height='40px', max_width='100px',
-                               min_height='30px', min_width='50px')
-    lbl_unit = widgets.Label('Unit:', layout=field_lay)
-    unit1 = widgets.BoundedIntText(value=0, min=0, max=len(node.id[:])-1,
-                                   layout=field_lay)
-    lbl_blank0 = widgets.Label('       ', layout=field_lay)
-    lbl_time = widgets.Label('Time (s):', layout=field_lay)
+    # initialize
+    closest_electrode = np.empty(num_units, dtype=int)
+    reduced_spike_times = spike_times
+    for unit in range(num_units):
+        # for better visualization, plot spike_times less than max_plt_time seconds
+        unit_times = spike_times[unit]
+        unit_times = unit_times[np.where((unit_times > time_window[0]) &
+                                         (unit_times < time_window[1]))]
 
-    tEnd = max(max(node['spike_times'][:]))
-    x0 = widgets.BoundedFloatText(value=0, min=0, max=tEnd, layout=field_lay)
-    x1 = widgets.BoundedFloatText(value=min(10, tEnd), min=0, max=tEnd, layout=field_lay)
-    lbl_blank1 = widgets.Label('       ', layout=field_lay)
-    lbl_window = widgets.Label('Window (ms):', layout=field_lay)
-    window = widgets.BoundedIntText(value=1000, min=1, max=2000, layout=field_lay)
-    hbox0 = widgets.HBox(children=[lbl_unit, unit1, lbl_blank0, lbl_time,
-                                   x0, x1, lbl_blank1, lbl_window, window])
+        reduced_spike_times[unit] = unit_times
+
+        # identify the electrode recording the largest waveform of the unit
+        if 'waveform_mean' in units.colnames:
+            waveform_mean_abs = np.abs(units['waveform_mean'][unit])
+            magnitude_per_electrode = np.amax(waveform_mean_abs, 0)
+            closest_electrode[unit] = np.argmax(magnitude_per_electrode)
+        else:
+            closest_electrode[unit] = 25  # default color in gist_earth_cmap
+
+    # create colormap to map the unit's closest electrode to color
+    if 'waveform_mean' in units.colnames:
+        cmap = cm.get_cmap('rainbow', num_units)
+        colors = cmap(unit_inds - min(unit_inds))
+    else:
+        colors = 'k'
+    # plot spike times for each unit
+    fig, ax = plt.subplots(1, 1)
+    ax.figure.set_size_inches(12, 6)
+    ax.eventplot(reduced_spike_times, color=colors,
+                 lineoffsets=unit_inds)
+    ax.set_xlabel('Time (seconds)')
+    ax.set_ylabel('Unit #')
+    ax.set_xlim(time_window)
+    ax.set_ylim(np.array(units_window) - .5)
+
+    return fig
+
+
+def raster_widget(node):
+
+    time_window_slider = widgets.FloatRangeSlider(
+        value=[0, 50],
+        min=0,
+        max=node['spike_times'].target.data[:].max(),
+        step=0.1,
+        description='time window',
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True,
+        readout_format='.1f')
+
+    units_slider = widgets.IntRangeSlider(
+        value=[0, 100],
+        min=0,
+        max=len(node['spike_times'].data)-1,
+        description='units',
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True)
+
     controls = {
-        'unit': unit1,
-        'x0': x0,
-        'x1': x1,
-        'window': window
+        'units': fixed(node),
+        'time_window': time_window_slider,
+        'units_window': units_slider,
     }
-    out_fig = widgets.interactive_output(control_plot, controls)
-    vbox = widgets.VBox([hbox0, out_fig])
+
+    out_fig = widgets.interactive_output(show_session_raster, controls)
+
+    control_widgets = widgets.HBox(children=(time_window_slider, units_slider))
+    vbox = widgets.VBox(children=[control_widgets, out_fig])
     return vbox
 
 
