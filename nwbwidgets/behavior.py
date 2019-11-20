@@ -63,7 +63,7 @@ def show_spatial_series(node: SpatialSeries, **kwargs):
     data, unit = get_timeseries_in_units(node)
     tt = get_timeseries_tt(node)
 
-    if data.shape[0] == 1:
+    if len(data.shape) == 1:
         fig, ax = plt.subplots()
         ax.plot(tt, data, **kwargs)
         ax.set_xlabel('t (sec)')
