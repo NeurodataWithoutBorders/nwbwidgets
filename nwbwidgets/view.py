@@ -9,7 +9,7 @@ default_neurodata_vis_spec = {
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict({
         'table': base.show_dynamic_table,
-        'traces': misc.show_unit_traces}),
+        'raster': misc.raster_widget}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_subject,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
