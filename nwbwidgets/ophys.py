@@ -5,9 +5,10 @@ from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
 from .utils.cmaps import linear_transfer_function
 import ipywidgets as widgets
-from .base import show_neurodata_base
+from .base import show_neurodata_base, get_timeseries_dur, get_timeseries_tt
 from scipy.spatial import ConvexHull
 import plotly.graph_objects as go
+from bisect import bisect
 
 
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
@@ -55,35 +56,89 @@ def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
         return neurodata_vis_spec[NWBDataInterface](df_over_f, neurodata_vis_spec)
 
 
-def show_roi_response_series(roi_response_series: RoiResponseSeries, neurodata_vis_spec: dict,
-                             nchans: int = 30, title: str = None):
+def roi_response_series_widget(node: RoiResponseSeries, neurodata_vis_spec: dict = None,
+                               time_window_slider: widgets.IntRangeSlider = None,
+                               roi_slider: widgets.FloatRangeSlider = None, **kwargs):
+    if time_window_slider is None:
+        time_window_slider = widgets.FloatRangeSlider(
+            value=[0, 100],
+            min=0,
+            max=get_timeseries_dur(node),
+            step=0.1,
+            description='time window',
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True,
+            readout_format='.1f')
+
+    if roi_slider is None:
+        roi_slider = widgets.IntRangeSlider(
+            value=[0, min(30, len(node.rois))],
+            min=0,
+            max=len(node.rois),
+            description='units',
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True)
+
+    controls = {
+        'roi_response_series': widgets.fixed(node),
+        'time_window': time_window_slider,
+        'roi_window': roi_slider,
+    }
+    controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
+
+    out_fig = widgets.interactive_output(show_roi_response_series, controls)
+
+    control_widgets = widgets.HBox(children=(time_window_slider, roi_slider))
+    vbox = widgets.VBox(children=[control_widgets, out_fig])
+    return vbox
+
+
+def show_roi_response_series(roi_response_series: RoiResponseSeries,
+                             neurodata_vis_spec: dict = None,
+                             time_window=None, roi_window=None, title: str = None):
     """
 
     :param roi_response_series: pynwb.ophys.RoiResponseSeries
     :param neurodata_vis_spec: OrderedDict
-    :param nchans: int
+    :param time_window: int
     :param title: str
     :return: matplotlib.pyplot.Figure
     """
-    tt = roi_response_series.timestamps
-    data = roi_response_series.data
-    if data.shape[1] == len(tt):  # fix of orientation is incorrect
-        mini_data = data[:nchans, :].T
+    if time_window is None:
+        time_window = [None, None]
+    if roi_window is None:
+        roi_window = [0, len(roi_response_series.rois)]
+    tt = get_timeseries_tt(roi_response_series)
+    if time_window[0] is None:
+        t_ind_start = 0
     else:
-        mini_data = data[:, :nchans]
+        t_ind_start = bisect(tt, time_window[0])
+    if time_window[1] is None:
+        t_ind_stop = -1
+    else:
+        t_ind_stop = bisect(tt, time_window[1], t_ind_start)
+    data = roi_response_series.data
+    tt = tt[t_ind_start: t_ind_stop]
+    if data.shape[1] == len(tt):  # fix of orientation is incorrect
+        mini_data = data[roi_window[0]:roi_window[1], t_ind_start:t_ind_stop].T
+    else:
+        mini_data = data[t_ind_start:t_ind_stop, roi_window[0]:roi_window[1]]
 
     gap = np.median(np.nanstd(mini_data, axis=0)) * 20
-    offsets = np.arange(nchans) * gap
+    offsets = np.arange(roi_window[1] - roi_window[0]) * gap
 
     fig, ax = plt.subplots()
+    ax.figure.set_size_inches(12, 6)
     ax.plot(tt, mini_data + offsets)
     ax.set_xlabel('time (s)')
-    ax.set_ylabel('traces (first 30)')
+    ax.set_ylabel('traces')
     if np.isfinite(gap):
         ax.set_ylim(-gap, offsets[-1] + gap)
         ax.set_xlim(tt[0], tt[-1])
         ax.set_yticks(offsets)
-        ax.set_yticklabels(np.arange(mini_data.shape[1]))
+        ax.set_yticklabels(np.arange(roi_window[0], roi_window[1]))
 
     if title is not None:
         ax.set_title(title)

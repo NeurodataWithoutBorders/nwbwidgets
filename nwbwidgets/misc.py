@@ -3,6 +3,7 @@ import numpy as np
 from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
+from .base import make_time_control_panel
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -15,45 +16,6 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     ax.plot(annotations.timestamps, np.ones(len(annotations.timestamps)), **kwargs)
     ax.set_xlabel('time (s)')
     return fig
-
-
-def show_unit(node, **kwargs):
-    field_lay = widgets.Layout(max_height='40px', max_width='700px',
-                               min_height='30px', min_width='120px')
-    info = []
-    for col in node.colnames:
-        lbl_key = widgets.Label(col+':', layout=field_lay)
-        lbl_val = widgets.Label(str(node[col][0]), layout=field_lay)
-        info.append(widgets.HBox(children=[lbl_key, lbl_val]))
-    vbox0 = widgets.VBox(info)
-
-    unit = widgets.BoundedIntText(value=0, min=0, max=node.columns[0][:].shape[0]-1,
-                                  description='Unit', layout=field_lay)
-
-    def update_x_range(change):
-        for ind, ch in enumerate(vbox0.children):
-            ch.children[1].value = str(node[node.colnames[ind]][change.new])
-    unit.observe(update_x_range, 'value')
-
-    vbox1 = widgets.VBox([unit, vbox0])
-
-    ntabs = 2
-    children = [widgets.HTML('Rendering...') for _ in range(ntabs)]
-    children[0] = vbox1
-
-    def on_selected_index(change):
-        # Click on Traces Tab
-        if change.new == 1 and isinstance(change.owner.children[1], widgets.HTML):
-            widget_box = show_unit_traces(node)
-            children[1] = widget_box
-            change.owner.children = children
-
-    tab_nest = widgets.Tab()
-    tab_nest.children = children
-    tab_nest.set_title(0, 'Fields')
-    tab_nest.set_title(1, 'Traces')
-    tab_nest.observe(on_selected_index, names='selected_index')
-    return tab_nest
 
 
 def show_session_raster(units, time_window, units_window):
@@ -101,17 +63,11 @@ def show_session_raster(units, time_window, units_window):
 
 
 def raster_widget(node):
+    all_spike_times = node['spike_times'].target.data[:]
+    tmin = all_spike_times.min()
+    tmax = all_spike_times.max()
 
-    time_window_slider = widgets.FloatRangeSlider(
-        value=[0, 50],
-        min=0,
-        max=node['spike_times'].target.data[:].max(),
-        step=0.1,
-        description='time window',
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True,
-        readout_format='.1f')
+    time_window_controller = make_time_control_panel(tmin, tmax)
 
     units_slider = widgets.IntRangeSlider(
         value=[0, 100],
@@ -124,13 +80,13 @@ def raster_widget(node):
 
     controls = {
         'units': fixed(node),
-        'time_window': time_window_slider,
+        'time_window': time_window_controller.children[0],
         'units_window': units_slider,
     }
 
     out_fig = widgets.interactive_output(show_session_raster, controls)
 
-    control_widgets = widgets.HBox(children=(time_window_slider, units_slider))
+    control_widgets = widgets.HBox(children=(time_window_controller, units_slider))
     vbox = widgets.VBox(children=[control_widgets, out_fig])
     return vbox
 

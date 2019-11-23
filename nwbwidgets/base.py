@@ -24,6 +24,13 @@ def get_timeseries_tt(node: TimeSeries):
         return np.arange(len(node.data)) / node.rate + node.starting_time
 
 
+def get_timeseries_dur(node: TimeSeries):
+    if node.timestamps is not None:
+        return node.timestamps[-1]
+    else:
+        return len(node.data) / node.rate + node.starting_time
+
+
 def get_timeseries_in_units(node: TimeSeries):
     if node.conversion and np.isfinite(node.conversion):
         data = node.data * node.conversion
@@ -211,3 +218,42 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
         if key not in exclude and isinstance(key, (str, float, int)):
             info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
     return widgets.VBox(info)
+
+
+def make_time_control_panel(tmin, tmax):
+
+    time_window_slider = widgets.FloatRangeSlider(
+        value=[tmin, min(tmin + 50, tmax)],
+        min=tmin,
+        max=tmax,
+        step=0.1,
+        description='time window',
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True,
+        readout_format='.1f')
+
+    forward_button = widgets.Button(description='▶')
+
+    backwards_button = widgets.Button(description='◀')
+
+    def forward(b):
+        value = time_window_slider.get_interact_value()
+        dur = value[1] - value[0]
+        time_window_slider.set_state({'value': (value[0] + dur, value[1] + dur)})
+
+    forward_button.on_click(forward)
+
+    def backwards(b):
+        value = time_window_slider.get_interact_value()
+        dur = value[1] - value[0]
+        time_window_slider.set_state({'value': (value[0] - dur, value[1] - dur)})
+
+    backwards_button.on_click(backwards)
+
+    time_window_controller = widgets.VBox(
+        children=[time_window_slider,
+                  widgets.HBox(
+                      children=[backwards_button, forward_button])])
+
+    return time_window_controller

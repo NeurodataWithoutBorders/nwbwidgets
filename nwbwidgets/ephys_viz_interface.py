@@ -1,4 +1,4 @@
-import ipywidgets as widgets
+"""import ipywidgets as widgets
 import pynwb
 from .view import default_neurodata_vis_spec
 import spikeextractors as se
@@ -53,3 +53,4 @@ class LFPRecordingExtractor(se.RecordingExtractor):
 
 
 _set_spec()
+"""

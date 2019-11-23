@@ -19,7 +19,7 @@ default_neurodata_vis_spec = {
     ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
     pynwb.ophys.PlaneSegmentation: ophys.show_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
-    pynwb.ophys.RoiResponseSeries: ophys.show_roi_response_series,
+    pynwb.ophys.RoiResponseSeries: ophys.roi_response_series_widget,
     pynwb.misc.AnnotationSeries: OrderedDict({
         'text': base.show_text_fields,
         'times': misc.show_annotations}),
