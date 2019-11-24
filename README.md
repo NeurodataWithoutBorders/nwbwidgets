@@ -30,3 +30,8 @@ Instead of supplying a function for the value of the `neurodata_vis_spec` dict, 
 
 ## Extending
 To extend NWBWidgets, all you need to a function that takes as input an instance of a specific neurodata_type class, and outputs a matplotlib figure or a jupyter widget.
+
+## Used in
+* [giocomo-lab-to-nwb](https://github.com/ben-dichter-consulting/giocomo-lab-to-nwb)
+* [buffalo-lab-data-to-nwb](https://github.com/ben-dichter-consulting/buffalo-lab-data-to-nwb)
+* [axel-lab-to-nwb](https://github.com/ben-dichter-consulting/axel-lab-to-nwb)
