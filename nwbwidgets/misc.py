@@ -3,7 +3,7 @@ import numpy as np
 from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
-from .base import make_time_control_panel
+from .base import make_time_control_panel, make_trace_selector
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -68,25 +68,17 @@ def raster_widget(node):
     tmax = all_spike_times.max()
 
     time_window_controller = make_time_control_panel(tmin, tmax)
-
-    units_slider = widgets.IntRangeSlider(
-        value=[0, 100],
-        min=0,
-        max=len(node['spike_times'].data)-1,
-        description='units',
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True)
+    unit_controller = make_trace_selector(len(node['spike_times'].data)-1, (0, 100))
 
     controls = {
         'units': fixed(node),
         'time_window': time_window_controller.children[0],
-        'units_window': units_slider,
+        'units_window': unit_controller.children[0],
     }
 
     out_fig = widgets.interactive_output(show_session_raster, controls)
 
-    control_widgets = widgets.HBox(children=(time_window_controller, units_slider))
+    control_widgets = widgets.HBox(children=(time_window_controller, unit_controller))
     vbox = widgets.VBox(children=[control_widgets, out_fig])
     return vbox
 

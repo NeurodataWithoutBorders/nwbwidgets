@@ -220,10 +220,12 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
     return widgets.VBox(info)
 
 
-def make_time_control_panel(tmin, tmax):
+def make_time_control_panel(tmin, tmax, start_value=None):
+    if start_value is None:
+        start_value = [tmin, min(tmin + 50, tmax)]
 
     time_window_slider = widgets.FloatRangeSlider(
-        value=[tmin, min(tmin + 50, tmax)],
+        value=start_value,
         min=tmin,
         max=tmax,
         step=0.1,
@@ -257,3 +259,42 @@ def make_time_control_panel(tmin, tmax):
                       children=[backwards_button, forward_button])])
 
     return time_window_controller
+
+
+def make_trace_selector(max_val, start_range=(0, 30)):
+
+    trace_slider = widgets.IntRangeSlider(
+        value=start_range,
+        min=0,
+        max=max_val,
+        description='units',
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True)
+
+    up_button = widgets.Button(description='▲')
+
+    down_button = widgets.Button(description='▼')
+
+    def up(b):
+        value = trace_slider.get_interact_value()
+        dur = value[1] - value[0]
+        trace_slider.set_state({'value': (value[0] + dur, value[1] + dur)})
+
+    up_button.on_click(up)
+
+    def down(b):
+        value = trace_slider.get_interact_value()
+        dur = value[1] - value[0]
+        trace_slider.set_state({'value': (value[0] - dur, value[1] - dur)})
+
+    down_button.on_click(down)
+
+    trace_controller = widgets.VBox(
+        children=[trace_slider,
+                  widgets.VBox(
+                      children=[up_button, down_button])])
+
+    return trace_controller
+
+

@@ -5,7 +5,7 @@ from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
 from .utils.cmaps import linear_transfer_function
 import ipywidgets as widgets
-from .base import show_neurodata_base, get_timeseries_dur, get_timeseries_tt
+from .base import show_neurodata_base, get_timeseries_dur, get_timeseries_tt, make_trace_selector, make_time_control_panel
 from scipy.spatial import ConvexHull
 import plotly.graph_objects as go
 from bisect import bisect
@@ -57,40 +57,25 @@ def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
 
 
 def roi_response_series_widget(node: RoiResponseSeries, neurodata_vis_spec: dict = None,
-                               time_window_slider: widgets.IntRangeSlider = None,
-                               roi_slider: widgets.FloatRangeSlider = None, **kwargs):
-    if time_window_slider is None:
-        time_window_slider = widgets.FloatRangeSlider(
-            value=[0, 100],
-            min=0,
-            max=get_timeseries_dur(node),
-            step=0.1,
-            description='time window',
-            continuous_update=False,
-            orientation='horizontal',
-            readout=True,
-            readout_format='.1f')
+                               time_window_controller=None,
+                               roi_controller=None, **kwargs):
 
-    if roi_slider is None:
-        roi_slider = widgets.IntRangeSlider(
-            value=[0, min(30, len(node.rois))],
-            min=0,
-            max=len(node.rois),
-            description='units',
-            continuous_update=False,
-            orientation='horizontal',
-            readout=True)
+    if time_window_controller is None:
+        tmax = get_timeseries_dur(node)
+        time_window_controller = make_time_control_panel(0, tmax, (0, tmax))
+    if roi_controller is None:
+        roi_controller = make_trace_selector(len(node.rois), (0, min(30, len(node.rois))))
 
     controls = {
         'roi_response_series': widgets.fixed(node),
-        'time_window': time_window_slider,
-        'roi_window': roi_slider,
+        'time_window': time_window_controller.children[0],
+        'roi_window': roi_controller.children[0],
     }
     controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
     out_fig = widgets.interactive_output(show_roi_response_series, controls)
 
-    control_widgets = widgets.HBox(children=(time_window_slider, roi_slider))
+    control_widgets = widgets.HBox(children=(time_window_controller, roi_controller))
     vbox = widgets.VBox(children=[control_widgets, out_fig])
     return vbox
 
