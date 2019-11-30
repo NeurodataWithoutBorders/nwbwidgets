@@ -38,6 +38,7 @@ default_neurodata_vis_spec = {
         'over time': behavior.show_spatial_series_over_time,
         'trace': behavior.show_spatial_series}),
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
+    pynwb.image.RGBImage: image.show_rbg_image,
     pynwb.image.ImageSeries: image.show_image_series,
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: base.show_timeseries,
