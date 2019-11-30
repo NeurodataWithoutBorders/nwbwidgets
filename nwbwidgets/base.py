@@ -10,6 +10,7 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_in_units, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind)
+from .controllers import make_time_controller, make_trace_controller
 
 
 def show_ts_fields(node):
@@ -197,84 +198,6 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
     return widgets.VBox(info)
 
 
-def make_time_control_panel(tmin, tmax, start_value=None):
-    if start_value is None:
-        start_value = [tmin, min(tmin + 50, tmax)]
-
-    time_window_slider = widgets.FloatRangeSlider(
-        value=start_value,
-        min=tmin,
-        max=tmax,
-        step=0.1,
-        description='time window',
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True,
-        readout_format='.1f')
-
-    forward_button = widgets.Button(description='▶')
-
-    backwards_button = widgets.Button(description='◀')
-
-    def forward(b):
-        value = time_window_slider.get_interact_value()
-        dur = value[1] - value[0]
-        time_window_slider.set_state({'value': (value[0] + dur, value[1] + dur)})
-
-    forward_button.on_click(forward)
-
-    def backwards(b):
-        value = time_window_slider.get_interact_value()
-        dur = value[1] - value[0]
-        time_window_slider.set_state({'value': (value[0] - dur, value[1] - dur)})
-
-    backwards_button.on_click(backwards)
-
-    time_window_controller = widgets.VBox(
-        children=[time_window_slider,
-                  widgets.HBox(
-                      children=[backwards_button, forward_button])])
-
-    return time_window_controller
-
-
-def make_trace_selector(max_val, start_range=(0, 30)):
-
-    trace_slider = widgets.IntRangeSlider(
-        value=start_range,
-        min=0,
-        max=max_val,
-        description='units',
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True)
-
-    up_button = widgets.Button(description='▲')
-
-    down_button = widgets.Button(description='▼')
-
-    def up(b):
-        value = trace_slider.get_interact_value()
-        dur = value[1] - value[0]
-        trace_slider.set_state({'value': (value[0] + dur, value[1] + dur)})
-
-    up_button.on_click(up)
-
-    def down(b):
-        value = trace_slider.get_interact_value()
-        dur = value[1] - value[0]
-        trace_slider.set_state({'value': (value[0] - dur, value[1] - dur)})
-
-    down_button.on_click(down)
-
-    trace_controller = widgets.VBox(
-        children=[trace_slider,
-                  widgets.VBox(
-                      children=[up_button, down_button])])
-
-    return trace_controller
-
-
 def plot_traces(time_series: TimeSeries, time_window, trace_window,
                 title: str = None, ylabel: str = 'traces'):
     """
@@ -329,20 +252,20 @@ def plot_traces(time_series: TimeSeries, time_window, trace_window,
 
 
 def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
-                       time_window_controller=None, time_window_starting_range=None,
-                       trace_controller=None, trace_starting_range=None,
-                       **kwargs):
+                  time_window_controller=None, time_window_starting_range=None,
+                  trace_controller=None, trace_starting_range=None,
+                  **kwargs):
 
     if time_window_controller is None:
         tmax = get_timeseries_maxt(node)
         tmin = get_timeseries_mint(node)
         if time_window_starting_range is None:
             time_window_starting_range = (tmin, min(tmin+10, tmax))
-        time_window_controller = make_time_control_panel(tmin, tmax, start_value=time_window_starting_range)
+        time_window_controller = make_time_controller(tmin, tmax, start_value=time_window_starting_range)
     if trace_controller is None:
         if trace_starting_range is None:
             trace_starting_range = (0, min(30, node.data.shape[1]))
-        trace_controller = make_trace_selector(node.data.shape[1], start_range=trace_starting_range)
+        trace_controller = make_trace_controller(node.data.shape[1], start_range=trace_starting_range)
 
     controls = {
         'time_series': widgets.fixed(node),
