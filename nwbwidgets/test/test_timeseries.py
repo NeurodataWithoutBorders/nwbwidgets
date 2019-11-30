@@ -1,7 +1,7 @@
 import numpy as np
 
 from pynwb import TimeSeries
-from .base import traces_widget
+from nwbwidgets.base import traces_widget
 
 
 def test_timeseries_widget():
