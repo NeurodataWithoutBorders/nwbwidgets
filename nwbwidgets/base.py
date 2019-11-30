@@ -8,6 +8,8 @@ from pynwb import TimeSeries, ProcessingModule
 from pynwb.core import NWBDataInterface
 from matplotlib.pyplot import Figure
 from datetime import datetime
+from .utils.timeseries import (get_timeseries_tt, get_timeseries_in_units, get_timeseries_maxt, get_timeseries_mint,
+                               timeseries_time_to_ind)
 
 
 def show_ts_fields(node):
@@ -17,38 +19,14 @@ def show_ts_fields(node):
     return widgets.VBox(info)
 
 
-def get_timeseries_tt(node: TimeSeries):
-    if node.timestamps is not None:
-        return node.timestamps
-    else:
-        return np.arange(len(node.data)) / node.rate + node.starting_time
-
-
-def get_timeseries_dur(node: TimeSeries):
-    if node.timestamps is not None:
-        return node.timestamps[-1]
-    else:
-        return len(node.data) / node.rate + node.starting_time
-
-
-def get_timeseries_in_units(node: TimeSeries):
-    if node.conversion and np.isfinite(node.conversion):
-        data = node.data * node.conversion
-        unit = node.unit
-    else:
-        data = node.data
-        unit = None
-    return data, unit
-
-
-def show_timeseries(node: TimeSeries, neurodata_vis_spec=None, **kwargs):
+def show_timeseries(node: TimeSeries, neurodata_vis_spec=None, istart=0, istop=-1, **kwargs):
     info = []
     for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
     children = [widgets.VBox(info)]
 
-    tt = get_timeseries_tt(node)
-    data, unit = get_timeseries_in_units(node)
+    tt = get_timeseries_tt(node, istart=istart, istop=istop)
+    data, unit = get_timeseries_in_units(node, istart=istart, istop=istop)
 
     fig, ax = plt.subplots()
     ax.plot(tt, data, **kwargs)
@@ -178,7 +156,6 @@ def lazy_tabs(in_dict: dict, node):
 
 
 def nwb2widget(node,  neurodata_vis_spec: dict, **pass_kwargs):
-
     for ndtype in type(node).__mro__:
         if ndtype in neurodata_vis_spec:
             spec = neurodata_vis_spec[ndtype]
@@ -296,5 +273,89 @@ def make_trace_selector(max_val, start_range=(0, 30)):
                       children=[up_button, down_button])])
 
     return trace_controller
+
+
+def plot_traces(time_series: TimeSeries, time_window, trace_window,
+                title: str = None, ylabel: str = 'traces'):
+    """
+
+    Parameters
+    ----------
+    time_series
+    time_window
+    trace_window
+    title
+    ylabel
+
+    Returns
+    -------
+
+    """
+    if time_window[0] is None:
+        t_ind_start = 0
+    else:
+        t_ind_start = timeseries_time_to_ind(time_series, time_window[0])
+    if time_window[1] is None:
+        t_ind_stop = time_series.data.shape[0]
+    else:
+        t_ind_stop = timeseries_time_to_ind(time_series, time_window[1])
+    data = time_series.data
+    tt = get_timeseries_tt(time_series, t_ind_start, t_ind_stop)
+    if data.shape[1] == len(tt):  # fix of orientation is incorrect
+        mini_data = data[trace_window[0]:trace_window[1], t_ind_start:t_ind_stop].T
+    else:
+        mini_data = data[t_ind_start:t_ind_stop, trace_window[0]:trace_window[1]]
+
+    gap = np.median(np.nanstd(mini_data, axis=0)) * 20
+    offsets = np.arange(trace_window[1] - trace_window[0]) * gap
+
+    fig, ax = plt.subplots()
+    ax.figure.set_size_inches(12, 6)
+    ax.plot(tt, mini_data + offsets)
+    ax.set_xlabel('time (s)')
+    if np.isfinite(gap):
+        ax.set_ylim(-gap, offsets[-1] + gap)
+        ax.set_xlim(tt[0], tt[-1])
+        ax.set_yticks(offsets)
+        ax.set_yticklabels(np.arange(trace_window[0], trace_window[1]))
+
+    if title is not None:
+        ax.set_title(title)
+
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+
+    return fig
+
+
+def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
+                       time_window_controller=None, time_window_starting_range=None,
+                       trace_controller=None, trace_starting_range=None,
+                       **kwargs):
+
+    if time_window_controller is None:
+        tmax = get_timeseries_maxt(node)
+        tmin = get_timeseries_mint(node)
+        if time_window_starting_range is None:
+            time_window_starting_range = (tmin, min(tmin+10, tmax))
+        time_window_controller = make_time_control_panel(tmin, tmax, start_value=time_window_starting_range)
+    if trace_controller is None:
+        if trace_starting_range is None:
+            trace_starting_range = (0, min(30, node.data.shape[1]))
+        trace_controller = make_trace_selector(node.data.shape[1], start_range=trace_starting_range)
+
+    controls = {
+        'time_series': widgets.fixed(node),
+        'time_window': time_window_controller.children[0],
+        'trace_window': trace_controller.children[0],
+    }
+    controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
+
+    out_fig = widgets.interactive_output(plot_traces, controls)
+
+    control_widgets = widgets.HBox(children=(time_window_controller, trace_controller))
+    vbox = widgets.VBox(children=[control_widgets, out_fig])
+
+    return vbox
 
 
