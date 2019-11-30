@@ -3,7 +3,7 @@ import numpy as np
 from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
-from .base import make_time_control_panel, make_trace_selector
+from .controllers import make_time_controller, make_trace_controller
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -67,8 +67,8 @@ def raster_widget(node):
     tmin = all_spike_times.min()
     tmax = all_spike_times.max()
 
-    time_window_controller = make_time_control_panel(tmin, tmax)
-    unit_controller = make_trace_selector(len(node['spike_times'].data)-1, (0, 100))
+    time_window_controller = make_time_controller(tmin, tmax)
+    unit_controller = make_trace_controller(len(node['spike_times'].data)-1, (0, 100))
 
     controls = {
         'units': fixed(node),
