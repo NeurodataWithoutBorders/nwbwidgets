@@ -40,6 +40,11 @@ def get_timeseries_in_units(node: TimeSeries, istart=0, istop=-1):
 
 def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None):
     if node.timestamps is not None:
-        return bisect(node.timestamps, time, lo=ind_min, hi=ind_max)
+        kwargs = dict()
+        if ind_min is not None:
+            kwargs.update(lo=ind_min)
+        if ind_max is not None:
+            kwargs.update(hi=ind_max)
+        return bisect(node.timestamps, time, **kwargs)
     else:
         return np.ceil((time - node.starting_time) * node.rate)
