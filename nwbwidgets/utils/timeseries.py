@@ -47,4 +47,4 @@ def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None):
             kwargs.update(hi=ind_max)
         return bisect(node.timestamps, time, **kwargs)
     else:
-        return np.ceil((time - node.starting_time) * node.rate)
+        return int(np.ceil((time - node.starting_time) * node.rate))
