@@ -35,13 +35,10 @@ def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_sp
     else:
         raise NotImplementedError
 
-    def on_index_change(change):
-        show_image(change.new)
-
     slider = widgets.IntSlider(value=0, min=0,
                                max=indexed_timeseries.data.shape[0] - 1,
                                orientation='horizontal')
-    slider.observe(on_index_change, names='value')
+    slider.observe(lambda change: show_image(change.new), names='value')
     show_image()
 
     return widgets.VBox([output, slider])
