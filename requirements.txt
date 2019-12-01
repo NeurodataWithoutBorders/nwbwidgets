@@ -1,0 +1,8 @@
+pynwb
+ipympl
+ipywidgets
+matplotlib
+numpy
+ipyvolume
+ndx_grayscalevolume
+plotly
