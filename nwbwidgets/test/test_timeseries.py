@@ -10,4 +10,4 @@ def test_timeseries_widget():
                                    [11., 12., 13., 14.]]),
                     rate=100.)
 
-    traces_widget(20)
+    traces_widget(ts)
