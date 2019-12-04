@@ -27,7 +27,7 @@ def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_sp
         import ipyvolume.pylab as p3
 
         def show_image(index=0):
-            fig = p3.figure()
+            p3.figure()
             p3.volshow(indexed_timeseries.data[index], tf=linear_transfer_function([0, 0, 0], max_opacity=.3))
             output.clear_output(wait=True)
             with output:
