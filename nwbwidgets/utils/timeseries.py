@@ -4,14 +4,16 @@ import numpy as np
 from bisect import bisect
 
 
-def get_timeseries_tt(node: TimeSeries, istart=0, istop=-1):
+def get_timeseries_tt(node: TimeSeries, istart=0, istop=None):
     if node.timestamps is not None:
         return node.timestamps[istart:istop]
     else:
-        if istop > 0:
+        if istop is None:
+            return np.arange(istart, len(node.data) - 1) / node.rate + node.starting_time
+        elif istop > 0:
             return np.arange(istart, istop) / node.rate + node.starting_time
         else:
-            return np.arange(istart, len(node.data) + istop + 1) / node.rate + node.starting_time
+            return np.arange(istart, len(node.data) + istop - 1) / node.rate + node.starting_time
 
 
 def get_timeseries_maxt(node: TimeSeries):
