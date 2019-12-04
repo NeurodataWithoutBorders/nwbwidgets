@@ -56,7 +56,7 @@ def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: dict
     if len(img_seg.plane_segmentations) == 1:
         return show_plane_segmentation(next(iter(img_seg.plane_segmentations.values())), neurodata_vis_spec)
     else:
-        return show_neurodata_base(ImageSegmentation, neurodata_vis_spec)
+        return neurodata_vis_spec[NWBDataInterface](img_seg, neurodata_vis_spec)
 
 
 def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
