@@ -9,7 +9,7 @@ def get_timeseries_tt(node: TimeSeries, istart=0, istop=None):
         return node.timestamps[istart:istop]
     else:
         if istop is None:
-            return np.arange(istart, len(node.data) - 1) / node.rate + node.starting_time
+            return np.arange(istart, len(node.data)) / node.rate + node.starting_time
         elif istop > 0:
             return np.arange(istart, istop) / node.rate + node.starting_time
         else:
@@ -30,7 +30,7 @@ def get_timeseries_mint(node: TimeSeries):
         return node.starting_time
 
 
-def get_timeseries_in_units(node: TimeSeries, istart=0, istop=-1):
+def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
     data = node.data[istart:istop]
     if node.conversion and np.isfinite(node.conversion):
         data = data * node.conversion
