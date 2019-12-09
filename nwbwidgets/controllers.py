@@ -1,4 +1,4 @@
-from ipywidgets import widgets
+from ipywidgets import widgets, Layout
 
 
 def move_slider_up(slider):
@@ -61,10 +61,10 @@ def make_trace_controller(max_val, start_range=(0, 30)):
         orientation='horizontal',
         readout=True)
 
-    up_button = widgets.Button(description='▲')
+    up_button = widgets.Button(description='▲', layout=Layout(width='auto'))
     up_button.on_click(lambda b: move_slider_up(slider))
 
-    down_button = widgets.Button(description='▼')
+    down_button = widgets.Button(description='▼', layout=Layout(width='auto'))
     down_button.on_click(lambda b: move_slider_down(slider))
 
     controller = widgets.VBox(
