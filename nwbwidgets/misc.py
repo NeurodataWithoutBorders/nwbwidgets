@@ -4,6 +4,7 @@ from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
 from .controllers import make_time_controller, make_trace_controller
+from bisect import bisect_left, bisect_right
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -18,42 +19,31 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     return fig
 
 
-def show_session_raster(units, time_window, units_window):
+def get_spike_times(units, index, in_interval):
+    st = units['spike_times']
+    unit_start = 0 if index == 0 else st.data[index - 1]
+    unit_stop = st.data[index]
+    start_time, stop_time = in_interval
+
+    ind_start = bisect_left(st.target, start_time, unit_start, unit_stop)
+    ind_stop = bisect_right(st.target, stop_time, ind_start, unit_stop)
+
+    return np.asarray(st.target[ind_start:ind_stop])
+
+
+def show_session_raster(units, time_window, units_window, cmap_name='rainbow'):
     num_units = units_window[1] - units_window[0]
     unit_inds = np.arange(units_window[0], units_window[1])
 
-    spike_times = units['spike_times'][units_window[0]:units_window[1]]
-
-    # initialize
-    closest_electrode = np.empty(num_units, dtype=int)
-    reduced_spike_times = spike_times
-    for unit in range(num_units):
-        # for better visualization, plot spike_times less than max_plt_time seconds
-        unit_times = spike_times[unit]
-        unit_times = unit_times[np.where((unit_times > time_window[0]) &
-                                         (unit_times < time_window[1]))]
-
-        reduced_spike_times[unit] = unit_times
-
-        # identify the electrode recording the largest waveform of the unit
-        if 'waveform_mean' in units.colnames:
-            waveform_mean_abs = np.abs(units['waveform_mean'][unit])
-            magnitude_per_electrode = np.amax(waveform_mean_abs, 0)
-            closest_electrode[unit] = np.argmax(magnitude_per_electrode)
-        else:
-            closest_electrode[unit] = 25  # default color in gist_earth_cmap
+    reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in range(num_units)]
 
     # create colormap to map the unit's closest electrode to color
-    if 'waveform_mean' in units.colnames:
-        cmap = cm.get_cmap('rainbow', num_units)
-        colors = cmap(unit_inds - min(unit_inds))
-    else:
-        colors = 'k'
+    cmap = cm.get_cmap(cmap_name, num_units)
+    colors = cmap(unit_inds - min(unit_inds))
     # plot spike times for each unit
     fig, ax = plt.subplots(1, 1)
     ax.figure.set_size_inches(12, 6)
-    ax.eventplot(reduced_spike_times, color=colors,
-                 lineoffsets=unit_inds)
+    ax.eventplot(reduced_spike_times, color=colors, lineoffsets=unit_inds)
     ax.set_xlabel('Time (seconds)')
     ax.set_ylabel('Unit #')
     ax.set_xlim(time_window)
