@@ -4,38 +4,23 @@ from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
 from .controllers import make_time_controller, make_trace_controller
-from bisect import bisect_left, bisect_right
-
+from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
-    default_kwargs = {'marker': "|", 'linestyle': ''}
-    for key, val in default_kwargs.items():
-        if key not in kwargs:
-            kwargs[key] = val
-
     fig, ax = plt.subplots()
-    ax.plot(annotations.timestamps, np.ones(len(annotations.timestamps)), **kwargs)
+    ax.eventplot(annotations.timestamps, **kwargs)
     ax.set_xlabel('time (s)')
     return fig
 
 
-def get_spike_times(units, index, in_interval):
-    st = units['spike_times']
-    unit_start = 0 if index == 0 else st.data[index - 1]
-    unit_stop = st.data[index]
-    start_time, stop_time = in_interval
 
-    ind_start = bisect_left(st.target, start_time, unit_start, unit_stop)
-    ind_stop = bisect_right(st.target, stop_time, ind_start, unit_stop)
-
-    return np.asarray(st.target[ind_start:ind_stop])
 
 
 def show_session_raster(units, time_window, units_window, cmap_name='rainbow'):
-    num_units = units_window[1] - units_window[0]
-    unit_inds = np.arange(units_window[0], units_window[1])
+    num_units = units_window[1] - units_window[0] + 1
+    unit_inds = np.arange(units_window[0], units_window[1] + 1)
 
-    reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in range(num_units)]
+    reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in unit_inds]
 
     # create colormap to map the unit's closest electrode to color
     cmap = cm.get_cmap(cmap_name, num_units)
@@ -47,15 +32,14 @@ def show_session_raster(units, time_window, units_window, cmap_name='rainbow'):
     ax.set_xlabel('Time (seconds)')
     ax.set_ylabel('Unit #')
     ax.set_xlim(time_window)
-    ax.set_ylim(np.array(units_window) - .5)
+    ax.set_ylim(np.array(units_window))
 
     return fig
 
 
 def raster_widget(node):
-    all_spike_times = node['spike_times'].target.data[:]
-    tmin = all_spike_times.min()
-    tmax = all_spike_times.max()
+    tmin = get_min_spike_time(node)
+    tmax = get_max_spike_time(node)
 
     time_window_controller = make_time_controller(tmin, tmax)
     unit_controller = make_trace_controller(len(node['spike_times'].data)-1, (0, 100))
