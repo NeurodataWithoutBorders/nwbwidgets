@@ -60,3 +60,62 @@ def get_max_spike_time(units: pynwb.misc.Units):
     inds = list(st.data[:] - 1)
     last_spikes = st.target.data[inds]
     return np.max(last_spikes)
+
+
+def align_by_times(units: pynwb.misc.Units, index, starts, stops):
+    """
+    Args:
+        units: pynwb.misc.Units
+        index: int
+        starts: array-like
+        stops: array-like
+    Returns:
+        np.array(shape=(n_trials, n_time, ...))
+    """
+    return np.array([get_spike_times(units, index, [a, b]) - a for a, b in zip(starts, stops)])
+
+
+def align_by_trials(units: pynwb.misc.Units, index, start_label='start_time',
+                    stop_label=None, before=0., after=1.):
+    """
+    Args:
+        units
+        start_label: str
+            default: 'start_time'
+        stop_label: str
+            default: None (just align to start_time)
+        before: float
+            time after start_label in secs (positive goes back in time)
+        after: float
+            time after stop_label in secs (positive goes forward in time)
+    Returns:
+        np.array(shape=(n_trials, n_time, ...))
+    """
+    trials = units.get_ancestor('NWBFile').trials
+    return align_by_time_intervals(units, index, trials, start_label, stop_label, before, after)
+
+
+def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_label='start_time',
+                            stop_label='stop_time', before=0., after=0.):
+    """
+    Args:
+        units: time-aware neurodata_type
+        index: int
+        intervals: pynwb.epoch.TimeIntervals
+        start_label: str
+            default: 'start_time'
+        stop_label: str
+            default: 'stop_time'
+        before: float
+            time after start_label in secs (positive goes back in time)
+        after: float
+            time after stop_label in secs (positive goes forward in time)
+    Returns:
+        np.array(shape=(n_trials, n_time, ...))
+    """
+    if stop_label is None:
+        stop_label = 'start_time'
+
+    starts = np.array(intervals[start_label][:]) - before
+    stops = np.array(intervals[stop_label][:]) + after
+    return [x - before for x in align_by_times(units, index, starts, stops)]

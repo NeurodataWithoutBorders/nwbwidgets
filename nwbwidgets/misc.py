@@ -1,19 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pynwb
 from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
-from .controllers import make_time_controller, make_trace_controller
-from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time
+from .controllers import float_range_controller, int_range_controller, int_controller
+from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_trials
+
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
     fig, ax = plt.subplots()
     ax.eventplot(annotations.timestamps, **kwargs)
     ax.set_xlabel('time (s)')
     return fig
-
-
-
 
 
 def show_session_raster(units, time_window, units_window, cmap_name='rainbow'):
@@ -37,12 +36,13 @@ def show_session_raster(units, time_window, units_window, cmap_name='rainbow'):
     return fig
 
 
-def raster_widget(node):
-    tmin = get_min_spike_time(node)
-    tmax = get_max_spike_time(node)
-
-    time_window_controller = make_time_controller(tmin, tmax)
-    unit_controller = make_trace_controller(len(node['spike_times'].data)-1, (0, 100))
+def raster_widget(node, unit_controller=None, time_window_controller=None):
+    if time_window_controller is None:
+        tmin = get_min_spike_time(node)
+        tmax = get_max_spike_time(node)
+        time_window_controller = float_range_controller(tmin, tmax)
+    if unit_controller is None:
+        unit_controller = int_range_controller(len(node['spike_times'].data)-1, (0, 100))
 
     controls = {
         'units': fixed(node),
@@ -137,3 +137,58 @@ def show_decomposition_traces(node):
     hbox0 = widgets.HBox(children=[lbl_x, x0, x1, lbl_blank, lbl_ch, ch0, ch1])
     vbox = widgets.VBox(children=[hbox0, out_fig])
     return vbox
+
+
+def psth_widget(units: pynwb.misc.Units, unit_controller=None, after_slider=None, before_slider=None,
+                trial_event_controller=None):
+
+    control_widgets = widgets.VBox(children=[])
+
+    if unit_controller is None:
+        nunits = len(units['spike_times'].data)
+        unit_controller = int_controller(nunits)
+        control_widgets.children = list(control_widgets.children) + [unit_controller]
+
+    if trial_event_controller is None:
+        trials = units.get_ancestor('NWBFile').trials
+        trial_events = ['start_time']
+        if not np.all(np.isnan(trials['stop_time'].data)):
+            trial_events.append('stop_time')
+        trial_events += [x.name for x in trials.columns if
+                         (('_time' in x.name) and (x.name not in ('start_time', 'stop_time')))]
+        trial_event_controller = widgets.Dropdown(options=trial_events,
+                                                  value='start_time',
+                                                  description='align to: ')
+        control_widgets.children = list(control_widgets.children) + [trial_event_controller]
+
+    if before_slider is None:
+        before_slider = widgets.FloatSlider(0, min=0, max=10., description='before (s)', continuous_update=False)
+        control_widgets.children = list(control_widgets.children) + [before_slider]
+
+    if after_slider is None:
+        after_slider = widgets.FloatSlider(2., min=0, max=10., description='after (s)', continuous_update=False)
+        control_widgets.children = list(control_widgets.children) + [after_slider]
+
+    controls = {
+        'units': fixed(units),
+        'ind': unit_controller.children[0],
+        'after': after_slider,
+        'before': before_slider,
+        'start_label': trial_event_controller
+    }
+
+    out_fig = widgets.interactive_output(show_psth, controls)
+    vbox = widgets.VBox(children=[control_widgets, out_fig])
+    return vbox
+
+
+def show_psth(units, ind=0, start_label='start_time', before=0., after=1.):
+    data = align_by_trials(units, ind, start_label=start_label, before=before, after=after)
+    fig, ax = plt.subplots()
+
+    ax.eventplot(data)
+    ax.set_xlim((-before, after))
+    ax.set_xlabel('time (s)')
+
+    return fig
+

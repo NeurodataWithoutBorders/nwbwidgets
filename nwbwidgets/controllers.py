@@ -1,7 +1,7 @@
 from ipywidgets import widgets, Layout
 
 
-def move_slider_up(slider):
+def move_range_slider_up(slider):
     value = slider.get_interact_value()
     value_range = value[1] - value[0]
     max_val = slider.get_state()['max']
@@ -11,7 +11,21 @@ def move_slider_up(slider):
         slider.set_state({'value': (max_val - value_range, max_val)})
 
 
-def move_slider_down(slider):
+def move_int_slider_up(slider: widgets.IntSlider):
+    value = slider.get_interact_value()
+    max_val = slider.get_state()['max']
+    if value + 1 < max_val:
+        slider.set_state({'value': value + 1})
+
+
+def move_int_slider_down(slider: widgets.IntSlider):
+    value = slider.get_interact_value()
+    min_val = slider.get_state()['min']
+    if value - 1 < min_val:
+        slider.set_state({'value': value - 1})
+
+
+def move_range_slider_down(slider):
     value = slider.get_interact_value()
     value_range = value[1] - value[0]
     min_val = slider.get_state()['min']
@@ -21,7 +35,7 @@ def move_slider_down(slider):
         slider.set_state({'value': (min_val, min_val + value_range)})
 
 
-def make_time_controller(tmin, tmax, start_value=None):
+def float_range_controller(tmin, tmax, start_value=None):
     if start_value is None:
         start_value = [tmin, min(tmin + 50, tmax)]
 
@@ -37,10 +51,10 @@ def make_time_controller(tmin, tmax, start_value=None):
         readout_format='.1f')
 
     forward_button = widgets.Button(description='▶')
-    forward_button.on_click(lambda b: move_slider_up(slider))
+    forward_button.on_click(lambda b: move_range_slider_up(slider))
 
     backwards_button = widgets.Button(description='◀')
-    backwards_button.on_click(lambda b: move_slider_down(slider))
+    backwards_button.on_click(lambda b: move_range_slider_down(slider))
 
     controller = widgets.VBox(
         children=[
@@ -50,22 +64,48 @@ def make_time_controller(tmin, tmax, start_value=None):
     return controller
 
 
-def make_trace_controller(max_val, start_range=(0, 30)):
+def int_range_controller(max, min=0, start_range=(0, 30), description='units', orientation='horizontal',
+                         continuous_update=False):
 
     slider = widgets.IntRangeSlider(
         value=start_range,
-        min=0,
-        max=max_val,
-        description='units',
-        continuous_update=False,
-        orientation='horizontal',
+        min=min,
+        max=max,
+        description=description,
+        continuous_update=continuous_update,
+        orientation=orientation,
         readout=True)
 
     up_button = widgets.Button(description='▲', layout=Layout(width='auto'))
-    up_button.on_click(lambda b: move_slider_up(slider))
+    up_button.on_click(lambda b: move_range_slider_up(slider))
 
     down_button = widgets.Button(description='▼', layout=Layout(width='auto'))
-    down_button.on_click(lambda b: move_slider_down(slider))
+    down_button.on_click(lambda b: move_range_slider_down(slider))
+
+    controller = widgets.VBox(
+        children=[
+            slider,
+            widgets.VBox(children=[up_button, down_button])])
+
+    return controller
+
+
+def int_controller(max, min=0, value=0, description='unit', orientation='horizontal', continuous_update=False):
+    slider = widgets.IntSlider(
+        value=value,
+        min=min,
+        max=max,
+        description=description,
+        continuous_update=continuous_update,
+        orientation=orientation,
+        readout=True
+    )
+
+    up_button = widgets.Button(description='▲', layout=Layout(width='auto'))
+    up_button.on_click(lambda b: move_int_slider_up(slider))
+
+    down_button = widgets.Button(description='▼', layout=Layout(width='auto'))
+    down_button.on_click(lambda b: move_int_slider_down(slider))
 
     controller = widgets.VBox(
         children=[

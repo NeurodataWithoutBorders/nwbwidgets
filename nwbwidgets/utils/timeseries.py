@@ -50,3 +50,65 @@ def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None):
         return bisect(node.timestamps, time, **kwargs)
     else:
         return int(np.ceil((time - node.starting_time) * node.rate))
+
+
+def align_by_times(timeseries: TimeSeries, starts, stops):
+    """
+    Args:
+        timeseries: TimeSeries
+        starts: array-like
+        stops: array-like
+    Returns:
+        np.array(shape=(n_trials, n_time, ...))
+    """
+    out = []
+    for istart, istop in zip(starts, stops):
+        ind_start = timeseries_time_to_ind(timeseries, istart)
+        ind_stop = timeseries_time_to_ind(timeseries, istop, ind_min=ind_start)
+        out.append(timeseries.data[ind_start:ind_stop])
+    return np.array(out)
+
+
+def align_by_trials(timeseries: TimeSeries, start_label='start_time',
+                    stop_label=None, before=0., after=1.):
+    """
+    Args:
+        timeseries: TimeSeries
+        start_label: str
+            default: 'start_time'
+        stop_label: str
+            default: None (just align to start_time)
+        before: float
+            time after start_label in secs (positive goes back in time)
+        after: float
+            time after stop_label in secs (positive goes forward in time)
+    Returns:
+        np.array(shape=(n_trials, n_time, ...))
+    """
+    trials = timeseries.get_ancestor('NWBFile').trials
+    return align_by_time_intervals(timeseries, trials, start_label, stop_label, before, after)
+
+
+def align_by_time_intervals(timeseries: TimeSeries, intervals, start_label='start_time',
+                            stop_label='stop_time', before=0., after=0.):
+    """
+    Args:
+        timeseries: pynwb.TimeSeries
+        intervals: pynwb.epoch.TimeIntervals
+        start_label: str
+            default: 'start_time'
+        stop_label: str
+            default: 'stop_time'
+        before: float
+            time after start_label in secs (positive goes back in time)
+        after: float
+            time after stop_label in secs (positive goes forward in time)
+    Returns:
+        np.array(shape=(n_trials, n_time, ...))
+    """
+    if stop_label is None:
+        stop_label = 'start_time'
+
+    starts = np.array(intervals[start_label][:]) - before
+    stops = np.array(intervals[stop_label][:]) + after
+    return align_by_times(timeseries, starts, stops)

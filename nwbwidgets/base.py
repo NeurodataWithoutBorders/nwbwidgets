@@ -10,7 +10,7 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_in_units, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind)
-from .controllers import make_time_controller, make_trace_controller
+from .controllers import int_range_controller, float_range_controller
 
 
 def show_ts_fields(node):
@@ -261,11 +261,11 @@ def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
         tmin = get_timeseries_mint(node)
         if time_window_starting_range is None:
             time_window_starting_range = (tmin, min(tmin+10, tmax))
-        time_window_controller = make_time_controller(tmin, tmax, start_value=time_window_starting_range)
+        time_window_controller = float_range_controller(tmin, tmax, start_value=time_window_starting_range)
     if trace_controller is None:
         if trace_starting_range is None:
             trace_starting_range = (0, min(30, node.data.shape[1]))
-        trace_controller = make_trace_controller(node.data.shape[1], start_range=trace_starting_range)
+        trace_controller = int_range_controller(node.data.shape[1], start_range=trace_starting_range)
 
     controls = {
         'time_series': widgets.fixed(node),
