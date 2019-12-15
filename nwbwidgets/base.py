@@ -10,7 +10,7 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_in_units, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind)
-from .controllers import int_range_controller, float_range_controller
+from .controllers import int_range_controller, float_range_controller, make_time_window_controller
 
 
 def show_ts_fields(node):
@@ -198,14 +198,15 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
     return widgets.VBox(info)
 
 
-def plot_traces(time_series: TimeSeries, time_window, trace_window,
+def plot_traces(time_series: TimeSeries, time_start, time_duration, trace_window,
                 title: str = None, ylabel: str = 'traces'):
     """
 
     Parameters
     ----------
     time_series
-    time_window
+    time_start
+    time_duration
     trace_window
     title
     ylabel
@@ -214,6 +215,8 @@ def plot_traces(time_series: TimeSeries, time_window, trace_window,
     -------
 
     """
+
+    time_window = time_start, time_start + time_duration
     if time_window[0] is None:
         t_ind_start = 0
     else:
@@ -252,16 +255,18 @@ def plot_traces(time_series: TimeSeries, time_window, trace_window,
 
 
 def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
-                  time_window_controller=None, time_window_starting_range=None,
+                  time_window_controller=None, start=None, dur=None,
                   trace_controller=None, trace_starting_range=None,
                   **kwargs):
 
     if time_window_controller is None:
         tmax = get_timeseries_maxt(node)
         tmin = get_timeseries_mint(node)
-        if time_window_starting_range is None:
-            time_window_starting_range = (tmin, min(tmin+10, tmax))
-        time_window_controller = float_range_controller(tmin, tmax, start_value=time_window_starting_range)
+        if start is None:
+            start = tmin
+        if dur is None:
+            dur = min(tmax-tmin, 5)
+        time_window_controller = make_time_window_controller(tmin, tmax, start=start, duration=dur)
     if trace_controller is None:
         if trace_starting_range is None:
             trace_starting_range = (0, min(30, node.data.shape[1]))
@@ -269,7 +274,8 @@ def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
 
     controls = {
         'time_series': widgets.fixed(node),
-        'time_window': time_window_controller.children[0],
+        'time_start': time_window_controller.children[0].children[0],
+        'time_duration': time_window_controller.children[0].children[1],
         'trace_window': trace_controller.children[0],
     }
     controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})

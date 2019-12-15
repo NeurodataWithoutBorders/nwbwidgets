@@ -5,7 +5,7 @@ from pynwb.misc import AnnotationSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
 from .controllers import float_range_controller, int_range_controller, int_controller
-from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_trials
+from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -42,7 +42,7 @@ def raster_widget(node, unit_controller=None, time_window_controller=None):
         tmax = get_max_spike_time(node)
         time_window_controller = float_range_controller(tmin, tmax)
     if unit_controller is None:
-        unit_controller = int_range_controller(len(node['spike_times'].data)-1, (0, 100))
+        unit_controller = int_range_controller(len(node['spike_times'].data)-1, start_range=(0, 100))
 
     controls = {
         'units': fixed(node),
@@ -140,7 +140,7 @@ def show_decomposition_traces(node):
 
 
 def psth_widget(units: pynwb.misc.Units, unit_controller=None, after_slider=None, before_slider=None,
-                trial_event_controller=None):
+                trial_event_controller=None, trial_order_controller=None, trial_color_controller=None):
 
     control_widgets = widgets.VBox(children=[])
 
@@ -159,7 +159,22 @@ def psth_widget(units: pynwb.misc.Units, unit_controller=None, after_slider=None
         trial_event_controller = widgets.Dropdown(options=trial_events,
                                                   value='start_time',
                                                   description='align to: ')
+
         control_widgets.children = list(control_widgets.children) + [trial_event_controller]
+
+    if trial_order_controller is None:
+        trials = units.get_ancestor('NWBFile').trials
+        trial_order_controller = widgets.Dropdown(options=trials.colnames,
+                                                  value='start_time',
+                                                  description='order by: ')
+        control_widgets.children = list(control_widgets.children) + [trial_order_controller]
+
+    if trial_color_controller is None:
+        trials = units.get_ancestor('NWBFile').trials
+        trial_color_controller = widgets.Dropdown(options=[''] + list(trials.colnames),
+                                                  value='',
+                                                  description='color by: ')
+        control_widgets.children = list(control_widgets.children) + [trial_color_controller]
 
     if before_slider is None:
         before_slider = widgets.FloatSlider(0, min=0, max=10., description='before (s)', continuous_update=False)
@@ -171,10 +186,12 @@ def psth_widget(units: pynwb.misc.Units, unit_controller=None, after_slider=None
 
     controls = {
         'units': fixed(units),
-        'ind': unit_controller.children[0],
+        'index': unit_controller.children[0],
         'after': after_slider,
         'before': before_slider,
-        'start_label': trial_event_controller
+        'start_label': trial_event_controller,
+        'order_by': trial_order_controller,
+        'color_by': trial_color_controller
     }
 
     out_fig = widgets.interactive_output(show_psth, controls)
@@ -182,13 +199,49 @@ def psth_widget(units: pynwb.misc.Units, unit_controller=None, after_slider=None
     return vbox
 
 
-def show_psth(units, ind=0, start_label='start_time', before=0., after=1.):
-    data = align_by_trials(units, ind, start_label=start_label, before=before, after=after)
-    fig, ax = plt.subplots()
+def show_psth(units, index=0, start_label='start_time', before=0., after=1., order_by='start_time',
+              color_by='', cmap_name='gist_rainbow'):
+    trials = units.get_ancestor('NWBFile').trials
+    data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after)
 
-    ax.eventplot(data)
+    order = np.argsort(trials[order_by].data[:])
+    data = np.array(data)[order]
+
+    cmap = cm.get_cmap(cmap_name)
+
+    if color_by:
+        coldata = trials[color_by].data[:]
+        if len(np.unique(coldata)) < 5:
+            coltype = 'cat'
+            labels, cvals = np.unique(coldata, return_inverse=True)
+        elif np.all(np.isreal(data)):
+            coltype = 'numeric'
+            cvals = coldata
+        else:
+            coltype = 'unknown'
+            cvals = 0
+        cvals = cvals - min(cvals)
+        cvals = cvals / max(cvals)
+        cvals = cvals[order]
+        colors = cmap(cvals)
+        cval_inds = np.hstack((0, np.where(np.diff(cvals))[0] + 1))
+    else:
+        coltype = 'unknown'
+        colors = 'k'
+
+    fig, ax = plt.subplots()
+    event_collection = ax.eventplot(data, orientation='horizontal', colors=colors)
     ax.set_xlim((-before, after))
+    ax.set_ylim(0, len(data))
+    ax.invert_yaxis()
     ax.set_xlabel('time (s)')
+    ax.set_ylabel('trials')
+    ax.axvline(color=[.5, .5, .5])
+    ax.set_title('PSTH for unit {}'.format(index))
+
+    if coltype == 'cat':
+        handles = [event_collection[x] for x in cval_inds]
+        ax.legend(handles=handles, labels=list(labels), bbox_to_anchor=(1.0, .6, .4, .4),
+                  mode="expand", borderaxespad=0.)
 
     return fig
-

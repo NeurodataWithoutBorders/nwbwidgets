@@ -5,7 +5,6 @@ from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
 from .utils.cmaps import linear_transfer_function
 import ipywidgets as widgets
-from .base import show_neurodata_base
 from scipy.spatial import ConvexHull
 import plotly.graph_objects as go
 

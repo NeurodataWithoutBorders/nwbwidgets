@@ -15,14 +15,14 @@ def move_int_slider_up(slider: widgets.IntSlider):
     value = slider.get_interact_value()
     max_val = slider.get_state()['max']
     if value + 1 < max_val:
-        slider.set_state({'value': value + 1})
+        slider.value = value + 1
 
 
 def move_int_slider_down(slider: widgets.IntSlider):
     value = slider.get_interact_value()
     min_val = slider.get_state()['min']
-    if value - 1 < min_val:
-        slider.set_state({'value': value - 1})
+    if value - 1 > min_val:
+        slider.value = value - 1
 
 
 def move_range_slider_down(slider):
@@ -33,6 +33,24 @@ def move_range_slider_down(slider):
         slider.set_state({'value': (value[0] - value_range, value[1] - value_range)})
     else:
         slider.set_state({'value': (min_val, min_val + value_range)})
+
+
+def move_slider_up(slider, dur):
+    value = slider.get_interact_value()
+    max_val = slider.get_state()['max']
+    if value + dur < max_val:
+        slider.value = value + dur
+    else:
+        slider.value = max_val - dur
+
+
+def move_slider_down(slider,  dur):
+    value = slider.get_interact_value()
+    min_val = slider.get_state()['min']
+    if value - dur > min_val:
+        slider.value = value - dur
+    else:
+        slider.value = min_val
 
 
 def float_range_controller(tmin, tmax, start_value=None):
@@ -59,6 +77,40 @@ def float_range_controller(tmin, tmax, start_value=None):
     controller = widgets.VBox(
         children=[
             slider,
+            widgets.HBox(children=[backwards_button, forward_button])])
+
+    return controller
+
+
+def make_time_window_controller(tmin, tmax, start=0, duration=5.):
+    slider = widgets.FloatSlider(
+        value=start,
+        min=tmin,
+        max=tmax,
+        step=0.1,
+        description='time start',
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True,
+        readout_format='.1f')
+
+    duration_widget = widgets.BoundedFloatText(
+        value=duration,
+        min=0,
+        max=tmax - tmin,
+        step=0.1,
+        description='duration (s): ',
+    )
+
+    forward_button = widgets.Button(description='▶')
+    forward_button.on_click(lambda b: move_slider_up(slider, duration_widget.get_interact_value()))
+
+    backwards_button = widgets.Button(description='◀')
+    backwards_button.on_click(lambda b: move_slider_down(slider, duration_widget.get_interact_value()))
+
+    controller = widgets.VBox(
+        children=[
+            widgets.VBox(children=[slider, duration_widget]),
             widgets.HBox(children=[backwards_button, forward_button])])
 
     return controller
