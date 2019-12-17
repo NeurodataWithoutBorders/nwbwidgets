@@ -5,8 +5,8 @@ from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
 from .utils.cmaps import linear_transfer_function
 import ipywidgets as widgets
-from scipy.spatial import ConvexHull
 import plotly.graph_objects as go
+from skimage import measure
 
 
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
@@ -78,9 +78,13 @@ def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
     return fig
 
 
-def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_wheel):
-    if 'neuron_type' in plane_seg:
-        neuron_types = np.unique(plane_seg['neuron_type'][:])
+def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type',
+                               threshold=.01):
+    if color_by:
+        if color_by in plane_seg:
+            cats = np.unique(plane_seg[color_by][:])
+        else:
+            raise ValueError('specified color_by parameter, {}, not in plane_seg object'.format(color_by))
     data = plane_seg['image_mask'].data
     nUnits = data.shape[0]
     fig = go.FigureWidget()
@@ -91,7 +95,10 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
             aux_leg.append(plane_seg['neuron_type'][i])
         else:
             show_leg = False
-        c = color_wheel[np.where(neuron_types == plane_seg['neuron_type'][i])[0][0]]
+        kwargs = dict()
+        if color_by:
+            c = color_wheel[np.where(cats == plane_seg['neuron_type'][i])[0][0]]
+            kwargs.update(line_color=c)
         # hover text
         hovertext = '<b>roi_id</b>: ' + str(plane_seg['roi_id'][i])
         rois_cols = list(plane_seg.colnames)
@@ -100,23 +107,19 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
                                isinstance(plane_seg[col][i], (int, float, np.integer, np.float, str))])
         hovertext += '<br>' + sec_str
         # form cell borders
-        y, x = np.where(plane_seg['image_mask'][i])
-        arr = np.vstack((x, y)).T
-        hull = ConvexHull(arr)
-        vertices = np.append(hull.vertices, hull.vertices[0])
+        x, y = zip(*measure.find_contours(plane_seg['image_mask'][i], threshold)[0])
         fig.add_trace(
             go.Scatter(
-                x=arr[vertices, 0],
-                y=arr[vertices, 1],
+                x=x, y=y,
                 fill='toself',
                 mode='lines',
-                line_color=c,
                 name=plane_seg['neuron_type'][i],
                 legendgroup=plane_seg['neuron_type'][i],
                 showlegend=show_leg,
                 text=hovertext,
                 hovertext='text',
                 line=dict(width=.5),
+                **kwargs
             )
         )
         fig.update_layout(
