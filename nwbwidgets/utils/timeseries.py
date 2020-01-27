@@ -5,6 +5,23 @@ from bisect import bisect
 
 
 def get_timeseries_tt(node: TimeSeries, istart=0, istop=None):
+    """
+    For any TimeSeries, return timestamps. If the TimeSeries uses starting_time and rate, the timestamps will be
+    generated.
+
+    Parameters
+    ----------
+    node: pynwb.TimeSeries
+    istart: int, optional
+        Optionally sub-select the returned times - lower bound
+    istop: int, optional
+        Optionally sub-select the returned times - upper bound
+
+    Returns
+    -------
+    numpy.ndarray
+
+    """
     if node.timestamps is not None:
         return node.timestamps[istart:istop]
     else:
@@ -21,6 +38,18 @@ def get_timeseries_tt(node: TimeSeries, istart=0, istop=None):
 
 
 def get_timeseries_maxt(node: TimeSeries):
+    """
+    Returns the maximum time of any TimeSeries
+
+    Parameters
+    ----------
+    node: pynwb.TimeSeries
+
+    Returns
+    -------
+    float
+
+    """
     if node.timestamps is not None:
         return node.timestamps[-1]
     else:
@@ -28,6 +57,18 @@ def get_timeseries_maxt(node: TimeSeries):
 
 
 def get_timeseries_mint(node: TimeSeries):
+    """
+    Returns the minimum time of any TimeSeries
+
+    Parameters
+    ----------
+    node: pynwb.TimeSeries
+
+    Returns
+    -------
+    float
+
+    """
     if node.timestamps is not None:
         return node.timestamps[0]
     else:
@@ -35,6 +76,20 @@ def get_timeseries_mint(node: TimeSeries):
 
 
 def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
+    """
+    Convert data into the designated units
+
+    Parameters
+    ----------
+    node: pynwb.TimeSeries
+    istart: int
+    istop: int
+
+    Returns
+    -------
+    numpy.ndarray, str
+
+    """
     data = node.data[istart:istop]
     if node.conversion and np.isfinite(node.conversion):
         print(node.conversion)
@@ -47,6 +102,21 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
 
 
 def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None):
+    """
+    Get the index of a certain time for any TimeSeries. For TimeSeries that use timestamps, bisect is used. You can
+    optionally provide ind_min and ind_max to constrain the search.
+
+    Parameters
+    ----------
+    node: pynwb.TimeSeries
+    time: float
+    ind_min: int, optional
+    ind_max: int, optional
+
+    Returns
+    -------
+
+    """
     if node.timestamps is not None:
         kwargs = dict()
         if ind_min is not None:
