@@ -10,7 +10,7 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_in_units, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind)
-from .controllers import int_range_controller, float_range_controller, make_time_window_controller
+from .controllers import int_range_controller, make_time_window_controller
 
 
 def show_ts_fields(node):
@@ -20,7 +20,7 @@ def show_ts_fields(node):
     return widgets.VBox(info)
 
 
-def show_timeseries(node: TimeSeries, neurodata_vis_spec=None, istart=0, istop=-1, **kwargs):
+def show_timeseries(node: TimeSeries, neurodata_vis_spec=None, istart=0, istop=None, **kwargs):
     info = []
     for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
@@ -198,39 +198,43 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
     return widgets.VBox(info)
 
 
-def plot_traces(time_series: TimeSeries, time_start, time_duration, trace_window,
+def plot_traces(time_series: TimeSeries, time_start=0, time_duration=None, trace_window=None,
                 title: str = None, ylabel: str = 'traces'):
     """
 
     Parameters
     ----------
-    time_series
-    time_start
-    time_duration
-    trace_window
-    title
-    ylabel
+    time_series: pynwb.TimeSeries
+    time_start: float
+        Start time in seconds
+    time_duration: float, optional
+        Duration in seconds. Default:
+    trace_window: [int int], optional
+        Index range of traces to view
+    title: str, optional
+    ylabel: str, optional
 
     Returns
     -------
 
     """
 
-    time_window = time_start, time_start + time_duration
-    if time_window[0] is None:
+    if time_start == 0:
         t_ind_start = 0
     else:
-        t_ind_start = timeseries_time_to_ind(time_series, time_window[0])
-    if time_window[1] is None:
-        t_ind_stop = time_series.data.shape[0]
+        t_ind_start = timeseries_time_to_ind(time_series, time_start)
+    if time_duration is None:
+        t_ind_stop = None
     else:
-        t_ind_stop = timeseries_time_to_ind(time_series, time_window[1])
-    data = time_series.data
+        t_ind_stop = timeseries_time_to_ind(time_series, time_start + time_duration)
+
+    if trace_window is None:
+        trace_window = [0, time_series.data.shape[1]]
     tt = get_timeseries_tt(time_series, t_ind_start, t_ind_stop)
-    if data.shape[1] == len(tt):  # fix of orientation is incorrect
-        mini_data = data[trace_window[0]:trace_window[1], t_ind_start:t_ind_stop].T
+    if time_series.data.shape[1] == len(tt):  # fix of orientation is incorrect
+        mini_data = time_series.data[trace_window[0]:trace_window[1], t_ind_start:t_ind_stop].T
     else:
-        mini_data = data[t_ind_start:t_ind_stop, trace_window[0]:trace_window[1]]
+        mini_data = time_series.data[t_ind_start:t_ind_stop, trace_window[0]:trace_window[1]]
 
     gap = np.median(np.nanstd(mini_data, axis=0)) * 20
     offsets = np.arange(trace_window[1] - trace_window[0]) * gap
