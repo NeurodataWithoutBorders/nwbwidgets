@@ -10,7 +10,7 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_in_units, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind)
-from .controllers import int_range_controller, float_range_controller, make_time_window_controller
+from .controllers import int_range_controller, make_time_window_controller
 
 
 def show_ts_fields(node):
@@ -20,7 +20,7 @@ def show_ts_fields(node):
     return widgets.VBox(info)
 
 
-def show_timeseries(node: TimeSeries, neurodata_vis_spec=None, istart=0, istop=-1, **kwargs):
+def show_timeseries(node: TimeSeries, neurodata_vis_spec=None, istart=0, istop=None, **kwargs):
     info = []
     for key in ('description', 'comments', 'unit', 'resolution', 'conversion'):
         info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
