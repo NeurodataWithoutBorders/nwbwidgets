@@ -34,8 +34,7 @@ from nwbwidgets.base import show_text_fields
 
 def test_show_text_fields():
     
-    data = np.array([[1., 2., 3., 4., 1., 2., 3., 4.],
-                               [11., 12., 13., 14., 11., 12., 13., 14.]])
+    data = np.random.rand(160,3)
     ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
 
     
