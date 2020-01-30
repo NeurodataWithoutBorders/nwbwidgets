@@ -1,11 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pynwb
-from pynwb.misc import AnnotationSeries
+from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
 from .controllers import float_range_controller, int_range_controller, int_controller
 from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -15,7 +17,29 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     return fig
 
 
-def show_session_raster(units, time_window, units_window, cmap_name='rainbow'):
+def show_session_raster(units: Units, time_window=None, units_window=None, cmap_name='rainbow',
+                        show_obs_intervals=True):
+    """
+
+    Parameters
+    ----------
+    units: pynwb.misc.Units
+    time_window: [int, int]
+    units_window: [int, int]
+    cmap_name: str
+    show_obs_intervals: bool
+
+    Returns
+    -------
+    matplotlib.pyplot.Figure
+
+    """
+    if time_window is None:
+        time_window = [get_min_spike_time(units), get_max_spike_time(units)]
+
+    if units_window is None:
+        units_window = [0, len(units['spike_times'].data) - 1]
+
     num_units = units_window[1] - units_window[0] + 1
     unit_inds = np.arange(units_window[0], units_window[1] + 1)
 
@@ -28,15 +52,26 @@ def show_session_raster(units, time_window, units_window, cmap_name='rainbow'):
     fig, ax = plt.subplots(1, 1)
     ax.figure.set_size_inches(12, 6)
     ax.eventplot(reduced_spike_times, color=colors, lineoffsets=unit_inds)
+    if show_obs_intervals and 'obs_intervals' in units:
+        rects = []
+        for i, intervals in enumerate(units['obs_intervals'][:]):  # TODO: use bisect here
+            these_obs_intervals = intervals[(intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])]
+            unobs_intervals = np.c_[these_obs_intervals[:-1, 1], these_obs_intervals[1:, 0]]
+            for i_interval in unobs_intervals:
+                rects.append(Rectangle((i_interval[0], i-.5), i_interval[1]-i_interval[0], 1))
+        pc = PatchCollection(rects, color=[0.85, 0.85, 0.85])
+        ax.add_collection(pc)
+
     ax.set_xlabel('Time (seconds)')
     ax.set_ylabel('Unit #')
     ax.set_xlim(time_window)
-    ax.set_ylim(np.array(units_window))
+    ax.set_ylim(np.array(units_window) + [-.5, .5])
+    if units_window[1] - units_window[0] <= 30:
+        ax.set_yticks(range(units_window[0], units_window[1] + 1))
 
     return fig
 
-
-def raster_widget(node, unit_controller=None, time_window_controller=None):
+def raster_widget(node: Units, unit_controller=None, time_window_controller=None):
     if time_window_controller is None:
         tmin = get_min_spike_time(node)
         tmax = get_max_spike_time(node)
@@ -87,7 +122,7 @@ def show_decomposition_series(node, **kwargs):
     return tab_nest
 
 
-def show_decomposition_traces(node):
+def show_decomposition_traces(node: DecompositionSeries):
     # Produce figure
     def control_plot(x0, x1, ch0, ch1):
         fig, ax = plt.subplots(nrows=nBands, ncols=1, sharex=True, figsize=(14, 7))
@@ -139,8 +174,24 @@ def show_decomposition_traces(node):
     return vbox
 
 
-def psth_widget(units: pynwb.misc.Units, unit_controller=None, after_slider=None, before_slider=None,
+def psth_widget(units: Units, unit_controller=None, after_slider=None, before_slider=None,
                 trial_event_controller=None, trial_order_controller=None, trial_color_controller=None):
+    """
+
+    Parameters
+    ----------
+    units: pynwb.misc.Units
+    unit_controller
+    after_slider
+    before_slider
+    trial_event_controller
+    trial_order_controller
+    trial_color_controller
+
+    Returns
+    -------
+
+    """
 
     control_widgets = widgets.VBox(children=[])
 
@@ -199,8 +250,25 @@ def psth_widget(units: pynwb.misc.Units, unit_controller=None, after_slider=None
     return vbox
 
 
-def show_psth(units, index=0, start_label='start_time', before=0., after=1., order_by='start_time',
+def show_psth(units: pynwb.misc.Units, index=0, start_label='start_time', before=0., after=1., order_by='start_time',
               color_by='', cmap_name='gist_rainbow'):
+    """
+
+    Parameters
+    ----------
+    units: pynwb.misc.Units
+    index: int
+    start_label
+    before
+    after
+    order_by
+    color_by
+    cmap_name
+
+    Returns
+    -------
+
+    """
     trials = units.get_ancestor('NWBFile').trials
     data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after)
 
