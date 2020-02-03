@@ -81,3 +81,19 @@ def test_processing_module():
     
     # Test processing_module function in base.py
     processing_module(nwbfile.processing['behavior'], neurodata_vis_spec)
+   
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from nwbwidgets.base import fig2widget
+
+
+def test_fig2widget():
+    
+    data = np.random.rand(160,3)
+    
+    fig=plt.figure(figsize=(10, 5))
+    plt.plot(data)
+
+    fig2widget(fig)
