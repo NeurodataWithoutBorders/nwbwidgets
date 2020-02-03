@@ -41,3 +41,19 @@ def test_show_text_fields():
 
     
     show_text_fields(ts)
+
+
+
+import numpy as np
+from pynwb import TimeSeries
+from nwbwidgets.base import show_ts_fields
+
+
+def test_show_ts_fields():
+    
+    data = np.random.rand(160,3)
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+
+    
+    show_ts_fields(ts)
+
