@@ -105,7 +105,6 @@ from ipywidgets import widgets
 from nwbwidgets.base import vis2widget
 
 
-
 def test_vis2widget():
     
     #data = np.random.rand(160,3)
