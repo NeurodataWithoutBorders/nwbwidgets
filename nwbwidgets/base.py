@@ -198,10 +198,11 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
     return widgets.VBox(info)
 
 
-def plot_traces(time_series: TimeSeries, time_start=0, time_duration=None, trace_window=None,
-                title: str = None, ylabel: str = 'traces'):
+def plot_traces(time_series: TimeSeries, time_start = 0, time_duration = None, trace_window = None,
+                n_trace = 1, title: str = None, ylabel: str = 'traces'):
     """
-
+    NOTE: time must always be the first dimension of any TimeSeries.data object
+    
     Parameters
     ----------
     time_series: pynwb.TimeSeries
@@ -211,14 +212,14 @@ def plot_traces(time_series: TimeSeries, time_start=0, time_duration=None, trace
         Duration in seconds. Default:
     trace_window: [int int], optional
         Index range of traces to view
+    n_trace: float
+        Number of traces
     title: str, optional
     ylabel: str, optional
-
     Returns
     -------
-
     """
-
+    
     if time_start == 0:
         t_ind_start = 0
     else:
@@ -227,18 +228,18 @@ def plot_traces(time_series: TimeSeries, time_start=0, time_duration=None, trace
         t_ind_stop = None
     else:
         t_ind_stop = timeseries_time_to_ind(time_series, time_start + time_duration)
-
     if trace_window is None:
-        trace_window = [0, time_series.data.shape[1]]
+        trace_window = [0, n_trace]
     tt = get_timeseries_tt(time_series, t_ind_start, t_ind_stop)
-    if time_series.data.shape[1] == len(tt):  # fix of orientation is incorrect
-        mini_data = time_series.data[trace_window[0]:trace_window[1], t_ind_start:t_ind_stop].T
+    
+    if n_trace == 1:
+        mini_data = data[t_ind_start:t_ind_stop]
     else:
-        mini_data = time_series.data[t_ind_start:t_ind_stop, trace_window[0]:trace_window[1]]
-
+        mini_data = data[t_ind_start:t_ind_stop, trace_window[0]:trace_window[1]]
+    
+    mini_data = np.asarray(mini_data)
     gap = np.median(np.nanstd(mini_data, axis=0)) * 20
     offsets = np.arange(trace_window[1] - trace_window[0]) * gap
-
     fig, ax = plt.subplots()
     ax.figure.set_size_inches(12, 6)
     ax.plot(tt, mini_data + offsets)
@@ -248,13 +249,10 @@ def plot_traces(time_series: TimeSeries, time_start=0, time_duration=None, trace
         ax.set_xlim(tt[0], tt[-1])
         ax.set_yticks(offsets)
         ax.set_yticklabels(np.arange(trace_window[0], trace_window[1]))
-
     if title is not None:
         ax.set_title(title)
-
     if ylabel is not None:
         ax.set_ylabel(ylabel)
-
     return fig
 
 
