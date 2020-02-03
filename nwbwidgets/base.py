@@ -198,8 +198,8 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs):
     return widgets.VBox(info)
 
 
-def plot_traces(time_series: TimeSeries, time_start = 0, time_duration = None, trace_window = None,
-                n_trace = 1, title: str = None, ylabel: str = 'traces'):
+def plot_traces(time_series: TimeSeries, time_start=0, time_duration=None, trace_window=None,
+                n_trace=1, title: str=None, ylabel: str='traces'):
     """
     NOTE: time must always be the first dimension of any TimeSeries.data object
     
