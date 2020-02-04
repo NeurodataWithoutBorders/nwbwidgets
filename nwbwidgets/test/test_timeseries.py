@@ -1,7 +1,8 @@
 import numpy as np
-
 from pynwb import TimeSeries
-from nwbwidgets.base import traces_widget
+from nwbwidgets.base import traces_widget, show_text_fields, show_ts_fields, show_timeseries
+from nwbwidgets.utils.timeseries import get_timeseries_tt
+ 
 
 
 def test_timeseries_widget():
@@ -13,11 +14,6 @@ def test_timeseries_widget():
     traces_widget(ts)
 
 
-
-from pynwb import TimeSeries
-from nwbwidgets.utils.timeseries import get_timeseries_tt
-
-
 def test_get_timeseries_tt():
     
     data = list(range(100, 200, 10))
@@ -25,13 +21,6 @@ def test_get_timeseries_tt():
     
     tt = get_timeseries_tt(ts)
     np.testing.assert_array_equal(tt,[0., 1., 2., 3., 4., 5., 6., 7., 8., 9.])
-
-    
-    
-
-import numpy as np
-from pynwb import TimeSeries
-from nwbwidgets.base import show_text_fields
 
 
 def test_show_text_fields():
@@ -43,12 +32,6 @@ def test_show_text_fields():
     show_text_fields(ts)
 
 
-
-import numpy as np
-from pynwb import TimeSeries
-from nwbwidgets.base import show_ts_fields
-
-
 def test_show_ts_fields():
     
     data = np.random.rand(160,3)
@@ -56,12 +39,6 @@ def test_show_ts_fields():
 
     
     show_ts_fields(ts)
-
-
-
-import numpy as np
-from pynwb import TimeSeries
-from nwbwidgets.base import show_timeseries
 
 
 def test_show_timeseries():
