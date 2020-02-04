@@ -1,9 +1,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from nwbwidgets.base import fig2widget, vis2widget, show_subject
+from nwbwidgets.base import fig2widget, vis2widget, show_subject, import show_dynamic_table
 from ipywidgets import widgets
 from pynwb import TimeSeries
+import pandas as pd
+from hdmf.common import DynamicTable
 
 
 
@@ -51,3 +53,14 @@ def test_show_subject():
 
     
     show_subject(ts)
+
+    
+    
+def test_show_dynamic_table():
+    
+    d = {'col1': [1, 2], 'col2': [3, 4]}
+    DT = DynamicTable.from_dataframe(df=pd.DataFrame(data=d), 
+                                     name='Test Dtable', 
+                                     table_description='no description')
+    
+    show_dynamic_table(DT)
