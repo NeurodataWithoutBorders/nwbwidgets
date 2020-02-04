@@ -1,7 +1,10 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from nwbwidgets.base import fig2widget
+from nwbwidgets.base import fig2widget, vis2widget, show_subject
+from ipywidgets import widgets
+from pynwb import TimeSeries
+
 
 
 def test_fig2widget():
@@ -12,14 +15,6 @@ def test_fig2widget():
     plt.plot(data)
     
     isinstance(fig2widget(fig), widgets.Widget)
-
-
-
-
-import numpy as np
-import matplotlib.pyplot as plt
-from ipywidgets import widgets
-from nwbwidgets.base import vis2widget
 
 
 def test_vis2widget_input_widget():
@@ -47,12 +42,6 @@ def test_vis2widget_input_figure():
     plt.plot(data)
     
     vis2widget(fig)
-
-
-
-import numpy as np
-from pynwb import TimeSeries
-from nwbwidgets.base import show_subject
 
 
 def test_show_subject():
