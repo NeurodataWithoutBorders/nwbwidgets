@@ -71,3 +71,19 @@ def test_show_timeseries():
 
     
     show_timeseries(ts, istart=5, istop=56)
+
+    
+    
+import numpy as np
+from pynwb import TimeSeries
+from nwbwidgets.base import show_subject
+
+
+def test_show_subject():
+    
+    data = np.random.rand(160,3)
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+
+    
+    show_subject(ts)
+
