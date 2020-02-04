@@ -1,7 +1,7 @@
 
 import numpy as np
 from pynwb import NWBFile
-from nwbwidgets.base import processing_module, nwb2widget, show_neurodata_base
+from nwbwidgets.base import processing_module, nwb2widget, show_neurodata_base, dict2accordion
 from datetime import datetime
 from dateutil.tz import tzlocal
 from pynwb.behavior import Position, SpatialSeries
@@ -60,7 +60,7 @@ def test_nwb2widget():
     # Add data interface to the processing module
     #nwbfile.processing['behavior'].add(position)
 
-    # Test processing_module function in base.py
+    # Test nwb2widget function in base.py
     #nwb2widget(nwbfile.processing['behavior'].data_interfaces, neurodata_vis_spec)
     nwb2widget(position, default_neurodata_vis_spec)
     
@@ -76,5 +76,13 @@ def test_show_neurodata_base():
     position = Position(spatial_series = spatial_series)
     
     
-    # Test processing_module function in base.py
+    # Test show_neurodata_base function in base.py
     show_neurodata_base(position, default_neurodata_vis_spec)
+    
+
+def test_dict2accordion():
+    
+    d = {'name': 'label', 'type': str, 'doc': 'the label on this dictionary'}
+    
+    # Test dict2accordion function in base.py
+    dict2accordion(d, default_neurodata_vis_spec)
