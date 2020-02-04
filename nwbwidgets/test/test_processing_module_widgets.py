@@ -1,13 +1,11 @@
 
 import numpy as np
 from pynwb import NWBFile
-from nwbwidgets.base import processing_module
+from nwbwidgets.base import processing_module, nwb2widget
 from datetime import datetime
 from dateutil.tz import tzlocal
-from pynwb.behavior import Position
-from pynwb.behavior import SpatialSeries
+from pynwb.behavior import Position, SpatialSeries
 from pynwb import ProcessingModule
-from nwbwidgets.base import nwb2widget
 
 
 
