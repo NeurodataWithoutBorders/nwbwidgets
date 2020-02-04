@@ -70,4 +70,4 @@ def test_show_timeseries():
     ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
 
     
-    show_timeseries(ts)
+    show_timeseries(ts, istart=5, istop=56)
