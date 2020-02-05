@@ -1,7 +1,7 @@
 
 import numpy as np
 from pynwb import NWBFile
-from nwbwidgets.base import processing_module, nwb2widget, show_neurodata_base, dict2accordion
+from nwbwidgets.base import processing_module, nwb2widget, show_neurodata_base
 from datetime import datetime
 from dateutil.tz import tzlocal
 from pynwb.behavior import Position, SpatialSeries
