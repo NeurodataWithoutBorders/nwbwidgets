@@ -9,6 +9,9 @@ from hdmf.common import DynamicTable
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 from nwbwidgets.view import default_neurodata_vis_spec
 from nwbwidgets.behavior import show_position, show_behavioral_events, show_spatial_series_over_time, show_spatial_series
+from pynwb.misc import AnnotationSeries
+from nwbwidgets.misc import show_annotations
+from utils.timeseries import get_timeseries_tt
 
 
 
@@ -134,3 +137,19 @@ def test_show_spatial_series():
     
     # Test show_spatial_series function in behavior.py
     show_spatial_series(spatial_series)
+    
+    
+    
+    
+def test_show_annotations():
+    
+    data = np.random.rand(160,12)
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+    timestamps=get_timeseries_tt(ts, 0, 7)
+    
+    
+    annotations = AnnotationSeries(name='test_annotations',timestamps=timestamps)
+    
+    # Test show_annotations function in misc.py
+    show_annotations(annotations)
+
