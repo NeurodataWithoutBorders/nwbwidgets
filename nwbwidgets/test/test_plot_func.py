@@ -6,6 +6,10 @@ from ipywidgets import widgets
 from pynwb import TimeSeries
 import pandas as pd
 from hdmf.common import DynamicTable
+from pynwb.behavior import Position, SpatialSeries
+from nwbwidgets.view import default_neurodata_vis_spec
+from nwbwidgets.behavior import show_position
+
 
 
 
@@ -64,3 +68,19 @@ def test_show_dynamic_table():
                                      table_description='no description')
     
     show_dynamic_table(DT)
+
+
+
+def test_show_position():
+    
+    
+    # Create a data interface object (position)
+    spatial_series = SpatialSeries(name = 'position',
+                               data = np.linspace(0, 1, 20),
+                               rate = 50.,
+                               reference_frame = 'starting gate')
+    position = Position(spatial_series = spatial_series)
+    
+    
+    # Test show position function in behavior.py
+    show_position(position, default_neurodata_vis_spec)
