@@ -6,10 +6,9 @@ from ipywidgets import widgets
 from pynwb import TimeSeries
 import pandas as pd
 from hdmf.common import DynamicTable
-from pynwb.behavior import Position, SpatialSeries
+from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 from nwbwidgets.view import default_neurodata_vis_spec
-from nwbwidgets.behavior import show_position
-
+from nwbwidgets.behavior import show_position, import show_behavioral_events
 
 
 
@@ -84,3 +83,15 @@ def test_show_position():
     
     # Test show position function in behavior.py
     show_position(position, default_neurodata_vis_spec)
+
+    
+
+def test_show_behavioral_events():
+    
+    
+    data = list(range(100, 200, 10))
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+    
+    beh_events = BehavioralEvents(time_series=ts)
+    
+    show_behavioral_events(beh_events, default_neurodata_vis_spec)
