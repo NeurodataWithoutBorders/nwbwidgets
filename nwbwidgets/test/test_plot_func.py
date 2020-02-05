@@ -8,7 +8,7 @@ import pandas as pd
 from hdmf.common import DynamicTable
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 from nwbwidgets.view import default_neurodata_vis_spec
-from nwbwidgets.behavior import show_position, import show_behavioral_events
+from nwbwidgets.behavior import show_position, show_behavioral_events, show_spatial_series_over_time
 
 
 
@@ -105,3 +105,17 @@ def test_show_behavioral_events():
     beh_events = BehavioralEvents(time_series=ts)
     
     show_behavioral_events(beh_events, default_neurodata_vis_spec)
+
+    
+def test_show_spatial_series_over_time():
+    
+    
+    # Create a data interface object (position)
+    spatial_series = SpatialSeries(name = 'position',
+                               data = np.linspace(0, 1, 20),
+                               rate = 50.,
+                               reference_frame = 'starting gate')
+    
+    
+    # Test show_spatial_series_over_time function in behavior.py
+    show_spatial_series_over_time(spatial_series)
