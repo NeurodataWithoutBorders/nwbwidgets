@@ -1,7 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from nwbwidgets.base import fig2widget, vis2widget, show_subject, import show_dynamic_table
+from nwbwidgets.base import fig2widget, vis2widget, show_subject, import show_dynamic_table, dict2accordion
 from ipywidgets import widgets
 from pynwb import TimeSeries
 import pandas as pd
@@ -70,6 +70,16 @@ def test_show_dynamic_table():
 
 
 
+def test_dict2accordion():
+    
+    data = list(range(100, 200, 10))
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+    
+    beh_events = BehavioralEvents(time_series=ts)
+    
+    dict2accordion(beh_events.time_series, default_neurodata_vis_spec)
+
+
 def test_show_position():
     
     
@@ -84,7 +94,7 @@ def test_show_position():
     # Test show position function in behavior.py
     show_position(position, default_neurodata_vis_spec)
 
-    
+
 
 def test_show_behavioral_events():
     
