@@ -80,9 +80,3 @@ def test_show_neurodata_base():
     show_neurodata_base(position, default_neurodata_vis_spec)
     
 
-def test_dict2accordion():
-    
-    d = {'name': 'label', 'type': str, 'doc': 'the label on this dictionary'}
-    
-    # Test dict2accordion function in base.py
-    dict2accordion(d, default_neurodata_vis_spec)
