@@ -1,10 +1,9 @@
 import numpy as np
 from pynwb import TimeSeries
 from nwbwidgets.view import default_neurodata_vis_spec
-from nwbwidgets.ecephys import show_lfp
+from nwbwidgets.ecephys import show_lfp, show_spectrogram
 from pynwb.ecephys import LFP, ElectricalSeries
 from hdmf.common import DynamicTableRegion
-
 
 
 def test_show_lfp():
@@ -22,3 +21,14 @@ def test_show_lfp():
     
     # Test show_lfp function in ecephys.py
     show_lfp(lfp, default_neurodata_vis_spec)
+
+    
+def test_show_spectrogram():
+    
+    data = np.random.rand(160,12)
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+    
+    
+    # Test show_spectrogram function in ecephys.py
+    channel = 3
+    show_spectrogram(ts,channel=channel)
