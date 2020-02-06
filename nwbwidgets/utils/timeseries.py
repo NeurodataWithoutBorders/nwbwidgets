@@ -4,7 +4,7 @@ import numpy as np
 from bisect import bisect
 
 
-def get_timeseries_tt(node: TimeSeries, istart=0, istop=None):
+def get_timeseries_tt(node: TimeSeries, istart=0, istop=None) -> np.ndarray:
     """
     For any TimeSeries, return timestamps. If the TimeSeries uses starting_time and rate, the timestamps will be
     generated.
@@ -37,7 +37,7 @@ def get_timeseries_tt(node: TimeSeries, istart=0, istop=None):
             return np.arange(istart, len(node.data) + istop - 1) / node.rate + starting_time
 
 
-def get_timeseries_maxt(node: TimeSeries):
+def get_timeseries_maxt(node: TimeSeries) -> float:
     """
     Returns the maximum time of any TimeSeries
 
@@ -56,7 +56,7 @@ def get_timeseries_maxt(node: TimeSeries):
         return len(node.data) / node.rate + node.starting_time
 
 
-def get_timeseries_mint(node: TimeSeries):
+def get_timeseries_mint(node: TimeSeries) -> float:
     """
     Returns the minimum time of any TimeSeries
 
@@ -92,8 +92,6 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
     """
     data = node.data[istart:istop]
     if node.conversion and np.isfinite(node.conversion):
-        print(node.conversion)
-        print(data)
         data = data * node.conversion
         unit = node.unit
     else:
@@ -101,7 +99,7 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
     return data, unit
 
 
-def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None):
+def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -> int:
     """
     Get the index of a certain time for any TimeSeries. For TimeSeries that use timestamps, bisect is used. You can
     optionally provide ind_min and ind_max to constrain the search.
