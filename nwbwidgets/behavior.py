@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 from nwbwidgets import base
-from .base import get_timeseries_tt, get_timeseries_in_units
+from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
 
 
 def show_position(node: Position, neurodata_vis_spec: dict):
