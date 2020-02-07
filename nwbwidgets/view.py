@@ -1,12 +1,14 @@
 import pynwb
 import ndx_grayscalevolume
 from collections import OrderedDict
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries
 import hdmf
 from functools import partial
+from ndx_icephys_meta.icephys import SweepSequences
 
 
 default_neurodata_vis_spec = {
+    SweepSequences: icephys.show_sweep_sequences,
     pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict({
@@ -21,7 +23,7 @@ default_neurodata_vis_spec = {
     ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
     pynwb.ophys.PlaneSegmentation: ophys.show_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
-    pynwb.ophys.RoiResponseSeries: base.traces_widget,
+    pynwb.ophys.RoiResponseSeries: timeseries.traces_widget,
     pynwb.misc.AnnotationSeries: OrderedDict({
         'text': base.show_text_fields,
         'times': misc.show_annotations}),
@@ -29,8 +31,8 @@ default_neurodata_vis_spec = {
     pynwb.ProcessingModule: base.processing_module,
     hdmf.common.DynamicTable: base.show_dynamic_table,
     pynwb.ecephys.ElectricalSeries: OrderedDict({
-        'Fields': base.show_ts_fields,
-        'Traces': partial(base.traces_widget,
+        'Fields': timeseries.show_ts_fields,
+        'Traces': partial(timeseries.traces_widget,
                           time_window_starting_range=(0, 10),
                           trace_starting_range=(0, 5)),
     }),
@@ -42,7 +44,7 @@ default_neurodata_vis_spec = {
     pynwb.image.RGBImage: image.show_rbg_image,
     pynwb.image.ImageSeries: image.show_image_series,
     pynwb.image.IndexSeries: image.show_index_series,
-    pynwb.TimeSeries: base.show_timeseries,
+    pynwb.TimeSeries: timeseries.show_timeseries,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
 }
 
