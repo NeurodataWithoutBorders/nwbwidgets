@@ -18,8 +18,7 @@ def test_show_lfp():
     es = ElectricalSeries(name='random data',data=ts,electrodes=electrodes,rate=1.0)
     lfp = LFP(electrical_series=es, name='sample LFP')
     
-    
-    # Test show_lfp function in ecephys.py
+
     show_lfp(lfp, default_neurodata_vis_spec)
 
     
@@ -28,7 +27,6 @@ def test_show_spectrogram():
     data = np.random.rand(160,12)
     ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
     
-    
-    # Test show_spectrogram function in ecephys.py
+
     channel = 3
     show_spectrogram(ts,channel=channel)
