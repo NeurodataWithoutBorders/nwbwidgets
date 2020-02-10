@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 import matplotlib.pyplot as plt
-from nwbwidgets.base import fig2widget, vis2widget, show_subject, import show_dynamic_table, dict2accordion
+from nwbwidgets.base import fig2widget, vis2widget, show_subject, show_dynamic_table, dict2accordion
 from ipywidgets import widgets
 from pynwb import TimeSeries
 import pandas as pd
@@ -13,6 +13,7 @@ from nwbwidgets.behavior import show_position, show_behavioral_events, show_spat
 from pynwb.misc import AnnotationSeries
 from nwbwidgets.misc import show_annotations
 from utils.timeseries import get_timeseries_tt
+from pynwb.file import Subject
 
 
 
@@ -61,11 +62,9 @@ class Test_vis2widget:
 
 def test_show_subject():
     
-    data = np.random.rand(160,3)
-    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
-
-    
-    show_subject(ts)
+    node = Subject(age='8', sex='m', species='macaque')
+                   
+    show_subject(node)
 
     
     
@@ -82,17 +81,13 @@ def test_show_dynamic_table():
 
 def test_dict2accordion():
     
-    data = list(range(100, 200, 10))
-    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+    d = {'age': 8,'sex': 'm','species': 'macaque'}
     
-    beh_events = BehavioralEvents(time_series=ts)
-    
-    dict2accordion(beh_events.time_series, default_neurodata_vis_spec)
+    dict2accordion(d, default_neurodata_vis_spec)
 
 
 def test_show_position():
     
-
     spatial_series = SpatialSeries(name = 'position',
                                data = np.linspace(0, 1, 20),
                                rate = 50.,
@@ -106,7 +101,6 @@ def test_show_position():
 
 def test_show_behavioral_events():
     
-    
     data = list(range(100, 200, 10))
     ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
     
@@ -117,7 +111,6 @@ def test_show_behavioral_events():
     
 def test_show_spatial_series_over_time():
     
-
     spatial_series = SpatialSeries(name = 'position',
                                data = np.linspace(0, 1, 20),
                                rate = 50.,
@@ -130,7 +123,6 @@ def test_show_spatial_series_over_time():
     
 def test_show_spatial_series():
     
-
     spatial_series = SpatialSeries(name = 'position',
                                data = np.linspace(0, 1, 20),
                                rate = 50.,
@@ -144,10 +136,7 @@ def test_show_spatial_series():
     
 def test_show_annotations():
     
-    data = np.random.rand(160,12)
-    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
-    timestamps=get_timeseries_tt(ts, 0, 7)
-    
+    timestamps = np.array([0., 1., 2., 3., 4., 5., 6.])
     
     annotations = AnnotationSeries(name='test_annotations',timestamps=timestamps)
 
