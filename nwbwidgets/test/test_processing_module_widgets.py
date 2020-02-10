@@ -34,24 +34,12 @@ def test_processing_module():
 
 def test_nwb2widget():
 
-    #start_time = datetime(2020, 1, 29, 11, tzinfo=tzlocal())
-    #nwbfile = NWBFile(session_description = 'Test Session',  
-    #              identifier = 'NWBPM',  
-    #              session_start_time = start_time)
-
     spatial_series = SpatialSeries(name='position',
                                data=np.linspace(0, 1, 20),
                                rate=50.,
                                reference_frame='starting gate')
     position = Position(spatial_series=spatial_series)
 
-    #behavior_module = ProcessingModule(name='behavior',
-    #                                               description='preprocessed behavioral data')
-    #nwbfile.add_processing_module(behavior_module)
-
-    #nwbfile.processing['behavior'].add(position)
-
-    #nwb2widget(nwbfile.processing['behavior'].data_interfaces, neurodata_vis_spec)
     nwb2widget(position, default_neurodata_vis_spec)
     
     
