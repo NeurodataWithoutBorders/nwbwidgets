@@ -22,7 +22,7 @@ def test_fig2widget():
     fig=plt.figure(figsize=(10, 5))
     plt.plot(data)
     
-    isinstance(fig2widget(fig), widgets.Widget)
+    assert isinstance(fig2widget(fig), widgets.Widget)
 
 
 def test_vis2widget_input_widget():
@@ -39,7 +39,8 @@ def test_vis2widget_input_widget():
     readout=True,
     readout_format='d')
 
-    vis2widget(wg)
+    assert isinstance(vis2widget(wg), widgets.Widget)
+    
 
 
 def test_vis2widget_input_figure():
