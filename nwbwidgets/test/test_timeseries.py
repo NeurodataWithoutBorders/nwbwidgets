@@ -1,8 +1,10 @@
 import numpy as np
 from pynwb import TimeSeries
+
 from nwbwidgets.base import traces_widget, show_text_fields, show_ts_fields, show_timeseries
 from nwbwidgets.utils.timeseries import get_timeseries_tt
- 
+from nwbwidgets.timeseries import traces_widget
+
 
 
 def test_timeseries_widget():
