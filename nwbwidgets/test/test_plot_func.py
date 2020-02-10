@@ -1,5 +1,6 @@
 
 import numpy as np
+import pytest
 import matplotlib.pyplot as plt
 from nwbwidgets.base import fig2widget, vis2widget, show_subject, import show_dynamic_table, dict2accordion
 from ipywidgets import widgets
@@ -25,32 +26,37 @@ def test_fig2widget():
     assert isinstance(fig2widget(fig), widgets.Widget)
 
 
-def test_vis2widget_input_widget():
+class Test_vis2widget:
+    
+    def test_vis2widget_input_widget(self):
+
+        wg = widgets.IntSlider(
+        value=7,
+        min=0,
+        max=10,
+        step=1,
+        description='Test:',
+        disabled=False,
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True,
+        readout_format='d')
+
+        assert isinstance(vis2widget(wg), widgets.Widget)
+
+    def test_vis2widget_input_figure(self):
+
+        data = np.random.rand(160,3)
+
+        fig=plt.figure(figsize=(10, 5))
+        plt.plot(data)
+
+        assert isinstance(vis2widget(fig), widgets.Widget)
         
-    wg = widgets.IntSlider(
-    value=7,
-    min=0,
-    max=10,
-    step=1,
-    description='Test:',
-    disabled=False,
-    continuous_update=False,
-    orientation='horizontal',
-    readout=True,
-    readout_format='d')
-
-    assert isinstance(vis2widget(wg), widgets.Widget)
-    
-
-
-def test_vis2widget_input_figure():
-    
-    data = np.random.rand(160,3)
-    
-    fig=plt.figure(figsize=(10, 5))
-    plt.plot(data)
-    
-    vis2widget(fig)
+    def test_vis2widget_input_other(self):
+        data = np.random.rand(160,3)
+        with pytest.raises(ValueError, match="unsupported vis type"):
+            vis2widget(data)
 
 
 def test_show_subject():
