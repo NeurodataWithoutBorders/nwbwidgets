@@ -19,7 +19,7 @@ def test_show_lfp():
 
     device = nwbfile.create_device(name='trodes_rig123')
 
-    electrode_group = nwbfile.create_electrode_group(electrode_name='tetrode1',
+    electrode_group = nwbfile.create_electrode_group(name='tetrode1',
                                                      description='an example tetrode',
                                                      location='somewhere in the hippocampus',
                                                      device=device)
