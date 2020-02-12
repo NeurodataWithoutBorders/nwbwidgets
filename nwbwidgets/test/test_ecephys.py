@@ -1,5 +1,6 @@
 import numpy as np
 from pynwb import TimeSeries
+import ipywidgets as widgets
 from nwbwidgets.view import default_neurodata_vis_spec
 from nwbwidgets.ecephys import show_lfp, show_spectrogram, show_spike_event_series
 from pynwb.ecephys import LFP, ElectricalSeries, SpikeEventSeries
