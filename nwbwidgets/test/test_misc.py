@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from dateutil.tz import tzlocal
 from pynwb import NWBFile
-from pynwb.misc import Units
+from pynwb.misc import Units, DecompositionSeries
 from ipywidgets import widgets
-from nwbwidgets.misc import show_psth,psth_widget
+from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces
 
 
 
@@ -76,3 +76,14 @@ def test_psth_widget():
     nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim='desert')
     
     assert isinstance(psth_widget(nwbfile.units),widgets.Widget)
+
+    
+    
+def test_show_decomposition_traces():
+    
+    data = np.random.rand(160,2,3)
+    
+    ds = DecompositionSeries(name='Test Decomposition',data=data,
+                             metric='amplitude',rate=1.0)
+    
+    assert isinstance(show_decomposition_traces(ds),widgets.Widget)    
