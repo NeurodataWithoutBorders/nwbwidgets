@@ -8,6 +8,8 @@ from pynwb.core import NWBDataInterface
 from matplotlib.pyplot import Figure
 from datetime import datetime
 from typing import Union
+import pandas as pd
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -95,7 +97,7 @@ def dict2accordion(d: dict, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.
     return accordion
 
 
-def lazy_tabs(in_dict: dict, node) -> widgets.Tab:
+def lazy_tabs(in_dict: dict, node, style: GroupingWidget =widgets.Tab) -> GroupingWidget:
     """Creates a lazy tab object where multiple visualizations can be used for a single node and are generated on the
     fly
 
@@ -105,6 +107,8 @@ def lazy_tabs(in_dict: dict, node) -> widgets.Tab:
         keys are labels for tabs and values are functions
     node: NWBDataInterface
         instance of neurodata type to visualize
+    style: ipywidgets.Tab or ipywidgets.Accordion, optional
+        which way to present the data
 
     Returns
     -------
@@ -115,7 +119,7 @@ def lazy_tabs(in_dict: dict, node) -> widgets.Tab:
 
     children = [tabs_spec[0][1](node)] + [widgets.HTML('Rendering...')
                                           for _ in range(len(tabs_spec) - 1)]
-    tab = widgets.Tab(children=children)
+    tab = style(children=children)
     [tab.set_title(i, label) for i, (label, _) in enumerate(tabs_spec)]
 
     def on_selected_index(change):
@@ -140,7 +144,7 @@ def lazy_show_over_data(list_, func_, labels=None, style: GroupingWidget = widge
 
     Returns
     -------
-    ipywidgets.Widget
+    ipywidgets.Tab or ipywidgets.Accordion
         subtype Tab or Accordion
 
     """
@@ -199,5 +203,107 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs) -> widget
         if key not in exclude and isinstance(key, (str, float, int)):
             info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
     return widgets.VBox(info)
+
+
+def df2accordion(df: pd.DataFrame, by, func, style: GroupingWidget = widgets.Accordion, detect_single=True) \
+        -> GroupingWidget:
+    """
+    Visualize pandas.DataFrame with an ipywidgets.Accordion
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+    by: str
+    func: visualization function
+    style: ipywidgets.Tab or ipywidgets.Accordion, optional
+    detect_single: bool
+        If True, test if the dimension you are grouping by only has 1 unique value. If so, do not form an Accordion.
+
+    Returns
+    -------
+    ipywigets.Accordion or ipywidgets.Tab
+
+
+    """
+    if detect_single and df[by].nunique() == 1:
+        return func(df)
+    else:
+        labels, idfs = zip(*df.groupby(by))
+        return lazy_show_over_data(idfs, func, labels=labels, style=style)
+
+
+def df2grid_plot(df, row, col, func, subplot_spec=None, fig=None) -> plt.Figure:
+    """
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+    row: str
+    col: str
+    func: function
+    subplot_spec: matplotlib.gridspec.GridSpec
+    fig: matplotlib.Figure
+
+    Returns
+    -------
+    fig
+        matplotlib.Figure
+
+    """
+
+    fig, big_ax, gs = df2grid_sps(df, row, col, subplot_spec=subplot_spec, fig=fig)
+
+    axs = []
+    for sps, ((r, c), idf) in zip(gs, df.groupby([row, col])):
+        ax = plt.Subplot(fig, sps)
+        fig.add_subplot(ax)
+        axs.append(ax)
+        if ax.is_last_row():
+            ax.set_xlabel(c)
+        if ax.is_first_col():
+            ax.set_ylabel(r)
+        func(idf, ax=ax)
+
+    return fig
+
+
+def df2grid_sps(df: pd.DataFrame, row, col, subplot_spec=None, fig=None):
+    """
+    Create subplot_spec from pandas.DataFrame
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+    row: str
+    col: str
+    subplot_spec: GridSpec, optional
+    fig: matplotlib.pyplot.Figure, optional
+
+    Returns
+    -------
+
+    """
+
+    if fig is None:
+        fig = plt.gcf()
+    nrows = df[row].nunique()
+    ncols = df[col].nunique()
+
+    if subplot_spec is not None:
+        gs = GridSpecFromSubplotSpec(nrows, ncols, subplot_spec=subplot_spec)
+        big_ax = plt.Subplot(fig, subplot_spec)
+    else:
+        gs = GridSpec(nrows, ncols, figure=fig)
+        big_ax = plt.Subplot(fig, GridSpec(1, 1)[0])
+    fig.add_subplot(big_ax)
+
+    [sp.set_visible(False) for sp in big_ax.spines.values()]
+    big_ax.set_xticks([])
+    big_ax.set_yticks([])
+    big_ax.patch.set_facecolor('none')
+    big_ax.set_xlabel(col, labelpad=30)
+    big_ax.set_ylabel(row, labelpad=30)
+
+    return fig, big_ax, gs
 
 
