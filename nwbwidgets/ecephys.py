@@ -15,10 +15,10 @@ def show_spectrogram(neurodata, channel=0, **kwargs):
     fig, ax = plt.subplots()
     f, t, Zxx = stft(neurodata.data[:, channel], neurodata.rate, nperseg=2*17)
     ax.imshow(np.log(np.abs(Zxx)), aspect='auto', extent=[0, max(t), 0, max(f)], origin='lower')
-    ax.set_ylim(0, 50)
+    ax.set_ylim(0, max(f))
     ax.set_xlabel('time')
     ax.set_ylabel('frequency')
-    plt.show(ax.figure())
+    plt.show(ax)
 
 
 def show_spike_event_series(ses, **kwargs):
