@@ -4,6 +4,7 @@ from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhoton
 from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
 from .utils.cmaps import linear_transfer_function
+from .utils.dynamictable import infer_categorical_columns
 import ipywidgets as widgets
 import plotly.graph_objects as go
 from skimage import measure
@@ -90,17 +91,17 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
     fig = go.FigureWidget()
     aux_leg = []
     for i in range(nUnits):
-        if plane_seg['neuron_type'][i] not in aux_leg:
+        if plane_seg[color_by][i] not in aux_leg:
             show_leg = True
-            aux_leg.append(plane_seg['neuron_type'][i])
+            aux_leg.append(plane_seg[color_by][i])
         else:
             show_leg = False
         kwargs = dict()
         if color_by:
-            c = color_wheel[np.where(cats == plane_seg['neuron_type'][i])[0][0]]
+            c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
             kwargs.update(line_color=c)
         # hover text
-        hovertext = '<b>roi_id</b>: ' + str(plane_seg['roi_id'][i])
+        hovertext = '<b>roi_id</b>: ' + str(plane_seg.id[i])
         rois_cols = list(plane_seg.colnames)
         rois_cols.remove('roi_id')
         sec_str = '<br>'.join([col + ': ' + str(plane_seg[col][i]) for col in rois_cols if
@@ -113,8 +114,8 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
                 x=x, y=y,
                 fill='toself',
                 mode='lines',
-                name=plane_seg['neuron_type'][i],
-                legendgroup=plane_seg['neuron_type'][i],
+                name=str(plane_seg[color_by][i]),
+                legendgroup=str(plane_seg[color_by][i]),
                 showlegend=show_leg,
                 text=hovertext,
                 hovertext='text',
@@ -130,11 +131,30 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
     return fig
 
 
+def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
+
+    categorical_columns = infer_categorical_columns(plane_seg)
+
+    if len(categorical_columns) == 1:
+        return show_plane_segmentation_2d(plane_seg, color_by=categorical_columns[0], **kwargs)
+
+    elif len(categorical_columns) > 1:
+        cat_controller = widgets.Dropdown(categorical_columns, value=1)
+
+        controls = dict(color_by=cat_controller)
+        controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
+        out_fig = widgets.interactive_output(show_plane_segmentation_2d, controls)
+        return widgets.VBox(children=[cat_controller, out_fig])
+    else:
+        return show_plane_segmentation_2d(plane_seg, color_by=None, **kwargs)
+
+
+
 def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
     if 'voxel_mask' in plane_seg:
         return show_plane_segmentation_3d(plane_seg)
     elif 'image_mask' in plane_seg:
-        return show_plane_segmentation_2d(plane_seg)
+        return plane_segmentation_2d_widget(plane_seg)
 
 
 def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
