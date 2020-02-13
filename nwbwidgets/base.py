@@ -183,7 +183,7 @@ def vis2widget(vis) -> widgets.Widget:
     elif isinstance(vis, plt.Figure):
         return fig2widget(vis)
     else:
-        raise ValueError('unsupported vis type')
+        raise ValueError('unsupported vis type {}'.format(type(vis)))
 
 
 def fig2widget(fig: Figure, **kwargs) -> widgets.Widget:
