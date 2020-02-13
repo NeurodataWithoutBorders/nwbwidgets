@@ -2,11 +2,12 @@ from .base import lazy_show_over_data, GroupingWidget
 from .timeseries import show_timeseries_mpl
 from ipywidgets import widgets
 import matplotlib.pyplot as plt
-from ndx_icephys_meta.icephys import SweepSequences
+from ndx_icephys_meta.icephys import SweepSequences, Conditions
 from functools import partial
 import numpy as np
 from matplotlib.pyplot import Figure
 import pandas as pd
+import pynwb
 
 
 def show_single_sweep_sequence(sweep_sequence, axs=None, title=None, **kwargs) -> Figure:
@@ -96,3 +97,20 @@ def show_sweep_sequences(node: SweepSequences, *args, style: GroupingWidget = wi
         func_ = show_single_sweep_sequence
     func_ = partial(func_, **kwargs)
     return lazy_show_over_data(data, func_, labels=labels, style=style)
+
+
+def data_selector(conditions: Conditions):
+    df = conditions.to_denormalized_dataframe(flat_column_index=True)
+    selectors = []
+    for x in df.columns:
+        if x not in ('stimulus', 'response'):
+            col_data = df[x]
+            if isinstance(col_data[0], pynwb.NWBContainer):
+                vals = [x.name for x in col_data[:]]
+            else:
+                vals = [x for x in col_data[:]]
+            unique_vals = np.unique(vals)
+            if len(unique_vals) > 1:
+                selectors.append(
+                    widgets.Dropdown(options=[''] + list(unique_vals),
+                                     description=x))
