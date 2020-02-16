@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Union
 import pandas as pd
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+from functools import partial
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -205,7 +206,8 @@ def show_text_fields(node, exclude=('comments', 'interval'), **kwargs) -> widget
     return widgets.VBox(info)
 
 
-def df2accordion(df: pd.DataFrame, by, func, style: GroupingWidget = widgets.Accordion, detect_single=True) \
+def df2accordion(df: pd.DataFrame, by, func, style: GroupingWidget = widgets.Accordion, detect_single=True,
+                 by_in_label=True) \
         -> GroupingWidget:
     """
     Visualize pandas.DataFrame with an ipywidgets.Accordion
@@ -213,7 +215,8 @@ def df2accordion(df: pd.DataFrame, by, func, style: GroupingWidget = widgets.Acc
     Parameters
     ----------
     df: pandas.DataFrame
-    by: str
+    by: list of strings
+        The function is called recursively, creating a hierarchy of accordions for each item.
     func: visualization function
     style: ipywidgets.Tab or ipywidgets.Accordion, optional
     detect_single: bool
@@ -225,11 +228,15 @@ def df2accordion(df: pd.DataFrame, by, func, style: GroupingWidget = widgets.Acc
 
 
     """
-    if detect_single and df[by].nunique() == 1:
+
+    if len(by) > 1:
+        func = partial(df2accordion, by=by[1:], func=func, style=style, detect_single=detect_single)
+    if detect_single and df[by[0]].nunique() == 1:
         return func(df)
-    else:
-        labels, idfs = zip(*df.groupby(by))
-        return lazy_show_over_data(idfs, func, labels=labels, style=style)
+    labels, idfs = zip(*df.groupby(by[0]))
+    if by_in_label:
+        labels = ['{}: {}'.format(by[0], label) for label in labels]
+    return lazy_show_over_data(idfs, func, labels=labels, style=style)
 
 
 def df2grid_plot(df, row, col, func, subplot_spec=None, fig=None) -> plt.Figure:
