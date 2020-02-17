@@ -5,6 +5,7 @@ from pynwb.base import NWBDataInterface
 from ndx_grayscalevolume import GrayscaleVolume
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
+from .utils.functional import MemoizeMutable
 import ipywidgets as widgets
 import plotly.graph_objects as go
 from skimage import measure
@@ -79,6 +80,14 @@ def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
     return fig
 
 
+def compute_outline(image_mask, threshold):
+    x, y = zip(*measure.find_contours(image_mask, threshold)[0])
+    return x, y
+
+
+compute_outline = MemoizeMutable(compute_outline)
+
+
 def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type',
                                threshold=.01, fig=None):
     """
@@ -126,7 +135,8 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
                                isinstance(plane_seg[col][i], (int, float, np.integer, np.float, str))])
         hovertext += '<br>' + sec_str
         # form cell borders
-        x, y = zip(*measure.find_contours(plane_seg['image_mask'][i], threshold)[0])
+        x, y = compute_outline(plane_seg['image_mask'][i], threshold)
+
         fig.add_trace(
             go.Scatter(
                 x=x, y=y,
@@ -157,7 +167,7 @@ def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
         return show_plane_segmentation_2d(plane_seg, color_by=categorical_columns[0], **kwargs)
 
     elif len(categorical_columns) > 1:
-        cat_controller = widgets.Dropdown(options=categorical_columns)
+        cat_controller = widgets.Dropdown(options=categorical_columns, description='color by')
 
         out_fig = show_plane_segmentation_2d(plane_seg, color_by=cat_controller.value, **kwargs)
 
