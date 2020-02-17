@@ -31,15 +31,15 @@ class ProcessingModuleTestCase(unittest.TestCase):
 
         nwbfile.processing['behavior'].add(self.position)
 
-        self.processing_module(nwbfile.processing['behavior'], default_neurodata_vis_spec)
+        processing_module(nwbfile.processing['behavior'], default_neurodata_vis_spec)
 
     def test_nwb2widget(self):
 
-        self.nwb2widget(self.position, default_neurodata_vis_spec)
+        nwb2widget(self.position, default_neurodata_vis_spec)
 
 
     def test_show_neurodata_base(self):
 
-        self.show_neurodata_base(self.position, default_neurodata_vis_spec)
+        show_neurodata_base(self.position, default_neurodata_vis_spec)
 
 
