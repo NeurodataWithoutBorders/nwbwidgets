@@ -4,13 +4,11 @@ import pytest
 import matplotlib.pyplot as plt
 from nwbwidgets.base import fig2widget, vis2widget, show_subject, show_dynamic_table, dict2accordion
 from ipywidgets import widgets
-from pynwb import TimeSeries
 import pandas as pd
 from hdmf.common import DynamicTable
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.misc import AnnotationSeries
 from nwbwidgets.misc import show_annotations
-from utils.timeseries import get_timeseries_tt
 from pynwb.file import Subject
 
 
