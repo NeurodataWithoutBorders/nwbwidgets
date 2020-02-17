@@ -34,7 +34,7 @@ def show_index_series(index_series, neurodata_vis_spec: dict):
     return widgets.VBox([series_widget, image_series_widget])
 
 
-def show_grayscale_image(grayscale_image: GrayscaleImage):
+def show_grayscale_image(grayscale_image: GrayscaleImage, neurodata_vis_spec=None):
     fig, ax = plt.subplots()
     plt.imshow(grayscale_image.data[:], 'gray')
     plt.axis('off')
@@ -42,7 +42,7 @@ def show_grayscale_image(grayscale_image: GrayscaleImage):
     return fig
 
 
-def show_rbg_image(rgb_image: RGBImage):
+def show_rbg_image(rgb_image: RGBImage, neurodata_vis_spec=None):
     fig, ax = plt.subplots()
     plt.imshow(rgb_image.data[:])
     plt.axis('off')
