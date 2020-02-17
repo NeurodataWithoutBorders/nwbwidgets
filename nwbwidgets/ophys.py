@@ -96,7 +96,6 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
 
     """
     if color_by:
-        print(color_by)
         if color_by in plane_seg:
             cats = np.unique(plane_seg[color_by][:])
         else:
@@ -163,9 +162,9 @@ def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
         out_fig = show_plane_segmentation_2d(plane_seg, color_by=cat_controller.value, **kwargs)
 
         def on_change(change, out_fig=out_fig):
-            print(change)
-            color_by = change['owner'].options[change['new']['index']]
-            show_plane_segmentation_2d(plane_seg, color_by=color_by, fig=out_fig, **kwargs)
+            if change['new']:
+                color_by = change['owner'].options[change['new']['index']]
+                show_plane_segmentation_2d(plane_seg, color_by=color_by, fig=out_fig, **kwargs)
 
         cat_controller.observe(on_change)
 
