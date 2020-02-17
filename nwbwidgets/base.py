@@ -2,7 +2,7 @@ from nwbwidgets import view
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from IPython import display
-from collections import Iterable
+from collections.abc import Iterable
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface
 from matplotlib.pyplot import Figure
