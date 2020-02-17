@@ -80,15 +80,33 @@ def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
 
 
 def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type',
-                               threshold=.01):
+                               threshold=.01, fig=None):
+    """
+
+    Parameters
+    ----------
+    plane_seg
+    color_wheel
+    color_by
+    threshold
+    fig: plotly.graph_objects.Figure, options
+
+    Returns
+    -------
+
+    """
     if color_by:
+        print(color_by)
         if color_by in plane_seg:
             cats = np.unique(plane_seg[color_by][:])
         else:
             raise ValueError('specified color_by parameter, {}, not in plane_seg object'.format(color_by))
     data = plane_seg['image_mask'].data
     nUnits = data.shape[0]
-    fig = go.FigureWidget()
+    if fig is None:
+        fig = go.FigureWidget()
+    else:
+        fig.data = None
     aux_leg = []
     for i in range(nUnits):
         if plane_seg[color_by][i] not in aux_leg:
@@ -103,7 +121,8 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
         # hover text
         hovertext = '<b>roi_id</b>: ' + str(plane_seg.id[i])
         rois_cols = list(plane_seg.colnames)
-        rois_cols.remove('roi_id')
+        if 'roi_id' in rois_cols:
+            rois_cols.remove('roi_id')
         sec_str = '<br>'.join([col + ': ' + str(plane_seg[col][i]) for col in rois_cols if
                                isinstance(plane_seg[col][i], (int, float, np.integer, np.float, str))])
         hovertext += '<br>' + sec_str
@@ -139,15 +158,20 @@ def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
         return show_plane_segmentation_2d(plane_seg, color_by=categorical_columns[0], **kwargs)
 
     elif len(categorical_columns) > 1:
-        cat_controller = widgets.Dropdown(categorical_columns, value=1)
+        cat_controller = widgets.Dropdown(options=categorical_columns)
 
-        controls = dict(color_by=cat_controller)
-        controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
-        out_fig = widgets.interactive_output(show_plane_segmentation_2d, controls)
+        out_fig = show_plane_segmentation_2d(plane_seg, color_by=cat_controller.value, **kwargs)
+
+        def on_change(change, out_fig=out_fig):
+            print(change)
+            color_by = change['owner'].options[change['new']['index']]
+            show_plane_segmentation_2d(plane_seg, color_by=color_by, fig=out_fig, **kwargs)
+
+        cat_controller.observe(on_change)
+
         return widgets.VBox(children=[cat_controller, out_fig])
     else:
         return show_plane_segmentation_2d(plane_seg, color_by=None, **kwargs)
-
 
 
 def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
