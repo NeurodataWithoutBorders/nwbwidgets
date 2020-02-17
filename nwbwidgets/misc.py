@@ -152,7 +152,7 @@ def show_decomposition_traces(node: DecompositionSeries):
                                min_height='30px', min_width='70px')
     x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000*nSamples/fs-100),
                                 layout=field_lay)
-    x1 = widgets.BoundedIntText(value=10000, min=100, max=int(1000*nSamples/fs),
+    x1 = widgets.BoundedIntText(value=nSamples, min=100, max=int(1000*nSamples/fs),
                                 layout=field_lay)
     ch0 = widgets.BoundedIntText(value=0, min=0, max=int(nChannels-1), layout=field_lay)
     ch1 = widgets.BoundedIntText(value=10, min=0, max=int(nChannels-1), layout=field_lay)
