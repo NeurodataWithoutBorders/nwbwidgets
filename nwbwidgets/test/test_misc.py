@@ -42,7 +42,7 @@ class ShowPSTHTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim='desert')
     
     def test_show_psth(self):
-        assert isinstance(show_psth(self.nwbfile.units,before=20., after=30.),plt.Figure)
+        assert isinstance(show_psth(self.nwbfile.units,before=20., after=30.,color_by='stim'),plt.Figure)
 
     def test_psth_widget(self):
         assert isinstance(psth_widget(self.nwbfile.units),widgets.Widget)
