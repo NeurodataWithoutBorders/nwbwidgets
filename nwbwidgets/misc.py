@@ -261,12 +261,14 @@ def show_psth(units: pynwb.misc.Units, index=0, start_label='start_time', before
     ----------
     units: pynwb.misc.Units
     index: int
-    start_label
-    before
-    after
-    order_by
-    color_by
-    cmap_name
+    start_label: str
+    before: float
+    after: float
+    order_by: str
+        can be 'start_time', 'stop_time', or 'stim'
+    color_by: str
+        can be 'start_time', 'stop_time', or 'stim'
+    cmap_name: str
 
     Returns
     -------
