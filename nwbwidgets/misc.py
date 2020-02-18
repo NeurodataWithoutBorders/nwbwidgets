@@ -289,10 +289,10 @@ def show_psth(units: pynwb.misc.Units, index=0, start_label='start_time', before
             labels, cvals = np.unique(coldata, return_inverse=True)
         elif np.all(np.isreal(data)):
             coltype = 'numeric'
-            cvals = coldata
+            labels, cvals = np.unique(coldata, return_inverse=True)
         else:
             coltype = 'unknown'
-            cvals = 0
+            cvals = np.array([0])
         cvals = cvals - min(cvals)
         cvals = cvals / max(cvals)
         cvals = cvals[order]
