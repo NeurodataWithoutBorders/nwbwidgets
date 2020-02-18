@@ -193,6 +193,10 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
 
     """
 
+    trials = units.get_ancestor('NWBFile').trials
+    if trials is None:
+        return widgets.HTML('No trials present')
+
     control_widgets = widgets.VBox(children=[])
 
     if unit_controller is None:
@@ -201,9 +205,8 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
         control_widgets.children = list(control_widgets.children) + [unit_controller]
 
     if trial_event_controller is None:
-        trials = units.get_ancestor('NWBFile').trials
         trial_events = ['start_time']
-        if not np.all(np.isnan(trials['stop_time'].data)):
+        if (trials['stop_time'] is not None) and (not np.all(np.isnan(trials['stop_time'].data))):
             trial_events.append('stop_time')
         trial_events += [x.name for x in trials.columns if
                          (('_time' in x.name) and (x.name not in ('start_time', 'stop_time')))]
