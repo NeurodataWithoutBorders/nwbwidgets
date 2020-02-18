@@ -59,7 +59,7 @@ class ShowActivityTestCase(unittest.TestCase):
 
         lfp = LFP(electrical_series=ephys_ts, name='LFP data')
 
-        self.show_lfp(lfp, default_neurodata_vis_spec)
+        show_lfp(lfp, default_neurodata_vis_spec)
 
 
     def test_show_spike_event_series(self):
