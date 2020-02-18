@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from pynwb.base import TimeSeries
-from pynwb.image import RGBImage,GrayscaleImage,IndexSeries
-from nwbwidgets.image import show_rbg_image,show_grayscale_image,show_index_series
+from pynwb.image import RGBImage,GrayscaleImage,IndexSeries,ImageSeries
+from nwbwidgets.image import show_rbg_image,show_grayscale_image,show_index_series,show_image_series
 from nwbwidgets.view import default_neurodata_vis_spec
 
 
@@ -32,3 +32,11 @@ def test_show_index_series():
                                indexed_timeseries=indexed_timeseries,rate=1.)
 
     assert isinstance(show_index_series(index_series,default_neurodata_vis_spec),widgets.Widget)
+    
+    
+def test_show_image_series():
+    
+    data=np.random.rand(800).reshape((8,10,10))
+    image_series = ImageSeries(name='Image Series',data=data,rate=1.)
+    
+    assert isinstance(show_image_series(image_series,default_neurodata_vis_spec),widgets.Widget)
