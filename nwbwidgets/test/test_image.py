@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from pynwb.base import TimeSeries
+import ipywidgets as widgets
 from pynwb.image import RGBImage,GrayscaleImage,IndexSeries,ImageSeries
 from nwbwidgets.image import show_rbg_image,show_grayscale_image,show_index_series,show_image_series
 from nwbwidgets.view import default_neurodata_vis_spec
