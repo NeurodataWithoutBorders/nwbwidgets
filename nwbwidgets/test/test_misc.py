@@ -6,7 +6,7 @@ from dateutil.tz import tzlocal
 from pynwb import NWBFile
 from pynwb.misc import Units, DecompositionSeries
 from ipywidgets import widgets
-from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces
+from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces, show_decomposition_series
 import unittest
 
 
@@ -56,12 +56,19 @@ class ShowPSTHTestCase(unittest.TestCase):
         assert isinstance(psth_widget(self.nwbfile.units),widgets.Widget)
 
     
+class ShowDecompositionTestCase(unittest.TestCase):
+
+    def setUp(self):
     
-def test_show_decomposition_traces():
-    
-    data = np.random.rand(160,2,3)
-    
-    ds = DecompositionSeries(name='Test Decomposition',data=data,
-                             metric='amplitude',rate=1.0)
-    
-    assert isinstance(show_decomposition_traces(ds),widgets.Widget)    
+        data = np.random.rand(160,2,3)
+
+        self.ds = DecompositionSeries(name='Test Decomposition',data=data,
+                                     metric='amplitude',rate=1.0)
+        
+    def test_show_decomposition_traces():
+
+        assert isinstance(show_decomposition_traces(self.ds),widgets.Widget)
+        
+    def test_show_decomposition_series():
+        
+        assert isinstance(show_decomposition_series(self.ds),widgets.Widget)
