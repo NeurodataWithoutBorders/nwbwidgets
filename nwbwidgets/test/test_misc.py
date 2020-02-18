@@ -6,7 +6,7 @@ from dateutil.tz import tzlocal
 from pynwb import NWBFile
 from pynwb.misc import Units, DecompositionSeries
 from ipywidgets import widgets
-from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces, show_decomposition_series
+from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces, show_decomposition_series, raster_widget
 import unittest
 
 
@@ -54,6 +54,9 @@ class ShowPSTHTestCase(unittest.TestCase):
 
     def test_psth_widget(self):
         assert isinstance(psth_widget(self.nwbfile.units),widgets.Widget)
+        
+    def test_raster_widget(self):
+        assert isinstance(raster_widget(self.nwbfile.units),widgets.Widget)
 
     
 class ShowDecompositionTestCase(unittest.TestCase):
