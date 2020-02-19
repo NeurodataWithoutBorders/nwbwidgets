@@ -41,16 +41,16 @@ class ShowTimeSeriesTestCase(unittest.TestCase):
         assert isinstance(show_timeseries(self.ts, istart=5, istop=56), widgets.Widget)
         
         
-    def test_plot_traces():
+def test_plot_traces():
 
-        data = np.random.rand(160,3)
-        ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=20.0)
+    data = np.random.rand(160,3)
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=20.0)
 
-        time_start = 1
-        time_duration = None
-        trace_window = None
-        title = 'Plot Traces'
-        ylabel = 'traces'
+    time_start = 1
+    time_duration = None
+    trace_window = None
+    title = 'Plot Traces'
+    ylabel = 'traces'
 
-        plot_traces(ts, time_start, time_duration, trace_window, title, ylabel)
+    plot_traces(ts, time_start, time_duration, trace_window, title, ylabel)
 
