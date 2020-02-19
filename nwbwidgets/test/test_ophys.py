@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import ipywidgets as widgets
 from nwbwidgets.ophys import show_grayscale_volume
 from ndx_grayscalevolume import GrayscaleVolume
 from nwbwidgets.view import default_neurodata_vis_spec
