@@ -29,6 +29,10 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     cmap_name: str
     show_obs_intervals: bool
     order_by: str or list, optional
+        None: order by id
+        str: order by the values of this column of the Units table
+        list: order by this list of columns in the Units table. The later columns dominate.
+        i.e. "sort by this, then sort by this, then sort by this..."
     color_by: str, optional
         None: all ticks are black
         'id': color by id of unit (default)
