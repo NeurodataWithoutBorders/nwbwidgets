@@ -18,7 +18,7 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
 
 
 def show_session_raster(units: Units, time_window=None, units_window=None, cmap_name='rainbow',
-                        show_obs_intervals=True, color_by='id', show_legend=True):
+                        show_obs_intervals=True, color_by='id', order_by=None, show_legend=True):
     """
 
     Parameters
@@ -28,6 +28,7 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     units_window: [int, int]
     cmap_name: str
     show_obs_intervals: bool
+    order_by: str or list, optional
     color_by: str, optional
         None: all ticks are black
         'id': color by id of unit (default)
@@ -50,7 +51,15 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     num_units = units_window[1] - units_window[0] + 1
     unit_inds = np.arange(units_window[0], units_window[1] + 1)
 
-    reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in unit_inds]
+    if order_by is not None:
+        if isinstance(order_by, str):
+            order = np.argsort(units[order_by][unit_inds.tolist()])
+        else:
+            order = np.lexsort([units[i_order_by][unit_inds.tolist()] for i_order_by in order_by])
+    else:
+        order = unit_inds
+
+    reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in order]
 
     # create colormap
     cmap = cm.get_cmap(cmap_name, num_units)
@@ -60,7 +69,7 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
         if color_by == 'id':
             cvals = unit_inds
         else:
-            vals = units[color_by][unit_inds.tolist()]
+            vals = [units[color_by][x] for x in order]
             if isinstance(vals[0], str):
                 labels, val_index, cvals = np.unique(vals, return_index=True, return_inverse=True)
             else:
@@ -108,7 +117,8 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
         ax.set_yticks(range(units_window[0], units_window[1] + 1))
 
     if color_by not in (None, 'id') and show_legend:
-        ax.legend(handles=[ax.collections[x] for x in val_index], labels=labels.tolist())
+        ax.legend(handles=[ax.collections[x] for x in val_index],
+                  labels=labels.tolist(), title=color_by)
 
     return fig
 
