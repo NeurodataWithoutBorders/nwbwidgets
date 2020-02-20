@@ -3,7 +3,7 @@ from pynwb import TimeSeries
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 from nwbwidgets.view import default_neurodata_vis_spec
 from nwbwidgets.behavior import show_position, show_behavioral_events, show_spatial_series_over_time, show_spatial_series
-
+import unittest
 class ShowSpatialSeriesTestCase(unittest.TestCase):
 
     def setUp(self):
