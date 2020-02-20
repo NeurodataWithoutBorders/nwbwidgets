@@ -17,7 +17,7 @@ def show_position(node: Position, neurodata_vis_spec: dict):
 
 
 def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dict):
-    return base.dict2accordion(beh_events.time_series, neurodata_vis_spec, ls='', marker='.')
+    return base.dict2accordion(beh_events.time_series, neurodata_vis_spec, ls='', marker='|')
 
 
 def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
