@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pynwb
+from typing import Iterable
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 from ipywidgets import widgets, fixed
 from matplotlib import cm
@@ -18,7 +19,8 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
 
 
 def show_session_raster(units: Units, time_window=None, units_window=None, cmap_name='rainbow',
-                        show_obs_intervals=True):
+                        show_obs_intervals=True, color_by='id', order_by1=None, order_by2=None,
+                        show_legend=True):
     """
 
     Parameters
@@ -28,6 +30,19 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     units_window: [int, int]
     cmap_name: str
     show_obs_intervals: bool
+    order_by1: str, optional
+        None: order by id
+        str: order by the values of this column of the Units table
+    order_by2: str, optional
+        None: order by id
+        str: order by the values of this column of the Units table
+    color_by: str, optional
+        None: all ticks are black
+        'id': color by id of unit (default)
+        other str: color by value in units table
+    show_legend: bool
+        default = True
+        Does not show legend if color_by is None or 'id'.
 
     Returns
     -------
@@ -43,22 +58,62 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     num_units = units_window[1] - units_window[0] + 1
     unit_inds = np.arange(units_window[0], units_window[1] + 1)
 
-    reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in unit_inds]
+    if order_by1 is not None:
+        if order_by2 is None:
+            order = np.argsort(units[order_by1][unit_inds.tolist()])
+        else:
+            order = np.lexsort([units[i_order_by][unit_inds.tolist()]
+                                for i_order_by in (order_by1, order_by2)])
+    else:
+        order = unit_inds
 
-    # create colormap to map the unit's closest electrode to color
+    reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in order]
+
+    # create colormap
     cmap = cm.get_cmap(cmap_name, num_units)
-    colors = cmap(unit_inds - min(unit_inds))
+    if color_by is None:
+        colors = 'k'
+    else:
+        if color_by == 'id':
+            cvals = unit_inds
+        else:
+            vals = [units[color_by][x] for x in order]
+            if isinstance(vals[0], str):
+                labels, val_index, cvals = np.unique(vals, return_index=True, return_inverse=True)
+            else:
+                cvals = vals
+                labels, val_index = np.unique(vals, return_index=True)
+        # normalize cvals
+        cvals -= min(cvals)
+        cvals = cvals / max(cvals)
+        colors = cmap(cvals)
+
     # plot spike times for each unit
     fig, ax = plt.subplots(1, 1)
     ax.figure.set_size_inches(12, 6)
     ax.eventplot(reduced_spike_times, color=colors, lineoffsets=unit_inds)
+
+    # add observation intervals
     if show_obs_intervals and 'obs_intervals' in units:
         rects = []
-        for i, intervals in enumerate(units['obs_intervals'][:]):  # TODO: use bisect here
+        for i_unit in unit_inds:
+            intervals = units['obs_intervals'][i_unit]  # TODO: use bisect here
             these_obs_intervals = intervals[(intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])]
             unobs_intervals = np.c_[these_obs_intervals[:-1, 1], these_obs_intervals[1:, 0]]
+
+            if len(these_obs_intervals):
+                # handle unobserved interval on lower bound of window
+                if these_obs_intervals[0, 0] > time_window[0]:
+                    unobs_intervals = np.vstack(([time_window[0], these_obs_intervals[0, 0]], unobs_intervals))
+
+                # handle unobserved interval on lower bound of window
+                if these_obs_intervals[-1, 1] < time_window[1]:
+                    unobs_intervals = np.vstack((unobs_intervals, [these_obs_intervals[-1, 1], time_window[1]]))
+            else:
+                unobs_intervals = [time_window]
+
             for i_interval in unobs_intervals:
-                rects.append(Rectangle((i_interval[0], i-.5), i_interval[1]-i_interval[0], 1))
+                rects.append(Rectangle((i_interval[0], i_unit-.5), i_interval[1]-i_interval[0], 1))
         pc = PatchCollection(rects, color=[0.85, 0.85, 0.85])
         ax.add_collection(pc)
 
@@ -69,25 +124,48 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     if units_window[1] - units_window[0] <= 30:
         ax.set_yticks(range(units_window[0], units_window[1] + 1))
 
+    if color_by not in (None, 'id') and show_legend:
+        ax.legend(handles=[ax.collections[x] for x in val_index],
+                  labels=labels.tolist(), title=color_by)
+
     return fig
 
-def raster_widget(node: Units, unit_controller=None, time_window_controller=None):
+
+def robust_unique(a):
+    if isinstance(a[0], pynwb.NWBContainer):
+        return np.unique([x.name for x in a])
+    return np.unique(a)
+
+
+def raster_widget(units: Units, unit_controller=None, time_window_controller=None):
     if time_window_controller is None:
-        tmin = get_min_spike_time(node)
-        tmax = get_max_spike_time(node)
+        tmin = get_min_spike_time(units)
+        tmax = get_max_spike_time(units)
         time_window_controller = float_range_controller(tmin, tmax)
     if unit_controller is None:
-        unit_controller = int_range_controller(len(node['spike_times'].data)-1, start_range=(0, 100))
+        unit_controller = int_range_controller(len(units['spike_times'].data)-1, start_range=(0, 100))
+
+    candidate_cols = [x for x in units.colnames
+                      if not isinstance(units[x][0], Iterable) or
+                      isinstance(units[x][0], str)]
+
+    features = [x for x in candidate_cols if len(robust_unique(units[x][:])) > 1]
+    color_controller = widgets.Dropdown(options=[None] + features, description='color by')
+    order_by_controller1 = widgets.Dropdown(options=[None] + features, description='order by')
+    order_by_controller2 = widgets.Dropdown(options=[None] + features, description='then order by')
 
     controls = {
-        'units': fixed(node),
+        'units': fixed(units),
         'time_window': time_window_controller.children[0],
         'units_window': unit_controller.children[0],
+        'color_by': color_controller,
+        'order_by1': order_by_controller1,
+        'order_by2': order_by_controller2
     }
 
     out_fig = widgets.interactive_output(show_session_raster, controls)
-
-    control_widgets = widgets.HBox(children=(time_window_controller, unit_controller))
+    color_and_order_box = widgets.VBox(children=(color_controller, order_by_controller1, order_by_controller2))
+    control_widgets = widgets.HBox(children=(time_window_controller, unit_controller, color_and_order_box))
     vbox = widgets.VBox(children=[control_widgets, out_fig])
     return vbox
 
@@ -193,6 +271,10 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
 
     """
 
+    trials = units.get_ancestor('NWBFile').trials
+    if trials is None:
+        return widgets.HTML('No trials present')
+
     control_widgets = widgets.VBox(children=[])
 
     if unit_controller is None:
@@ -201,7 +283,6 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
         control_widgets.children = list(control_widgets.children) + [unit_controller]
 
     if trial_event_controller is None:
-        trials = units.get_ancestor('NWBFile').trials
         trial_events = ['start_time']
         if not np.all(np.isnan(trials['stop_time'].data)):
             trial_events.append('stop_time')

@@ -2,7 +2,7 @@ from nwbwidgets import view
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from IPython import display
-from collections import Iterable
+from collections.abc import Iterable
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface
 from matplotlib.pyplot import Figure
@@ -14,9 +14,9 @@ from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
 
-def show_subject(node, **kwargs) -> widgets.Widget:
-    field_lay = widgets.Layout(max_height='40px', max_width='150px',
-                               min_height='30px', min_width='70px')
+def show_fields(node, **kwargs) -> widgets.Widget:
+    field_lay = widgets.Layout(max_height='40px', max_width='600px',
+                               min_height='30px', min_width='130px')
     info = []
     for key, val in node.fields.items():
         lbl_key = widgets.Label(key+':', layout=field_lay)
