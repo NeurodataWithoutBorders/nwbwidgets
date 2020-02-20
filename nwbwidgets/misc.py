@@ -18,7 +18,7 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
 
 
 def show_session_raster(units: Units, time_window=None, units_window=None, cmap_name='rainbow',
-                        show_obs_intervals=True):
+                        show_obs_intervals=True, color_by='id', show_legend=True):
     """
 
     Parameters
@@ -28,6 +28,13 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     units_window: [int, int]
     cmap_name: str
     show_obs_intervals: bool
+    color_by: str, optional
+        None: all ticks are black
+        'id': color by id of unit (default)
+        other str: color by value in units table
+    show_legend: bool
+        default = True
+        Does not show legend if color_by is None or 'id'.
 
     Returns
     -------
@@ -45,20 +52,51 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
 
     reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in unit_inds]
 
-    # create colormap to map the unit's closest electrode to color
+    # create colormap
     cmap = cm.get_cmap(cmap_name, num_units)
-    colors = cmap(unit_inds - min(unit_inds))
+    if color_by is None:
+        colors = 'k'
+    else:
+        if color_by == 'id':
+            cvals = unit_inds
+        else:
+            vals = units[color_by][unit_inds.tolist()]
+            if isinstance(vals[0], str):
+                labels, val_index, cvals = np.unique(vals, return_index=True, return_inverse=True)
+            else:
+                cvals = vals
+                labels, val_index = np.unique(vals, return_index=True)
+        # normalize cvals
+        cvals -= min(cvals)
+        cvals = cvals / max(cvals)
+        colors = cmap(cvals)
+
     # plot spike times for each unit
     fig, ax = plt.subplots(1, 1)
     ax.figure.set_size_inches(12, 6)
     ax.eventplot(reduced_spike_times, color=colors, lineoffsets=unit_inds)
+
+    # add observation intervals
     if show_obs_intervals and 'obs_intervals' in units:
         rects = []
-        for i, intervals in enumerate(units['obs_intervals'][:]):  # TODO: use bisect here
+        for i_unit in unit_inds:
+            intervals = units['obs_intervals'][i_unit]  # TODO: use bisect here
             these_obs_intervals = intervals[(intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])]
             unobs_intervals = np.c_[these_obs_intervals[:-1, 1], these_obs_intervals[1:, 0]]
+
+            if len(these_obs_intervals):
+                # handle unobserved interval on lower bound of window
+                if these_obs_intervals[0, 0] > time_window[0]:
+                    unobs_intervals = np.vstack(([time_window[0], these_obs_intervals[0, 0]], unobs_intervals))
+
+                # handle unobserved interval on lower bound of window
+                if these_obs_intervals[-1, 1] < time_window[1]:
+                    unobs_intervals = np.vstack((unobs_intervals, [these_obs_intervals[-1, 1], time_window[1]]))
+            else:
+                unobs_intervals = [time_window]
+
             for i_interval in unobs_intervals:
-                rects.append(Rectangle((i_interval[0], i-.5), i_interval[1]-i_interval[0], 1))
+                rects.append(Rectangle((i_interval[0], i_unit-.5), i_interval[1]-i_interval[0], 1))
         pc = PatchCollection(rects, color=[0.85, 0.85, 0.85])
         ax.add_collection(pc)
 
@@ -69,7 +107,11 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     if units_window[1] - units_window[0] <= 30:
         ax.set_yticks(range(units_window[0], units_window[1] + 1))
 
+    if color_by not in (None, 'id') and show_legend:
+        ax.legend(handles=[ax.collections[x] for x in val_index], labels=labels.tolist())
+
     return fig
+
 
 def raster_widget(node: Units, unit_controller=None, time_window_controller=None):
     if time_window_controller is None:
@@ -206,7 +248,7 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
 
     if trial_event_controller is None:
         trial_events = ['start_time']
-        if (trials['stop_time'] is not None) and (not np.all(np.isnan(trials['stop_time'].data))):
+        if not np.all(np.isnan(trials['stop_time'].data)):
             trial_events.append('stop_time')
         trial_events += [x.name for x in trials.columns if
                          (('_time' in x.name) and (x.name not in ('start_time', 'stop_time')))]
