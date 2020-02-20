@@ -16,7 +16,8 @@ default_neurodata_vis_spec = {
         'raster': misc.raster_widget,
         'PSTH': misc.psth_widget}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
-    pynwb.file.Subject: base.show_subject,
+    pynwb.file.Subject: base.show_fields,
+    pynwb.ophys.ImagingPlane: base.show_fields,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
     pynwb.ophys.ImageSegmentation: ophys.show_image_segmentation,
     pynwb.ophys.TwoPhotonSeries: ophys.show_two_photon_series,
@@ -33,7 +34,7 @@ default_neurodata_vis_spec = {
     pynwb.ecephys.ElectricalSeries: OrderedDict({
         'Fields': timeseries.show_ts_fields,
         'Traces': partial(timeseries.traces_widget,
-                          time_window_starting_range=(0, 10),
+                          start=0, dur=10,
                           trace_starting_range=(0, 5)),
     }),
     pynwb.behavior.Position: behavior.show_position,
