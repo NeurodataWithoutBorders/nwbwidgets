@@ -31,14 +31,14 @@ class ShowTimeSeriesTestCase(unittest.TestCase):
         data = np.random.rand(160,3)
         self.ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
         
-    def test_show_text_fields():
+    def test_show_text_fields(self):
         assert isinstance(show_text_fields(self.ts), widgets.Widget)
         
 
-    def test_show_ts_fields():
+    def test_show_ts_fields(self):
         assert isinstance(show_ts_fields(self.ts), widgets.Widget)
         
-    def test_show_timeseries():
+    def test_show_timeseries(self):
         assert isinstance(show_timeseries(self.ts, istart=5, istop=56), widgets.Widget)
         
         
