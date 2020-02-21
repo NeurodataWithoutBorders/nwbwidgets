@@ -71,10 +71,10 @@ class ShowDecompositionTestCase(unittest.TestCase):
         self.ds = DecompositionSeries(name='Test Decomposition',data=data,
                                      metric='amplitude',rate=1.0)
         
-    def test_show_decomposition_traces():
+    def test_show_decomposition_traces(self):
 
         assert isinstance(show_decomposition_traces(self.ds),widgets.Widget)
         
-    def test_show_decomposition_series():
+    def test_show_decomposition_series(self):
         
         assert isinstance(show_decomposition_series(self.ds),widgets.Widget)
