@@ -4,6 +4,7 @@ from ipywidgets import widgets
 from nwbwidgets.base import show_text_fields
 from nwbwidgets.timeseries import traces_widget, show_ts_fields, show_timeseries, plot_traces
 from nwbwidgets.utils.timeseries import get_timeseries_tt
+import unittest
 
 
 
