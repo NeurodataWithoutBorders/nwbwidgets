@@ -57,7 +57,7 @@ def get_max_spike_time(units: pynwb.misc.Units):
 
     """
     st = units['spike_times']
-    inds = list(st.data[:] - 1)
+    inds = [x - 1 for x in st.data[:]]
     last_spikes = [st.target.data[i] for i in inds]
     return np.max(last_spikes)
 
