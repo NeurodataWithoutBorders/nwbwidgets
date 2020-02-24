@@ -9,7 +9,6 @@ from ipywidgets import widgets
 from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces
 
 
-
 def test_show_psth():
     """
     Trials must exist.
@@ -33,7 +32,6 @@ def test_show_psth():
     nwbfile.add_unit(id=3, spike_times=[1.2, 2.3, 3.3, 4.5],
                      obs_intervals=[[1, 10], [20, 30]], location='CA1', quality=0.90)
     
-    
     nwbfile.add_trial_column(name='stim', description='the visual stimuli during the trial')
 
     nwbfile.add_trial(start_time=0.0, stop_time=2.0, stim='person')
@@ -43,8 +41,6 @@ def test_show_psth():
     assert isinstance(show_psth(nwbfile.units,before=20., after=30.),plt.Figure)
     
 
-
-    
 def test_psth_widget():
     """
     Trials must exist.
@@ -76,7 +72,6 @@ def test_psth_widget():
     nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim='desert')
     
     assert isinstance(psth_widget(nwbfile.units),widgets.Widget)
-
     
     
 def test_show_decomposition_traces():
