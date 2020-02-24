@@ -24,19 +24,25 @@ class MoveSliderTestCase(unittest.TestCase):
     
     def test_move_slider_down_bigger(self):
         move_slider_down(self.slider,3)
+        self.assert(self.slider.value == 4)
     def test_move_slider_down_smaller(self):
         move_slider_down(self.slider,6)
+        self.assert(self.slider.value == 2)
         
     def test_move_slider_up_bigger(self):
         move_slider_up(self.slider,2)
+        self.assert(self.slider.value == 9)
     def test_move_slider_up_smaller(self):
         move_slider_up(self.slider,6)
+        self.assert(self.slider.value == 4)
         
     def test_move_int_slider_down(self):
         move_int_slider_down(self.slider)
+        self.assert(self.slider.value == 6)
         
     def test_move_int_slider_up(self):
         move_int_slider_up(self.slider)
+        self.assert(self.slider.value == 8)
 
 
 class RangeSliderTestCase(unittest.TestCase):
@@ -57,13 +63,17 @@ class RangeSliderTestCase(unittest.TestCase):
     def test_move_range_slider_down_bigger(self):
         self.slider.value = (4, 6)
         move_range_slider_down(self.slider)
+        self.assert(self.slider.value == (2, 4))
     def test_move_range_slider_down_smaller(self):
         self.slider.value = (2, 6)
         move_range_slider_down(self.slider)
+        self.assert(self.slider.value == (0, 4))
     
     def test_move_range_slider_up_smaller(self):
         self.slider.value = (5, 7)
         move_range_slider_up(self.slider)
+        self.assert(self.slider.value == (7, 9))
     def test_move_range_slider_up_bigger(self):
         self.slider.value = (5, 8)
         move_range_slider_up(self.slider)
+        self.assert(self.slider.value == (7, 10))
