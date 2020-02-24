@@ -11,7 +11,7 @@ def get_spike_times(units: pynwb.misc.Units, index, in_interval):
     ----------
     units: pynwb.misc.Units
     index: int
-    in_interval: list of ints
+    in_interval: start and stop times
 
     Returns
     -------
@@ -70,7 +70,7 @@ def align_by_times(units: pynwb.misc.Units, index, starts, stops):
         starts: array-like
         stops: array-like
     Returns:
-        np.array(shape=(n_trials, n_time, ...))
+        np.array
     """
     return np.array([get_spike_times(units, index, [a, b]) - a for a, b in zip(starts, stops)])
 
@@ -96,7 +96,7 @@ def align_by_trials(units: pynwb.misc.Units, index, start_label='start_time',
 
 
 def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_label='start_time',
-                            stop_label='stop_time', before=0., after=0.):
+                            stop_label='stop_time', before=0., after=0., trials_select=None):
     """
     Args:
         units: time-aware neurodata_type
@@ -110,12 +110,17 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
             time after start_label in secs (positive goes back in time)
         after: float
             time after stop_label in secs (positive goes forward in time)
+        trials_select: array_like, optional
+            sub-selects specific trials
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
     if stop_label is None:
         stop_label = 'start_time'
-
-    starts = np.array(intervals[start_label][:]) - before
-    stops = np.array(intervals[stop_label][:]) + after
+    if trials_select is None:
+        starts = np.array(intervals[start_label][:]) - before
+        stops = np.array(intervals[stop_label][:]) + after
+    else:
+        starts = np.array(intervals[start_label][trials_select]) - before
+        stops = np.array(intervals[stop_label][trials_select]) + after
     return [x - before for x in align_by_times(units, index, starts, stops)]
