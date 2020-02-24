@@ -9,6 +9,9 @@ from .controllers import float_range_controller, int_range_controller, int_contr
 from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
+from scipy.stats import gaussian_kde
+import scipy
+
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -374,7 +377,7 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', befo
     labels = None
     if color_by:
         coldata = trials[color_by].data[:]
-        if len(np.unique(coldata)) < 5:
+        if len(np.unique(coldata)) < 10:
             labels, cvals = np.unique(coldata, return_inverse=True)
         elif np.all(np.isreal(data)):
             cvals = coldata
@@ -388,17 +391,50 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', befo
     else:
         colors = 'k'
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(2, 1)
     if labels is not None:
-        ax = show_psth(data, colors, ax, before, after,
-                       labels=labels, cval_inds=cval_inds)
+        show_psth_smoothed(data, ax[1], cvals, colors)
+
+    if labels is not None:
+        ax = show_psth_raster(data, colors, ax[0], before, after,
+                              labels=labels, cval_inds=cval_inds)
     else:
-        ax = show_psth(data, colors, ax, before, after)
+        ax = show_psth_raster(data, colors, ax[0], before, after)
     ax.set_title('PSTH for unit {}'.format(index))
     return fig
 
 
-def show_psth(data, colors, ax, before, after, labels=None, cval_inds=None):
+def show_psth_smoothed(data, ax, cvals=None, colors=None):
+
+    all_data = np.hstack(data)
+    x_grid = np.linspace(min(all_data), max(all_data), 1000)
+    smoothed = []
+    for x in data:
+        if len(x) > 1:
+            bandwidth = .05
+            gauss = gaussian_kde(x, bandwidth / x.std(ddof=1)).evaluate(x_grid)
+            gauss *= len(x)
+            smoothed.append(gauss)
+        else:
+
+    smoothed = np.array(smoothed)
+
+    if cvals is not None:
+        groups, group_inds = np.unique(cvals, return_inverse=True)
+        group_stats = []
+        for group in range(len(groups)):
+            this_mean = np.mean(smoothed[group_inds == group], axis=0)
+            err = scipy.stats.sem(smoothed[group_inds == group], axis=0)
+            group_stats.append({'mean': this_mean,
+                                'lower': this_mean - err,
+                                'upper': this_mean + err})
+
+    for color, stats in zip(np.unique(colors), group_stats):
+        plt.plot(x_grid, stats['mean'], color=color)
+        plt.fill_between(x_grid, stats['lower'], stats['upper'], alpha=.2, color=color)
+
+
+def show_psth_raster(data, colors, ax, before, after, labels=None, cval_inds=None):
     event_collection = ax.eventplot(data, orientation='horizontal', colors=colors)
     ax.set_xlim((-before, after))
     ax.set_ylim(-.5, len(data)-.5)
