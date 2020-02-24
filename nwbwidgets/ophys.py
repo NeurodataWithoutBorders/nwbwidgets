@@ -164,7 +164,8 @@ def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
     categorical_columns = infer_categorical_columns(plane_seg)
 
     if len(categorical_columns) == 1:
-        return show_plane_segmentation_2d(plane_seg, color_by=categorical_columns[0], **kwargs)
+        color_by = list(categorical_columns.keys())[0]
+        return show_plane_segmentation_2d(plane_seg, color_by=color_by, **kwargs)
 
     elif len(categorical_columns) > 1:
         cat_controller = widgets.Dropdown(options=categorical_columns, description='color by')
