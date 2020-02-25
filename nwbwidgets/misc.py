@@ -379,7 +379,8 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', befo
         elif np.all(np.isreal(data)):
             cvals = coldata
         else:
-            cvals = 0
+            coltype = 'unknown'
+            cvals = np.array([0])
         cvals = cvals - min(cvals)
         cvals = cvals / max(cvals)
         cvals = cvals[order]
