@@ -55,7 +55,7 @@ def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
 
 def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: dict):
     if len(img_seg.plane_segmentations) == 1:
-        return show_plane_segmentation(next(iter(img_seg.plane_segmentations.values())), neurodata_vis_spec)
+        return show_plane_segmentation(list(img_seg.plane_segmentations.values())[0], neurodata_vis_spec)
     else:
         return neurodata_vis_spec[NWBDataInterface](img_seg, neurodata_vis_spec)
 
@@ -168,14 +168,16 @@ def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
         return show_plane_segmentation_2d(plane_seg, color_by=color_by, **kwargs)
 
     elif len(categorical_columns) > 1:
-        cat_controller = widgets.Dropdown(options=categorical_columns, description='color by')
+        cat_controller = widgets.Dropdown(options=list(categorical_columns), description='color by')
 
         out_fig = show_plane_segmentation_2d(plane_seg, color_by=cat_controller.value, **kwargs)
 
         def on_change(change, out_fig=out_fig):
-            if change['new']:
-                color_by = change['owner'].options[change['new']['index']]
-                show_plane_segmentation_2d(plane_seg, color_by=color_by, fig=out_fig, **kwargs)
+            if change['new'] and isinstance(change['new'], dict):
+                ind = change['new']['index']
+                if isinstance(ind, int):
+                    color_by = change['owner'].options[ind]
+                    show_plane_segmentation_2d(plane_seg, color_by=color_by, fig=out_fig, **kwargs)
 
         cat_controller.observe(on_change)
 
