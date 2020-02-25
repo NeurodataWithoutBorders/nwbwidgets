@@ -10,6 +10,13 @@ from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces, s
 import unittest
 
 
+def test_show_psth():
+    data = np.random.random([6, 50])
+    colors = ['C{}'.format(i) for i in range(6)]
+    fig, ax = plt.subplots()
+    assert isinstance(show_psth(data=data, colors=colors, ax=ax, before=0, after=1),plt.Subplot)
+    
+
 class ShowPSTHTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -40,17 +47,6 @@ class ShowPSTHTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=0.0, stop_time=2.0, stim='person')
         self.nwbfile.add_trial(start_time=3.0, stop_time=5.0, stim='ocean')
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim='desert')
-    
-    def test_show_psth_color_by_empty(self):
-        assert isinstance(show_psth(self.nwbfile.units,before=20., after=30.),plt.Figure)
-
-    def test_show_psth_color_by_notempty_small_colldata(self):
-        assert isinstance(show_psth(self.nwbfile.units,before=20., after=30.,color_by='stim'),plt.Figure)
-
-    def test_show_psth_color_by_notempty_bigger_colldata_real(self):
-        self.nwbfile.add_trial(start_time=9.0, stop_time=11.0, stim='forest')
-        self.nwbfile.add_trial(start_time=12.0, stop_time=14.0, stim='animal')
-        assert isinstance(show_psth(self.nwbfile.units,before=20., after=30.,color_by='stim'),plt.Figure)
 
     def test_psth_widget(self):
         assert isinstance(psth_widget(self.nwbfile.units),widgets.Widget)
