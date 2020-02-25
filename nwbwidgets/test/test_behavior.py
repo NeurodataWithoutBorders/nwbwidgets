@@ -44,8 +44,24 @@ class ShowSpatialSeriesTwoDTestCase(unittest.TestCase):
 
         show_spatial_series(self.spatial_series)
     
-    
-    
+
+class ShowSpatialSeriesThreeDTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.spatial_series = SpatialSeries(name = 'position',
+                                       data = np.array([np.linspace(0, 1, 20), np.linspace(0, 1, 20),np.linspace(0, 1, 20)]).T,
+                                       rate = 50.,
+                                       reference_frame = 'starting gate')
+
+    def test_show_spatial_series_over_time_threeD(self):
+        
+        show_spatial_series_over_time(self.spatial_series)
+
+    def test_show_spatial_series_threeD(self):
+
+        show_spatial_series(self.spatial_series)
+
+        
 def test_show_behavioral_events():
     
     data = list(range(100, 200, 10))
