@@ -26,16 +26,26 @@ class ShowSpatialSeriesTestCase(unittest.TestCase):
 
         show_spatial_series(self.spatial_series)
 
-
-def test_show_spatial_series_over_time_twoD():
-    xv, yv = np.meshgrid(np.linspace(0, 1, 20), np.linspace(0, 1, 20))
-    spatial_series = SpatialSeries(name = 'position',
-                                   data = xv,
-                                   rate = 50.,
-                                   reference_frame = 'starting gate')
-    show_spatial_series_over_time(spatial_series)
-    
         
+        
+class ShowSpatialSeriesTwoDTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.spatial_series = SpatialSeries(name = 'position',
+                                       data = np.array([np.linspace(0, 1, 20), np.linspace(0, 1, 20)]).T,
+                                       rate = 50.,
+                                       reference_frame = 'starting gate')
+
+    def test_show_spatial_series_over_time_twoD(self):
+        
+        show_spatial_series_over_time(self.spatial_series)
+
+    def test_show_spatial_series_twoD(self):
+
+        show_spatial_series(self.spatial_series)
+    
+    
+    
 def test_show_behavioral_events():
     
     data = list(range(100, 200, 10))
