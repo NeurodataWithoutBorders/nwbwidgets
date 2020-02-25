@@ -1,12 +1,18 @@
-from utils.units import get_min_spike_time,get_max_spike_time
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime
+from dateutil.tz import tzlocal
+from pynwb import NWBFile
+from ipywidgets import widgets
+from utils.units import get_min_spike_time
 
 start_time = datetime(2017, 4, 3, 11, tzinfo=tzlocal())
 create_date = datetime(2017, 4, 15, 12, tzinfo=tzlocal())
 
-nwbfile = NWBFile(session_description='demonstrate NWBFile basics',  # required
-                  identifier='NWB123',  # required
-                  session_start_time=start_time,  # required
-                  file_create_date=create_date)  # optional
+nwbfile = NWBFile(session_description='demonstrate NWBFile basics',
+                  identifier='NWB123',
+                  session_start_time=start_time,
+                  file_create_date=create_date)  
 
 nwbfile.add_unit_column('location', 'the anatomical location of this unit')
 nwbfile.add_unit_column('quality', 'the quality for the inference of this unit')
