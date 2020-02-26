@@ -1,6 +1,6 @@
 import numpy as np
 from pynwb import TimeSeries
-from nwbwidgets.utils.timeseries import get_timeseries_tt,get_timeseries_maxt,get_timeseries_mint,get_timeseries_in_units,timeseries_time_to_ind,align_by_times,align_by_trials
+from .utils.timeseries import get_timeseries_tt,get_timeseries_maxt,get_timeseries_mint,get_timeseries_in_units,timeseries_time_to_ind,align_by_times,align_by_trials
 import unittest
 
   
