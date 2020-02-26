@@ -1,6 +1,6 @@
 import numpy as np
 from pynwb import TimeSeries
-from nwbwidgets.utils.timeseries import get_timeseries_tt,get_timeseries_maxt,get_timeseries_mint
+from nwbwidgets.utils.timeseries import get_timeseries_tt,get_timeseries_maxt,get_timeseries_mint,get_timeseries_in_units
 import unittest
 
 
@@ -49,3 +49,10 @@ def test_get_timeseries_mint():
     
     mint = get_timeseries_mint(ts)
     assert(mint==0)
+
+    
+def test_get_timeseries_in_units():
+    data = list(range(100, 200, 10))
+    timestamps = list(range(10))
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', timestamps=timestamps,conversion=np.inf)
+    get_timeseries_in_units(ts)
