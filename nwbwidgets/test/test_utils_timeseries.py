@@ -87,6 +87,6 @@ class TimeSeriesTimeStampTestCase(unittest.TestCase):
         
     def test_align_by_time_intervals():
         intervals=TimeIntervals(name='Time Intervals')
-        np.testing.assert_array_equal(align_by_time_intervals(timeseries=ts,intervals=intervals,stop_label=None),np.array([]))
+        np.testing.assert_array_equal(align_by_time_intervals(timeseries=self.ts,intervals=intervals,stop_label=None),np.array([]))
         
     
