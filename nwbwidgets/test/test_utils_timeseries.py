@@ -26,7 +26,7 @@ def test_get_timeseries_in_units():
     data = list(range(100, 200, 10))
     timestamps = list(range(10))
     ts = TimeSeries(name='test_timeseries', data=data, unit='m', timestamps=timestamps,conversion=np.inf)
-    data,unint = get_timeseries_in_units(ts)
+    data,unit = get_timeseries_in_units(ts)
     assert(unit is None)
     assert(data==[100, 110, 120, 130, 140, 150, 160, 170, 180, 190])
     
