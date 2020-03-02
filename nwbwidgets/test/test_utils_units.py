@@ -5,7 +5,7 @@ from dateutil.tz import tzlocal
 from pynwb import NWBFile
 from ipywidgets import widgets
 from pynwb.epoch import TimeIntervals
-from .utils.units import get_min_spike_time, align_by_trials, align_by_time_intervals
+from nwbwidgets.utils.units import get_min_spike_time, align_by_trials, align_by_time_intervals
 
 class ShowPSTHTestCase(unittest.TestCase):
 
