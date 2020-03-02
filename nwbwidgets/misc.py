@@ -12,6 +12,7 @@ from matplotlib.collections import PatchCollection
 from scipy.stats import gaussian_kde
 import scipy
 
+color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
@@ -261,7 +262,8 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 
 def psth_widget(units: Units, unit_controller=None, after_slider=None, before_slider=None,
-                trial_event_controller=None, trial_order_controller=None, trial_color_controller=None):
+                trial_event_controller=None, trial_order_controller=None,
+                trial_color_controller=None, sigma_in_secs=.05, ntt=1000):
     """
 
     Parameters
@@ -273,6 +275,9 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
     trial_event_controller
     trial_order_controller
     trial_color_controller
+    sigma_in_secs: float
+    ntt: int
+        Number of timepoints to use for smoothed PSTH
 
     Returns
     -------
@@ -328,6 +333,8 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
 
     controls = {
         'units': fixed(units),
+        'sigma_in_secs': fixed(sigma_in_secs),
+        'ntt': fixed(ntt),
         'index': unit_controller,
         'after': after_slider,
         'before': before_slider,
@@ -342,7 +349,9 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
 
 
 def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', before=0., after=1., order_by='start_time',
-                color_by=None, cmap_name='gist_rainbow', trials_select=None):
+                color_by=None, trials_select=None,
+                sigma_in_secs=0.05,
+                ntt=1000):
     """
 
     Parameters
@@ -354,7 +363,6 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', befo
     after
     order_by
     color_by
-    cmap_name
     trials_select
 
     Returns
@@ -364,6 +372,11 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', befo
     trials = units.get_ancestor('NWBFile').trials
 
     data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after, trials_select)
+    # expanded data so that gaussian smoother uses larger window than is viewed
+    expanded_data = align_by_time_intervals(units, index, trials, start_label, start_label,
+                                            before + sigma_in_secs * 4,
+                                            after + sigma_in_secs * 4,
+                                            trials_select)
 
     if trials_select is None:
         order = np.argsort(trials[order_by].data[:])
@@ -371,80 +384,80 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', befo
         order = np.argsort(trials[order_by].data[trials_select])
 
     data = np.array(data)[order]
-
-    cmap = cm.get_cmap(cmap_name)
+    expanded_data = np.array(expanded_data)[order]
 
     labels = None
+    group_inds = None
     if color_by:
-        coldata = trials[color_by].data[:]
-        if len(np.unique(coldata)) < 10:
-            labels, cvals = np.unique(coldata, return_inverse=True)
-        elif np.all(np.isreal(data)):
-            cvals = coldata
-        else:
-            cvals = 0
-        cvals = cvals - min(cvals)
-        cvals = cvals / max(cvals)
-        cvals = cvals[order]
-        colors = cmap(cvals)
-        cval_inds = np.hstack((0, np.where(np.diff(cvals))[0] + 1))
-    else:
-        colors = 'k'
+        coldata = np.array(trials[color_by].data)[order]
+        if len(np.unique(coldata)) < 10:  # is categorical
+            labels, group_inds = np.unique(coldata, return_inverse=True)
 
-    fig, ax = plt.subplots(2, 1)
-    if labels is not None:
-        show_psth_smoothed(data, ax[1], cvals, colors)
+    fig, axs = plt.subplots(2, 1)
+    ax = show_psth_raster(data, axs[0], before, after, group_inds, labels)
+    show_psth_smoothed(expanded_data, axs[1], before, after, group_inds,
+                       sigma_in_secs=sigma_in_secs, ntt=ntt)
 
-    if labels is not None:
-        ax = show_psth_raster(data, colors, ax[0], before, after,
-                              labels=labels, cval_inds=cval_inds)
-    else:
-        ax = show_psth_raster(data, colors, ax[0], before, after)
     ax.set_title('PSTH for unit {}'.format(index))
+    ax.set_xticks([])
+    ax.set_xlabel('')
     return fig
 
 
-def show_psth_smoothed(data, ax, cvals=None, colors=None):
+def show_psth_smoothed(data, ax, before, after, cvals=None, sigma_in_secs=.05, ntt=1000):
 
     all_data = np.hstack(data)
-    x_grid = np.linspace(min(all_data), max(all_data), 1000)
+    tt = np.linspace(min(all_data), max(all_data), ntt)
     smoothed = []
     for x in data:
-        if len(x) > 1:
-            bandwidth = .05
-            gauss = gaussian_kde(x, bandwidth / x.std(ddof=1)).evaluate(x_grid)
-            gauss *= len(x)
-            smoothed.append(gauss)
-        else:
+        sig = np.zeros_like(tt)
+        sig[np.searchsorted(tt, x)] += 1
+        dt = np.diff(tt[:2])[0]
+        sigma = sigma_in_secs / dt
+        xx = scipy.ndimage.gaussian_filter1d(sig, sigma) / dt
+        smoothed.append(xx)
 
     smoothed = np.array(smoothed)
 
-    if cvals is not None:
-        groups, group_inds = np.unique(cvals, return_inverse=True)
-        group_stats = []
-        for group in range(len(groups)):
-            this_mean = np.mean(smoothed[group_inds == group], axis=0)
-            err = scipy.stats.sem(smoothed[group_inds == group], axis=0)
-            group_stats.append({'mean': this_mean,
-                                'lower': this_mean - err,
-                                'upper': this_mean + err})
+    if cvals is None:
+        cvals = np.zeros((len(smoothed)))
+    groups, group_inds = np.unique(cvals, return_inverse=True)
+    group_stats = []
+    for group in range(len(groups)):
+        this_mean = np.mean(smoothed[group_inds == group], axis=0)
+        err = scipy.stats.sem(smoothed[group_inds == group], axis=0)
+        group_stats.append({'mean': this_mean,
+                            'lower': this_mean - err,
+                            'upper': this_mean + err})
+    for stats, color in zip(group_stats, color_wheel):
+        ax.plot(tt, stats['mean'], color=color)
+        ax.fill_between(tt, stats['lower'], stats['upper'], alpha=.2, color=color)
+    ax.set_xlim([-before, after])
+    ax.set_ylabel('firing rate (Hz)')
+    ax.set_xlabel('time (s)')
 
-    for color, stats in zip(np.unique(colors), group_stats):
-        plt.plot(x_grid, stats['mean'], color=color)
-        plt.fill_between(x_grid, stats['lower'], stats['upper'], alpha=.2, color=color)
 
-
-def show_psth_raster(data, colors, ax, before, after, labels=None, cval_inds=None):
-    event_collection = ax.eventplot(data, orientation='horizontal', colors=colors)
+def show_psth_raster(data, ax, before, after, group_inds=None, labels=None):
+    if group_inds is not None:
+        handles = []
+        for i, color in zip(np.unique(group_inds), color_wheel):
+            lineoffsets = np.where(group_inds == i)[0]
+            event_collection = ax.eventplot(data[group_inds == i],
+                                            orientation='horizontal',
+                                            lineoffsets=lineoffsets,
+                                            color=color)
+            handles.append(event_collection[0])
+    else:
+        ax.eventplot(data, orientation='horizontal', color='k')
     ax.set_xlim((-before, after))
     ax.set_ylim(-.5, len(data)-.5)
     ax.set_xlabel('time (s)')
     ax.set_ylabel('trials')
-    ax.axvline(color=[.5, .5, .5])
+    ax.axvline(color=[0.7, 0.7, 0.7])
 
     if labels is not None:
-        handles = [event_collection[x] for x in cval_inds]
-        ax.legend(handles=handles, labels=list(labels), bbox_to_anchor=(1.0, .6, .4, .4),
+        ax.legend(handles=handles, labels=list(labels),
+                  bbox_to_anchor=(1.0, .6, .4, .4),
                   mode="expand", borderaxespad=0.)
 
     return ax
