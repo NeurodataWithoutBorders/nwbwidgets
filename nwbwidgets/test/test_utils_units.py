@@ -39,15 +39,15 @@ class ShowPSTHTestCase(unittest.TestCase):
         assert(get_min_spike_time(self.nwbfile.units)==1.2)
         
     def test_align_by_trials(self):
-        ComparetoAT = [np.array([ 2.1999999999999993,  3.0 , 25.0 , 26.0 ]),np.array([-0.8000000000000007,  0. , 22. , 23. ]),
-                       np.array([-3.8000000000000007, -3. , 19. , 20. ])]
+        ComparetoAT = [np.array([ 2.2,  3.0 , 25.0 , 26.0 ]),np.array([-0.8,  0. , 22. , 23. ]),
+                       np.array([-3.8, -3. , 19. , 20. ])]
         
         AT = align_by_trials(self.nwbfile.units, index=1, start_label='start_time',
                             stop_label=None, before=20., after=30.)
         
-        assert(all(AT[0]==ComparetoAT[0]))
-        assert(all(AT[1]==ComparetoAT[1]))
-        assert(all(AT[2]==ComparetoAT[2]))
+        np.testing.assert_allclose(AT[0],ComparetoAT[0],rtol=1e-02)
+        np.testing.assert_allclose(AT[1],ComparetoAT[1],rtol=1e-02)
+        np.testing.assert_allclose(AT[2],ComparetoAT[2],rtol=1e-02)
         
     def test_align_by_time_intervals_Nonetrials_select(self):
         time_intervals = TimeIntervals(name='Test Time Interval')
