@@ -3,7 +3,9 @@ from pynwb import TimeSeries
 from datetime import datetime
 from dateutil.tz import tzlocal
 from pynwb import NWBFile
-from nwbwidgets.utils.timeseries import get_timeseries_tt,get_timeseries_maxt,get_timeseries_mint,get_timeseries_in_units,timeseries_time_to_ind,align_by_times,align_by_trials,align_by_trials
+from pynwb.epoch import TimeIntervals
+from nwbwidgets.utils.timeseries import get_timeseries_tt,get_timeseries_maxt,get_timeseries_mint,get_timeseries_in_units, \
+timeseries_time_to_ind,align_by_times,align_by_trials,align_by_trials,align_by_time_intervals
 import unittest
 
   
@@ -82,4 +84,9 @@ class TimeSeriesTimeStampTestCase(unittest.TestCase):
     def test_get_timeseries_tt_timestamp(self):
         tt = get_timeseries_tt(self.ts)
         np.testing.assert_array_equal(tt,[0., 1., 2., 3., 4., 5., 6., 7., 8., 9.])
+        
+    def test_align_by_time_intervals():
+        intervals=TimeIntervals(name='Time Intervals')
+        np.testing.assert_array_equal(align_by_time_intervals(timeseries=ts,intervals=intervals,stop_label=None),np.array([]))
+        
     
