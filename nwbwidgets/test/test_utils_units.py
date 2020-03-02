@@ -6,6 +6,7 @@ from pynwb import NWBFile
 from ipywidgets import widgets
 from pynwb.epoch import TimeIntervals
 from nwbwidgets.utils.units import get_min_spike_time, align_by_trials, align_by_time_intervals
+import unittest
 
 class ShowPSTHTestCase(unittest.TestCase):
 
