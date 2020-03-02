@@ -31,7 +31,7 @@ class MoveSliderTestCase(unittest.TestCase):
         
     def test_move_slider_up_bigger(self):
         move_slider_up(self.slider,2)
-        assert(self.slider.value == 9)
+        assert(self.slider.value == 8)
     def test_move_slider_up_smaller(self):
         move_slider_up(self.slider,6)
         assert(self.slider.value == 4)
