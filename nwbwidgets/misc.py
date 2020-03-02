@@ -437,7 +437,9 @@ def show_psth_smoothed(data, ax, before, after, cvals=None, sigma_in_secs=.05, n
     ax.set_xlabel('time (s)')
 
 
-def show_psth_raster(data, ax, before, after, group_inds=None, labels=None):
+def show_psth_raster(data, before, after, group_inds=None, labels=None, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
     if group_inds is not None:
         handles = []
         for i, color in zip(np.unique(group_inds), color_wheel):
@@ -460,5 +462,4 @@ def show_psth_raster(data, ax, before, after, group_inds=None, labels=None):
                   bbox_to_anchor=(1.0, .6, .4, .4),
                   mode="expand", borderaxespad=0.)
 
-    return ax
 
