@@ -2,20 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pynwb import TimeSeries
 from ipywidgets import widgets
-from nwbwidgets.base import show_text_fields
 from nwbwidgets.timeseries import traces_widget, show_ts_fields, show_timeseries, plot_traces, show_timeseries_mpl
-from nwbwidgets.utils.timeseries import get_timeseries_tt
 import unittest
 
-
-
-def test_get_timeseries_tt():
-    
-    data = list(range(100, 200, 10))
-    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
-    
-    tt = get_timeseries_tt(ts)
-    np.testing.assert_array_equal(tt,[0., 1., 2., 3., 4., 5., 6., 7., 8., 9.])
 
 
 def test_timeseries_widget():
@@ -31,10 +20,6 @@ class ShowTimeSeriesTestCase(unittest.TestCase):
     def setUp(self):
         data = np.random.rand(160,3)
         self.ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
-        
-    def test_show_text_fields(self):
-        assert isinstance(show_text_fields(self.ts), widgets.Widget)
-        
 
     def test_show_ts_fields(self):
         assert isinstance(show_ts_fields(self.ts), widgets.Widget)
