@@ -12,7 +12,7 @@ from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb import ProcessingModule
 from pynwb.behavior import Position, SpatialSeries
 from nwbwidgets.base import df2grid_sps, df2grid_plot,show_neurodata_base,processing_module, nwb2widget, show_text_fields, \
-fig2widget, vis2widget, show_fields, show_dynamic_table
+fig2widget, vis2widget, show_fields, show_dynamic_table, df2accordion
 import unittest
 import pytest
 
@@ -138,3 +138,22 @@ def test_show_dynamic_table():
                                      table_description='no description')
     show_dynamic_table(DT)
 
+
+def test_df2accordion():
+    df = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+                     columns=['a', 'b', 'c'])
+    def func_fig(data):
+        fig=plt.figure(figsize=(10, 5))
+        plt.plot(data)
+        return fig
+    df2accordion(df=df,by='a',func=func_fig)
+    
+    
+def test_df2accordion_single():
+    df = pd.DataFrame(np.array([1]),
+                     columns=['a'])
+    def func_fig(data):
+        fig=plt.figure(figsize=(10, 5))
+        plt.plot(data)
+        return fig
+    df2accordion(df=df,by='a',func=func_fig)
