@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from dateutil.tz import tzlocal
 from pynwb import NWBFile
-from pynwb.misc import Units, DecompositionSeries
+from pynwb.misc import Units, DecompositionSeries, AnnotationSeries
 from ipywidgets import widgets
-from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces, show_decomposition_series, raster_widget, show_session_raster
+from nwbwidgets.misc import show_psth, psth_widget, show_decomposition_traces, show_decomposition_series, raster_widget, \
+show_session_raster,show_annotations
 import unittest
 
 
@@ -16,6 +17,12 @@ def test_show_psth():
     assert isinstance(show_psth(data=data, colors=colors, ax=ax, before=0, after=1),plt.Subplot)
     
 
+def test_show_annotations():
+    timestamps = np.array([0., 1., 2., 3., 4., 5., 6.])
+    annotations = AnnotationSeries(name='test_annotations',timestamps=timestamps)
+    show_annotations(annotations)
+    
+    
 class ShowPSTHTestCase(unittest.TestCase):
 
     def setUp(self):
