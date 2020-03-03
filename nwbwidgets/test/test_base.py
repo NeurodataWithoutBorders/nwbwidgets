@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from pynwb import TimeSeries
 from datetime import datetime
 from dateutil.tz import tzlocal
 from pynwb import NWBFile
