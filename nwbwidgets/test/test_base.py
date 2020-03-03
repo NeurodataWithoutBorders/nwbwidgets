@@ -12,7 +12,7 @@ from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb import ProcessingModule
 from pynwb.behavior import Position, SpatialSeries
 from nwbwidgets.base import df2grid_sps, df2grid_plot,show_neurodata_base,processing_module, nwb2widget, show_text_fields, \
-fig2widget, vis2widget, show_fields, show_dynamic_table, df2accordion
+fig2widget, vis2widget, show_fields, show_dynamic_table, df2accordion, lazy_show_over_data
 import unittest
 import pytest
 
@@ -157,3 +157,12 @@ def test_df2accordion_single():
         plt.plot(data)
         return fig
     df2accordion(df=df,by='a',func=func_fig)
+    
+    
+def test_lazy_show_over_data():
+    list_ = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    def func_fig(data):
+        fig=plt.figure(figsize=(10, 5))
+        plt.plot(data)
+        return fig
+    assert isinstance(lazy_show_over_data(list_=list_,func_=func_fig),widgets.Widget)
