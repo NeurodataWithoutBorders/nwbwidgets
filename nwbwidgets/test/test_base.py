@@ -46,6 +46,7 @@ def test_show_neurodata_base():
     
     
  class ProcessingModuleTestCase(unittest.TestCase):
+    
     def setUp(self):
         spatial_series = SpatialSeries(name='position',
                                    data=np.linspace(0, 1, 20),
@@ -71,5 +72,3 @@ def test_show_neurodata_base():
     def test_nwb2widget(self):
 
         nwb2widget(self.position, default_neurodata_vis_spec)
-
-
