@@ -8,7 +8,7 @@ from ipywidgets import widgets
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb import ProcessingModule
 from pynwb.behavior import Position, SpatialSeries
-from nwbwidgets.base import df2grid_sps, df2grid_plot,show_neurodata_base,processing_module, nwb2widget
+from nwbwidgets.base import df2grid_sps, df2grid_plot,show_neurodata_base,processing_module, nwb2widget, show_text_fields
 import unittest
 
 
@@ -43,6 +43,12 @@ def test_show_neurodata_base():
                       experimenter='Dr. Pack')
     
     assert isinstance(show_neurodata_base(nwbfile,default_neurodata_vis_spec), widgets.Widget)
+    
+
+def test_show_text_fields(self):
+    data = np.random.rand(160,3)
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+    assert isinstance(show_text_fields(ts), widgets.Widget)
     
     
 class ProcessingModuleTestCase(unittest.TestCase):
