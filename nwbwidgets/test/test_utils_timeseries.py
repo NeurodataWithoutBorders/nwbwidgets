@@ -8,7 +8,16 @@ from nwbwidgets.utils.timeseries import get_timeseries_tt,get_timeseries_maxt,ge
 timeseries_time_to_ind,align_by_times,align_by_trials,align_by_trials,align_by_time_intervals
 import unittest
 
-  
+
+def test_get_timeseries_tt():
+    
+    data = list(range(100, 200, 10))
+    ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
+    
+    tt = get_timeseries_tt(ts)
+    np.testing.assert_array_equal(tt,[0., 1., 2., 3., 4., 5., 6., 7., 8., 9.])
+
+    
 def test_get_timeseries_tt_infstarting_time():
     
     data = list(range(100, 200, 10))
