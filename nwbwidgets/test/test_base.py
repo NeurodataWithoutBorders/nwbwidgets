@@ -45,7 +45,7 @@ def test_show_neurodata_base():
     assert isinstance(show_neurodata_base(nwbfile,default_neurodata_vis_spec), widgets.Widget)
     
 
-def test_show_text_fields(self):
+def test_show_text_fields():
     data = np.random.rand(160,3)
     ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
     assert isinstance(show_text_fields(ts), widgets.Widget)
