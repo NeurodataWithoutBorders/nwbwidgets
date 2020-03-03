@@ -45,7 +45,7 @@ def test_show_neurodata_base():
     assert isinstance(show_neurodata_base(nwbfile,default_neurodata_vis_spec), widgets.Widget)
     
     
- class ProcessingModuleTestCase(unittest.TestCase):
+class ProcessingModuleTestCase(unittest.TestCase):
     
     def setUp(self):
         spatial_series = SpatialSeries(name='position',
