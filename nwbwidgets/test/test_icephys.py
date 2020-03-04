@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pynwb.icephys import IntracellularElectrode
 from pynwb.base import TimeSeries
-from ndx_icephys_meta.icephys import SweepSequences,Sweeps,IntracellularRecordings
+from ndx_icephys_meta.icephys import Sweeps,IntracellularRecordings
 from nwbwidgets.icephys import show_single_sweep_sequence
 from pynwb.device import Device
 
