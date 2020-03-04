@@ -27,7 +27,6 @@ class ShowSpatialSeriesTestCase(unittest.TestCase):
         show_spatial_series(self.spatial_series)
 
         
-        
 class ShowSpatialSeriesTwoDTestCase(unittest.TestCase):
 
     def setUp(self):
