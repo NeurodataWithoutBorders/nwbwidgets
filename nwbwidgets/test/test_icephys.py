@@ -26,6 +26,5 @@ def test_show_single_sweep_sequence():
                       response=response)
     
     sweeps_table = Sweeps(intracellular_recordings_table=icr)
-    node = SweepSequences(sweeps_table=sweeps_table)
-    assert isinstance(show_single_sweep_sequence(node),plt.Figure)
+    assert isinstance(show_single_sweep_sequence(sweeps_table),plt.Figure)
 
