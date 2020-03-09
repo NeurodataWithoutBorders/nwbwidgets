@@ -6,7 +6,7 @@ from pynwb import NWBFile
 import ipywidgets as widgets
 from ndx_grayscalevolume import GrayscaleVolume
 from nwbwidgets.view import default_neurodata_vis_spec
-from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation
+from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence
 from pynwb.device import Device
 from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series
 
@@ -64,6 +64,15 @@ def test_show_two_photon_series():
     img_mask2[0][0] = 2.1
     img_mask2[1][1] = 2.2
     ps.add_roi(pixel_mask=pix_mask2, image_mask=img_mask2, voxel_mask=vox_mask2)
-
+    
+    fl = Fluorescence()
+    mod.add(fl)
+    
+    rt_region = ps.create_roi_table_region('the first of two ROIs', region=[0])
+    
+    data = [0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]
+    timestamps = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    rrs = fl.create_roi_response_series('my_rrs', data, rt_region, unit='lumens', timestamps=timestamps)
+    
     assert isinstance(show_two_photon_series(image_series,default_neurodata_vis_spec),widgets.Widget)
     
