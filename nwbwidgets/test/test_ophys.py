@@ -6,7 +6,7 @@ from pynwb import NWBFile
 import ipywidgets as widgets
 from ndx_grayscalevolume import GrayscaleVolume
 from nwbwidgets.view import default_neurodata_vis_spec
-from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence
+from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence, DfOverF
 from pynwb.device import Device
 from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series
 
@@ -73,6 +73,8 @@ def test_show_two_photon_series():
     data = [0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]
     timestamps = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     rrs = fl.create_roi_response_series('my_rrs', data, rt_region, unit='lumens', timestamps=timestamps)
+    
+    df_over_f = DfOverF(rrs)
     
     assert isinstance(show_two_photon_series(image_series,default_neurodata_vis_spec),widgets.Widget)
     
