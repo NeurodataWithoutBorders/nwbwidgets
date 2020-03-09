@@ -98,6 +98,7 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
         rects = []
         for i_unit in unit_inds:
             intervals = units['obs_intervals'][i_unit]  # TODO: use bisect here
+            intervals = np.array(intervals)
             these_obs_intervals = intervals[(intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])]
             unobs_intervals = np.c_[these_obs_intervals[:-1, 1], these_obs_intervals[1:, 0]]
 
