@@ -7,8 +7,8 @@ from nwbwidgets.utils.dynamictable import infer_categorical_columns
 
 def test_infer_categorical_columns():
     
-    data1 = np.random.rand(9,)
-    data2 = np.random.rand(9,)
+    data1 = np.random.rand(9,)>0.5
+    data2 = np.random.rand(9,)>0.5
     
     vd1 = VectorData('spikes','vector data for creating a DynamicTable',data=data1)
     vd2 = VectorData('LFP','vector data for creating a DynamicTable',data=data2)
