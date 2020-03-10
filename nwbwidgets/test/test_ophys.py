@@ -8,7 +8,8 @@ from ndx_grayscalevolume import GrayscaleVolume
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence, DfOverF
 from pynwb.device import Device
-from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series,show_df_over_f,show_plane_segmentation_2d,plane_segmentation_2d_widget
+from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series,show_df_over_f,show_plane_segmentation_2d,\
+plane_segmentation_2d_widget,show_plane_segmentation_3d
 import unittest
 
 
@@ -90,4 +91,7 @@ class CalciumImagingTestCase(unittest.TestCase):
         
     def test_plane_segmentation_2d_widget(self):
         assert isinstance(plane_segmentation_2d_widget(self.ps),widgets.Widget)
+        
+    def test_show_plane_segmentation_3d(self):
+        assert isinstance(show_plane_segmentation_3d(self.ps),widgets.Widget)
 
