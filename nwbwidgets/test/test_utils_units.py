@@ -43,8 +43,7 @@ class ShowPSTHTestCase(unittest.TestCase):
         ComparetoAT = [np.array([ 2.2,  3.0 , 25.0 , 26.0 ]),np.array([-0.8,  0. , 22. , 23. ]),
                        np.array([-3.8, -3. , 19. , 20. ])]
         
-        AT = align_by_trials(self.nwbfile.units, index=1, start_label='start_time',
-                            stop_label=None, before=20., after=30.)
+        AT = align_by_trials(self.nwbfile.units, index=1, before=20., after=30.)
         
         np.testing.assert_allclose(AT[0],ComparetoAT[0],rtol=1e-02)
         np.testing.assert_allclose(AT[1],ComparetoAT[1],rtol=1e-02)
@@ -54,15 +53,15 @@ class ShowPSTHTestCase(unittest.TestCase):
         time_intervals = TimeIntervals(name='Test Time Interval')
         time_intervals.add_interval(start_time=21.0, stop_time=28.0)
         
-        assert(np.array_equal(align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals, start_label='start_time',
-                            stop_label=None, before=20., after=30., trials_select=None)[0],np.array([-18.8, -18. ,   4. ,   5. ])))
+        assert(np.array_equal(align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals,
+                                                      stop_label=None, before=20., after=30.)[0],np.array([-18.8, -18. ,   4. ,   5. ])))
         
     def test_align_by_time_intervals(self):
         time_intervals = TimeIntervals(name='Test Time Interval')
         time_intervals.add_interval(start_time=21.0, stop_time=28.0)
         
-        assert(np.array_equal(align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals, start_label='start_time',
-                            stop_label=None, before=20., after=30., trials_select=[0])[0],np.array([-18.8, -18. ,   4. ,   5. ])))
+        assert(np.array_equal(align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals, 
+                                                      stop_label=None, before=20., after=30., trials_select=[0])[0],np.array([-18.8, -18. ,   4. ,   5. ])))
         
         
 
