@@ -8,7 +8,7 @@ from ndx_grayscalevolume import GrayscaleVolume
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence, DfOverF
 from pynwb.device import Device
-from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series,show_df_over_f
+from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series,show_df_over_f,show_plane_segmentation_2d
 import unittest
 
 
@@ -47,7 +47,7 @@ class CalciumImagingTestCase(unittest.TestCase):
         mod = nwbfile.create_processing_module('ophys', 'contains optical physiology processed data')
         img_seg = ImageSegmentation()
         mod.add(img_seg)
-        ps = img_seg.create_plane_segmentation('output from segmenting my favorite imaging plane',
+        self.ps = img_seg.create_plane_segmentation('output from segmenting my favorite imaging plane',
                                                imaging_plane, 'my_planeseg', self.image_series)
 
 
@@ -58,19 +58,19 @@ class CalciumImagingTestCase(unittest.TestCase):
         img_mask1[0][0] = 1.1
         img_mask1[1][1] = 1.2
         img_mask1[2][2] = 1.3
-        ps.add_roi(pixel_mask=pix_mask1, image_mask=img_mask1, voxel_mask=vox_mask1)
+        self.ps.add_roi(pixel_mask=pix_mask1, image_mask=img_mask1, voxel_mask=vox_mask1)
 
         pix_mask2 = [(0, 0, 2.1), (1, 1, 2.2)]
         vox_mask2 = [(0, 0, 0, 2.1), (1, 1, 1, 2.2)]
         img_mask2 = [[0.0 for x in range(w)] for y in range(h)]
         img_mask2[0][0] = 2.1
         img_mask2[1][1] = 2.2
-        ps.add_roi(pixel_mask=pix_mask2, image_mask=img_mask2, voxel_mask=vox_mask2)
+        self.ps.add_roi(pixel_mask=pix_mask2, image_mask=img_mask2, voxel_mask=vox_mask2)
 
         fl = Fluorescence()
         mod.add(fl)
 
-        rt_region = ps.create_roi_table_region('the first of two ROIs', region=[0])
+        rt_region = self.ps.create_roi_table_region('the first of two ROIs', region=[0])
 
         data = np.array([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]).reshape(10,1)
         timestamps = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -83,4 +83,8 @@ class CalciumImagingTestCase(unittest.TestCase):
         
     def test_show_df_over_f(self):
         assert isinstance(show_df_over_f(self.df_over_f,default_neurodata_vis_spec),widgets.Widget)
+        
+    def test_show_plane_segmentation_2d(self):
+        color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
+        assert isinstance(show_plane_segmentation_2d(self.ps,color_by='pixel_mask',color_wheel=color_wheel),plt.Figure)
 
