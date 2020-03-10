@@ -9,7 +9,7 @@ from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence, DfOverF
 from pynwb.device import Device
 from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series,show_df_over_f,show_plane_segmentation_2d,\
-plane_segmentation_2d_widget,show_plane_segmentation_3d
+plane_segmentation_2d_widget,show_plane_segmentation_3d,show_plane_segmentation,show_image_segmentation
 import unittest
 
 
@@ -46,9 +46,9 @@ class CalciumImagingTestCase(unittest.TestCase):
 
 
         mod = nwbfile.create_processing_module('ophys', 'contains optical physiology processed data')
-        img_seg = ImageSegmentation()
-        mod.add(img_seg)
-        self.ps = img_seg.create_plane_segmentation('output from segmenting my favorite imaging plane',
+        self.img_seg = ImageSegmentation()
+        mod.add(self.img_seg)
+        self.ps = self.img_seg.create_plane_segmentation('output from segmenting my favorite imaging plane',
                                                imaging_plane, 'my_planeseg', self.image_series)
 
 
@@ -94,4 +94,10 @@ class CalciumImagingTestCase(unittest.TestCase):
         
     def test_show_plane_segmentation_3d(self):
         assert isinstance(show_plane_segmentation_3d(self.ps),widgets.Widget)
+        
+    def test_show_plane_segmentation(self):
+        assert isinstance(show_plane_segmentation(self.ps,default_neurodata_vis_spec),widgets.Widget)
+        
+    def test_show_image_segmentation(self):
+        assert isinstance(show_image_segmentation(self.img_seg,default_neurodata_vis_spec),widgets.Widget)
 
