@@ -65,17 +65,16 @@ def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
 
     nrois = len(plane_seg)
 
-    dims = np.array([max(max(plane_seg['voxel_mask'][i][dim]) for i in range(nrois))
-                     for dim in ['x', 'y', 'z']]).astype('int') + 1
+    dims = dims = np.array([max(max([plane_seg['voxel_mask'][i][j][dim] for j in range(len(plane_seg['voxel_mask'][i]))]) for i in range(nrois)) for dim in [0, 1, 2]]).astype('int') + 1
     fig = p3.figure()
     for icolor, color in enumerate(color_wheel):
         vol = np.zeros(dims)
         sel = np.arange(icolor, nrois, len(color_wheel))
         for isel in sel:
             dat = plane_seg['voxel_mask'][isel]
-            vol[tuple(dat['x'].astype('int')),
-                tuple(dat['y'].astype('int')),
-                tuple(dat['z'].astype('int'))] = 1
+            vol[tuple(np.array([dat[i][0] for i in range(len(dat))]).astype('int')),
+                tuple(np.array([dat[i][1] for i in range(len(dat))]).astype('int')),
+                tuple(np.array([dat[i][2] for i in range(len(dat))]).astype('int'))] = 1
         p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
     return fig
 
