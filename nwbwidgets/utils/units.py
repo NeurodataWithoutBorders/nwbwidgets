@@ -57,7 +57,7 @@ def get_max_spike_time(units: pynwb.misc.Units):
 
     """
     st = units['spike_times']
-    inds = list(st.data[:] - 1)
+    inds = [x - 1 for x in st.data[:]]
     last_spikes = [st.target.data[i] for i in inds]
     return np.max(last_spikes)
 
@@ -116,11 +116,11 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
         np.array(shape=(n_trials, n_time, ...))
     """
     if stop_label is None:
-        stop_label = 'start_time'
+        stop_label = start_label
     if trials_select is None:
         starts = np.array(intervals[start_label][:]) - before
         stops = np.array(intervals[stop_label][:]) + after
     else:
-        starts = np.array(intervals[start_label][trials_select]) - before
-        stops = np.array(intervals[stop_label][trials_select]) + after
+        starts = np.array(intervals[start_label][:])[trials_select] - before
+        stops = np.array(intervals[stop_label][:])[trials_select] + after
     return [x - before for x in align_by_times(units, index, starts, stops)]

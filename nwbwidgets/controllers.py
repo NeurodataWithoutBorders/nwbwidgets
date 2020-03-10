@@ -1,4 +1,5 @@
 from ipywidgets import widgets, Layout
+import numpy as np
 
 
 def move_range_slider_up(slider):
@@ -172,3 +173,14 @@ def int_controller(max, min=0, value=0, description='unit', orientation='horizon
 
     return controller
 
+
+def make_trial_event_controller(trials):
+    trial_events = ['start_time']
+    if not np.all(np.isnan(trials['stop_time'].data)):
+        trial_events.append('stop_time')
+    trial_events += [x.name for x in trials.columns if
+                     (('_time' in x.name) and (x.name not in ('start_time', 'stop_time')))]
+    trial_event_controller = widgets.Dropdown(options=trial_events,
+                                              value='start_time',
+                                              description='align to: ')
+    return trial_event_controller

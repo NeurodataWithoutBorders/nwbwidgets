@@ -1,10 +1,11 @@
 import ipywidgets as widgets
-from nwbwidgets.controllers import float_range_controller,move_slider_down,move_slider_up,move_int_slider_down,move_int_slider_up,move_range_slider_down,move_range_slider_up
+from nwbwidgets.controllers import float_range_controller, move_int_slider_down, move_int_slider_up, \
+    move_range_slider_down, move_range_slider_up
 import unittest
 
-def test_float_range_controller():
 
-    assert isinstance(float_range_controller(tmin=1,tmax=26),widgets.Widget)
+def test_float_range_controller():
+    assert isinstance(float_range_controller(tmin=1, tmax=26), widgets.Widget)
 
     
 class MoveSliderTestCase(unittest.TestCase):
@@ -49,21 +50,22 @@ class RangeSliderTestCase(unittest.TestCase):
 
     def setUp(self):
         self.slider = widgets.IntRangeSlider(
-        value=[5, 7],
-        min=0,
-        max=10,
-        step=1,
-        description='Test:',
-        disabled=False,
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True,
-        readout_format='d')
+            value=[5, 7],
+            min=0,
+            max=10,
+            step=1,
+            description='Test:',
+            disabled=False,
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True,
+            readout_format='d')
         
     def test_move_range_slider_down_bigger(self):
         self.slider.value = (4, 6)
         move_range_slider_down(self.slider)
         assert(self.slider.value == (2, 4))
+
     def test_move_range_slider_down_smaller(self):
         self.slider.value = (2, 6)
         move_range_slider_down(self.slider)
@@ -73,6 +75,7 @@ class RangeSliderTestCase(unittest.TestCase):
         self.slider.value = (5, 7)
         move_range_slider_up(self.slider)
         assert(self.slider.value == (7, 9))
+
     def test_move_range_slider_up_bigger(self):
         self.slider.value = (5, 8)
         move_range_slider_up(self.slider)
