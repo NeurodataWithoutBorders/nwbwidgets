@@ -1,6 +1,6 @@
 import ipywidgets as widgets
 from nwbwidgets.controllers import float_range_controller, move_int_slider_down, move_int_slider_up, \
-    move_range_slider_down, move_range_slider_up
+    move_range_slider_down, move_range_slider_up, move_slider_down, move_slider_up
 import unittest
 
 
