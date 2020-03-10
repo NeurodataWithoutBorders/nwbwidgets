@@ -267,15 +267,13 @@ def df2grid_plot(df, row, col, func, subplot_spec=None, fig=None) -> plt.Figure:
     return fig
 
 
-def df2grid_sps(df: pd.DataFrame, row, col, subplot_spec=None, fig=None):
+def grid_sps(shape, subplot_spec=None, fig=None):
     """
     Create subplot_spec from pandas.DataFrame
 
     Parameters
     ----------
-    df: pd.DataFrame
-    row: str
-    col: str
+    shape: tuple
     subplot_spec: GridSpec, optional
     fig: matplotlib.pyplot.Figure, optional
 
@@ -286,14 +284,12 @@ def df2grid_sps(df: pd.DataFrame, row, col, subplot_spec=None, fig=None):
 
     if fig is None:
         fig = plt.gcf()
-    nrows = df[row].nunique()
-    ncols = df[col].nunique()
 
     if subplot_spec is not None:
-        gs = GridSpecFromSubplotSpec(nrows, ncols, subplot_spec=subplot_spec)
+        gs = GridSpecFromSubplotSpec(shape[0], shape[1], subplot_spec=subplot_spec)
         big_ax = plt.Subplot(fig, subplot_spec)
     else:
-        gs = GridSpec(nrows, ncols, figure=fig)
+        gs = GridSpec(shape[0], shape[1], figure=fig)
         big_ax = plt.Subplot(fig, GridSpec(1, 1)[0])
     fig.add_subplot(big_ax)
 
@@ -301,8 +297,6 @@ def df2grid_sps(df: pd.DataFrame, row, col, subplot_spec=None, fig=None):
     big_ax.set_xticks([])
     big_ax.set_yticks([])
     big_ax.patch.set_facecolor('none')
-    big_ax.set_xlabel(col, labelpad=30)
-    big_ax.set_ylabel(row, labelpad=30)
 
     return fig, big_ax, gs
 
