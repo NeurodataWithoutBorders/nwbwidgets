@@ -110,7 +110,7 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
         else:
             raise ValueError('specified color_by parameter, {}, not in plane_seg object'.format(color_by))
     data = plane_seg['image_mask'].data
-    nUnits = data.shape[0]
+    nUnits = len(data)
     if fig is None:
         fig = go.FigureWidget()
     else:
@@ -124,7 +124,7 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
             show_leg = False
         kwargs = dict()
         if color_by:
-            c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
+            c = color_wheel[np.where([cats[j]==plane_seg[color_by][i] for j in range(nUnits)])[0][0]]
             kwargs.update(line_color=c)
         # hover text
         hovertext = '<b>roi_id</b>: ' + str(plane_seg.id[i])
