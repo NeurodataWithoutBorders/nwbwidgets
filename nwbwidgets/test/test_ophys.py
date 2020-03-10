@@ -8,7 +8,7 @@ from ndx_grayscalevolume import GrayscaleVolume
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence, DfOverF
 from pynwb.device import Device
-from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series,show_df_over_f,show_plane_segmentation_2d
+from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series,show_df_over_f,show_plane_segmentation_2d,plane_segmentation_2d_widget
 import unittest
 
 
@@ -87,4 +87,7 @@ class CalciumImagingTestCase(unittest.TestCase):
     def test_show_plane_segmentation_2d(self):
         color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
         assert isinstance(show_plane_segmentation_2d(self.ps,color_by='pixel_mask',color_wheel=color_wheel),widgets.Widget)
+        
+    def test_plane_segmentation_2d_widget():
+        assert isinstance(plane_segmentation_2d_widget(self.ps),widgets.Widget)
 
