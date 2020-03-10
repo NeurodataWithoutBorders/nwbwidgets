@@ -7,7 +7,7 @@ from pynwb import NWBFile
 from pynwb.misc import DecompositionSeries, AnnotationSeries
 from ipywidgets import widgets
 from nwbwidgets.misc import show_psth_raster, psth_widget, show_decomposition_traces, show_decomposition_series, raster_widget, \
-    show_session_raster, show_annotations
+    show_session_raster, show_annotations, raster_grid_widget
 import unittest
 
 
@@ -60,6 +60,9 @@ class ShowPSTHTestCase(unittest.TestCase):
 
     def test_show_session_raster(self):
         assert isinstance(show_session_raster(self.nwbfile.units),plt.Figure)
+        
+    def test_raster_grid_widget(self):
+        assert isinstance(raster_grid_widget(self.nwbfile.units),widgets.Widget)
 
     
 class ShowDecompositionTestCase(unittest.TestCase):
