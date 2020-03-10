@@ -4,18 +4,16 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from dateutil.tz import tzlocal
 from pynwb import NWBFile
-from pynwb.misc import Units, DecompositionSeries, AnnotationSeries
+from pynwb.misc import DecompositionSeries, AnnotationSeries
 from ipywidgets import widgets
-from nwbwidgets.misc import trials_psth, psth_widget, show_decomposition_traces, show_decomposition_series, raster_widget, \
-show_session_raster,show_annotations
+from nwbwidgets.misc import show_psth_raster, psth_widget, show_decomposition_traces, show_decomposition_series, raster_widget, \
+    show_session_raster, show_annotations
 import unittest
 
 
 def test_show_psth():
     data = np.random.random([6, 50])
-    colors = ['C{}'.format(i) for i in range(6)]
-    fig, ax = plt.subplots()
-    assert isinstance(show_psth(data=data, colors=colors, ax=ax, before=0, after=1),plt.Subplot)
+    assert isinstance(show_psth_raster(data=data, before=0, after=1), plt.Subplot)
 
 
 def test_show_annotations():

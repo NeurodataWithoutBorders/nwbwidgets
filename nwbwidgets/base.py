@@ -9,7 +9,6 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 from typing import Union
 import pandas as pd
-from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -230,74 +229,5 @@ def df2accordion(df: pd.DataFrame, by, func, style: GroupingWidget = widgets.Acc
     else:
         labels, idfs = zip(*df.groupby(by))
         return lazy_show_over_data(idfs, func, labels=labels, style=style)
-
-
-def df2grid_plot(df, row, col, func, subplot_spec=None, fig=None) -> plt.Figure:
-    """
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-    row: str
-    col: str
-    func: function
-    subplot_spec: matplotlib.gridspec.GridSpec
-    fig: matplotlib.Figure
-
-    Returns
-    -------
-    fig
-        matplotlib.Figure
-
-    """
-
-    fig, big_ax, gs = df2grid_sps(df, row, col, subplot_spec=subplot_spec, fig=fig)
-
-    axs = []
-    for sps, ((r, c), idf) in zip(gs, df.groupby([row, col])):
-        ax = plt.Subplot(fig, sps)
-        fig.add_subplot(ax)
-        axs.append(ax)
-        if ax.is_last_row():
-            ax.set_xlabel(c)
-        if ax.is_first_col():
-            ax.set_ylabel(r)
-        func(idf, ax=ax)
-
-    return fig
-
-
-def grid_sps(shape, subplot_spec=None, fig=None):
-    """
-    Create subplot_spec from pandas.DataFrame
-
-    Parameters
-    ----------
-    shape: tuple
-    subplot_spec: GridSpec, optional
-    fig: matplotlib.pyplot.Figure, optional
-
-    Returns
-    -------
-
-    """
-
-    if fig is None:
-        fig = plt.gcf()
-
-    if subplot_spec is not None:
-        gs = GridSpecFromSubplotSpec(shape[0], shape[1], subplot_spec=subplot_spec)
-        big_ax = plt.Subplot(fig, subplot_spec)
-    else:
-        gs = GridSpec(shape[0], shape[1], figure=fig)
-        big_ax = plt.Subplot(fig, GridSpec(1, 1)[0])
-    fig.add_subplot(big_ax)
-
-    [sp.set_visible(False) for sp in big_ax.spines.values()]
-    big_ax.set_xticks([])
-    big_ax.set_yticks([])
-    big_ax.patch.set_facecolor('none')
-
-    return fig, big_ax, gs
 
 

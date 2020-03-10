@@ -11,29 +11,10 @@ from pynwb.file import Subject
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb import ProcessingModule
 from pynwb.behavior import Position, SpatialSeries
-from nwbwidgets.base import df2grid_sps, df2grid_plot,show_neurodata_base,processing_module, nwb2widget, show_text_fields, \
+from nwbwidgets.base import show_neurodata_base,processing_module, nwb2widget, show_text_fields, \
 fig2widget, vis2widget, show_fields, show_dynamic_table, df2accordion, lazy_show_over_data
 import unittest
 import pytest
-
-
-def test_df2grid_sps():
-    df = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
-                     columns=['a', 'b', 'c'])
-    fig, big_ax, gs = df2grid_sps(df,'a','b')
-    assert isinstance(fig,plt.Figure)
-    assert isinstance(big_ax,plt.Subplot)
-    assert isinstance(gs,plt.GridSpec)
-
-  
-def test_df2grid_plot():
-    df = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
-                     columns=['a', 'b', 'c'])
-    def func(df,ax):
-      return 1
-    
-    fig = df2grid_plot(df,'a','b',func)
-    assert isinstance(fig,plt.Figure)
     
     
 def test_show_neurodata_base():
