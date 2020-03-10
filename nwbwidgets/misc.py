@@ -1,16 +1,19 @@
+from typing import Iterable
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pynwb
-from typing import Iterable
-from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
-from ipywidgets import widgets, fixed, Layout
-from matplotlib import cm
-from .controllers import float_range_controller, int_range_controller, int_controller
-from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals
-from matplotlib.patches import Rectangle
-from matplotlib.collections import PatchCollection
-from scipy.stats import gaussian_kde
 import scipy
+from ipywidgets import widgets, fixed, Layout
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
+from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
+from scipy.stats import gaussian_kde
+
+from .controllers import float_range_controller, int_range_controller, make_trial_event_controller, int_controller
+from .utils.dynamictable import get_group_inds_and_order,infer_categorical_columns
+from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals
+from .utils.mpl import create_big_ax
 
 color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -22,9 +25,8 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     return fig
 
 
-def show_session_raster(units: Units, time_window=None, units_window=None, cmap_name='rainbow',
-                        show_obs_intervals=True, color_by='id', order_by1=None, order_by2=None,
-                        show_legend=True):
+def show_session_raster(units: Units, time_window=None, units_window=None, show_obs_intervals=True,
+                        group_by=None, order_by=None, show_legend=True):
     """
 
     Parameters
@@ -32,18 +34,9 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     units: pynwb.misc.Units
     time_window: [int, int]
     units_window: [int, int]
-    cmap_name: str
     show_obs_intervals: bool
-    order_by1: str, optional
-        None: order by id
-        str: order by the values of this column of the Units table
-    order_by2: str, optional
-        None: order by id
-        str: order by the values of this column of the Units table
-    color_by: str, optional
-        None: all ticks are black
-        'id': color by id of unit (default)
-        other str: color by value in units table
+    group_by: str, optional
+    order_by: str, optional
     show_legend: bool
         default = True
         Does not show legend if color_by is None or 'id'.
@@ -59,43 +52,17 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
     if units_window is None:
         units_window = [0, len(units['spike_times'].data) - 1]
 
-    num_units = units_window[1] - units_window[0] + 1
     unit_inds = np.arange(units_window[0], units_window[1] + 1)
 
-    if order_by1 is not None:
-        if order_by2 is None:
-            order = np.argsort(units[order_by1][unit_inds.tolist()])
-        else:
-            order = np.lexsort([units[i_order_by][unit_inds.tolist()]
-                                for i_order_by in (order_by1, order_by2)])
-    else:
-        order = unit_inds
+    order, group_inds, labels = get_group_inds_and_order(units, rows=unit_inds,
+                                                         group_by=group_by, order_by=order_by)
 
-    reduced_spike_times = [get_spike_times(units, unit, time_window) for unit in order]
-
-    # create colormap
-    cmap = cm.get_cmap(cmap_name, num_units)
-    if color_by is None:
-        colors = 'k'
-    else:
-        if color_by == 'id':
-            cvals = unit_inds
-        else:
-            vals = [units[color_by][x] for x in order]
-            if isinstance(vals[0], str):
-                labels, val_index, cvals = np.unique(vals, return_index=True, return_inverse=True)
-            else:
-                cvals = vals
-                labels, val_index = np.unique(vals, return_index=True)
-        # normalize cvals
-        cvals -= min(cvals)
-        cvals = cvals / max(cvals)
-        colors = cmap(cvals)
+    data = [get_spike_times(units, unit, time_window) for unit in unit_inds[order]]
 
     # plot spike times for each unit
     fig, ax = plt.subplots(1, 1)
     ax.figure.set_size_inches(12, 6)
-    ax.eventplot(reduced_spike_times, color=colors, lineoffsets=unit_inds)
+    plot_grouped_events(data, time_window, group_inds=group_inds, labels=labels, show_legend=show_legend, ax=ax)
 
     # add observation intervals
     if show_obs_intervals and 'obs_intervals' in units:
@@ -121,16 +88,12 @@ def show_session_raster(units: Units, time_window=None, units_window=None, cmap_
         pc = PatchCollection(rects, color=[0.85, 0.85, 0.85])
         ax.add_collection(pc)
 
-    ax.set_xlabel('Time (seconds)')
-    ax.set_ylabel('Unit #')
+    ax.set_xlabel('time (s)')
+    ax.set_ylabel('unit #')
     ax.set_xlim(time_window)
     ax.set_ylim(np.array(units_window) + [-.5, .5])
     if units_window[1] - units_window[0] <= 30:
         ax.set_yticks(range(units_window[0], units_window[1] + 1))
-
-    if color_by not in (None, 'id') and show_legend:
-        ax.legend(handles=[ax.collections[x] for x in val_index],
-                  labels=labels.tolist(), title=color_by)
 
     return fig
 
@@ -153,26 +116,25 @@ def raster_widget(units: Units, unit_controller=None, time_window_controller=Non
                       if not isinstance(units[x][0], Iterable) or
                       isinstance(units[x][0], str)]
 
-    features = [x for x in candidate_cols if len(robust_unique(units[x][:])) > 1]
-    color_controller = widgets.Dropdown(options=[None] + features, description='color by',
+    groups = infer_categorical_columns(units)
+    group_controller = widgets.Dropdown(options=[None] + list(groups), description='color by',
                                         layout=Layout(width='90%'))
-    order_by_controller1 = widgets.Dropdown(options=[None] + features, description='order by',
-                                            layout=Layout(width='90%'))
-    order_by_controller2 = widgets.Dropdown(options=[None] + features, description='then order by',
-                                            layout=Layout(width='90%'))
+
+    features = [x for x in candidate_cols if len(robust_unique(units[x][:])) > 1]
+    order_by_controller = widgets.Dropdown(options=[None] + features, description='order by',
+                                           layout=Layout(width='90%'))
 
     controls = {
         'units': fixed(units),
         'time_window': time_window_controller.children[0],
         'units_window': unit_controller.children[0],
-        'color_by': color_controller,
-        'order_by1': order_by_controller1,
-        'order_by2': order_by_controller2
+        'group_by': group_controller,
+        'order_by': order_by_controller,
     }
 
     out_fig = widgets.interactive_output(show_session_raster, controls)
     color_and_order_box = widgets.VBox(
-        children=(color_controller, order_by_controller1, order_by_controller2),
+        children=(group_controller, order_by_controller),
         layout=Layout(width='250px'))
     control_widgets = widgets.HBox(children=(time_window_controller, unit_controller, color_and_order_box))
     vbox = widgets.VBox(children=[control_widgets, out_fig])
@@ -263,7 +225,7 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 def psth_widget(units: Units, unit_controller=None, after_slider=None, before_slider=None,
                 trial_event_controller=None, trial_order_controller=None,
-                trial_color_controller=None, sigma_in_secs=.05, ntt=1000):
+                trial_group_controller=None, sigma_in_secs=.05, ntt=1000):
     """
 
     Parameters
@@ -274,7 +236,7 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
     before_slider
     trial_event_controller
     trial_order_controller
-    trial_color_controller
+    trial_group_controller
     sigma_in_secs: float
     ntt: int
         Number of timepoints to use for smoothed PSTH
@@ -298,15 +260,7 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
         control_widgets.children = list(control_widgets.children) + [unit_controller]
 
     if trial_event_controller is None:
-        trial_events = ['start_time']
-        if not np.all(np.isnan(trials['stop_time'].data)):
-            trial_events.append('stop_time')
-        trial_events += [x.name for x in trials.columns if
-                         (('_time' in x.name) and (x.name not in ('start_time', 'stop_time')))]
-        trial_event_controller = widgets.Dropdown(options=trial_events,
-                                                  value='start_time',
-                                                  description='align to: ')
-
+        trial_event_controller = make_trial_event_controller(trials)
         control_widgets.children = list(control_widgets.children) + [trial_event_controller]
 
     if trial_order_controller is None:
@@ -316,12 +270,11 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
                                                   description='order by: ')
         control_widgets.children = list(control_widgets.children) + [trial_order_controller]
 
-    if trial_color_controller is None:
+    if trial_group_controller is None:
         trials = units.get_ancestor('NWBFile').trials
-        trial_color_controller = widgets.Dropdown(options=[''] + list(trials.colnames),
-                                                  value='',
-                                                  description='color by: ')
-        control_widgets.children = list(control_widgets.children) + [trial_color_controller]
+        trial_group_controller = widgets.Dropdown(options=[None] + list(trials.colnames),
+                                                  description='group by')
+        control_widgets.children = list(control_widgets.children) + [trial_group_controller]
 
     if before_slider is None:
         before_slider = widgets.FloatSlider(.5, min=0, max=5., description='before (s)', continuous_update=False)
@@ -340,7 +293,7 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
         'before': before_slider,
         'start_label': trial_event_controller,
         'order_by': trial_order_controller,
-        'color_by': trial_color_controller
+        'group_by': trial_group_controller
     }
 
     out_fig = widgets.interactive_output(trials_psth, controls)
@@ -348,10 +301,9 @@ def psth_widget(units: Units, unit_controller=None, after_slider=None, before_sl
     return vbox
 
 
-def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', before=0., after=1., order_by='start_time',
-                color_by=None, trials_select=None,
-                sigma_in_secs=0.05,
-                ntt=1000):
+def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
+                before=0., after=1., order_by=None, group_by=None, trials_select=None,
+                sigma_in_secs=0.05, ntt=1000):
     """
 
     Parameters
@@ -362,7 +314,7 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', befo
     before
     after
     order_by
-    color_by
+    group_by
     trials_select
 
     Returns
@@ -371,64 +323,50 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time', befo
     """
     trials = units.get_ancestor('NWBFile').trials
 
-    data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after, trials_select)
+    order, group_inds, labels = get_group_inds_and_order(trials, trials_select, group_by, order_by)
+
+    data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after, order)
     # expanded data so that gaussian smoother uses larger window than is viewed
     expanded_data = align_by_time_intervals(units, index, trials, start_label, start_label,
                                             before + sigma_in_secs * 4,
                                             after + sigma_in_secs * 4,
-                                            trials_select)
-
-    if trials_select is None:
-        order = np.argsort(trials[order_by].data[:])
-    else:
-        order = np.argsort(trials[order_by].data[trials_select])
-
-    data = np.array(data)[order]
-    expanded_data = np.array(expanded_data)[order]
-
-    labels = None
-    group_inds = None
-    if color_by:
-        coldata = np.array(trials[color_by].data)[order]
-        if len(np.unique(coldata)) < 10:  # is categorical
-            labels, group_inds = np.unique(coldata, return_inverse=True)
+                                            order)
 
     fig, axs = plt.subplots(2, 1)
-    ax = show_psth_raster(data, axs[0], before, after, group_inds, labels)
+    show_psth_raster(data, before, after, group_inds, labels, ax=axs[0])
     show_psth_smoothed(expanded_data, axs[1], before, after, group_inds,
                        sigma_in_secs=sigma_in_secs, ntt=ntt)
 
-    ax.set_title('PSTH for unit {}'.format(index))
-    ax.set_xticks([])
-    ax.set_xlabel('')
+    axs[0].set_title('PSTH for unit {}'.format(index))
+    axs[0].set_xticks([])
+    axs[0].set_xlabel('')
     return fig
 
 
-def show_psth_smoothed(data, ax, before, after, cvals=None, sigma_in_secs=.05, ntt=1000):
+def compute_smoothed_firing_rate(spike_times, tt, sigma_in_secs):
+    binned_spikes = np.zeros_like(tt)
+    binned_spikes[np.searchsorted(tt, spike_times)] += 1
+    dt = np.diff(tt[:2])[0]
+    sigma_in_samps = sigma_in_secs / dt
+    smooth_fr = scipy.ndimage.gaussian_filter1d(binned_spikes, sigma_in_samps) / dt
+    return smooth_fr
+
+
+def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000):
 
     all_data = np.hstack(data)
     tt = np.linspace(min(all_data), max(all_data), ntt)
-    smoothed = []
-    for x in data:
-        sig = np.zeros_like(tt)
-        sig[np.searchsorted(tt, x)] += 1
-        dt = np.diff(tt[:2])[0]
-        sigma = sigma_in_secs / dt
-        xx = scipy.ndimage.gaussian_filter1d(sig, sigma) / dt
-        smoothed.append(xx)
+    smoothed = np.array([compute_smoothed_firing_rate(x, tt, sigma_in_secs) for x in data])
 
-    smoothed = np.array(smoothed)
-
-    if cvals is None:
-        cvals = np.zeros((len(smoothed)))
-    groups, group_inds = np.unique(cvals, return_inverse=True)
+    if group_inds is None:
+        group_inds = np.zeros((len(smoothed)))
     group_stats = []
-    for group in range(len(groups)):
+    for group in range(len(np.unique(group_inds))):
         this_mean = np.mean(smoothed[group_inds == group], axis=0)
         err = scipy.stats.sem(smoothed[group_inds == group], axis=0)
         group_stats.append({'mean': this_mean,
-                            'lower': this_mean - err,
-                            'upper': this_mean + err})
+                            'lower': this_mean - 2 * err,
+                            'upper': this_mean + 2 * err})
     for stats, color in zip(group_stats, color_wheel):
         ax.plot(tt, stats['mean'], color=color)
         ax.fill_between(tt, stats['lower'], stats['upper'], alpha=.2, color=color)
@@ -437,29 +375,128 @@ def show_psth_smoothed(data, ax, before, after, cvals=None, sigma_in_secs=.05, n
     ax.set_xlabel('time (s)')
 
 
-def show_psth_raster(data, before, after, group_inds=None, labels=None, ax=None):
+def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=None, labels=None,
+                        show_legend=True):
+    data = np.asarray(data)
     if ax is None:
         fig, ax = plt.subplots()
     if group_inds is not None:
         handles = []
-        for i, color in zip(np.unique(group_inds), color_wheel):
+        for i, color in zip(np.unique(group_inds), colors):
             lineoffsets = np.where(group_inds == i)[0]
             event_collection = ax.eventplot(data[group_inds == i],
                                             orientation='horizontal',
                                             lineoffsets=lineoffsets,
                                             color=color)
             handles.append(event_collection[0])
+        if show_legend:
+            ax.legend(handles=handles, labels=list(labels),
+                      bbox_to_anchor=(1.0, .6, .4, .4),
+                      mode="expand", borderaxespad=0.)
     else:
         ax.eventplot(data, orientation='horizontal', color='k')
-    ax.set_xlim((-before, after))
-    ax.set_ylim(-.5, len(data)-.5)
+
+    ax.set_xlim(window)
+    ax.set_ylim(-.5, len(data) - .5)
     ax.set_xlabel('time (s)')
+
+    return ax
+
+
+def show_psth_raster(data, before, after, group_inds=None, labels=None, ax=None, show_legend=True):
+    ax = plot_grouped_events(data, [-before, after], group_inds, color_wheel, ax, labels,
+                             show_legend=show_legend)
     ax.set_ylabel('trials')
     ax.axvline(color=[0.7, 0.7, 0.7])
+    return ax
 
-    if labels is not None:
-        ax.legend(handles=handles, labels=list(labels),
-                  bbox_to_anchor=(1.0, .6, .4, .4),
-                  mode="expand", borderaxespad=0.)
+
+def raster_grid(units, trials, index, before, after, rows_label=None, cols_label=None, align_by='start_time'):
+    if trials is None:
+        raise ValueError('trials must exist (trials cannot be None)')
+    if rows_label is not None:
+        row_vals = np.unique(trials[rows_label][:])
+    else:
+        row_vals = [None]
+    nrows = len(row_vals)
+
+    if cols_label is not None:
+        col_vals = np.unique(trials[cols_label][:])
+    else:
+        col_vals = [None]
+    ncols = len(col_vals)
+
+    fig, axs = plt.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False)
+    big_ax = create_big_ax(fig)
+    for i, row in enumerate(row_vals):
+        for j, col in enumerate(col_vals):
+            ax = axs[i, j]
+            trials_select = np.ones((len(trials),)).astype('bool')
+            if row is not None:
+                trials_select &= np.array(trials[rows_label][:]) == row
+            if col is not None:
+                trials_select &= np.array(trials[cols_label][:]) == col
+            trials_select = np.where(trials_select)[0]
+            data = align_by_time_intervals(units, index, trials, align_by, align_by,
+                                           before, after, trials_select)
+            show_psth_raster(data, before, after, ax=ax)
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+            if ax.is_first_col():
+                ax.set_ylabel(row)
+            if ax.is_last_row():
+                ax.set_xlabel(col)
+
+    big_ax.set_xlabel(cols_label, labelpad=50)
+    big_ax.set_ylabel(rows_label, labelpad=60)
+
+    return fig
+
+
+def raster_grid_widget(units: Units):
+
+    trials = units.get_ancestor('NWBFile').trials
+    if trials is None:
+        return widgets.HTML('No trials present')
+
+    groups = infer_categorical_columns(trials)
+
+    control_widgets = widgets.VBox(children=[])
+
+    rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows: ',
+                                       layout=Layout(width='95%'))
+    cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols: ',
+                                       layout=Layout(width='95%'))
+    control_widgets.children = list(control_widgets.children) + [rows_controller, cols_controller]
+
+    trial_event_controller = make_trial_event_controller(trials)
+    control_widgets.children = list(control_widgets.children) + [trial_event_controller]
+
+    unit_controller = int_controller(len(units['spike_times'].data) - 1)
+    control_widgets.children = list(control_widgets.children) + [unit_controller]
+
+    before_slider = widgets.FloatSlider(.5, min=0, max=5., description='before (s)', continuous_update=False)
+    control_widgets.children = list(control_widgets.children) + [before_slider]
+
+    after_slider = widgets.FloatSlider(2., min=0, max=5., description='after (s)', continuous_update=False)
+    control_widgets.children = list(control_widgets.children) + [after_slider]
+
+    controls = {
+        'units': fixed(units),
+        'trials': fixed(trials),
+        'index': unit_controller.children[0],
+        'after': after_slider,
+        'before': before_slider,
+        'align_by': trial_event_controller,
+        'rows_label': rows_controller,
+        'cols_label': cols_controller
+    }
+
+    out_fig = widgets.interactive_output(raster_grid, controls)
+    vbox = widgets.VBox(children=[control_widgets, out_fig])
+
+    return vbox
+
+
 
 
