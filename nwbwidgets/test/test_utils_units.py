@@ -45,9 +45,7 @@ class ShowPSTHTestCase(unittest.TestCase):
         
         AT = align_by_trials(self.nwbfile.units, index=1, before=20., after=30.)
         
-        np.testing.assert_allclose(AT[0],ComparetoAT[0],rtol=1e-02)
-        np.testing.assert_allclose(AT[1],ComparetoAT[1],rtol=1e-02)
-        np.testing.assert_allclose(AT[2],ComparetoAT[2],rtol=1e-02)
+        np.testing.assert_allclose(AT, ComparetoAT, rtol=1e-02)
         
     def test_align_by_time_intervals_Nonetrials_select(self):
         time_intervals = TimeIntervals(name='Test Time Interval')
