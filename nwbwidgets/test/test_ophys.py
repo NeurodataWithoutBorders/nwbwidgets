@@ -86,5 +86,5 @@ class CalciumImagingTestCase(unittest.TestCase):
         
     def test_show_plane_segmentation_2d(self):
         color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
-        assert isinstance(show_plane_segmentation_2d(self.ps,color_by='pixel_mask',color_wheel=color_wheel),plt.Figure)
+        assert isinstance(show_plane_segmentation_2d(self.ps,color_by='pixel_mask',color_wheel=color_wheel),widgets.Widget)
 
