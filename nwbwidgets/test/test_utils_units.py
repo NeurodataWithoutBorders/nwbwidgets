@@ -50,16 +50,28 @@ class ShowPSTHTestCase(unittest.TestCase):
     def test_align_by_time_intervals_Nonetrials_select(self):
         time_intervals = TimeIntervals(name='Test Time Interval')
         time_intervals.add_interval(start_time=21.0, stop_time=28.0)
+        time_intervals.add_interval(start_time=22.0, stop_time=26.0)
+        time_intervals.add_interval(start_time=22.0, stop_time=28.4)
         
-        assert(np.array_equal(align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals,
-                                                      stop_label=None, before=20., after=30.)[0],np.array([-18.8, -18. ,   4. ,   5. ])))
+        ATI = align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals,
+                                                      stop_label=None, before=20., after=30.)
+
+        ComparedtoATI = [np.array([-18.8, -18. ,   4. ,   5. ]), np.array([-19.8, -19. ,   3. ,   4. ]), np.array([-19.8, -19. ,   3. ,   4. ])]
+        
+        assert(np.array_equal(ATI,ComparedtoATI))
         
     def test_align_by_time_intervals(self):
         time_intervals = TimeIntervals(name='Test Time Interval')
         time_intervals.add_interval(start_time=21.0, stop_time=28.0)
+        time_intervals.add_interval(start_time=22.0, stop_time=26.0)
+        time_intervals.add_interval(start_time=22.0, stop_time=28.4)
         
-        assert(np.array_equal(align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals, 
-                                                      stop_label=None, before=20., after=30., trials_select=[0])[0],np.array([-18.8, -18. ,   4. ,   5. ])))
+        ATI = align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals, 
+                                                      stop_label=None, before=20., after=30., trials_select=[0,1])
+        
+        ComparedtoATI = [np.array([-18.8, -18. ,   4. ,   5. ]), np.array([-19.8, -19. ,   3. ,   4. ])]
+        
+        assert(np.array_equal(ATI,ComparedtoATI))
         
         
 
