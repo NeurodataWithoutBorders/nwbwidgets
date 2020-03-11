@@ -439,7 +439,7 @@ def raster_grid(units, trials, index, before, after, rows_label=None, cols_label
                 trials_select &= np.array(trials[cols_label][:]) == col
             trials_select = np.where(trials_select)[0]
             data = align_by_time_intervals(units, index, trials, align_by, align_by,
-                                           before, after, trials_select)
+                                           before, after, list(trials_select))
             show_psth_raster(data, before, after, ax=ax)
             ax.set_xlabel('')
             ax.set_ylabel('')
