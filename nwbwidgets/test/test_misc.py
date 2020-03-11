@@ -63,6 +63,10 @@ class ShowPSTHTestCase(unittest.TestCase):
         
     def test_raster_grid_widget(self):
         assert isinstance(raster_grid_widget(self.nwbfile.units),widgets.Widget)
+        
+    def test_raster_grid(self):
+        trials = self.nwbfile.units.get_ancestor('NWBFile').trials
+        assert isinstance(raster_grid(self.nwbfile.units,trials=trials,index=0,before=0.5,after=20.0),plt.Figure)
 
     
 class ShowDecompositionTestCase(unittest.TestCase):
