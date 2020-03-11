@@ -7,7 +7,7 @@ from pynwb import NWBFile
 from pynwb.misc import DecompositionSeries, AnnotationSeries
 from ipywidgets import widgets
 from nwbwidgets.misc import show_psth_raster, psth_widget, show_decomposition_traces, show_decomposition_series, raster_widget, \
-    show_session_raster, show_annotations, raster_grid_widget
+    show_session_raster, show_annotations, raster_grid_widget, raster_grid
 import unittest
 
 
