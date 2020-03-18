@@ -12,16 +12,16 @@ class MoveSliderTestCase(unittest.TestCase):
 
     def setUp(self):
         self.slider = widgets.IntSlider(
-        value=7,
-        min=2,
-        max=10,
-        step=1,
-        description='Test:',
-        disabled=False,
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True,
-        readout_format='d')
+            value=7,
+            min=2,
+            max=10,
+            step=1,
+            description='Test:',
+            disabled=False,
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True,
+            readout_format='d')
     
     def test_move_slider_down_bigger(self):
         move_slider_down(self.slider,3)
