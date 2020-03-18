@@ -9,5 +9,5 @@ def test_create_big_ax():
     assert isinstance(create_big_ax(fig),plt.Subplot)
 
 def test_grid_sps():
-    shape = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    shape = (5,6)
     grid_sps(shape)
