@@ -58,7 +58,7 @@ class ShowPSTHTestCase(unittest.TestCase):
 
         ComparedtoATI = [np.array([-18.8, -18. ,   4. ,   5. ]), np.array([-19.8, -19. ,   3. ,   4. ]), np.array([-19.8, -19. ,   3. ,   4. ])]
         
-        assert(np.array_equal(ATI,ComparedtoATI))
+        np.testing.assert_array_equal(ATI,ComparedtoATI)
         
     def test_align_by_time_intervals(self):
         time_intervals = TimeIntervals(name='Test Time Interval')
@@ -71,7 +71,7 @@ class ShowPSTHTestCase(unittest.TestCase):
         
         ComparedtoATI = [np.array([-18.8, -18. ,   4. ,   5. ]), np.array([-19.8, -19. ,   3. ,   4. ])]
         
-        assert(np.array_equal(ATI,ComparedtoATI))
+        np.testing.assert_array_equal(ATI,ComparedtoATI)
         
         
 
