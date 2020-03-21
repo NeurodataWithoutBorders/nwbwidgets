@@ -9,18 +9,18 @@ def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
 
     def show_image(index=0):
         fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
-        ax.imshow(image_series.data[index][:, :], cmap='gray')
+        ax.imshow(image_series.data[index, :, :], cmap='gray')
+        plt.show()
         return fig2widget(fig)
 
-    def on_index_change(change):
-        show_image(change.new)
     slider = widgets.IntSlider(value=0, min=0,
                                max=image_series.data.shape[0] - 1,
                                orientation='horizontal')
-    slider.observe(on_index_change, names='value')
-    output = show_image()
+    controls = {'index': slider}
+    out_fig = widgets.interactive_output(show_image, controls)
+    vbox = widgets.VBox(children=[out_fig, slider])
 
-    return widgets.VBox([output, slider])
+    return vbox
 
 
 def show_index_series(index_series, neurodata_vis_spec: dict):
