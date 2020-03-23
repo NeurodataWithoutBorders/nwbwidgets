@@ -10,4 +10,8 @@ def test_create_big_ax():
 
 def test_grid_sps():
     shape = (5,6)
-    grid_sps(shape)
+    fig, big_ax, gs = grid_sps(shape)
+    assert isinstance(fig,plt.Figure)
+    assert isinstance(big_ax,plt.Subplot)
+    assert isinstance(gs,plt.GridSpec)
+    
