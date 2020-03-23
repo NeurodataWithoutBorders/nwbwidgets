@@ -14,7 +14,8 @@ default_neurodata_vis_spec = {
     pynwb.misc.Units: OrderedDict({
         'table': base.show_dynamic_table,
         'raster': misc.raster_widget,
-        'PSTH': misc.psth_widget}),
+        'grouped PSTH': misc.psth_widget,
+        'raster grid': misc.raster_grid_widget}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_fields,
     pynwb.ophys.ImagingPlane: base.show_fields,
