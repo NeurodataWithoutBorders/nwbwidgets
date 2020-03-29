@@ -5,7 +5,7 @@ from pynwb import TimeSeries
 import pynwb
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind, get_timeseries_in_units)
-from .controllers import make_int_range_controller, make_time_window_controller, make_float_range_controller
+from .controllers import make_time_window_controller,  RangeController
 from .base import fig2widget
 
 
@@ -134,14 +134,14 @@ def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
     if trace_controller is None:
         if trace_starting_range is None:
             trace_starting_range = (0, min(30, node.data.shape[1]))
-        trace_controller = make_int_range_controller(node.data.shape[1], start_range=trace_starting_range,
-                                                     description='traces')
+        trace_controller = RangeController(0, node.data.shape[1], start_range=trace_starting_range,
+                                           description='traces', dtype='int', orientation='vertical')
 
     controls = {
         'time_series': widgets.fixed(node),
         'time_start': time_window_controller.children[0],
         'time_duration': time_window_controller.children[1],
-        'trace_window': trace_controller.children[0],
+        'trace_window': trace_controller.slider,
     }
     controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
@@ -169,9 +169,9 @@ def single_trace_widget(timeseries: TimeSeries, time_window_controller=None):
         gen_time_window_controller = True
         tmin = get_timeseries_mint(timeseries)
         tmax = get_timeseries_maxt(timeseries)
-        time_window_controller = make_float_range_controller(tmin, tmax, start_value=[tmin, min(tmin+30, tmax)])
+        time_window_controller = FloatRangeController(tmin, tmax, start_value=[tmin, min(tmin+30, tmax)])
 
-    controls.update(time_window=time_window_controller.children[0])
+    controls.update(time_window=time_window_controller.slider)
 
     out_fig = widgets.interactive_output(show_trace, controls)
 

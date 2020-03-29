@@ -15,20 +15,20 @@ class ShowPSTHTestCase(unittest.TestCase):
         start_time = datetime(2017, 4, 3, 11, tzinfo=tzlocal())
         create_date = datetime(2017, 4, 15, 12, tzinfo=tzlocal())
 
-        self.nwbfile = NWBFile(session_description='NWBFile for PSTH', 
-                          identifier='NWB123',  
-                          session_start_time=start_time,  
-                          file_create_date=create_date)
+        self.nwbfile = NWBFile(session_description='NWBFile for PSTH',
+                               identifier='NWB123',
+                               session_start_time=start_time,
+                               file_create_date=create_date)
         
         self.nwbfile.add_unit_column('location', 'the anatomical location of this unit')
         self.nwbfile.add_unit_column('quality', 'the quality for the inference of this unit')
         
         self.nwbfile.add_unit(id=1, spike_times=[2.2, 3.0, 4.5],
-                         obs_intervals=[[1, 10]], location='CA1', quality=0.95)
+                              obs_intervals=[[1, 10]], location='CA1', quality=0.95)
         self.nwbfile.add_unit(id=2, spike_times=[2.2, 3.0, 25.0, 26.0],
-                         obs_intervals=[[1, 10], [20, 30]], location='CA3', quality=0.85)
+                              obs_intervals=[[1, 10], [20, 30]], location='CA3', quality=0.85)
         self.nwbfile.add_unit(id=3, spike_times=[1.2, 2.3, 3.3, 4.5],
-                         obs_intervals=[[1, 10], [20, 30]], location='CA1', quality=0.90)
+                              obs_intervals=[[1, 10], [20, 30]], location='CA1', quality=0.90)
         
         self.nwbfile.add_trial_column(name='stim', description='the visual stimuli during the trial')
 
@@ -54,11 +54,11 @@ class ShowPSTHTestCase(unittest.TestCase):
         time_intervals.add_interval(start_time=22.0, stop_time=28.4)
         
         ATI = align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals,
-                                                      stop_label=None, before=20., after=30.)
+                                      stop_label=None, before=20., after=30.)
 
         ComparedtoATI = [np.array([-18.8, -18. ,   4. ,   5. ]), np.array([-19.8, -19. ,   3. ,   4. ]), np.array([-19.8, -19. ,   3. ,   4. ])]
         
-        np.testing.assert_array_equal(ATI,ComparedtoATI)
+        np.testing.assert_array_equal(ATI, ComparedtoATI)
         
     def test_align_by_time_intervals(self):
         time_intervals = TimeIntervals(name='Test Time Interval')
@@ -66,12 +66,12 @@ class ShowPSTHTestCase(unittest.TestCase):
         time_intervals.add_interval(start_time=22.0, stop_time=26.0)
         time_intervals.add_interval(start_time=22.0, stop_time=28.4)
         
-        ATI = align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals, 
-                                                      stop_label=None, before=20., after=30., trials_select=[0,1])
+        ATI = align_by_time_intervals(self.nwbfile.units, index=1, intervals=time_intervals,
+                                      stop_label=None, before=20., after=30., rows_select=[0, 1])
         
-        ComparedtoATI = [np.array([-18.8, -18. ,   4. ,   5. ]), np.array([-19.8, -19. ,   3. ,   4. ])]
+        ComparedtoATI = [np.array([-18.8, -18., 4., 5.]), np.array([-19.8, -19., 3., 4.])]
         
-        np.testing.assert_array_equal(ATI,ComparedtoATI)
+        np.testing.assert_array_equal(ATI, ComparedtoATI)
         
         
 

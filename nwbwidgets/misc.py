@@ -9,8 +9,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
-from .controllers import make_float_range_controller, make_int_range_controller, make_trial_event_controller, \
-    int_controller
+from .controllers import make_trial_event_controller, int_controller, RangeController
 from .utils.dynamictable import group_and_sort, infer_categorical_columns
 from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals, \
     get_unobserved_intervals
@@ -102,12 +101,13 @@ def raster_widget(units: Units, units_window_controller=None, time_window_contro
     if time_window_controller is None:
         tmin = get_min_spike_time(units)
         tmax = get_max_spike_time(units)
-        time_window_controller = make_float_range_controller(tmin, tmax, start_value=[tmin, min(tmin+30, tmax)])
-    controls.update(time_window=time_window_controller.children[0])
+        time_window_controller = RangeController(tmin, tmax, start_value=[tmin, min(tmin+30, tmax)])
+    controls.update(time_window=time_window_controller.slider)
 
     if units_window_controller is None:
-        units_window_controller = make_int_range_controller(len(units['spike_times'].data)-1, start_range=(0, 100))
-    controls.update(units_window=units_window_controller.children[0])
+        units_window_controller = RangeController(0, len(units['spike_times'].data)-1, start_range=(0, 100),
+                                                  dtype='int', orientation='vertical')
+    controls.update(units_window=units_window_controller.slider)
 
     candidate_cols = [x for x in units.colnames
                       if not isinstance(units[x][0], Iterable) or
@@ -127,7 +127,7 @@ def raster_widget(units: Units, units_window_controller=None, time_window_contro
     def set_max_window(group_by, limit):
         group_vals = units[group_by][:]
         nunits = sum(min(sum(group_vals == x), limit) for x in np.unique(group_vals))
-        units_window_controller.children[0].max = nunits
+        units_window_controller.slider.max = nunits
 
     def group_disable_limit(change):
         if change['name'] == 'label':
@@ -139,7 +139,7 @@ def raster_widget(units: Units, units_window_controller=None, time_window_contro
     def group_by_set_max_window(change):
         if change['name'] == 'label':
             if change['new'] in ('None', '', None):
-                units_window_controller.children[0].max = len(units)
+                units_window_controller.slider.max = len(units)
             else:
                 set_max_window(change['new'], limit_controller.value)
 
@@ -581,10 +581,10 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
         handles = []
-        for i in ugroup_inds:
+        for i, ui in enumerate(ugroup_inds):
             color = colors[ugroup_inds[i % len(colors)]]
-            lineoffsets = np.where(group_inds == i)[0] + offset
-            event_collection = ax.eventplot(data[group_inds == i],
+            lineoffsets = np.where(group_inds == ui)[0] + offset
+            event_collection = ax.eventplot(data[group_inds == ui],
                                             orientation='horizontal',
                                             lineoffsets=lineoffsets,
                                             color=color)
@@ -599,9 +599,9 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
 
     ax.set_xlim(window)
     ax.set_xlabel('time (s)')
-    ax.set_ylim(np.array([-.5, len(data) + .5]) + offset)
+    ax.set_ylim(np.array([-.5, len(data) - .5]) + offset)
     if len(data) <= 30:
-        ax.set_yticks(range(offset, len(data) + 1 + offset))
+        ax.set_yticks(range(offset, len(data) + offset))
 
     return ax
 

@@ -231,5 +231,3 @@ def df2accordion(df: pd.DataFrame, by, func, style: GroupingWidget = widgets.Acc
     else:
         labels, idfs = zip(*df.groupby(by))
         return lazy_show_over_data(idfs, func, labels=labels, style=style)
-
-
