@@ -187,11 +187,12 @@ def make_time_window_controller(tmin, tmax, start=0, duration=5.):
         min=tmin,
         max=tmax,
         step=0.1,
-        description='window start (s):',
+        description='window start (s)',
         continuous_update=False,
         orientation='horizontal',
         readout=True,
         readout_format='.1f',
+        style={'description_width': 'initial'},
         layout=Layout(width='100%'))
 
     duration_widget = widgets.BoundedFloatText(
@@ -200,6 +201,7 @@ def make_time_window_controller(tmin, tmax, start=0, duration=5.):
         max=tmax - tmin,
         step=0.1,
         description='duration (s):',
+        style={'description_width': 'initial'},
         layout=Layout(width='150px')
     )
 

@@ -169,7 +169,7 @@ def single_trace_widget(timeseries: TimeSeries, time_window_controller=None):
         gen_time_window_controller = True
         tmin = get_timeseries_mint(timeseries)
         tmax = get_timeseries_maxt(timeseries)
-        time_window_controller = FloatRangeController(tmin, tmax, start_value=[tmin, min(tmin+30, tmax)])
+        time_window_controller = RangeController(tmin, tmax, start_value=[tmin, min(tmin+30, tmax)])
 
     controls.update(time_window=time_window_controller.slider)
 
