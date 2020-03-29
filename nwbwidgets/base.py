@@ -96,7 +96,7 @@ def dict2accordion(d: dict, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.
     return accordion
 
 
-def lazy_tabs(in_dict: dict, node, style: GroupingWidget =widgets.Tab) -> GroupingWidget:
+def lazy_tabs(in_dict: dict, node, style: GroupingWidget = widgets.Tab) -> GroupingWidget:
     """Creates a lazy tab object where multiple visualizations can be used for a single node and are generated on the
     fly
 
@@ -181,6 +181,8 @@ def vis2widget(vis) -> widgets.Widget:
         return vis
     elif isinstance(vis, plt.Figure):
         return fig2widget(vis)
+    elif isinstance(vis, plt.Axes):
+        return fig2widget(vis.get_figure())
     else:
         raise ValueError('unsupported vis type {}'.format(type(vis)))
 

@@ -32,19 +32,19 @@ class ShowPSTHTestCase(unittest.TestCase):
         create_date = datetime(2017, 4, 15, 12, tzinfo=tzlocal())
 
         self.nwbfile = NWBFile(session_description='NWBFile for PSTH',
-                          identifier='NWB123',
-                          session_start_time=start_time,
-                          file_create_date=create_date)
+                               identifier='NWB123',
+                               session_start_time=start_time,
+                               file_create_date=create_date)
 
         self.nwbfile.add_unit_column('location', 'the anatomical location of this unit')
         self.nwbfile.add_unit_column('quality', 'the quality for the inference of this unit')
 
-        self.nwbfile.add_unit( spike_times=[2.2, 3.0, 4.5],
-                         obs_intervals=[[1, 10]], location='CA1', quality=0.95)
-        self.nwbfile.add_unit( spike_times=[2.2, 3.0, 25.0, 26.0],
-                         obs_intervals=[[1, 10], [20, 30]], location='CA3', quality=0.85)
-        self.nwbfile.add_unit( spike_times=[1.2, 2.3, 3.3, 4.5],
-                         obs_intervals=[[1, 10], [20, 30]], location='CA1', quality=0.90)
+        self.nwbfile.add_unit(spike_times=[2.2, 3.0, 4.5],
+                              obs_intervals=[[1, 10]], location='CA1', quality=0.95)
+        self.nwbfile.add_unit(spike_times=[2.2, 3.0, 25.0, 26.0],
+                              obs_intervals=[[1, 10], [20, 30]], location='CA3', quality=0.85)
+        self.nwbfile.add_unit(spike_times=[1.2, 2.3, 3.3, 4.5],
+                              obs_intervals=[[1, 10], [20, 30]], location='CA1', quality=0.90)
 
         self.nwbfile.add_trial_column(name='stim', description='the visual stimuli during the trial')
 
@@ -53,28 +53,28 @@ class ShowPSTHTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim='desert')
 
     def test_psth_widget(self):
-        assert isinstance(psth_widget(self.nwbfile.units),widgets.Widget)
+        assert isinstance(psth_widget(self.nwbfile.units), widgets.Widget)
 
     def test_raster_widget(self):
-        assert isinstance(raster_widget(self.nwbfile.units),widgets.Widget)
+        assert isinstance(raster_widget(self.nwbfile.units), widgets.Widget)
 
     def test_show_session_raster(self):
-        assert isinstance(show_session_raster(self.nwbfile.units),plt.Figure)
+        assert isinstance(show_session_raster(self.nwbfile.units), plt.Axes)
 
     
 class ShowDecompositionTestCase(unittest.TestCase):
 
     def setUp(self):
     
-        data = np.random.rand(160,2,3)
+        data = np.random.rand(160, 2, 3)
 
-        self.ds = DecompositionSeries(name='Test Decomposition',data=data,
-                                     metric='amplitude',rate=1.0)
+        self.ds = DecompositionSeries(name='Test Decomposition', data=data,
+                                      metric='amplitude', rate=1.0)
 
     def test_show_decomposition_traces(self):
 
-        assert isinstance(show_decomposition_traces(self.ds),widgets.Widget)
+        assert isinstance(show_decomposition_traces(self.ds), widgets.Widget)
 
     def test_show_decomposition_series(self):
 
-        assert isinstance(show_decomposition_series(self.ds),widgets.Widget)
+        assert isinstance(show_decomposition_series(self.ds), widgets.Widget)

@@ -1,11 +1,11 @@
 import ipywidgets as widgets
-from nwbwidgets.controllers import float_range_controller, move_int_slider_down, move_int_slider_up, \
+from nwbwidgets.controllers import make_float_range_controller, move_int_slider_down, move_int_slider_up, \
     move_range_slider_down, move_range_slider_up
 import unittest
 
 
 def test_float_range_controller():
-    assert isinstance(float_range_controller(tmin=1, tmax=26), widgets.Widget)
+    assert isinstance(make_float_range_controller(tmin=1, tmax=26), widgets.Widget)
 
     
 class MoveSliderTestCase(unittest.TestCase):
