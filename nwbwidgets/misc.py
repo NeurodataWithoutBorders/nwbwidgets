@@ -14,6 +14,8 @@ from .utils.dynamictable import group_and_sort, infer_categorical_columns
 from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals, \
     get_unobserved_intervals
 from .utils.mpl import create_big_ax
+from .utils.pynwb import robust_unique
+from .analysis.spikes import compute_smoothed_firing_rate
 
 color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -26,7 +28,7 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
 
 
 def show_session_raster(units: Units, time_window=None, units_select=None, units_window=None, show_obs_intervals=True,
-                        group_by=None, order_by=None, show_legend=True, limit=None):
+                        group_by=None, order_by=None, show_legend=True, limit=None, electrodes=None):
     """
 
     Parameters
@@ -41,6 +43,8 @@ def show_session_raster(units: Units, time_window=None, units_select=None, units
     show_legend: bool
         default = True
         Does not show legend if color_by is None or 'id'.
+    limit: int, optional
+    electrodes: pynwb.DynamicTable, optional
 
     Returns
     -------
@@ -61,13 +65,19 @@ def show_session_raster(units: Units, time_window=None, units_select=None, units
 
     if group_by is None:
         group_vals = None
-    else:
+    elif group_by in units:
         group_vals = units[group_by][:][units_select]
+    elif electrodes is not None and group_by in electrodes:
+        ids = electrodes.id[:]
+        inds = [np.argmax(ids == val) for val in units['peak_channel_id'][:]]
+        group_vals = electrodes[group_by][:][inds][units_select]
 
     if order_by is None:
         order_vals = None
-    else:
-        order_vals = units[order_by][:][units_select]
+    elif electrodes is not None and order_by in electrodes:
+        ids = electrodes.id[:]
+        inds = [np.argmax(ids == val) for val in units['peak_channel_id'][:]]
+        order_vals = electrodes[order_by][:][inds][units_select]
 
     if group_vals is None and order_vals is None:
         order, group_inds, labels = np.arange(units_window[0], units_window[1], dtype='int'), None, None
@@ -89,10 +99,111 @@ def show_session_raster(units: Units, time_window=None, units_select=None, units
     return ax
 
 
-def robust_unique(a):
-    if isinstance(a[0], pynwb.NWBContainer):
-        return np.unique([x.name for x in a])
-    return np.unique(a)
+class RasterWidget(widgets.HBox):
+    def __init__(self, units: Units, units_window_controller=None, time_window_controller=None):
+        super(RasterWidget, self).__init__()
+
+        self.units = units
+
+        controls = dict(units=fixed(units), electrodes=fixed(self.units.get_ancestor('NWBFile').electrodes))
+        if time_window_controller is None:
+            self.tmin = get_min_spike_time(units)
+            self.tmax = get_max_spike_time(units)
+            self.time_window_controller = RangeController(self.tmin, self.tmax,
+                                                          start_value=[self.tmin, min(self.tmin + 30, self.tmax)])
+        else:
+            self.time_window_controller = time_window_controller
+            self.tmin = self.time_window_controller.vmin
+            self.tmax = self.time_window_controller.vmax
+        controls.update(time_window=self.time_window_controller.slider)
+
+        if units_window_controller is None:
+            self.nunits = len(units['spike_times'].data) - 1
+            self.units_window_controller = RangeController(0, self.nunits, start_value=(0, min(100, self.nunits)),
+                                                           dtype='int', orientation='vertical')
+        else:
+            self.units_window_controller = units_window_controller
+            self.nunits = self.units_window_controller.vmax
+
+        controls.update(units_window=self.units_window_controller.slider)
+
+        groups = self.get_groups()
+
+        group_controller = widgets.Dropdown(options=[None] + list(groups), description='group by',
+                                            layout=Layout(width='90%'),
+                                            style={'description_width': 'initial'})
+        controls.update(group_by=group_controller)
+
+        limit_controller = widgets.BoundedIntText(value=50, min=-1, max=99999, description='limit',
+                                                  layout=Layout(width='90%'),
+                                                  style={'description_width': 'initial'},
+                                                  disabled=True)
+
+        def set_max_window(group_by, limit):
+            group_vals = self.get_group_vals(group_by)
+            if group_vals.dtype == np.float64:
+                group_vals = group_vals[~np.isnan(group_vals)]
+            nunits = sum(min(sum(group_vals == x), limit) for x in np.unique(group_vals))
+            self.units_window_controller.slider.max = nunits
+
+        def group_disable_limit(change):
+            if change['name'] == 'label':
+                if change['new'] in ('None', '', None):
+                    limit_controller.disabled = True
+                else:
+                    limit_controller.disabled = False
+
+        def group_by_set_max_window(change):
+            if change['name'] == 'label':
+                if change['new'] in ('None', '', None):
+                    self.units_window_controller.slider.max = len(units)
+                else:
+                    set_max_window(change['new'], limit_controller.value)
+
+        def limit_set_max_window(change):
+            if change['name'] == 'value':
+                set_max_window(group_controller.value, change['new'])
+
+        group_controller.observe(group_disable_limit)
+        group_controller.observe(group_by_set_max_window)
+        limit_controller.observe(limit_set_max_window)
+
+
+        orderable_features = self.get_orderable_cols()
+
+        order_by_controller = widgets.Dropdown(options=[None] + orderable_features, description='order by',
+                                               layout=Layout(width='90%'),
+                                               style={'description_width': 'initial'})
+
+        controls.update(order_by=order_by_controller, limit=limit_controller)
+
+        out_fig = widgets.interactive_output(show_session_raster, controls)
+
+        dropdown_box = widgets.VBox(children=(group_controller,
+                                              limit_controller,
+                                              order_by_controller),
+                                    layout=Layout(width='150px'))
+
+        self.children = [
+                widgets.VBox(children=[dropdown_box, self.units_window_controller]),
+                widgets.VBox(children=[self.time_window_controller, out_fig])
+            ]
+
+    def get_groups(self):
+        return infer_categorical_columns(self.units)
+
+    def get_group_vals(self, group_by, units_select=()):
+        if group_by is None:
+            return None
+        elif group_by in self.units:
+            return self.units[group_by][:][units_select]
+
+    def get_orderable_cols(self):
+        candidate_cols = [x for x in self.units.colnames
+                          if not isinstance(self.units[x][0], Iterable) or
+                          isinstance(self.units[x][0], str)]
+        return [x for x in candidate_cols if len(robust_unique(self.units[x][:])) > 1]
+
 
 
 def raster_widget(units: Units, units_window_controller=None, time_window_controller=None):
@@ -394,162 +505,6 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
     return fig
 
 
-def compute_smoothed_firing_rate(spike_times, tt, sigma_in_secs):
-    """ Evaluate gaussian smoothing of spike_times at uniformly spaced array t
-        Args:
-          spike_times:
-              A 1D numpy ndarray of spike times
-          tt:
-              1D array, uniformly spaced, e.g. the output of np.linspace or np.arange
-          sigma_in_secs:
-              standard deviation of the smoothing gaussian in seconds
-        Returns:
-              Gaussian smoothing evaluated at array t
-        """
-    binned_spikes = np.zeros_like(tt)
-    binned_spikes[np.searchsorted(tt, spike_times)] += 1
-    dt = np.diff(tt[:2])[0]
-    sigma_in_samps = sigma_in_secs / dt
-    smooth_fr = scipy.ndimage.gaussian_filter1d(binned_spikes, sigma_in_samps) / dt
-    return smooth_fr
-
-
-def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=10):
-    """ Find peristimulus time histogram smoothed by a gaussian kernel
-        The time units of the arrays in data, sig and t
-        should be the same, e.g. seconds
-    Args:
-      data:
-            A dictionary of channel names, and 1D numpy ndarray spike times,
-            A numpy ndarray, where each row gives the spike times for each channel
-            A 1D numpy ndarray, one list or tuple of floats that gives spike times for only one channel
-      sig:  standard deviation of the smoothing gaussian. default 0.05
-      T: time interval [a,b], spike times strictly outside this interval are excluded
-      err: An integer, 0, 1, or 2. default 2
-            0 indicates no standard error computation
-            1 Poisson error
-            2 Boostrap method over trials
-      t: 1D array, list or tuple indicating times to evaluate psth at
-      num_bootstraps: number of bootstraps. Effective only in computing error when err=2. default 10
-    Returns:
-      R: Rate, mean smoothed peristimulus time histogram
-      t: 1D array, list or tuple indicating times psth is evaluated at
-      E: standard error
-    """
-
-    # verify data argument
-    try:
-        if isinstance(data, dict):
-            data = data.values()
-        elif isinstance(data[0], (float, int)):
-            data = np.array([data])
-        elif isinstance(data[0], (np.ndarray, list, tuple)):
-            data = np.array(data)
-        else:
-            raise TypeError
-        if isinstance(data, np.ndarray) and len(data.shape) == 2:
-            if data.shape[0] == 0 or data.shape[1] == 0:
-                raise TypeError
-        else:
-            data = [np.array(ch_data) for ch_data in data]
-            for ch_data in data:
-                if len(ch_data.shape) != 1 or not isinstance(ch_data[0], (float, int)):
-                    raise TypeError
-    except Exception as exc:
-        msg = ("psth requires spike time data as first positional argument. " +
-               "Spike time data should be in the form of:\n" +
-               "   a dictionary of channel names, and 1D numpy ndarray spike times\n" +
-               "   a 2D numpy ndarray, where each row represents the spike times of a channel", )
-        exc.args = msg
-        raise exc
-
-    # input data size
-    num_channels = len(data)
-    channel_lengths = [len(ch_data) for ch_data in data]
-    max_channel_length = max(channel_lengths)
-
-    if not isinstance(sig, (float, int)) or sig <= 0:
-        raise TypeError("sig must be positive. Only the non-adaptive method is supported")
-    if not isinstance(num_bootstraps, int) or num_bootstraps <= 0:
-        raise TypeError("num_bootstraps must be a positive integer")
-
-    # determine the interval of interest T, and mask times outside of the interval
-    if T is not None:
-        # expand T to avoid edge effects in rate
-        T = [T[0]-4*sig, T[1]+4*sig]
-        data = [np.ma.masked_outside(np.ravel(ch_data), T[0], T[1]) for ch_data in data]
-    else:
-        T = [np.ma.min([np.ma.min(c) for c in data]), np.ma.max([np.ma.max(c) for c in data])]
-
-    # determine t
-    if t is None:
-        num_points = int(5*(T[1]-T[0])/sig)
-        t = np.linspace(T[0], T[1], num_points)
-        t_min, t_max = T[0], T[1]
-    else:
-        t = np.ravel(t)
-        num_points = len(t)
-        t_min, t_max = np.min(t), np.max(t)
-
-    # masked input data size
-    data_lengths = [np.ma.count(ch_data) for ch_data in data]
-    num_times_total = sum(data_lengths)+1
-
-    # Transposes data if necessary. The longer dimension is assumed to be time.
-    # This is to convert the data into a form compatible with Murray's routine
-    if num_channels < max_channel_length:
-        num_t = num_channels  # number of trials
-    else:
-        num_t = max_channel_length
-        # pad and transpose
-        data_transposed = np.ma.zeros((max_channel_length, num_channels))
-        data_transposed[...] = np.ma.masked
-        for n in range(num_channels):
-            data_transposed[:, n] = data[n]
-        data = data_transposed
-        del data_transposed
-        max_channel_length = num_channels
-
-    # warn if spikes have low density
-    L = num_times_total/(num_t*(T[1]-T[0]))
-    if 2*L*num_t*sig < 1 or L < 0.1:
-        print('Spikes have very low density. The time units may not be the same, or the kernel width is too small')
-        print('Total events: %f \nsig: %f ms \nT: %f \nevents*sig: %f\n'
-              % (num_times_total, sig*1000, T, num_times_total*sig/(T[1]-T[0])))
-
-    # fine grid in case t does not have sufficient precision for gaussian_filter1d
-    num_points_extended = 6*int(5*(t_max-t_min)/sig)
-    t_extended = np.linspace(t_min, t_max, num_points_extended)
-    smooth_fr_index = np.rint((t-t_min)/(t_extended[1]-t_extended[0])).astype(np.int)
-    # evaluate kernel density estimation at array t
-    RR = np.zeros((num_t, num_points))
-    for n in range(num_t):
-        spike_times = data[n] if not np.ma.is_masked(data[n]) else data[n].compressed()
-        smooth_fr = compute_smoothed_firing_rate(spike_times, t_extended, sig)
-        RR[n, :] = smooth_fr[smooth_fr_index]
-
-    # find rate
-    R = np.mean(RR, axis=0)
-
-    # find error
-    if num_t < 4 and err == 2:
-        print('Switching to Poisson errorbars as number of trials is too small for bootstrap')
-        err = 1
-    # std dev is sqrt(rate*(integral over kernal^2)/trials)
-    # for Gaussian integral over Kernal^2 is 1/(2*sig*srqt(pi))
-    if err == 0:
-        E = None
-    elif err == 1:
-        E = np.sqrt(R/(2*num_t*sig*np.sqrt(np.pi)))
-    elif err == 2:
-        mean_ = [np.mean(RR[np.random.randint(0, num_t), :]) for _ in range(num_bootstraps)]
-        E = np.std(mean_)
-    else:
-        raise TypeError("err must be 0, 1, or 2")
-
-    return R, t, E
-
-
 def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000):
 
     all_data = np.hstack(data)
@@ -582,7 +537,7 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
         ugroup_inds = np.unique(group_inds)
         handles = []
         for i, ui in enumerate(ugroup_inds):
-            color = colors[ugroup_inds[i % len(colors)]]
+            color = colors[ugroup_inds[i] % len(colors)]
             lineoffsets = np.where(group_inds == ui)[0] + offset
             event_collection = ax.eventplot(data[group_inds == ui],
                                             orientation='horizontal',
@@ -590,7 +545,8 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
                                             color=color)
             handles.append(event_collection[0])
         if show_legend:
-            ax.legend(handles=handles, labels=list(labels[ugroup_inds]), bbox_to_anchor=(1.05, 1))
+            ax.legend(handles=handles[::-1], labels=list(labels[ugroup_inds][::-1]), loc='upper left',
+                      bbox_to_anchor=(1.01, 1))
     else:
         ax.eventplot(data, orientation='horizontal', color='k', lineoffsets=np.arange(len(data)) + offset)
 
