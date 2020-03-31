@@ -3,10 +3,26 @@ from typing import Iterable
 import numpy as np
 
 from pynwb.misc import Units
+import ipywidgets as widgets
 
-from .misc import RasterWidget
+from .misc import RasterWidget, PSTHWidget
 from .view import default_neurodata_vis_spec
 from .utils.pynwb import robust_unique
+
+
+class AllenPSTHWidget(PSTHWidget):
+    def get_trials(self):
+        return self.units.get_ancestor('NWBFile').epochs
+
+    def select_trials(self):
+        self.controls['trials_select'] = widgets.Dropdown(options=np.unique(self.trials['stimulus_name'][:]).tolist(),
+                                                          label='drifting_gratings',
+                                                          description='trial select')
+        self.children = list(self.children) + [self.controls['trials_select']]
+
+    def process_controls(self, control_states):
+        control_states['trials_select'] = self.trials['stimulus_name'][:] == control_states['trials_select']
+        return control_states
 
 
 class AllenRasterWidget(RasterWidget):
@@ -40,4 +56,5 @@ class AllenRasterWidget(RasterWidget):
 
 def load_allen_widgets():
     default_neurodata_vis_spec[Units]['raster'] = AllenRasterWidget
+    default_neurodata_vis_spec[Units]['grouped PSTH'] = AllenPSTHWidget
 

@@ -3,7 +3,6 @@ import pynwb
 
 from bisect import bisect_right, bisect_left
 from numpy import searchsorted
-from tqdm import tqdm
 
 
 def get_spike_times(units: pynwb.misc.Units, index, in_interval):

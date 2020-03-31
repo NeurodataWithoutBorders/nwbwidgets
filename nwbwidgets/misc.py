@@ -15,6 +15,7 @@ from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time
     get_unobserved_intervals
 from .utils.mpl import create_big_ax
 from .utils.pynwb import robust_unique
+from .utils.widgets import interactive_output
 from .analysis.spikes import compute_smoothed_firing_rate
 
 color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -105,7 +106,7 @@ class RasterWidget(widgets.HBox):
 
         self.units = units
 
-        controls = dict(units=fixed(units), electrodes=fixed(self.units.get_ancestor('NWBFile').electrodes))
+        self.controls = dict(units=fixed(units), electrodes=fixed(self.units.get_ancestor('NWBFile').electrodes))
         if time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
@@ -115,7 +116,7 @@ class RasterWidget(widgets.HBox):
             self.time_window_controller = time_window_controller
             self.tmin = self.time_window_controller.vmin
             self.tmax = self.time_window_controller.vmax
-        controls.update(time_window=self.time_window_controller.slider)
+        self.controls.update(time_window=self.time_window_controller.slider)
 
         if units_window_controller is None:
             self.nunits = len(units['spike_times'].data) - 1
@@ -125,14 +126,14 @@ class RasterWidget(widgets.HBox):
             self.units_window_controller = units_window_controller
             self.nunits = self.units_window_controller.vmax
 
-        controls.update(units_window=self.units_window_controller.slider)
+        self.controls.update(units_window=self.units_window_controller.slider)
 
         groups = self.get_groups()
 
         group_controller = widgets.Dropdown(options=[None] + list(groups), description='group by',
                                             layout=Layout(width='90%'),
                                             style={'description_width': 'initial'})
-        controls.update(group_by=group_controller)
+        self.controls.update(group_by=group_controller)
 
         limit_controller = widgets.BoundedIntText(value=50, min=-1, max=99999, description='limit',
                                                   layout=Layout(width='90%'),
@@ -168,16 +169,15 @@ class RasterWidget(widgets.HBox):
         group_controller.observe(group_by_set_max_window)
         limit_controller.observe(limit_set_max_window)
 
-
         orderable_features = self.get_orderable_cols()
 
         order_by_controller = widgets.Dropdown(options=[None] + orderable_features, description='order by',
                                                layout=Layout(width='90%'),
                                                style={'description_width': 'initial'})
 
-        controls.update(order_by=order_by_controller, limit=limit_controller)
+        self.controls.update(order_by=order_by_controller, limit=limit_controller)
 
-        out_fig = widgets.interactive_output(show_session_raster, controls)
+        out_fig = widgets.interactive_output(show_session_raster, self.controls)
 
         dropdown_box = widgets.VBox(children=(group_controller,
                                               limit_controller,
@@ -204,85 +204,8 @@ class RasterWidget(widgets.HBox):
                           isinstance(self.units[x][0], str)]
         return [x for x in candidate_cols if len(robust_unique(self.units[x][:])) > 1]
 
-
-
-def raster_widget(units: Units, units_window_controller=None, time_window_controller=None):
-
-    controls = dict(units=fixed(units))
-    if time_window_controller is None:
-        tmin = get_min_spike_time(units)
-        tmax = get_max_spike_time(units)
-        time_window_controller = RangeController(tmin, tmax, start_value=[tmin, min(tmin+30, tmax)])
-    controls.update(time_window=time_window_controller.slider)
-
-    if units_window_controller is None:
-        units_window_controller = RangeController(0, len(units['spike_times'].data)-1, start_range=(0, 100),
-                                                  dtype='int', orientation='vertical')
-    controls.update(units_window=units_window_controller.slider)
-
-    candidate_cols = [x for x in units.colnames
-                      if not isinstance(units[x][0], Iterable) or
-                      isinstance(units[x][0], str)]
-
-    groups = infer_categorical_columns(units)
-    group_controller = widgets.Dropdown(options=[None] + list(groups), description='group by',
-                                        layout=Layout(width='90%'),
-                                        style={'description_width': 'initial'})
-    controls.update(group_by=group_controller)
-
-    limit_controller = widgets.BoundedIntText(value=50, min=-1, max=99999, description='limit',
-                                              layout=Layout(width='90%'),
-                                              style={'description_width': 'initial'},
-                                              disabled=True)
-
-    def set_max_window(group_by, limit):
-        group_vals = units[group_by][:]
-        nunits = sum(min(sum(group_vals == x), limit) for x in np.unique(group_vals))
-        units_window_controller.slider.max = nunits
-
-    def group_disable_limit(change):
-        if change['name'] == 'label':
-            if change['new'] in ('None', '', None):
-                limit_controller.disabled = True
-            else:
-                limit_controller.disabled = False
-
-    def group_by_set_max_window(change):
-        if change['name'] == 'label':
-            if change['new'] in ('None', '', None):
-                units_window_controller.slider.max = len(units)
-            else:
-                set_max_window(change['new'], limit_controller.value)
-
-    def limit_set_max_window(change):
-        if change['name'] == 'value':
-            set_max_window(group_controller.value, change['new'])
-
-    group_controller.observe(group_disable_limit)
-    group_controller.observe(group_by_set_max_window)
-    limit_controller.observe(limit_set_max_window)
-
-    features = [x for x in candidate_cols if len(robust_unique(units[x][:])) > 1]
-    order_by_controller = widgets.Dropdown(options=[None] + features, description='order by',
-                                           layout=Layout(width='90%'),
-                                           style={'description_width': 'initial'})
-    controls.update(order_by=order_by_controller)
-    controls.update(limit=limit_controller)
-
-    out_fig = widgets.interactive_output(show_session_raster, controls)
-
-    dropdown_box = widgets.VBox(children=(group_controller,
-                                          limit_controller,
-                                          order_by_controller),
-                                layout=Layout(width='150px'))
-
-    hbox = widgets.HBox(
-        children=[
-            widgets.VBox(children=[dropdown_box, units_window_controller]),
-            widgets.VBox(children=[time_window_controller, out_fig])
-        ]
-    )
-    return hbox
+    def get_trials_select(self):
+        return ()
 
 
 def show_decomposition_series(node, **kwargs):
@@ -366,86 +289,67 @@ def show_decomposition_traces(node: DecompositionSeries):
     return vbox
 
 
-def psth_widget(units: Units, unit_controller=None, after_slider=None, before_slider=None,
-                trial_event_controller=None, trial_order_controller=None,
-                trial_group_controller=None, sigma_in_secs=.05, ntt=1000):
-    """
+class PSTHWidget(widgets.VBox):
+    def __init__(self, units: Units, unit_controller=None, sigma_in_secs=.05, ntt=1000):
 
-    Parameters
-    ----------
-    units: pynwb.misc.Units
-    unit_controller
-    after_slider
-    before_slider
-    trial_event_controller
-    trial_order_controller
-    trial_group_controller
-    sigma_in_secs: float
-    ntt: int
-        Number of timepoints to use for smoothed PSTH
+        self.units = units
 
-    Returns
-    -------
+        super(PSTHWidget, self).__init__()
 
-    """
+        self.trials = self.get_trials()
+        if self.trials is None:
+            self.children = [widgets.HTML('No trials present')]
+            return
 
-    trials = units.get_ancestor('NWBFile').trials
-    if trials is None:
-        return widgets.HTML('No trials present')
+        if unit_controller is None:
+            nunits = len(units['spike_times'].data)
+            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], description='unit')
 
-    control_widgets = widgets.VBox(children=[])
-
-    if unit_controller is None:
-        nunits = len(units['spike_times'].data)
-        #unit_controller = int_controller(nunits)
-        unit_controller = widgets.Dropdown(options=[x for x in range(nunits)],
-                                           description='unit: ')
-        control_widgets.children = list(control_widgets.children) + [unit_controller]
-
-    if trial_event_controller is None:
-        trial_event_controller = make_trial_event_controller(trials)
-        control_widgets.children = list(control_widgets.children) + [trial_event_controller]
-
-    if trial_order_controller is None:
-        trials = units.get_ancestor('NWBFile').trials
-        trial_order_controller = widgets.Dropdown(options=trials.colnames,
-                                                  value='start_time',
-                                                  description='order by: ')
-        control_widgets.children = list(control_widgets.children) + [trial_order_controller]
-
-    if trial_group_controller is None:
-        trials = units.get_ancestor('NWBFile').trials
-        trial_group_controller = widgets.Dropdown(options=[None] + list(trials.colnames),
-                                                  description='group by')
-        control_widgets.children = list(control_widgets.children) + [trial_group_controller]
-
-    if before_slider is None:
+        trial_event_controller = make_trial_event_controller(self.trials)
+        trial_order_controller = widgets.Dropdown(options=self.trials.colnames, value='start_time',
+                                                  description='order by')
+        trial_group_controller = widgets.Dropdown(options=[None] + list(self.trials.colnames), description='group by')
         before_slider = widgets.FloatSlider(.5, min=0, max=5., description='before (s)', continuous_update=False)
-        control_widgets.children = list(control_widgets.children) + [before_slider]
-
-    if after_slider is None:
         after_slider = widgets.FloatSlider(2., min=0, max=5., description='after (s)', continuous_update=False)
-        control_widgets.children = list(control_widgets.children) + [after_slider]
 
-    controls = {
-        'units': fixed(units),
-        'sigma_in_secs': fixed(sigma_in_secs),
-        'ntt': fixed(ntt),
-        'index': unit_controller,
-        'after': after_slider,
-        'before': before_slider,
-        'start_label': trial_event_controller,
-        'order_by': trial_order_controller,
-        'group_by': trial_group_controller
-    }
+        self.children = [
+            unit_controller,
+            trial_event_controller,
+            trial_order_controller,
+            trial_group_controller,
+            before_slider,
+            after_slider]
 
-    out_fig = widgets.interactive_output(trials_psth, controls)
-    vbox = widgets.VBox(children=[control_widgets, out_fig])
-    return vbox
+        self.controls = {
+            'units': fixed(units),
+            'sigma_in_secs': fixed(sigma_in_secs),
+            'ntt': fixed(ntt),
+            'index': unit_controller,
+            'after': after_slider,
+            'before': before_slider,
+            'start_label': trial_event_controller,
+            'order_by': trial_order_controller,
+            'group_by': trial_group_controller
+        }
+
+        self.select_trials()
+
+        out_fig = interactive_output(trials_psth, self.controls, process_controls=self.process_controls)
+
+        self.children = list(self.children) + [out_fig]
+
+    def get_trials(self):
+        return self.units.get_ancestor('NWBFile').trials
+
+    def select_trials(self):
+        self.controls['trials_select'] = fixed(())
+
+    def process_controls(self, controls):
+        return controls
 
 
 def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
-                before=0., after=1., order_by=None, group_by=None, trials_select=None,
+                before=0., after=1., order_by=None, group_by=None, trials_select=(),
                 sigma_in_secs=0.05, ntt=1000):
     """
 
@@ -465,20 +369,18 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
 
     """
     trials = units.get_ancestor('NWBFile').trials
-
-    if trials_select is None:
-        trials_select = np.arange(len(trials), dtype='int')
-    trials_select = np.array(trials_select, dtype='int')
+    if trials is None:
+        trials = units.get_ancestor('NWBFile').epochs
 
     if group_by is None:
         group_vals = None
     else:
-        group_vals = np.array(trials[group_by][:])[trials_select]
+        group_vals = trials[group_by].data[:][trials_select]
 
     if order_by is None:
         order_vals = None
     else:
-        order_vals = np.array(trials[order_by][:])[trials_select]
+        order_vals = trials[order_by].data[:][trials_select]
 
     if group_vals is None and order_vals is None:
         order, group_inds, labels = np.arange(len(trials_select)), None, None
@@ -508,6 +410,8 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
 def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000):
 
     all_data = np.hstack(data)
+    if not len(all_data):
+        return
     tt = np.linspace(min(all_data), max(all_data), ntt)
     smoothed = np.array([compute_smoothed_firing_rate(x, tt, sigma_in_secs) for x in data])
 
