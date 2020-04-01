@@ -54,36 +54,131 @@ def move_slider_down(slider,  dur):
         slider.value = min_val
 
 
-def float_range_controller(tmin, tmax, start_value=None):
-    if start_value is None:
-        start_value = [tmin, min(tmin + 50, tmax)]
+class RangeController(widgets.HBox):
 
-    slider = widgets.FloatRangeSlider(
-        value=start_value,
-        min=tmin,
-        max=tmax,
-        step=0.1,
-        description='time window',
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True,
-        readout_format='.1f',
-        layout=Layout(width='90%'))
+    def __init__(self, vmin, vmax, start_value=None, dtype='float', description='time window (s)',
+                 orientation='horizontal', **kwargs):
 
-    forward_button = widgets.Button(description='▶', layout=Layout(width='50px'))
-    forward_button.on_click(lambda b: move_range_slider_up(slider))
+        if orientation not in ('horizontal', 'vertical'):
+            ValueError('Unrecognized orientation: {}'.format(orientation))
 
-    backwards_button = widgets.Button(description='◀', layout=Layout(width='50px'))
-    backwards_button.on_click(lambda b: move_range_slider_down(slider))
+        self.vmin = vmin
+        self.vmax = vmax
+        self.start_value = start_value
+        self.orientation = orientation
+        self.dtype = dtype
 
-    button_box = widgets.HBox(children=[backwards_button, forward_button])
-    button_box.layout.align_items = 'center'
+        super(RangeController, self).__init__()
 
-    controller = widgets.VBox(
-        layout=Layout(width='250px'),
-        children=[slider, button_box])
+        self.slider = self.make_range_slider(description=description, **kwargs)
 
-    return controller
+        if self.orientation == 'horizontal':
+            self.to_start_button = widgets.Button(description='◀◀', layout=Layout(width='55px'))
+            self.backwards_button = widgets.Button(description='◀', layout=Layout(width='40px'))
+            self.forward_button = widgets.Button(description='▶', layout=Layout(width='40px'))
+            self.to_end_button = widgets.Button(description='▶▶', layout=Layout(width='55px'))
+        else:  # vertical
+            self.to_end_button = widgets.Button(description='▲▲', layout=Layout(width='50px'))
+            self.forward_button = widgets.Button(description='▲', layout=Layout(width='40px'))
+            self.backwards_button = widgets.Button(description='▼', layout=Layout(width='40px'))
+            self.to_start_button = widgets.Button(description='▼▼', layout=Layout(width='50px'))
+
+        self.to_start_button.on_click(self.move_start)
+        self.backwards_button.on_click(self.move_down)
+        self.forward_button.on_click(self.move_up)
+        self.to_end_button.on_click(self.move_end)
+
+        self.children = self.layout()
+
+    def layout(self):
+        if self.orientation == 'horizontal':
+            return [
+                self.slider,
+                self.to_start_button,
+                self.backwards_button,
+                self.forward_button,
+                self.to_end_button
+            ]
+        elif self.orientation == 'vertical':
+            return [widgets.VBox([
+                self.slider,
+                self.to_end_button,
+                self.forward_button,
+                self.backwards_button,
+                self.to_start_button,
+            ],
+                layout=widgets.Layout(display='flex',
+                                      flex_flow='column',
+                                      align_items='center')
+            )]
+        else:
+            raise ValueError('Unrecognized orientation: {}'.format(self.orientation))
+
+    def make_range_slider(self, **kwargs):
+        """
+
+        Parameters
+        ----------
+        kwargs: passed into RangeSlider constructor
+
+        Returns
+        -------
+
+        """
+
+        slider_kwargs = dict(
+            value=self.start_value,
+            min=self.vmin,
+            max=self.vmax,
+            continuous_update=False,
+            readout=True,
+            style={'description_width': 'initial'},
+            orientation=self.orientation
+        )
+
+        if self.dtype == 'float':
+            slider_kwargs.update(
+                readout_format='.1f',
+                step=0.1,
+                description='time window (s)',
+                layout=Layout(width='100%')
+            )
+            slider_kwargs.update(kwargs)
+            return widgets.FloatRangeSlider(**slider_kwargs)
+        elif self.dtype == 'int':
+            slider_kwargs.update(
+                description='unit window',
+                layout=Layout(height='100%')
+            )
+            return widgets.IntRangeSlider(**slider_kwargs)
+        else:
+            raise ValueError('Unrecognized dtype: {}'.format(self.dtype))
+
+    def move_up(self, change):
+        value = self.slider.get_interact_value()
+        value_range = value[1] - value[0]
+        if value[1] + value_range < self.vmax:
+            self.slider.set_state({'value': (value[0] + value_range, value[1] + value_range)})
+        else:
+            self.slider.set_state({'value': (self.vmax - value_range, self.vmax)})
+
+    def move_down(self, change):
+        value = self.slider.get_interact_value()
+        value_range = value[1] - value[0]
+        if value[0] - value_range > self.vmin:
+            self.slider.set_state({'value': (value[0] - value_range, value[1] - value_range)})
+        else:
+            self.slider.set_state({'value': (self.vmin, self.vmin + value_range)})
+
+    def move_start(self, change):
+        value = self.slider.get_interact_value()
+        value_range = value[1] - value[0]
+        self.slider.set_state({'value': (self.vmin, self.vmin + value_range)})
+
+    def move_end(self, change):
+        value = self.slider.get_interact_value()
+        value_range = value[1] - value[0]
+        self.slider.set_state({'value': (self.vmax - value_range, self.vmax)})
 
 
 def make_time_window_controller(tmin, tmax, start=0, duration=5.):
@@ -92,11 +187,13 @@ def make_time_window_controller(tmin, tmax, start=0, duration=5.):
         min=tmin,
         max=tmax,
         step=0.1,
-        description='window start (s):',
+        description='window start (s)',
         continuous_update=False,
         orientation='horizontal',
         readout=True,
-        readout_format='.1f')
+        readout_format='.1f',
+        style={'description_width': 'initial'},
+        layout=Layout(width='100%'))
 
     duration_widget = widgets.BoundedFloatText(
         value=duration,
@@ -104,47 +201,21 @@ def make_time_window_controller(tmin, tmax, start=0, duration=5.):
         max=tmax - tmin,
         step=0.1,
         description='duration (s):',
+        style={'description_width': 'initial'},
+        layout=Layout(width='150px')
     )
 
-    forward_button = widgets.Button(description='▶')
+    forward_button = widgets.Button(description='▶', layout=Layout(width='50px'))
     forward_button.on_click(lambda b: move_slider_up(slider, duration_widget.get_interact_value()))
 
-    backwards_button = widgets.Button(description='◀')
+    backwards_button = widgets.Button(description='◀', layout=Layout(width='50px'))
     backwards_button.on_click(lambda b: move_slider_down(slider, duration_widget.get_interact_value()))
 
-    controller = widgets.VBox(
-        children=[
-            widgets.VBox(children=[slider, duration_widget]),
-            widgets.HBox(children=[backwards_button, forward_button])])
-
-    return controller
-
-
-def int_range_controller(max, min=0, start_range=(0, 30), description='units', orientation='horizontal',
-                         continuous_update=False):
-
-    slider = widgets.IntRangeSlider(
-        value=start_range,
-        min=min,
-        max=max,
-        description=description,
-        continuous_update=continuous_update,
-        orientation=orientation,
-        readout=True,
-        style={'description_width': 'initial'},
-        layout=Layout(width='100%'))
-
-    up_button = widgets.Button(description='▲', layout=Layout(width='100%'))
-    up_button.on_click(lambda b: move_range_slider_up(slider))
-
-    down_button = widgets.Button(description='▼', layout=Layout(width='100%'))
-    down_button.on_click(lambda b: move_range_slider_down(slider))
-
-    controller = widgets.VBox(
-        layout=Layout(width='175px'),
-        children=[
-            slider,
-            widgets.VBox(children=[up_button, down_button])])
+    controller = widgets.HBox(
+        children=[slider,
+                  duration_widget,
+                  backwards_button,
+                  forward_button])
 
     return controller
 
@@ -160,13 +231,13 @@ def int_controller(max, min=0, value=0, description='unit', orientation='horizon
         readout=True
     )
 
-    up_button = widgets.Button(description='▲', layout=Layout(width='auto'))
+    up_button = widgets.Button(description='▲', layout=Layout(width='40px', height='20px'))
     up_button.on_click(lambda b: move_int_slider_up(slider))
 
-    down_button = widgets.Button(description='▼', layout=Layout(width='auto'))
+    down_button = widgets.Button(description='▼', layout=Layout(width='40px', height='20px'))
     down_button.on_click(lambda b: move_int_slider_down(slider))
 
-    controller = widgets.VBox(
+    controller = widgets.HBox(
         children=[
             slider,
             widgets.VBox(children=[up_button, down_button])])

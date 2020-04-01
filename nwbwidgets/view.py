@@ -1,21 +1,22 @@
 import pynwb
 import ndx_grayscalevolume
 from collections import OrderedDict
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
 import hdmf
 from functools import partial
 from ndx_icephys_meta.icephys import SweepSequences
 
 
 default_neurodata_vis_spec = {
+    pynwb.NWBFile: file.show_nwbfile,
     SweepSequences: icephys.show_sweep_sequences,
     pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict({
-        'table': base.show_dynamic_table,
-        'raster': misc.raster_widget,
-        'grouped PSTH': misc.psth_widget,
-        'raster grid': misc.raster_grid_widget}),
+        'raster': misc.RasterWidget,
+        'grouped PSTH': misc.PSTHWidget,
+        'raster grid': misc.raster_grid_widget,
+        'table': base.show_dynamic_table}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_fields,
     pynwb.ophys.ImagingPlane: base.show_fields,

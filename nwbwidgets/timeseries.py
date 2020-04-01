@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from ipywidgets import widgets
+from ipywidgets import widgets, fixed
 from pynwb import TimeSeries
+import pynwb
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind, get_timeseries_in_units)
-from .controllers import int_range_controller, make_time_window_controller
+from .controllers import make_time_window_controller,  RangeController
 from .base import fig2widget
 
 
@@ -133,19 +134,55 @@ def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
     if trace_controller is None:
         if trace_starting_range is None:
             trace_starting_range = (0, min(30, node.data.shape[1]))
-        trace_controller = int_range_controller(node.data.shape[1], start_range=trace_starting_range)
+        trace_controller = RangeController(0, node.data.shape[1], start_range=trace_starting_range,
+                                           description='traces', dtype='int', orientation='vertical')
 
     controls = {
         'time_series': widgets.fixed(node),
-        'time_start': time_window_controller.children[0].children[0],
-        'time_duration': time_window_controller.children[0].children[1],
-        'trace_window': trace_controller.children[0],
+        'time_start': time_window_controller.children[0],
+        'time_duration': time_window_controller.children[1],
+        'trace_window': trace_controller.slider,
     }
     controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
     out_fig = widgets.interactive_output(plot_traces, controls)
 
-    control_widgets = widgets.HBox(children=(time_window_controller, trace_controller))
-    vbox = widgets.VBox(children=[control_widgets, out_fig])
+    lower = widgets.HBox(children=[
+        trace_controller,
+        out_fig
+    ])
 
-    return vbox
+    out = widgets.VBox(children=[
+        time_window_controller,
+        lower
+    ])
+
+    return out
+
+
+def single_trace_widget(timeseries: TimeSeries, time_window_controller=None):
+
+    controls = dict(timeseries=fixed(timeseries))
+
+    gen_time_window_controller = False
+    if time_window_controller is None:
+        gen_time_window_controller = True
+        tmin = get_timeseries_mint(timeseries)
+        tmax = get_timeseries_maxt(timeseries)
+        time_window_controller = RangeController(tmin, tmax, start_value=[tmin, min(tmin+30, tmax)])
+
+    controls.update(time_window=time_window_controller.slider)
+
+    out_fig = widgets.interactive_output(show_trace, controls)
+
+    if gen_time_window_controller:
+        return widgets.VBox(children=[time_window_controller, out_fig])
+    else:
+        return widgets.VBox(children=[out_fig])
+
+
+def show_trace(timeseries, time_window):
+    istart = timeseries_time_to_ind(timeseries, time_window[0])
+    istop = timeseries_time_to_ind(timeseries, time_window[1])
+
+    return show_timeseries_mpl(timeseries, istart=istart, istop=istop).get_figure()
