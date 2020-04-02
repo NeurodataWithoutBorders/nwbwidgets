@@ -103,7 +103,7 @@ def align_by_trials(units: pynwb.misc.Units, index, start_label='start_time',
 
 
 def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_label='start_time',
-                            stop_label='stop_time', before=0., after=0., rows_select=None):
+                            stop_label='stop_time', before=0., after=0., rows_select=()):
     """
     Args:
         units: time-aware neurodata_type
@@ -124,22 +124,15 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
     """
     if stop_label is None:
         stop_label = start_label
-    if rows_select is None:
-        starts = np.array(intervals[start_label][:]) - before
-        stops = np.array(intervals[stop_label][:]) + after
-    else:
-        starts = np.array(intervals[start_label][:])[rows_select] - before
-        stops = np.array(intervals[stop_label][:])[rows_select] + after
+    starts = np.array(intervals[start_label][:])[rows_select] - before
+    stops = np.array(intervals[stop_label][:])[rows_select] + after
     return [x - before for x in align_by_times(units, index, starts, stops)]
 
 
-def get_unobserved_intervals(units, time_window, units_select=None):
+def get_unobserved_intervals(units, time_window, units_select=()):
 
     if 'obs_intervals' not in units:
         return []
-
-    if units_select is None:
-        units_select = list(range(len(units)))
 
     # add observation intervals
     unobserved_intervals_list = []

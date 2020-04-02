@@ -28,7 +28,7 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     return fig
 
 
-def show_session_raster(units: Units, time_window=None, units_select=None, units_window=None, show_obs_intervals=True,
+def show_session_raster(units: Units, time_window=None, units_select=(), units_window=None, show_obs_intervals=True,
                         group_by=None, order_by=None, show_legend=True, limit=None, electrodes=None):
     """
 
@@ -59,11 +59,6 @@ def show_session_raster(units: Units, time_window=None, units_select=None, units
     if units_window is None:
         units_window = [0, len(units)]
 
-    if units_select is None:
-        units_select = np.arange(len(units))
-
-    units_select = np.array(units_select)
-
     if group_by is None:
         group_vals = None
     elif group_by in units:
@@ -86,7 +81,10 @@ def show_session_raster(units: Units, time_window=None, units_select=None, units
         order, group_inds, labels = group_and_sort(group_vals=group_vals, order_vals=order_vals, window=units_window,
                                                    limit=limit)
 
-    data = [get_spike_times(units, unit, time_window) for unit in units_select[order]]
+    if not units_select == ():
+        order = units_select[order]
+
+    data = [get_spike_times(units, unit, time_window) for unit in order]
 
     if show_obs_intervals:
         unobserved_intervals_list = get_unobserved_intervals(units, time_window, order)

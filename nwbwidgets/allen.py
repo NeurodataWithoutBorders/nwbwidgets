@@ -32,9 +32,7 @@ class AllenRasterWidget(RasterWidget):
         groups.update({name: np.unique(electrodes[name][:]) for name in electrodes.colnames})
         return groups
 
-    def get_group_vals(self, group_by, units_select=None):
-        if units_select is None:
-            units_select = ()
+    def get_group_vals(self, group_by, units_select=()):
         if group_by is None:
             return None
         elif group_by in self.units:

@@ -20,12 +20,14 @@ def group_and_sort(group_vals=None, order_vals=None, limit=None, window=None):
 
     if group_vals is not None:
         if group_vals.dtype == np.float64:
-            nan_inds = np.isnan(group_vals)
-            group_vals = group_vals[~nan_inds]
+            keep = ~np.isnan(group_vals)
+            group_vals = group_vals[keep]
+        else:
+            keep = ()
         if order_vals is None:
             order = np.argsort(group_vals)
         else:
-            order_vals = order_vals[~nan_inds]
+            order_vals = order_vals[keep]
             order = np.lexsort([order_vals, group_vals])
         labels, group_inds = np.unique(group_vals[order], return_inverse=True)
     else:
