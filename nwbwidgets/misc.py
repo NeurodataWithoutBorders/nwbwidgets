@@ -29,7 +29,7 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
 
 
 def show_session_raster(units: Units, time_window=None, units_select=(), units_window=None, show_obs_intervals=True,
-                        group_by=None, order_by=None, show_legend=True, limit=None, electrodes=None):
+                        group_vals=None, order_vals=None, show_legend=True, limit=None):
     """
 
     Parameters
@@ -39,13 +39,12 @@ def show_session_raster(units: Units, time_window=None, units_select=(), units_w
     units_select: list(int)
     units_window: [int, int]
     show_obs_intervals: bool
-    group_by: str, optional
-    order_by: str, optional
+    group_vals: array-like, optional
+    order_vals: array-like, optional
     show_legend: bool
         default = True
         Does not show legend if color_by is None or 'id'.
     limit: int, optional
-    electrodes: pynwb.DynamicTable, optional
 
     Returns
     -------
@@ -58,22 +57,6 @@ def show_session_raster(units: Units, time_window=None, units_select=(), units_w
 
     if units_window is None:
         units_window = [0, len(units)]
-
-    if group_by is None:
-        group_vals = None
-    elif group_by in units:
-        group_vals = units[group_by][:][units_select]
-    elif electrodes is not None and group_by in electrodes:
-        ids = electrodes.id[:]
-        inds = [np.argmax(ids == val) for val in units['peak_channel_id'][:]]
-        group_vals = electrodes[group_by][:][inds][units_select]
-
-    if order_by is None:
-        order_vals = None
-    elif electrodes is not None and order_by in electrodes:
-        ids = electrodes.id[:]
-        inds = [np.argmax(ids == val) for val in units['peak_channel_id'][:]]
-        order_vals = electrodes[order_by][:][inds][units_select]
 
     if group_vals is None and order_vals is None:
         order, group_inds, labels = np.arange(units_window[0], units_window[1], dtype='int'), None, None
@@ -104,7 +87,7 @@ class RasterWidget(widgets.HBox):
 
         self.units = units
 
-        self.controls = dict(units=fixed(units), electrodes=fixed(self.units.get_ancestor('NWBFile').electrodes))
+        self.controls = dict(units=fixed(units))
         if time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
@@ -139,7 +122,7 @@ class RasterWidget(widgets.HBox):
                                                   disabled=True)
 
         def set_max_window(group_by, limit):
-            group_vals = self.get_group_vals(group_by)
+            group_vals = self.get_group_vals(self.units, group_by)
             if group_vals.dtype == np.float64:
                 group_vals = group_vals[~np.isnan(group_vals)]
             nunits = sum(min(sum(group_vals == x), limit) for x in np.unique(group_vals))
@@ -175,7 +158,7 @@ class RasterWidget(widgets.HBox):
 
         self.controls.update(order_by=order_by_controller, limit=limit_controller)
 
-        out_fig = widgets.interactive_output(show_session_raster, self.controls)
+        out_fig = interactive_output(show_session_raster, self.controls, self.process_controls)
 
         dropdown_box = widgets.VBox(children=(group_controller,
                                               limit_controller,
@@ -190,11 +173,12 @@ class RasterWidget(widgets.HBox):
     def get_groups(self):
         return infer_categorical_columns(self.units)
 
-    def get_group_vals(self, group_by, units_select=()):
+    @staticmethod
+    def get_group_vals(dynamic_table, group_by, units_select=()):
         if group_by is None:
             return None
-        elif group_by in self.units:
-            return self.units[group_by][:][units_select]
+        elif group_by in dynamic_table:
+            return dynamic_table[group_by][:][units_select]
 
     def get_orderable_cols(self):
         candidate_cols = [x for x in self.units.colnames
@@ -203,7 +187,16 @@ class RasterWidget(widgets.HBox):
         return [x for x in candidate_cols if len(robust_unique(self.units[x][:])) > 1]
 
     def get_trials_select(self):
-        return ()
+        return ()  # all trials
+
+    def process_controls(self, control_states):
+        order_by = control_states.pop('order_by')
+        control_states['order_vals'] = self.get_group_vals(self.units, order_by, self.get_trials_select())
+
+        group_by = control_states.pop('group_by')
+        control_states['group_vals'] = self.get_group_vals(self.units, group_by, self.get_trials_select())
+
+        return control_states
 
 
 def show_decomposition_series(node, **kwargs):
@@ -340,14 +333,29 @@ class PSTHWidget(widgets.VBox):
         return self.units.get_ancestor('NWBFile').trials
 
     def select_trials(self):
-        self.controls['trials_select'] = fixed(())
+        return
 
-    def process_controls(self, controls):
-        return controls
+    @staticmethod
+    def get_group_vals(dynamic_table, group_by, units_select=()):
+        if group_by is None:
+            return None
+        elif group_by in dynamic_table:
+            return dynamic_table[group_by][:][units_select]
+        else:
+            raise ValueError('{} not found in trials'.format(group_by))
+
+    def process_controls(self, control_states):
+        order_by = control_states.pop('order_by')
+        control_states['order_vals'] = self.get_group_vals(self.trials, order_by)
+
+        group_by = control_states.pop('group_by')
+        control_states['group_vals'] = self.get_group_vals(self.trials, group_by)
+
+        return control_states
 
 
-def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
-                before=0., after=1., order_by=None, group_by=None, trials_select=(),
+def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
+                before=0., after=1., order_vals=None, group_vals=None,
                 sigma_in_secs=0.05, ntt=1000):
     """
 
@@ -355,36 +363,35 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
     ----------
     units: pynwb.misc.Units
     index: int
-    start_label
-    before
-    after
-    order_by
-    group_by
-    trials_select
+        Index of unit
+    start_label: str, optional
+        Trial column name to align on
+    before: float
+        Time before that event (should be positive)
+    after: float
+        Time after that event
+    order_vals: array-like, optional
+        How to order trials
+    group_vals: array-like, optional
+        How to group trials
+    sigma_in_secs: float, optional
+        standard deviation of gaussian kernel
+    ntt:
+        Number of time points to use for smooth curve
 
     Returns
     -------
+    matplotlib.Figure
 
     """
     trials = units.get_ancestor('NWBFile').trials
     if trials is None:
         trials = units.get_ancestor('NWBFile').epochs
 
-    if group_by is None:
-        group_vals = None
-    else:
-        group_vals = trials[group_by].data[:][trials_select]
-
-    if order_by is None:
-        order_vals = None
-    else:
-        order_vals = trials[order_by].data[:][trials_select]
-
     if group_vals is None and order_vals is None:
-        order, group_inds, labels = np.arange(len(trials_select)), None, None
+        order, group_inds, labels = np.arange(len(trials)), None, None
     else:
         order, group_inds, labels = group_and_sort(group_vals=group_vals, order_vals=order_vals)
-
     data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after, order)
     # expanded data so that gaussian smoother uses larger window than is viewed
     expanded_data = align_by_time_intervals(units, index, trials, start_label, start_label,
@@ -475,6 +482,8 @@ def plot_unobserved_intervals(unobserved_intervals_list, ax, offset=0, color=(0.
 
 def show_psth_raster(data, before=0.5, after=2.0, group_inds=None, labels=None, ax=None, show_legend=True,
                      align_line_color=(0.7, 0.7, 0.7)):
+    if not len(data):
+        return ax
     ax = plot_grouped_events(data, [-before, after], group_inds, color_wheel, ax, labels,
                              show_legend=show_legend)
     ax.set_ylabel('trials')
