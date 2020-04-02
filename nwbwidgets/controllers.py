@@ -150,6 +150,7 @@ class RangeController(widgets.HBox):
                 description='unit window',
                 layout=Layout(height='100%')
             )
+            slider_kwargs.update(kwargs)
             return widgets.IntRangeSlider(**slider_kwargs)
         else:
             raise ValueError('Unrecognized dtype: {}'.format(self.dtype))

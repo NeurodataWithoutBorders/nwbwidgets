@@ -281,7 +281,7 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 
 class PSTHWidget(widgets.VBox):
-    def __init__(self, units: Units, unit_controller=None, sigma_in_secs=.05, ntt=1000):
+    def __init__(self, units: Units, unit_index=0, unit_controller=None, sigma_in_secs=.05, ntt=1000):
 
         self.units = units
 
@@ -294,7 +294,7 @@ class PSTHWidget(widgets.VBox):
 
         if unit_controller is None:
             nunits = len(units['spike_times'].data)
-            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], description='unit')
+            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], value=unit_index, description='unit')
 
         trial_event_controller = make_trial_event_controller(self.trials)
         trial_order_controller = widgets.Dropdown(options=self.trials.colnames, value='start_time',
@@ -336,11 +336,11 @@ class PSTHWidget(widgets.VBox):
         return
 
     @staticmethod
-    def get_group_vals(dynamic_table, group_by, units_select=()):
+    def get_group_vals(dynamic_table, group_by):
         if group_by is None:
             return None
         elif group_by in dynamic_table:
-            return dynamic_table[group_by][:][units_select]
+            return dynamic_table[group_by][:]
         else:
             raise ValueError('{} not found in trials'.format(group_by))
 
@@ -355,7 +355,7 @@ class PSTHWidget(widgets.VBox):
 
 
 def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
-                before=0., after=1., order_vals=None, group_vals=None,
+                before=0., after=1., order_vals=None, group_vals=None, trials_select=(),
                 sigma_in_secs=0.05, ntt=1000):
     """
 
@@ -388,10 +388,22 @@ def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
     if trials is None:
         trials = units.get_ancestor('NWBFile').epochs
 
+    if group_vals is not None and group_vals.dtype == np.float64:
+        if trials_select == ():
+            trials_select = np.ones((len(group_vals),), dtype='bool')
+        trials_select &= ~np.isnan(group_vals)
+
     if group_vals is None and order_vals is None:
-        order, group_inds, labels = np.arange(len(trials)), None, None
+        order, group_inds, labels = np.where(trials_select)[0], None, None
     else:
+        if group_vals is not None:
+            group_vals = group_vals[trials_select]
+        if order_vals is not None:
+            order_vals = order_vals[trials_select]
         order, group_inds, labels = group_and_sort(group_vals=group_vals, order_vals=order_vals)
+        if not trials_select == ():
+            order = np.where(trials_select)[0][order]
+
     data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after, order)
     # expanded data so that gaussian smoother uses larger window than is viewed
     expanded_data = align_by_time_intervals(units, index, trials, start_label, start_label,
@@ -399,7 +411,7 @@ def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
                                             after + sigma_in_secs * 4,
                                             order)
 
-    fig, axs = plt.subplots(2, 1)
+    fig, axs = plt.subplots(2, 1, figsize=(10, 10))
 
     show_psth_raster(data, before, after, group_inds, labels, ax=axs[0])
 
@@ -412,7 +424,8 @@ def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
     return fig
 
 
-def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000):
+def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000,
+                       align_line_color=(.7, .7, .7)):
 
     all_data = np.hstack(data)
     if not len(all_data):
@@ -435,6 +448,8 @@ def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.
     ax.set_xlim([-before, after])
     ax.set_ylabel('firing rate (Hz)')
     ax.set_xlabel('time (s)')
+
+    ax.axvline(color=align_line_color)
 
 
 def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=None, labels=None,
@@ -492,7 +507,7 @@ def show_psth_raster(data, before=0.5, after=2.0, group_inds=None, labels=None, 
 
 
 def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeIntervals, index, before, after,
-                rows_label=None, cols_label=None, align_by='start_time'):
+                rows_label=None, cols_label=None, trials_select=None, align_by='start_time', axis=None):
     """
 
     Parameters
@@ -512,32 +527,44 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
     """
     if time_intervals is None:
         raise ValueError('trials must exist (trials cannot be None)')
+
+    if trials_select is None:
+        trials_select = np.ones((len(time_intervals),)).astype('bool')
+
     if rows_label is not None:
-        row_vals = np.unique(time_intervals[rows_label][:])
+        row_vals = time_intervals[rows_label][:]
+        urow_vals = np.unique(row_vals[trials_select])
+        if urow_vals.dtype == np.float64:
+            urow_vals = urow_vals[~np.isnan(urow_vals)]
+
     else:
-        row_vals = [None]
-    nrows = len(row_vals)
+        urow_vals = [None]
+    nrows = len(urow_vals)
 
     if cols_label is not None:
-        col_vals = np.unique(time_intervals[cols_label][:])
-    else:
-        col_vals = [None]
-    ncols = len(col_vals)
+        col_vals = time_intervals[cols_label][:]
+        ucol_vals = np.unique(col_vals[trials_select])
+        if ucol_vals.dtype == np.float64:
+            ucol_vals = ucol_vals[~np.isnan(ucol_vals)]
 
-    fig, axs = plt.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False)
+    else:
+        ucol_vals = [None]
+    ncols = len(ucol_vals)
+
+    fig, axs = plt.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False, figsize=(10, 10))
     big_ax = create_big_ax(fig)
-    for i, row in enumerate(row_vals):
-        for j, col in enumerate(col_vals):
+    for i, row in enumerate(urow_vals):
+        for j, col in enumerate(ucol_vals):
             ax = axs[i, j]
-            trials_select = np.ones((len(time_intervals),)).astype('bool')
+            ax_trials_select = trials_select.copy()
             if row is not None:
-                trials_select &= np.array(time_intervals[rows_label][:]) == row
+                ax_trials_select &= row_vals == row
             if col is not None:
-                trials_select &= np.array(time_intervals[cols_label][:]) == col
-            trials_select = np.where(trials_select)[0]
-            if len(trials_select):
+                ax_trials_select &= col_vals == col
+            ax_trials_select = np.where(ax_trials_select)[0]
+            if len(ax_trials_select):
                 data = align_by_time_intervals(units, index, time_intervals, align_by, align_by,
-                                               before, after, trials_select)
+                                               before, after, ax_trials_select)
                 show_psth_raster(data, before, after, ax=ax)
                 ax.set_xlabel('')
                 ax.set_ylabel('')
@@ -552,46 +579,72 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
     return fig
 
 
-def raster_grid_widget(units: Units):
+class RasterGridWidget(widgets.VBox):
 
-    trials = units.get_ancestor('NWBFile').trials
-    if trials is None:
-        return widgets.HTML('No trials present')
+    def __init__(self, units: Units, unit_index=0):
+        super(RasterGridWidget, self).__init__()
 
-    groups = infer_categorical_columns(trials)
+        self.units = units
 
-    control_widgets = widgets.VBox(children=[])
+        self.trials = self.get_trials()
+        if self.trials is None:
+            self.children = [widgets.HTML('No trials present')]
+            return
 
-    rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows: ',
-                                       layout=Layout(width='95%'))
-    cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols: ',
-                                       layout=Layout(width='95%'))
-    control_widgets.children = list(control_widgets.children) + [rows_controller, cols_controller]
+        groups = self.get_groups()
 
-    trial_event_controller = make_trial_event_controller(trials)
-    control_widgets.children = list(control_widgets.children) + [trial_event_controller]
+        rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows')
+        cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols')
 
-    unit_controller = int_controller(len(units['spike_times'].data) - 1)
-    control_widgets.children = list(control_widgets.children) + [unit_controller]
+        trial_event_controller = make_trial_event_controller(self.trials)
+        unit_controller = int_controller(len(units['spike_times'].data) - 1, value=unit_index)
 
-    before_slider = widgets.FloatSlider(.5, min=0, max=5., description='before (s)', continuous_update=False)
-    control_widgets.children = list(control_widgets.children) + [before_slider]
+        before_slider = widgets.FloatSlider(.1, min=0, max=5., description='before (s)', continuous_update=False)
+        after_slider = widgets.FloatSlider(1., min=0, max=5., description='after (s)', continuous_update=False)
 
-    after_slider = widgets.FloatSlider(2., min=0, max=5., description='after (s)', continuous_update=False)
-    control_widgets.children = list(control_widgets.children) + [after_slider]
+        self.controls = {
+            'units': fixed(units),
+            'time_intervals': fixed(self.trials),
+            'index': unit_controller.children[0],
+            'after': after_slider,
+            'before': before_slider,
+            'align_by': trial_event_controller,
+            'rows_label': rows_controller,
+            'cols_label': cols_controller
+        }
 
-    controls = {
-        'units': fixed(units),
-        'time_intervals': fixed(trials),
-        'index': unit_controller.children[0],
-        'after': after_slider,
-        'before': before_slider,
-        'align_by': trial_event_controller,
-        'rows_label': rows_controller,
-        'cols_label': cols_controller
-    }
+        self.children = [
+            unit_controller,
+            rows_controller,
+            cols_controller,
+            trial_event_controller,
+            before_slider,
+            after_slider,
+        ]
 
-    out_fig = widgets.interactive_output(raster_grid, controls)
-    vbox = widgets.VBox(children=[control_widgets, out_fig])
+        self.select_trials()
 
-    return vbox
+        out_fig = interactive_output(raster_grid, self.controls, self.process_controls)
+
+        self.children = list(self.children) + [out_fig]
+
+    def get_groups(self):
+        return infer_categorical_columns(self.trials)
+
+    @staticmethod
+    def get_group_vals(dynamic_table, group_by, units_select=()):
+        if group_by is None:
+            return None
+        elif group_by in dynamic_table:
+            return dynamic_table[group_by][:][units_select]
+        else:
+            raise ValueError('{} not found in trials'.format(group_by))
+
+    def get_trials(self):
+        return self.units.get_ancestor('NWBFile').trials
+
+    def select_trials(self):
+        return
+
+    def process_controls(self, control_states):
+        return control_states
