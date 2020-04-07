@@ -591,7 +591,7 @@ class RasterGridWidget(widgets.VBox):
             self.children = [widgets.HTML('No trials present')]
             return
 
-        groups = self.get_groups()
+        groups = list(self.trials.colnames)
 
         rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows')
         cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols')
