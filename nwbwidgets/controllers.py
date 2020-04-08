@@ -1,4 +1,5 @@
-from ipywidgets import widgets, Layout
+from ipywidgets import widgets, Layout, ValueWidget, link, HBox
+from ipywidgets.widgets.widget_description import DescriptionWidget
 import numpy as np
 
 
@@ -54,7 +55,7 @@ def move_slider_down(slider,  dur):
         slider.value = min_val
 
 
-class RangeController(widgets.HBox):
+class RangeController(widgets.HBox, ValueWidget, DescriptionWidget):
 
     def __init__(self, vmin, vmax, start_value=None, dtype='float', description='time window (s)',
                  orientation='horizontal', **kwargs):
@@ -71,6 +72,8 @@ class RangeController(widgets.HBox):
         super(RangeController, self).__init__()
 
         self.slider = self.make_range_slider(description=description, **kwargs)
+        link((self.slider, 'value'), (self, 'value'))
+        link((self.slider, 'description'), (self, 'description'))
 
         if self.orientation == 'horizontal':
             self.to_start_button = widgets.Button(description='◀◀', layout=Layout(width='55px'))
@@ -156,69 +159,110 @@ class RangeController(widgets.HBox):
             raise ValueError('Unrecognized dtype: {}'.format(self.dtype))
 
     def move_up(self, change):
-        value = self.slider.get_interact_value()
-        value_range = value[1] - value[0]
-        if value[1] + value_range < self.vmax:
-            self.slider.set_state({'value': (value[0] + value_range, value[1] + value_range)})
+        value_range = self.value[1] - self.value[0]
+        if self.value[1] + value_range < self.vmax:
+            self.value = (self.value[0] + value_range, self.value[1] + value_range)
         else:
-            self.slider.set_state({'value': (self.vmax - value_range, self.vmax)})
+            self.move_end(change)
 
     def move_down(self, change):
-        value = self.slider.get_interact_value()
-        value_range = value[1] - value[0]
-        if value[0] - value_range > self.vmin:
-            self.slider.set_state({'value': (value[0] - value_range, value[1] - value_range)})
+        value_range = self.value[1] - self.value[0]
+        if self.value[0] - value_range > self.vmin:
+            self.value = (self.value[0] - value_range, self.value[1] - value_range)
         else:
-            self.slider.set_state({'value': (self.vmin, self.vmin + value_range)})
+            self.move_start(change)
 
     def move_start(self, change):
-        value = self.slider.get_interact_value()
-        value_range = value[1] - value[0]
-        self.slider.set_state({'value': (self.vmin, self.vmin + value_range)})
+        value_range = self.value[1] - self.value[0]
+        self.value = (self.vmin, self.vmin + value_range)
 
     def move_end(self, change):
-        value = self.slider.get_interact_value()
-        value_range = value[1] - value[0]
-        self.slider.set_state({'value': (self.vmax - value_range, self.vmax)})
+        value_range = self.value[1] - self.value[0]
+        self.value = (self.vmax - value_range, self.vmax)
 
 
-def make_time_window_controller(tmin, tmax, start=0, duration=5.):
-    slider = widgets.FloatSlider(
-        value=start,
-        min=tmin,
-        max=tmax,
-        step=0.1,
-        description='window start (s)',
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True,
-        readout_format='.1f',
-        style={'description_width': 'initial'},
-        layout=Layout(width='100%'))
+class StartAndDurationController(HBox, ValueWidget, DescriptionWidget):
+    def __init__(self, tmax, tmin=0, start_value=None, duration=1., dtype='float', description='window (s)',
+                 **kwargs):
 
-    duration_widget = widgets.BoundedFloatText(
-        value=duration,
-        min=0,
-        max=tmax - tmin,
-        step=0.1,
-        description='duration (s):',
-        style={'description_width': 'initial'},
-        layout=Layout(width='150px')
-    )
+        self.tmin = tmin
+        self.tmax = tmax
+        self.start_value = start_value
+        self.dtype = dtype
 
-    forward_button = widgets.Button(description='▶', layout=Layout(width='50px'))
-    forward_button.on_click(lambda b: move_slider_up(slider, duration_widget.get_interact_value()))
+        self.slider = widgets.FloatSlider(
+            value=start_value,
+            min=tmin,
+            max=tmax,
+            step=0.01,
+            description=description,
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True,
+            readout_format='.2f',
+            style={'description_width': 'initial'},
+            layout=Layout(width='100%'))
 
-    backwards_button = widgets.Button(description='◀', layout=Layout(width='50px'))
-    backwards_button.on_click(lambda b: move_slider_down(slider, duration_widget.get_interact_value()))
+        self.duration = widgets.BoundedFloatText(
+            value=duration,
+            min=0,
+            max=tmax - tmin,
+            step=0.1,
+            description='duration (s):',
+            style={'description_width': 'initial'},
+            layout=Layout(width='150px')
+        )
 
-    controller = widgets.HBox(
-        children=[slider,
-                  duration_widget,
-                  backwards_button,
-                  forward_button])
+        super(StartAndDurationController, self).__init__()
+        link((self.slider, 'description'), (self, 'description'))
 
-    return controller
+        self.value = (self.slider.value, self.slider.value + self.duration.value)
+
+        self.forward_button = widgets.Button(description='▶', layout=Layout(width='50px'))
+        self.forward_button.on_click(self.move_up)
+
+        self.backwards_button = widgets.Button(description='◀', layout=Layout(width='50px'))
+        self.backwards_button.on_click(self.move_down)
+
+        self.children = [self.slider, self.duration, self.backwards_button, self.forward_button]
+
+        self.slider.observe(self.monitor_slider)
+        self.duration.observe(self.monitor_duration)
+
+    def monitor_slider(self, change):
+        if 'new' in change:
+            if isinstance(change['new'], dict):
+                if 'value' in change['new']:
+                    value = change['new']['value']
+                else:
+                    return
+            else:
+                value = change['new']
+        if value + self.duration.value > self.tmax:
+            self.slider.value = self.tmax - self.duration.value
+        else:
+            self.value = (value, value + self.duration.value)
+
+    def monitor_duration(self, change):
+        if 'new' in change:
+            if isinstance(change['new'], dict):
+                if 'value' in change['new']:
+                    value = change['new']['value']
+                    if self.slider.value + value > self.tmax:
+                        self.slider.value = self.tmax - value
+                    self.value = (self.slider.value, self.slider.value + value)
+
+    def move_up(self, change):
+        if self.slider.value + 2 * self.duration.value < self.tmax:
+            self.slider.value += self.duration.value
+        else:
+            self.slider.value = self.tmax - self.duration.value
+
+    def move_down(self, change):
+        if self.slider.value - self.duration.value > self.tmin:
+            self.slider.value -= self.duration.value
+        else:
+            self.slider.value = self.tmin
 
 
 def int_controller(max, min=0, value=0, description='unit', orientation='horizontal', continuous_update=False):

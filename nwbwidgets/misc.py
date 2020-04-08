@@ -97,17 +97,17 @@ class RasterWidget(widgets.HBox):
             self.time_window_controller = time_window_controller
             self.tmin = self.time_window_controller.vmin
             self.tmax = self.time_window_controller.vmax
-        self.controls.update(time_window=self.time_window_controller.slider)
+        self.controls.update(time_window=self.time_window_controller)
 
         if units_window_controller is None:
             self.nunits = len(units['spike_times'].data) - 1
             self.units_window_controller = RangeController(0, self.nunits, start_value=(0, min(100, self.nunits)),
-                                                           dtype='int', orientation='vertical')
+                                                           dtype='int', orientation='vertical', description='units')
         else:
             self.units_window_controller = units_window_controller
             self.nunits = self.units_window_controller.vmax
 
-        self.controls.update(units_window=self.units_window_controller.slider)
+        self.controls.update(units_window=self.units_window_controller)
 
         groups = self.get_groups()
 
