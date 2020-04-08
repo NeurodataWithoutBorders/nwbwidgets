@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from scipy.signal import stft
-from pynwb.ecephys import LFP
+from pynwb.ecephys import LFP, SpikeEventSeries
 from .base import fig2widget, nwb2widget
 
 
@@ -21,19 +21,25 @@ def show_spectrogram(neurodata, channel=0, **kwargs):
     plt.show(ax)
 
 
-def show_spike_event_series(ses, **kwargs):
+def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
     def control_plot(spk_ind):
         fig, ax = plt.subplots(figsize=(9, 5))
-        data = ses.data[spk_ind, :, :]
-        for ch in range(nChannels):
-            ax.plot(data[:, ch], color='#d9d9d9')
+        data = ses.data[spk_ind]
+        if nChannels > 1:
+            for ch in range(nChannels):
+                ax.plot(data[:, ch], color='#d9d9d9')
+        else:
+            ax.plot(data[:], color='#d9d9d9')
         ax.plot(np.mean(data, axis=1), color='k')
         ax.set_xlabel('Time')
         ax.set_ylabel('Amplitude')
         plt.show()
         return fig2widget(fig)
 
-    nChannels = ses.data.shape[2]
+    if len(ses.data.shape) == 3:
+        nChannels = ses.data.shape[2]
+    else:
+        nChannels = ses.data.shape[1]
     nSpikes = ses.data.shape[0]
 
     # Controls
