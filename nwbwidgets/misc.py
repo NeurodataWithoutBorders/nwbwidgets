@@ -346,10 +346,10 @@ class PSTHWidget(widgets.VBox):
 
     def process_controls(self, control_states):
         order_by = control_states.pop('order_by')
-        control_states['order_vals'] = self.get_group_vals(self.trials, order_by)
+        control_states['order_vals'] = np.array(self.get_group_vals(self.trials, order_by))
 
         group_by = control_states.pop('group_by')
-        control_states['group_vals'] = self.get_group_vals(self.trials, group_by)
+        control_states['group_vals'] = np.array(self.get_group_vals(self.trials, group_by))
 
         return control_states
 
@@ -507,7 +507,7 @@ def show_psth_raster(data, before=0.5, after=2.0, group_inds=None, labels=None, 
 
 
 def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeIntervals, index, before, after,
-                rows_label=None, cols_label=None, trials_select=None, align_by='start_time', axis=None):
+                rows_label=None, cols_label=None, trials_select=None, align_by='start_time'):
     """
 
     Parameters
@@ -517,9 +517,10 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
     index: int
     before: float
     after: float
-    rows_label:
-    cols_label
-    align_by
+    rows_label: str
+    cols_label: str
+    trials_select: np.array(dtype=bool)
+    align_by: str
 
     Returns
     -------
