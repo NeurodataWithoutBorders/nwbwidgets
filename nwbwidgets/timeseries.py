@@ -135,7 +135,7 @@ def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
         if trace_starting_range is None:
             trace_starting_range = (0, min(30, node.data.shape[1]))
         trace_controller = RangeController(0, node.data.shape[1], start_range=trace_starting_range,
-                                           description='traces', dtype='int', orientation='vertical')
+                                           description='channels', dtype='int', orientation='vertical')
 
     controls = {
         'time_series': widgets.fixed(node),

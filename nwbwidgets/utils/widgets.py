@@ -13,7 +13,8 @@ def interactive_output(f, controls, process_controls=lambda x: x):
     out = Output()
 
     def observer(change):
-        kwargs = process_controls({k: v.value for k, v in controls.items()})
+        control_states = {k: v.value for k, v in controls.items()}
+        kwargs = process_controls(control_states)
         show_inline_matplotlib_plots()
         with out:
             clear_output(wait=True)

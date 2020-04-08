@@ -28,8 +28,8 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     return fig
 
 
-def show_session_raster(units: Units, time_window=None, units_select=None, units_window=None, show_obs_intervals=True,
-                        group_by=None, order_by=None, show_legend=True, limit=None, electrodes=None):
+def show_session_raster(units: Units, time_window=None, units_select=(), units_window=None, show_obs_intervals=True,
+                        group_vals=None, order_vals=None, show_legend=True, limit=None):
     """
 
     Parameters
@@ -39,13 +39,12 @@ def show_session_raster(units: Units, time_window=None, units_select=None, units
     units_select: list(int)
     units_window: [int, int]
     show_obs_intervals: bool
-    group_by: str, optional
-    order_by: str, optional
+    group_vals: array-like, optional
+    order_vals: array-like, optional
     show_legend: bool
         default = True
         Does not show legend if color_by is None or 'id'.
     limit: int, optional
-    electrodes: pynwb.DynamicTable, optional
 
     Returns
     -------
@@ -59,34 +58,16 @@ def show_session_raster(units: Units, time_window=None, units_select=None, units
     if units_window is None:
         units_window = [0, len(units)]
 
-    if units_select is None:
-        units_select = np.arange(len(units))
-
-    units_select = np.array(units_select)
-
-    if group_by is None:
-        group_vals = None
-    elif group_by in units:
-        group_vals = units[group_by][:][units_select]
-    elif electrodes is not None and group_by in electrodes:
-        ids = electrodes.id[:]
-        inds = [np.argmax(ids == val) for val in units['peak_channel_id'][:]]
-        group_vals = electrodes[group_by][:][inds][units_select]
-
-    if order_by is None:
-        order_vals = None
-    elif electrodes is not None and order_by in electrodes:
-        ids = electrodes.id[:]
-        inds = [np.argmax(ids == val) for val in units['peak_channel_id'][:]]
-        order_vals = electrodes[order_by][:][inds][units_select]
-
     if group_vals is None and order_vals is None:
         order, group_inds, labels = np.arange(units_window[0], units_window[1], dtype='int'), None, None
     else:
         order, group_inds, labels = group_and_sort(group_vals=group_vals, order_vals=order_vals, window=units_window,
                                                    limit=limit)
 
-    data = [get_spike_times(units, unit, time_window) for unit in units_select[order]]
+    if not units_select == ():
+        order = units_select[order]
+
+    data = [get_spike_times(units, unit, time_window) for unit in order]
 
     if show_obs_intervals:
         unobserved_intervals_list = get_unobserved_intervals(units, time_window, order)
@@ -106,7 +87,7 @@ class RasterWidget(widgets.HBox):
 
         self.units = units
 
-        self.controls = dict(units=fixed(units), electrodes=fixed(self.units.get_ancestor('NWBFile').electrodes))
+        self.controls = dict(units=fixed(units))
         if time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
@@ -141,7 +122,7 @@ class RasterWidget(widgets.HBox):
                                                   disabled=True)
 
         def set_max_window(group_by, limit):
-            group_vals = self.get_group_vals(group_by)
+            group_vals = self.get_group_vals(self.units, group_by)
             if group_vals.dtype == np.float64:
                 group_vals = group_vals[~np.isnan(group_vals)]
             nunits = sum(min(sum(group_vals == x), limit) for x in np.unique(group_vals))
@@ -177,7 +158,7 @@ class RasterWidget(widgets.HBox):
 
         self.controls.update(order_by=order_by_controller, limit=limit_controller)
 
-        out_fig = widgets.interactive_output(show_session_raster, self.controls)
+        out_fig = interactive_output(show_session_raster, self.controls, self.process_controls)
 
         dropdown_box = widgets.VBox(children=(group_controller,
                                               limit_controller,
@@ -192,11 +173,12 @@ class RasterWidget(widgets.HBox):
     def get_groups(self):
         return infer_categorical_columns(self.units)
 
-    def get_group_vals(self, group_by, units_select=()):
+    @staticmethod
+    def get_group_vals(dynamic_table, group_by, units_select=()):
         if group_by is None:
             return None
-        elif group_by in self.units:
-            return self.units[group_by][:][units_select]
+        elif group_by in dynamic_table:
+            return dynamic_table[group_by][:][units_select]
 
     def get_orderable_cols(self):
         candidate_cols = [x for x in self.units.colnames
@@ -205,7 +187,16 @@ class RasterWidget(widgets.HBox):
         return [x for x in candidate_cols if len(robust_unique(self.units[x][:])) > 1]
 
     def get_trials_select(self):
-        return ()
+        return ()  # all trials
+
+    def process_controls(self, control_states):
+        order_by = control_states.pop('order_by')
+        control_states['order_vals'] = self.get_group_vals(self.units, order_by, self.get_trials_select())
+
+        group_by = control_states.pop('group_by')
+        control_states['group_vals'] = self.get_group_vals(self.units, group_by, self.get_trials_select())
+
+        return control_states
 
 
 def show_decomposition_series(node, **kwargs):
@@ -290,7 +281,7 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 
 class PSTHWidget(widgets.VBox):
-    def __init__(self, units: Units, unit_controller=None, sigma_in_secs=.05, ntt=1000):
+    def __init__(self, units: Units, unit_index=0, unit_controller=None, sigma_in_secs=.05, ntt=1000):
 
         self.units = units
 
@@ -303,7 +294,7 @@ class PSTHWidget(widgets.VBox):
 
         if unit_controller is None:
             nunits = len(units['spike_times'].data)
-            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], description='unit')
+            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], value=unit_index, description='unit')
 
         trial_event_controller = make_trial_event_controller(self.trials)
         trial_order_controller = widgets.Dropdown(options=self.trials.colnames, value='start_time',
@@ -342,14 +333,29 @@ class PSTHWidget(widgets.VBox):
         return self.units.get_ancestor('NWBFile').trials
 
     def select_trials(self):
-        self.controls['trials_select'] = fixed(())
+        return
 
-    def process_controls(self, controls):
-        return controls
+    @staticmethod
+    def get_group_vals(dynamic_table, group_by):
+        if group_by is None:
+            return None
+        elif group_by in dynamic_table:
+            return dynamic_table[group_by][:]
+        else:
+            raise ValueError('{} not found in trials'.format(group_by))
+
+    def process_controls(self, control_states):
+        order_by = control_states.pop('order_by')
+        control_states['order_vals'] = self.get_group_vals(self.trials, order_by)
+
+        group_by = control_states.pop('group_by')
+        control_states['group_vals'] = self.get_group_vals(self.trials, group_by)
+
+        return control_states
 
 
-def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
-                before=0., after=1., order_by=None, group_by=None, trials_select=(),
+def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
+                before=0., after=1., order_vals=None, group_vals=None, trials_select=(),
                 sigma_in_secs=0.05, ntt=1000):
     """
 
@@ -357,35 +363,46 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
     ----------
     units: pynwb.misc.Units
     index: int
-    start_label
-    before
-    after
-    order_by
-    group_by
-    trials_select
+        Index of unit
+    start_label: str, optional
+        Trial column name to align on
+    before: float
+        Time before that event (should be positive)
+    after: float
+        Time after that event
+    order_vals: array-like, optional
+        How to order trials
+    group_vals: array-like, optional
+        How to group trials
+    sigma_in_secs: float, optional
+        standard deviation of gaussian kernel
+    ntt:
+        Number of time points to use for smooth curve
 
     Returns
     -------
+    matplotlib.Figure
 
     """
     trials = units.get_ancestor('NWBFile').trials
     if trials is None:
         trials = units.get_ancestor('NWBFile').epochs
 
-    if group_by is None:
-        group_vals = None
-    else:
-        group_vals = trials[group_by].data[:][trials_select]
-
-    if order_by is None:
-        order_vals = None
-    else:
-        order_vals = trials[order_by].data[:][trials_select]
+    if group_vals is not None and group_vals.dtype == np.float64:
+        if trials_select == ():
+            trials_select = np.ones((len(group_vals),), dtype='bool')
+        trials_select &= ~np.isnan(group_vals)
 
     if group_vals is None and order_vals is None:
-        order, group_inds, labels = np.arange(len(trials_select)), None, None
+        order, group_inds, labels = np.where(trials_select)[0], None, None
     else:
+        if group_vals is not None:
+            group_vals = group_vals[trials_select]
+        if order_vals is not None:
+            order_vals = order_vals[trials_select]
         order, group_inds, labels = group_and_sort(group_vals=group_vals, order_vals=order_vals)
+        if not trials_select == ():
+            order = np.where(trials_select)[0][order]
 
     data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after, order)
     # expanded data so that gaussian smoother uses larger window than is viewed
@@ -394,7 +411,7 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
                                             after + sigma_in_secs * 4,
                                             order)
 
-    fig, axs = plt.subplots(2, 1)
+    fig, axs = plt.subplots(2, 1, figsize=(10, 10))
 
     show_psth_raster(data, before, after, group_inds, labels, ax=axs[0])
 
@@ -407,7 +424,8 @@ def trials_psth(units: pynwb.misc.Units, index=0, start_label='start_time',
     return fig
 
 
-def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000):
+def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000,
+                       align_line_color=(.7, .7, .7)):
 
     all_data = np.hstack(data)
     if not len(all_data):
@@ -430,6 +448,8 @@ def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.
     ax.set_xlim([-before, after])
     ax.set_ylabel('firing rate (Hz)')
     ax.set_xlabel('time (s)')
+
+    ax.axvline(color=align_line_color)
 
 
 def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=None, labels=None,
@@ -477,6 +497,8 @@ def plot_unobserved_intervals(unobserved_intervals_list, ax, offset=0, color=(0.
 
 def show_psth_raster(data, before=0.5, after=2.0, group_inds=None, labels=None, ax=None, show_legend=True,
                      align_line_color=(0.7, 0.7, 0.7)):
+    if not len(data):
+        return ax
     ax = plot_grouped_events(data, [-before, after], group_inds, color_wheel, ax, labels,
                              show_legend=show_legend)
     ax.set_ylabel('trials')
@@ -485,7 +507,7 @@ def show_psth_raster(data, before=0.5, after=2.0, group_inds=None, labels=None, 
 
 
 def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeIntervals, index, before, after,
-                rows_label=None, cols_label=None, align_by='start_time'):
+                rows_label=None, cols_label=None, trials_select=None, align_by='start_time', axis=None):
     """
 
     Parameters
@@ -505,32 +527,44 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
     """
     if time_intervals is None:
         raise ValueError('trials must exist (trials cannot be None)')
+
+    if trials_select is None:
+        trials_select = np.ones((len(time_intervals),)).astype('bool')
+
     if rows_label is not None:
-        row_vals = np.unique(time_intervals[rows_label][:])
+        row_vals = time_intervals[rows_label][:]
+        urow_vals = np.unique(row_vals[trials_select])
+        if urow_vals.dtype == np.float64:
+            urow_vals = urow_vals[~np.isnan(urow_vals)]
+
     else:
-        row_vals = [None]
-    nrows = len(row_vals)
+        urow_vals = [None]
+    nrows = len(urow_vals)
 
     if cols_label is not None:
-        col_vals = np.unique(time_intervals[cols_label][:])
-    else:
-        col_vals = [None]
-    ncols = len(col_vals)
+        col_vals = time_intervals[cols_label][:]
+        ucol_vals = np.unique(col_vals[trials_select])
+        if ucol_vals.dtype == np.float64:
+            ucol_vals = ucol_vals[~np.isnan(ucol_vals)]
 
-    fig, axs = plt.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False)
+    else:
+        ucol_vals = [None]
+    ncols = len(ucol_vals)
+
+    fig, axs = plt.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False, figsize=(10, 10))
     big_ax = create_big_ax(fig)
-    for i, row in enumerate(row_vals):
-        for j, col in enumerate(col_vals):
+    for i, row in enumerate(urow_vals):
+        for j, col in enumerate(ucol_vals):
             ax = axs[i, j]
-            trials_select = np.ones((len(time_intervals),)).astype('bool')
+            ax_trials_select = trials_select.copy()
             if row is not None:
-                trials_select &= np.array(time_intervals[rows_label][:]) == row
+                ax_trials_select &= row_vals == row
             if col is not None:
-                trials_select &= np.array(time_intervals[cols_label][:]) == col
-            trials_select = np.where(trials_select)[0]
-            if len(trials_select):
+                ax_trials_select &= col_vals == col
+            ax_trials_select = np.where(ax_trials_select)[0]
+            if len(ax_trials_select):
                 data = align_by_time_intervals(units, index, time_intervals, align_by, align_by,
-                                               before, after, trials_select)
+                                               before, after, ax_trials_select)
                 show_psth_raster(data, before, after, ax=ax)
                 ax.set_xlabel('')
                 ax.set_ylabel('')
@@ -545,46 +579,72 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
     return fig
 
 
-def raster_grid_widget(units: Units):
+class RasterGridWidget(widgets.VBox):
 
-    trials = units.get_ancestor('NWBFile').trials
-    if trials is None:
-        return widgets.HTML('No trials present')
+    def __init__(self, units: Units, unit_index=0):
+        super(RasterGridWidget, self).__init__()
 
-    groups = infer_categorical_columns(trials)
+        self.units = units
 
-    control_widgets = widgets.VBox(children=[])
+        self.trials = self.get_trials()
+        if self.trials is None:
+            self.children = [widgets.HTML('No trials present')]
+            return
 
-    rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows: ',
-                                       layout=Layout(width='95%'))
-    cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols: ',
-                                       layout=Layout(width='95%'))
-    control_widgets.children = list(control_widgets.children) + [rows_controller, cols_controller]
+        groups = list(self.trials.colnames)
 
-    trial_event_controller = make_trial_event_controller(trials)
-    control_widgets.children = list(control_widgets.children) + [trial_event_controller]
+        rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows')
+        cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols')
 
-    unit_controller = int_controller(len(units['spike_times'].data) - 1)
-    control_widgets.children = list(control_widgets.children) + [unit_controller]
+        trial_event_controller = make_trial_event_controller(self.trials)
+        unit_controller = int_controller(len(units['spike_times'].data) - 1, value=unit_index)
 
-    before_slider = widgets.FloatSlider(.5, min=0, max=5., description='before (s)', continuous_update=False)
-    control_widgets.children = list(control_widgets.children) + [before_slider]
+        before_slider = widgets.FloatSlider(.1, min=0, max=5., description='before (s)', continuous_update=False)
+        after_slider = widgets.FloatSlider(1., min=0, max=5., description='after (s)', continuous_update=False)
 
-    after_slider = widgets.FloatSlider(2., min=0, max=5., description='after (s)', continuous_update=False)
-    control_widgets.children = list(control_widgets.children) + [after_slider]
+        self.controls = {
+            'units': fixed(units),
+            'time_intervals': fixed(self.trials),
+            'index': unit_controller.children[0],
+            'after': after_slider,
+            'before': before_slider,
+            'align_by': trial_event_controller,
+            'rows_label': rows_controller,
+            'cols_label': cols_controller
+        }
 
-    controls = {
-        'units': fixed(units),
-        'time_intervals': fixed(trials),
-        'index': unit_controller.children[0],
-        'after': after_slider,
-        'before': before_slider,
-        'align_by': trial_event_controller,
-        'rows_label': rows_controller,
-        'cols_label': cols_controller
-    }
+        self.children = [
+            unit_controller,
+            rows_controller,
+            cols_controller,
+            trial_event_controller,
+            before_slider,
+            after_slider,
+        ]
 
-    out_fig = widgets.interactive_output(raster_grid, controls)
-    vbox = widgets.VBox(children=[control_widgets, out_fig])
+        self.select_trials()
 
-    return vbox
+        out_fig = interactive_output(raster_grid, self.controls, self.process_controls)
+
+        self.children = list(self.children) + [out_fig]
+
+    def get_groups(self):
+        return infer_categorical_columns(self.trials)
+
+    @staticmethod
+    def get_group_vals(dynamic_table, group_by, units_select=()):
+        if group_by is None:
+            return None
+        elif group_by in dynamic_table:
+            return dynamic_table[group_by][:][units_select]
+        else:
+            raise ValueError('{} not found in trials'.format(group_by))
+
+    def get_trials(self):
+        return self.units.get_ancestor('NWBFile').trials
+
+    def select_trials(self):
+        return
+
+    def process_controls(self, control_states):
+        return control_states
