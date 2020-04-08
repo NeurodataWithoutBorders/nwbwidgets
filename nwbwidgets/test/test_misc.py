@@ -6,8 +6,8 @@ from dateutil.tz import tzlocal
 from pynwb import NWBFile
 from pynwb.misc import DecompositionSeries, AnnotationSeries
 from ipywidgets import widgets
-from nwbwidgets.misc import show_psth_raster, psth_widget, show_decomposition_traces, show_decomposition_series, raster_widget, \
-    show_session_raster, show_annotations, raster_grid_widget, raster_grid
+from nwbwidgets.misc import show_psth_raster, PSTHWidget, show_decomposition_traces, show_decomposition_series, RasterWidget, \
+    show_session_raster, show_annotations, RasterGridWidget, raster_grid
 import unittest
 
 
@@ -53,16 +53,16 @@ class ShowPSTHTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim='desert')
 
     def test_psth_widget(self):
-        assert isinstance(psth_widget(self.nwbfile.units), widgets.Widget)
+        assert isinstance(PSTHWidget(self.nwbfile.units), widgets.Widget)
 
     def test_raster_widget(self):
-        assert isinstance(raster_widget(self.nwbfile.units), widgets.Widget)
+        assert isinstance(RasterWidget(self.nwbfile.units), widgets.Widget)
 
     def test_show_session_raster(self):
         assert isinstance(show_session_raster(self.nwbfile.units), plt.Axes)
 
     def test_raster_grid_widget(self):
-        assert isinstance(raster_grid_widget(self.nwbfile.units), widgets.Widget)
+        assert isinstance(RasterGridWidget(self.nwbfile.units), widgets.Widget)
 
     def test_raster_grid(self):
         trials = self.nwbfile.units.get_ancestor('NWBFile').trials
