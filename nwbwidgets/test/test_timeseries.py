@@ -35,21 +35,14 @@ class ShowTimeSeriesTestCase(unittest.TestCase):
 class PlotTracesTestCase(unittest.TestCase):
     
     def setUp(self):
-        
-        self.time_start = 1
-        self.time_duration = None
-        self.trace_window = None
-        self.title = 'Plot Traces'
-        self.ylabel = 'traces'
         self.data = np.random.rand(160, 3)
     
     def test_plot_traces(self):
 
         ts = TimeSeries(name='test_timeseries', data=self.data, unit='m', starting_time=0.0, rate=20.0)
-        plot_traces(ts, self.time_start, self.time_duration, self.trace_window, self.title, self.ylabel)
+        plot_traces(ts)
         
     def test_plot_traces_fix(self):
 
-        data = self.data.T
-        ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=20.0)
-        plot_traces(ts, self.time_start, self.time_duration, self.trace_window, self.title, self.ylabel)
+        ts = TimeSeries(name='test_timeseries', data=self.data.T, unit='m', starting_time=0.0, rate=20.0)
+        plot_traces(ts)

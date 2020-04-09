@@ -5,7 +5,7 @@ from pynwb import TimeSeries
 import pynwb
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind, get_timeseries_in_units)
-from .controllers import make_time_window_controller,  RangeController
+from .controllers import StartAndDurationController,  RangeController
 from .base import fig2widget
 
 
@@ -58,7 +58,7 @@ def show_timeseries(node: TimeSeries, neurodata_vis_spec=None, istart=0, istop=N
     return widgets.HBox(children=children)
 
 
-def plot_traces(time_series: TimeSeries, time_start=0, time_duration=None, trace_window=None,
+def plot_traces(time_series: TimeSeries, time_window=None, trace_window=None,
                 title: str = None, ylabel: str = 'traces'):
     """
 
@@ -79,14 +79,12 @@ def plot_traces(time_series: TimeSeries, time_start=0, time_duration=None, trace
 
     """
 
-    if time_start == 0:
+    if time_window is None:
         t_ind_start = 0
-    else:
-        t_ind_start = timeseries_time_to_ind(time_series, time_start)
-    if time_duration is None:
         t_ind_stop = None
     else:
-        t_ind_stop = timeseries_time_to_ind(time_series, time_start + time_duration)
+        t_ind_start = timeseries_time_to_ind(time_series, time_window[0])
+        t_ind_stop = timeseries_time_to_ind(time_series, time_window[1])
 
     if trace_window is None:
         trace_window = [0, time_series.data.shape[1]]
@@ -130,7 +128,7 @@ def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
             start = tmin
         if dur is None:
             dur = min(tmax-tmin, 5)
-        time_window_controller = make_time_window_controller(tmin, tmax, start=start, duration=dur)
+        time_window_controller = StartAndDurationController(tmax, tmin, start=start, duration=dur)
     if trace_controller is None:
         if trace_starting_range is None:
             trace_starting_range = (0, min(30, node.data.shape[1]))
@@ -139,8 +137,7 @@ def traces_widget(node: TimeSeries, neurodata_vis_spec: dict = None,
 
     controls = {
         'time_series': widgets.fixed(node),
-        'time_start': time_window_controller.children[0],
-        'time_duration': time_window_controller.children[1],
+        'time_window': time_window_controller,
         'trace_window': trace_controller.slider,
     }
     controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
