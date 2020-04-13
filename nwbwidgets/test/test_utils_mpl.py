@@ -3,6 +3,7 @@ import numpy as np
 from nwbwidgets.utils.mpl import create_big_ax,grid_sps
 
 
+
 def test_create_big_ax():
     fig = plt.figure(tight_layout=True)
     plt.plot(np.arange(0, 1e6, 1000))
