@@ -72,15 +72,15 @@ class CalciumImagingTestCase(unittest.TestCase):
 
         rt_region = ps.create_roi_table_region('the first of two ROIs', region=[0])
 
-        data = np.array([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]).reshape(10,1)
-        timestamps = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        data = np.random.randn(10, 5)
+        timestamps = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
         rrs = fl.create_roi_response_series('my_rrs', data, rt_region, unit='lumens', timestamps=timestamps)
 
         self.df_over_f = DfOverF(rrs)
         
     def test_show_two_photon_series(self):
-        assert isinstance(show_two_photon_series(self.image_series,default_neurodata_vis_spec),widgets.Widget)
+        assert isinstance(show_two_photon_series(self.image_series, default_neurodata_vis_spec), widgets.Widget)
         
     def test_show_df_over_f(self):
-        assert isinstance(show_df_over_f(self.df_over_f,default_neurodata_vis_spec),widgets.Widget)
+        assert isinstance(show_df_over_f(self.df_over_f, default_neurodata_vis_spec), widgets.Widget)
 
