@@ -649,4 +649,3 @@ class RasterGridWidget(widgets.VBox):
 
     def process_controls(self, control_states):
         return control_states
-
