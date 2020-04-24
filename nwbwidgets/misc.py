@@ -422,7 +422,7 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=10):
 
     if not isinstance(sig, (float, int)) or sig <= 0:
         raise TypeError("sig must be positive. Only the non-adaptive method is supported")
-    if not isinstance(num_bootstraps, int):
+    if not isinstance(num_bootstraps, int) or num_bootstraps <= 0:
         raise TypeError("num_bootstraps must be a positive integer")
 
     # determine the interval of interest T, and mask times outside of the interval
@@ -438,7 +438,6 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=10):
         num_points = int(5*(T[1]-T[0])/sig)
         t = np.linspace(T[0], T[1], num_points)
         t_min, t_max = T[0], T[1]
-
     else:
         t = np.ravel(t)
         num_points = len(t)
@@ -647,3 +646,4 @@ def raster_grid_widget(units: Units):
     vbox = widgets.VBox(children=[control_widgets, out_fig])
 
     return vbox
+
