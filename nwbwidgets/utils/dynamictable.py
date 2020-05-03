@@ -16,9 +16,33 @@ def infer_categorical_columns(dynamic_table: DynamicTable):
     return categorical_cols
 
 
-def group_and_sort(group_vals=None, order_vals=None, limit=None, window=None):
+def group_and_sort(group_vals=None, group_select=None, order_vals=None, limit=None, window=None):
+    """
+    1) Apply group select
+    2) Apply groups
+    3) Apply order
+    4) Apply limit
+    5) Apply window
+
+    Parameters
+    ----------
+    group_vals
+    group_select
+    order_vals
+    limit
+    window
+
+    Returns
+    -------
+
+    """
 
     if group_vals is not None:
+        if group_select:
+            keep = np.isin(group_vals, group_select)
+            group_vals = group_vals[keep]
+            if order_vals is not None:
+                order_vals = order_vals[keep]
         if order_vals is None:
             order = np.argsort(group_vals)
         else:
