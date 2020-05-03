@@ -1,20 +1,18 @@
-from typing import Iterable
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pynwb
 import scipy
-from ipywidgets import widgets, fixed, Layout
+from ipywidgets import widgets, fixed
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
-from .controllers import make_trial_event_controller, int_controller, RangeController
+from .controllers import make_trial_event_controller, GroupAndSortController, StartAndDurationController
 from .utils.dynamictable import group_and_sort, infer_categorical_columns
 from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals, \
     get_unobserved_intervals
 from .utils.mpl import create_big_ax
-from .utils.pynwb import robust_unique
 from .utils.widgets import interactive_output
 from .analysis.spikes import compute_smoothed_firing_rate
 
@@ -28,23 +26,22 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
     return fig
 
 
-def show_session_raster(units: Units, time_window=None, units_select=(), units_window=None, show_obs_intervals=True,
-                        group_vals=None, order_vals=None, show_legend=True, limit=None):
+def show_session_raster(units: Units, time_window=None, units_window=None, show_obs_intervals=True,
+                        order=None, group_inds=None, labels=None, show_legend=True):
     """
 
     Parameters
     ----------
     units: pynwb.misc.Units
     time_window: [int, int]
-    units_select: list(int)
     units_window: [int, int]
     show_obs_intervals: bool
-    group_vals: array-like, optional
-    order_vals: array-like, optional
+    order: array-like, optional
+    group_inds: array-like, optional
+    labels: array-like, optional
     show_legend: bool
         default = True
         Does not show legend if color_by is None or 'id'.
-    limit: int, optional
 
     Returns
     -------
@@ -58,14 +55,8 @@ def show_session_raster(units: Units, time_window=None, units_select=(), units_w
     if units_window is None:
         units_window = [0, len(units)]
 
-    if group_vals is None and order_vals is None:
-        order, group_inds, labels = np.arange(units_window[0], units_window[1], dtype='int'), None, None
-    else:
-        order, group_inds, labels = group_and_sort(group_vals=group_vals, order_vals=order_vals, window=units_window,
-                                                   limit=limit)
-
-    if not units_select == ():
-        order = units_select[order]
+    if order is None:
+        order = np.arange(len(units), dtype='int')
 
     data = [get_spike_times(units, unit, time_window) for unit in order]
 
@@ -82,121 +73,41 @@ def show_session_raster(units: Units, time_window=None, units_select=(), units_w
 
 
 class RasterWidget(widgets.HBox):
-    def __init__(self, units: Units, units_window_controller=None, time_window_controller=None):
-        super(RasterWidget, self).__init__()
+    def __init__(self, units: Units, time_window_controller=None, group_by=None):
+        super().__init__()
 
         self.units = units
 
-        self.controls = dict(units=fixed(units))
         if time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
-            self.time_window_controller = RangeController(self.tmin, self.tmax,
-                                                          start_value=[self.tmin, min(self.tmin + 30, self.tmax)])
+            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
+                                                                     duration=5)
         else:
             self.time_window_controller = time_window_controller
             self.tmin = self.time_window_controller.vmin
             self.tmax = self.time_window_controller.vmax
-        self.controls.update(time_window=self.time_window_controller)
 
-        if units_window_controller is None:
-            self.nunits = len(units['spike_times'].data) - 1
-            self.units_window_controller = RangeController(0, self.nunits, start_value=(0, min(100, self.nunits)),
-                                                           dtype='int', orientation='vertical', description='units')
-        else:
-            self.units_window_controller = units_window_controller
-            self.nunits = self.units_window_controller.vmax
+        self.gas = self.make_group_and_sort(group_by=group_by)
 
-        self.controls.update(units_window=self.units_window_controller)
+        self.controls = dict(
+            units=fixed(self.units),
+            time_window=self.time_window_controller,
+            gas=self.gas
+        )
 
-        groups = self.get_groups()
-
-        group_controller = widgets.Dropdown(options=[None] + list(groups), description='group by',
-                                            layout=Layout(width='90%'),
-                                            style={'description_width': 'initial'})
-        self.controls.update(group_by=group_controller)
-
-        limit_controller = widgets.BoundedIntText(value=50, min=-1, max=99999, description='limit',
-                                                  layout=Layout(width='90%'),
-                                                  style={'description_width': 'initial'},
-                                                  disabled=True)
-
-        def set_max_window(group_by, limit):
-            group_vals = self.get_group_vals(self.units, group_by)
-            if group_vals.dtype == np.float64:
-                group_vals = group_vals[~np.isnan(group_vals)]
-            nunits = sum(min(sum(group_vals == x), limit) for x in np.unique(group_vals))
-            self.units_window_controller.slider.max = nunits
-
-        def group_disable_limit(change):
-            if change['name'] == 'label':
-                if change['new'] in ('None', '', None):
-                    limit_controller.disabled = True
-                else:
-                    limit_controller.disabled = False
-
-        def group_by_set_max_window(change):
-            if change['name'] == 'label':
-                if change['new'] in ('None', '', None):
-                    self.units_window_controller.slider.max = len(units)
-                else:
-                    set_max_window(change['new'], limit_controller.value)
-
-        def limit_set_max_window(change):
-            if change['name'] == 'value':
-                set_max_window(group_controller.value, change['new'])
-
-        group_controller.observe(group_disable_limit)
-        group_controller.observe(group_by_set_max_window)
-        limit_controller.observe(limit_set_max_window)
-
-        orderable_features = self.get_orderable_cols()
-
-        order_by_controller = widgets.Dropdown(options=[None] + orderable_features, description='order by',
-                                               layout=Layout(width='90%'),
-                                               style={'description_width': 'initial'})
-
-        self.controls.update(order_by=order_by_controller, limit=limit_controller)
-
-        out_fig = interactive_output(show_session_raster, self.controls, self.process_controls)
-
-        dropdown_box = widgets.VBox(children=(group_controller,
-                                              limit_controller,
-                                              order_by_controller),
-                                    layout=Layout(width='150px'))
+        out_fig = interactive_output(show_session_raster, self.controls)
 
         self.children = [
-                widgets.VBox(children=[dropdown_box, self.units_window_controller]),
-                widgets.VBox(children=[self.time_window_controller, out_fig])
+                self.gas,
+                widgets.VBox(children=[
+                    self.time_window_controller,
+                    out_fig
+                ])
             ]
 
-    def get_groups(self):
-        return infer_categorical_columns(self.units)
-
-    @staticmethod
-    def get_group_vals(dynamic_table, group_by, units_select=()):
-        if group_by is None:
-            return None
-        elif group_by in dynamic_table:
-            return dynamic_table[group_by][:][units_select]
-
-    def get_orderable_cols(self):
-        candidate_cols = [x for x in self.units.colnames
-                          if not isinstance(self.units[x][0], Iterable) or
-                          isinstance(self.units[x][0], str)]
-        return [x for x in candidate_cols if len(robust_unique(self.units[x][:])) > 1]
-
-    def get_trials_select(self):
-        return ()  # all trials
-
-    def process_controls(self, control_states):
-        order_by = control_states.pop('order_by')
-        control_states['order_vals'] = self.get_group_vals(self.units, order_by, self.get_trials_select())
-
-        group_by = control_states.pop('group_by')
-        control_states['group_vals'] = self.get_group_vals(self.units, group_by, self.get_trials_select())
-
-        return control_states
+    def make_group_and_sort(self, group_by=None):
+        return GroupAndSortController(self.units, group_by=group_by)
 
 
 def show_decomposition_series(node, **kwargs):
@@ -285,7 +196,7 @@ class PSTHWidget(widgets.VBox):
 
         self.units = units
 
-        super(PSTHWidget, self).__init__()
+        super().__init__()
 
         self.trials = self.get_trials()
         if self.trials is None:
@@ -583,7 +494,7 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
 class RasterGridWidget(widgets.VBox):
 
     def __init__(self, units: Units, unit_index=0):
-        super(RasterGridWidget, self).__init__()
+        super().__init__()
 
         self.units = units
 
@@ -598,7 +509,8 @@ class RasterGridWidget(widgets.VBox):
         cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols')
 
         trial_event_controller = make_trial_event_controller(self.trials)
-        unit_controller = int_controller(len(units['spike_times'].data) - 1, value=unit_index)
+        unit_controller = widgets.Dropdown(options=range(len(units['spike_times'].data)), value=unit_index,
+                                           description='unit')
 
         before_slider = widgets.FloatSlider(.1, min=0, max=5., description='before (s)', continuous_update=False)
         after_slider = widgets.FloatSlider(1., min=0, max=5., description='after (s)', continuous_update=False)
@@ -606,7 +518,7 @@ class RasterGridWidget(widgets.VBox):
         self.controls = {
             'units': fixed(units),
             'time_intervals': fixed(self.trials),
-            'index': unit_controller.children[0],
+            'index': unit_controller,
             'after': after_slider,
             'before': before_slider,
             'align_by': trial_event_controller,

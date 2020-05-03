@@ -8,6 +8,12 @@ import ipywidgets as widgets
 from .misc import RasterWidget, PSTHWidget, RasterGridWidget
 from .view import default_neurodata_vis_spec
 from .utils.pynwb import robust_unique
+from .controllers import GroupAndSortController
+
+
+class AllenRasterWidget(RasterWidget):
+    def make_group_and_sort(self, group_by=None):
+        return AllenRasterGroupAndSortController(self.units, group_by=group_by)
 
 
 class AllenPSTHWidget(PSTHWidget):
@@ -22,7 +28,7 @@ class AllenPSTHWidget(PSTHWidget):
         self.children = list(self.children) + [self.controls['trials_select']]
 
     def process_controls(self, control_states):
-        control_states = super(AllenPSTHWidget, self).process_controls(control_states)
+        control_states = super().process_controls(control_states)
         control_states['trials_select'] = self.trials['stimulus_name'][:] == control_states.pop('trials_select')
         return control_states
 
@@ -40,32 +46,34 @@ class AllenPSTHWidget(PSTHWidget):
                 return electrodes[group_by][:][inds]
 
 
-class AllenRasterWidget(RasterWidget):
+class AllenRasterGroupAndSortController(GroupAndSortController):
+
     def get_groups(self):
-        groups = super(AllenRasterWidget, self).get_groups()
-        electrodes = self.units.get_ancestor('NWBFile').electrodes
-        groups.update({name: np.unique(electrodes[name][:]) for name in electrodes.colnames})
+
+        self.electrodes = self.dynamic_table.get_ancestor('NWBFile').electrodes
+
+        groups = super().get_groups()
+        groups.update({name: np.unique(self.electrodes[name][:]) for name in self.electrodes.colnames})
         return groups
 
     def get_orderable_cols(self):
-        units_orderable_cols = super(AllenRasterWidget, self).get_orderable_cols()
-        electrodes = self.units.get_ancestor('NWBFile').electrodes
-        candidate_cols = [x for x in electrodes.colnames
-                          if not (isinstance(electrodes[x][0], Iterable) or isinstance(electrodes[x][0], str))]
-        return units_orderable_cols + [x for x in candidate_cols if len(robust_unique(electrodes[x][:])) > 1]
+        units_orderable_cols = super().get_orderable_cols()
+        candidate_cols = [x for x in self.electrodes.colnames
+                          if not (isinstance(self.electrodes[x][0], Iterable) or
+                                  isinstance(self.electrodes[x][0], str))]
+        return units_orderable_cols + [x for x in candidate_cols
+                                       if len(robust_unique(self.electrodes[x][:])) > 1]
 
-    @staticmethod
-    def get_group_vals(dynamic_table, group_by, rows_select=()):
-        if group_by is None:
+    def get_group_vals(self, by, rows_select=()):
+        if by is None:
             return None
-        elif group_by in dynamic_table:
-            return dynamic_table[group_by][:][rows_select]
+        elif by in self.dynamic_table:
+            return self.dynamic_table[by][:][rows_select]
         else:
-            electrodes = dynamic_table.get_ancestor('NWBFile').electrodes
-            if electrodes is not None and group_by in electrodes:
-                ids = electrodes.id[:]
-                inds = [np.argmax(ids == val) for val in dynamic_table['peak_channel_id'][:]]
-                return electrodes[group_by][:][inds][rows_select]
+            if self.electrodes is not None and by in self.electrodes:
+                ids = self.electrodes.id[:]
+                inds = [np.argmax(ids == val) for val in self.dynamic_table['peak_channel_id'][:]]
+                return self.electrodes[by][:][inds][rows_select]
 
 
 class AllenRasterGridWidget(RasterGridWidget):
