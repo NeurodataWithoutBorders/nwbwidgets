@@ -388,8 +388,10 @@ class GroupAndSortController(AbstractGroupAndSortController):
         """group SelectMultiple observer"""
         if change['name'] == 'value' and not self.group_sm.disabled:
             self.group_select = change['new']
+            value_before = self.range_controller.slider.value
             self.set_range_max()
-            self.group_and_sort()
+            if self.range_controller.slider.value == value_before:
+                self.group_and_sort()
 
     def range_controller_observer(self, change):
         self.window = self.range_controller.value
@@ -399,19 +401,28 @@ class GroupAndSortController(AbstractGroupAndSortController):
         return infer_categorical_columns(self.dynamic_table)
 
     def set_range_max(self):
-        if self.group_vals is not None:
-            # remove nans
-            if hasattr(self.group_vals, 'dtype') and self.group_vals.dtype == np.float64:
-                group_vals = self.group_vals[~np.isnan(self.group_vals)]
-            else:
-                group_vals = self.group_vals
-            if self.limit is None:
-                self.range_controller.slider.max = len(group_vals)
-            else:
-                self.range_controller.slider.max = sum(min(sum(self.group_vals == x), self.limit)
-                                                       for x in np.unique(group_vals))
+
+        if self.group_select is not None:
+            max = 0
+            for group in self.group_select:
+                if self.limit is None:
+                    max += sum(self.group_vals == group)
+                else:
+                    max += min(sum(self.group_vals == group), self.limit)
+            self.range_controller.slider.max = max
 
     def get_group_vals(self, by, units_select=()):
+        """Get the values of the group_by variable
+
+        Parameters
+        ----------
+        by
+        units_select
+
+        Returns
+        -------
+
+        """
         if by is None:
             return None
         elif by in self.dynamic_table:
