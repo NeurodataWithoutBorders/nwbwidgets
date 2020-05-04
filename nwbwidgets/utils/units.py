@@ -119,6 +119,7 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
             time after stop_label in secs (positive goes forward in time)
         rows_select: array_like, optional
             sub-selects specific rows
+        progress: FloatProgress
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
@@ -126,7 +127,16 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
         stop_label = start_label
     starts = np.array(intervals[start_label][:])[rows_select] - before
     stops = np.array(intervals[stop_label][:])[rows_select] + after
-    return [x - before for x in align_by_times(units, index, starts, stops)]
+    if progress is not None:
+        progress.value = 0
+        progress.description = 'reading spike data'
+
+    out = []
+    for i, x in enumerate(align_by_times(units, index, starts, stops)):
+        out.append(x - before)
+
+
+    return out
 
 
 def get_unobserved_intervals(units, time_window, units_select=()):

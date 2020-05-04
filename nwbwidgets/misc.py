@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pynwb
 import scipy
-from ipywidgets import widgets, fixed
+from ipywidgets import widgets, fixed, FloatProgress, Layout
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
@@ -27,7 +27,7 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
 
 
 def show_session_raster(units: Units, time_window=None, units_window=None, show_obs_intervals=True,
-                        order=None, group_inds=None, labels=None, show_legend=True):
+                        order=None, group_inds=None, labels=None, show_legend=True, progress=None):
     """
 
     Parameters
@@ -58,7 +58,13 @@ def show_session_raster(units: Units, time_window=None, units_window=None, show_
     if order is None:
         order = np.arange(len(units), dtype='int')
 
-    data = [get_spike_times(units, unit, time_window) for unit in order]
+    data = []
+    if progress is not None:
+        progress.value = 0
+        progress.description = 'reading spike data'
+    for i, unit in enumerate(order):
+        data.append(get_spike_times(units, unit, time_window))
+        progress.value = i / len(order)
 
     if show_obs_intervals:
         unobserved_intervals_list = get_unobserved_intervals(units, time_window, order)
@@ -66,7 +72,8 @@ def show_session_raster(units: Units, time_window=None, units_window=None, show_
         unobserved_intervals_list = None
 
     ax = plot_grouped_events(data, time_window, group_inds=group_inds, labels=labels, show_legend=show_legend,
-                             offset=units_window[0], unobserved_intervals_list=unobserved_intervals_list)
+                             offset=units_window[0], unobserved_intervals_list=unobserved_intervals_list,
+                             progress=progress)
     ax.set_ylabel('unit #')
 
     return ax
@@ -90,10 +97,13 @@ class RasterWidget(widgets.HBox):
 
         self.gas = self.make_group_and_sort(group_by=group_by)
 
+        self.progress = FloatProgress(max=1, style={'description_width': 'initial'}, layout=Layout(width='100%'))
+
         self.controls = dict(
             units=fixed(self.units),
             time_window=self.time_window_controller,
-            gas=self.gas
+            gas=self.gas,
+            progress=fixed(self.progress)
         )
 
         out_fig = interactive_output(show_session_raster, self.controls)
@@ -102,7 +112,8 @@ class RasterWidget(widgets.HBox):
                 self.gas,
                 widgets.VBox(children=[
                     self.time_window_controller,
-                    out_fig
+                    out_fig,
+                    self.progress
                 ])
             ]
 
@@ -364,13 +375,38 @@ def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.
 
 
 def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=None, labels=None,
-                        show_legend=True, offset=0, unobserved_intervals_list=None):
+                        show_legend=True, offset=0, unobserved_intervals_list=None, progress=None):
+    """
+
+    Parameters
+    ----------
+    data: array-like
+    window: array-like [float, float]
+        Time in seconds
+    group_inds: array-like dtype=int
+    colors: array-like
+    ax: plt.Axes
+    labels: array-like dtype=str
+    show_legend: bool
+    offset: number
+    unobserved_intervals_list: array-like
+    progress: ipywidgets.FloatProgress
+
+    Returns
+    -------
+
+    """
+    if progress is not None:
+        progress.description = 'plotting'
+        progress.value = 0
+
     data = np.asarray(data)
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 6))
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
         handles = []
+        ngroups = len(ugroup_inds)
         for i, ui in enumerate(ugroup_inds):
             color = colors[ugroup_inds[i] % len(colors)]
             lineoffsets = np.where(group_inds == ui)[0] + offset
@@ -379,6 +415,11 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
                                             lineoffsets=lineoffsets,
                                             color=color)
             handles.append(event_collection[0])
+            if progress is not None:
+                progress.value = i / ngroups
+        if progress is not None:
+            progress.value = 0
+            progress.description = ''
         if show_legend:
             ax.legend(handles=handles[::-1], labels=list(labels[ugroup_inds][::-1]), loc='upper left',
                       bbox_to_anchor=(1.01, 1))
