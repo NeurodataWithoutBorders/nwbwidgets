@@ -251,6 +251,8 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         groups = self.get_groups()
 
+        self.discard_rows = None
+
         self.limit_bit = widgets.BoundedIntText(value=50, min=0, max=99999, disabled=True,
                                                 layout=Layout(max_width='70px'))
         self.limit_bit.observe(self.limit_bit_observer)
@@ -284,14 +286,11 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         self.window = self.range_controller.value
 
-        self.value = dict(order=None, group_inds=None, labels=None)
+        self.value = dict(order=np.arange(32).astype('int'), group_inds=None, labels=None)
 
         link((self.range_controller, 'description'), (self, 'description'))
 
         self.children = self.get_children()
-
-        self.group_and_sort()
-
         # self.layout = Layout(max_width='250px')
 
     def get_children(self):
@@ -310,12 +309,12 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.limit_cb.disabled = False
         self.group_by = group_by
         self.group_vals = self.get_group_vals(by=group_by)
-        self.set_range_max()
         groups = list(np.unique(self.group_vals))
         self.group_sm.options = groups[::-1]
         self.group_sm.value = groups
         self.group_sm.disabled = False
         self.group_sm.rows = min(len(groups), 20)
+        self.group_and_sort()
 
     def group_dd_observer(self, change):
         """group dropdown observer"""
@@ -333,7 +332,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             else:
                 self.set_group_by(group_by)
 
-            self.group_and_sort()
+            self.update_value()
 
     def limit_bit_observer(self, change):
         """limit bounded int text observer"""
@@ -341,7 +340,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             limit = self.limit_bit.value
             self.limit = limit
             self.set_range_max()
-            self.group_and_sort()
+            self.update_value()
 
     def limit_cb_observer(self, change):
         """limit checkbox observer"""
@@ -353,8 +352,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 self.limit_bit.disabled = True
                 self.limit = None
                 self.range_controller.slider.max = self.nitems
-            self.set_range_max()
-            self.group_and_sort()
+            self.update_value()
 
     def order_dd_observer(self, change):
         """order dropdown observer"""
@@ -371,7 +369,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.order_vals = order_vals
 
             self.ascending_dd.disabled = self.order_dd.value is None
-            self.group_and_sort()
+            self.update_value()
 
     def ascending_dd_observer(self, change):
         """ascending dropdown observer"""
@@ -382,34 +380,23 @@ class GroupAndSortController(AbstractGroupAndSortController):
             else:
                 self.desc = True
                 self.order_vals *= -1
-            self.group_and_sort()
+            self.update_value()
 
     def group_sm_observer(self, change):
         """group SelectMultiple observer"""
         if change['name'] == 'value' and not self.group_sm.disabled:
             self.group_select = change['new']
             value_before = self.range_controller.slider.value
-            self.set_range_max()
+            self.group_and_sort()
             if self.range_controller.slider.value == value_before:
-                self.group_and_sort()
+                self.update_value()
 
     def range_controller_observer(self, change):
         self.window = self.range_controller.value
-        self.group_and_sort()
+        self.update_value()
 
     def get_groups(self):
         return infer_categorical_columns(self.dynamic_table)
-
-    def set_range_max(self):
-
-        if self.group_select is not None:
-            max = 0
-            for group in self.group_select:
-                if self.limit is None:
-                    max += sum(self.group_vals == group)
-                else:
-                    max += min(sum(self.group_vals == group), self.limit)
-            self.range_controller.slider.max = max
 
     def get_group_vals(self, by, units_select=()):
         """Get the values of the group_by variable
@@ -438,11 +425,29 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
     def group_and_sort(self):
         if not (self.group_vals is None and self.order_vals is None):
-            order, group_inds, labels = group_and_sort(self.group_vals, self.group_select, self.order_vals, self.limit,
-                                                       self.window)
+            order, group_inds, labels = group_and_sort(
+                group_vals=self.group_vals,
+                group_select=self.group_select,
+                discard_rows=self.discard_rows,
+                order_vals=self.order_vals,
+                limit=self.limit
+            )
         else:
             order, group_inds, labels = np.arange(self.window[0], self.window[1], dtype='int'), None, None
 
+        self.range_controller.slider.max = len(order)
+
+        # apply window
+        if self.window is not None:
+            order = order[self.window[0]:self.window[1]]
+            if group_inds is not None:
+                group_inds = group_inds[self.window[0]:self.window[1]]
+
+        return order, group_inds, labels
+
+    def update_value(self):
+
+        order, group_inds, labels = self.group_and_sort()
         self.value = dict(order=order, group_inds=group_inds, labels=labels)
 
 
