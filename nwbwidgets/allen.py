@@ -18,32 +18,29 @@ class AllenRasterWidget(RasterWidget):
 
 class AllenPSTHWidget(PSTHWidget):
 
+    def __init__(self, units: Units, unit_index=0, unit_controller=None, sigma_in_secs=.05, ntt=1000):
+
+        super().__init__(units, unit_index, unit_controller, sigma_in_secs, ntt)
+
+        self.stimulus_type_dd = widgets.Dropdown(options=np.unique(self.trials['stimulus_name'][:]).tolist(),
+                                                 label='drifting_gratings',
+                                                 description='stimulus type')
+
+        self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
+
+        self.children = [self.stimulus_type_dd] + list(self.children)
+
     def get_trials(self):
         return self.units.get_ancestor('NWBFile').epochs
 
-    def select_trials(self):
-        self.controls['trials_select'] = widgets.Dropdown(options=np.unique(self.trials['stimulus_name'][:]).tolist(),
-                                                          label='drifting_gratings',
-                                                          description='trial select')
-        self.children = list(self.children) + [self.controls['trials_select']]
+    def stimulus_type_dd_callback(self, change):
+        self.gas.discard_rows = np.where(self.trials['stimulus_name'][:] != self.stimulus_type_dd.value)[0]
 
-    def process_controls(self, control_states):
-        control_states = super().process_controls(control_states)
-        control_states['trials_select'] = self.trials['stimulus_name'][:] == control_states.pop('trials_select')
-        return control_states
+    def make_group_and_sort(self, window=False):
+        discard_rows = np.where(self.trials['stimulus_name'][:] != 'drifting_gratings')[0]
+        gas = GroupAndSortController(self.trials, window=window, start_discard_rows=discard_rows)
 
-    @staticmethod
-    def get_group_vals(dynamic_table, group_by):
-        if group_by is None:
-            return None
-        elif group_by in dynamic_table:
-            return dynamic_table[group_by][:]
-        else:
-            electrodes = dynamic_table.get_ancestor('NWBFile').electrodes
-            if electrodes is not None and group_by in electrodes:
-                ids = electrodes.id[:]
-                inds = [np.argmax(ids == val) for val in dynamic_table['peak_channel_id'][:]]
-                return electrodes[group_by][:][inds]
+        return gas
 
 
 class AllenRasterGroupAndSortController(GroupAndSortController):

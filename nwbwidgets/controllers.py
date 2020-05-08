@@ -6,6 +6,8 @@ from .utils.dynamictable import group_and_sort, infer_categorical_columns
 from .utils.pynwb import robust_unique
 from typing import Iterable
 
+from tqdm.notebook import tqdm as tqdm_notebook
+
 
 class RangeController(widgets.HBox, ValueWidget, DescriptionWidget):
 
@@ -220,7 +222,7 @@ class StartAndDurationController(HBox, ValueWidget, DescriptionWidget):
             self.slider.value = self.tmin
 
 
-class AbstractGroupAndSortController(widgets.VBox, ValueWidget, DescriptionWidget):
+class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
     """
     Defines the abstract type for GroupAndSortController objects. These classes take in a DynamicTable objects
     and broadcast a `value` of the form
@@ -243,15 +245,24 @@ class AbstractGroupAndSortController(widgets.VBox, ValueWidget, DescriptionWidge
         self.desc = False
         self.order_by = None
         self.order_vals = None
+        self.window = None
 
 
 class GroupAndSortController(AbstractGroupAndSortController):
-    def __init__(self, dynamic_table: DynamicTable, group_by=None):
+    def __init__(self, dynamic_table: DynamicTable, group_by=None, window=None, start_discard_rows=None):
+        """
+
+        Parameters
+        ----------
+        dynamic_table
+        group_by
+        window: None or bool,
+        """
         super().__init__(dynamic_table)
 
         groups = self.get_groups()
 
-        self.discard_rows = None
+        self.discard_rows = start_discard_rows
 
         self.limit_bit = widgets.BoundedIntText(value=50, min=0, max=99999, disabled=True,
                                                 layout=Layout(max_width='70px'))
@@ -269,9 +280,15 @@ class GroupAndSortController(AbstractGroupAndSortController):
                                              layout=Layout(max_width='70px'))
         self.ascending_dd.observe(self.ascending_dd_observer)
 
-        self.range_controller = RangeController(0, self.nitems, start_value=(0, 32), dtype='int', description='units',
-                                                orientation='vertical')
-        self.range_controller.observe(self.range_controller_observer)
+        range_controller_max = min(30, self.nitems)
+        if window is None:
+            self.range_controller = RangeController(0, self.nitems, start_value=(0, range_controller_max), dtype='int', description='units',
+                                                    orientation='vertical')
+            self.range_controller.observe(self.range_controller_observer)
+            self.window = self.range_controller.value
+        elif window is False:
+            self.window = (0, self.nitems)
+            self.range_controller = widgets.HTML('')
 
         self.group_sm = widgets.SelectMultiple(layout=Layout(max_width='100px'), disabled=True, rows=1)
         self.group_sm.observe(self.group_sm_observer)
@@ -284,14 +301,9 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.group_dd = None
             self.set_group_by(group_by)
 
-        self.window = self.range_controller.value
-
-        self.value = dict(order=np.arange(32).astype('int'), group_inds=None, labels=None)
-
-        link((self.range_controller, 'description'), (self, 'description'))
-
         self.children = self.get_children()
-        # self.layout = Layout(max_width='250px')
+        self.layout = Layout(width='280px')
+        self.update_value()
 
     def get_children(self):
         children = [
@@ -306,14 +318,19 @@ class GroupAndSortController(AbstractGroupAndSortController):
         return children
 
     def set_group_by(self, group_by):
-        self.limit_cb.disabled = False
         self.group_by = group_by
         self.group_vals = self.get_group_vals(by=group_by)
-        groups = list(np.unique(self.group_vals))
-        self.group_sm.options = groups[::-1]
-        self.group_sm.value = groups
+        group_vals = self.group_vals
+        if self.discard_rows is not None:
+            group_vals = group_vals[~np.isin(np.arange(len(group_vals), dtype='int'), self.discard_rows)]
+        if self.group_vals.dtype == np.float:
+            group_vals = group_vals[~np.isnan(group_vals)]
+        groups = np.unique(group_vals)
+        self.group_sm.options = tuple(groups[::-1])
+        self.group_sm.value = self.group_sm.options
         self.group_sm.disabled = False
         self.group_sm.rows = min(len(groups), 20)
+        self.limit_cb.disabled = False
         self.group_and_sort()
 
     def group_dd_observer(self, change):
@@ -328,7 +345,8 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 self.limit = None
                 self.limit_cb.value = False
 
-                self.range_controller.slider.max = self.nitems
+                if hasattr(self.range_controller, 'slider'):
+                    self.range_controller.slider.max = len(self.dynamic_table) - len(self.discard_rows)
             else:
                 self.set_group_by(group_by)
 
@@ -339,7 +357,6 @@ class GroupAndSortController(AbstractGroupAndSortController):
         if change['name'] == 'value':
             limit = self.limit_bit.value
             self.limit = limit
-            self.set_range_max()
             self.update_value()
 
     def limit_cb_observer(self, change):
@@ -351,7 +368,6 @@ class GroupAndSortController(AbstractGroupAndSortController):
             else:
                 self.limit_bit.disabled = True
                 self.limit = None
-                self.range_controller.slider.max = self.nitems
             self.update_value()
 
     def order_dd_observer(self, change):
@@ -386,9 +402,11 @@ class GroupAndSortController(AbstractGroupAndSortController):
         """group SelectMultiple observer"""
         if change['name'] == 'value' and not self.group_sm.disabled:
             self.group_select = change['new']
-            value_before = self.range_controller.slider.value
+            value_before = self.window
             self.group_and_sort()
-            if self.range_controller.slider.value == value_before:
+            if hasattr(self.range_controller, 'slider') and not self.range_controller.slider.value == value_before:
+                pass  # do nothing, value was updated automatically
+            else:
                 self.update_value()
 
     def range_controller_observer(self, change):
@@ -424,18 +442,19 @@ class GroupAndSortController(AbstractGroupAndSortController):
         return [x for x in candidate_cols if len(robust_unique(self.units[x][:])) > 1]
 
     def group_and_sort(self):
-        if not (self.group_vals is None and self.order_vals is None):
-            order, group_inds, labels = group_and_sort(
-                group_vals=self.group_vals,
-                group_select=self.group_select,
-                discard_rows=self.discard_rows,
-                order_vals=self.order_vals,
-                limit=self.limit
-            )
-        else:
-            order, group_inds, labels = np.arange(self.window[0], self.window[1], dtype='int'), None, None
+        if self.group_vals is None and self.order_vals is None:
+            self.order_vals = np.arange(self.nitems).astype('int')
 
-        self.range_controller.slider.max = len(order)
+        order, group_inds, labels = group_and_sort(
+            group_vals=self.group_vals,
+            group_select=self.group_select,
+            discard_rows=self.discard_rows,
+            order_vals=self.order_vals,
+            limit=self.limit
+        )
+
+        if hasattr(self.range_controller, 'slider'):
+            self.range_controller.slider.max = len(order)
 
         # apply window
         if self.window is not None:
@@ -449,6 +468,13 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         order, group_inds, labels = self.group_and_sort()
         self.value = dict(order=order, group_inds=group_inds, labels=labels)
+
+
+class ProgressBar(tqdm_notebook):
+
+    def __init__(self, *arg, **kwargs):
+        super().__init__(*arg, **kwargs)
+        self.container.children[0].layout = Layout(width='80%')
 
 
 def make_trial_event_controller(trials):

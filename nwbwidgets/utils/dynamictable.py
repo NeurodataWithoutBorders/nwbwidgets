@@ -41,11 +41,6 @@ def group_and_sort(group_vals=None, group_select=None, order_vals=None, discard_
     """
 
     if group_vals is not None:
-        if group_select:
-            keep = np.isin(group_vals, group_select)
-            group_vals = group_vals[keep]
-            if order_vals is not None:
-                order_vals = order_vals[keep]
         if order_vals is None:
             order = np.argsort(group_vals)
         else:
@@ -63,7 +58,30 @@ def group_and_sort(group_vals=None, group_select=None, order_vals=None, discard_
     if discard_rows is not None:
         keep = np.logical_not(np.isin(order, discard_rows))
         order = order[keep]
+        if group_inds is not None:
+            group_inds = group_inds[keep]
+
+    # apply discard NaN categories
+    try:
+        if any(np.isnan(labels)):
+            nan_labs = np.isnan(labels)
+            keep = ~np.isin(group_inds, np.where(nan_labs)[0])
+            group_inds = group_inds[keep]
+            order = order[keep]
+            labels = labels[~np.isnan(labels)]
+    except TypeError:  # if labels are strings
+        pass
+
+    # apply discard groups (but keep labels)
+    if group_select is not None:
+        keep = np.isin(labels[group_inds], group_select)
         group_inds = group_inds[keep]
+        order = order[keep]
+
+    # remove groups that are missing
+    if labels is not None:
+        labels = labels[np.isin(range(len(labels)), group_inds)]
+        _, group_inds = np.unique(group_inds, return_inverse=True)
 
     # apply limit
     inds = list()
