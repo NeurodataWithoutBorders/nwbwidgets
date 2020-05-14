@@ -6,3 +6,4 @@ numpy
 ipyvolume
 ndx_grayscalevolume
 plotly
+tqdm
