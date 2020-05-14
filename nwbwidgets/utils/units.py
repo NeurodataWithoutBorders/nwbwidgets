@@ -79,7 +79,8 @@ def align_by_times(units: pynwb.misc.Units, index, starts, stops):
 
     istarts = searchsorted(unit_spike_data, starts)
     istops = searchsorted(unit_spike_data, stops)
-    return np.array([unit_spike_data[istart:istop] - start for start, istart, istop in zip(starts, istarts, istops)])
+    for start, istart, istop in zip(starts, istarts, istops):
+        yield unit_spike_data[istart:istop] - start
 
 
 def align_by_trials(units: pynwb.misc.Units, index, start_label='start_time',
@@ -103,7 +104,7 @@ def align_by_trials(units: pynwb.misc.Units, index, start_label='start_time',
 
 
 def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_label='start_time',
-                            stop_label='stop_time', before=0., after=0., rows_select=()):
+                            stop_label='stop_time', before=0., after=0., rows_select=(), progress_bar=None):
     """
     Args:
         units: time-aware neurodata_type
@@ -119,6 +120,8 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
             time after stop_label in secs (positive goes forward in time)
         rows_select: array_like, optional
             sub-selects specific rows
+        progress_bar: FloatProgress, optional
+            Proved a progress bar object to have this method automatically update the progress bar
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
@@ -126,7 +129,17 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
         stop_label = start_label
     starts = np.array(intervals[start_label][:])[rows_select] - before
     stops = np.array(intervals[stop_label][:])[rows_select] + after
-    return [x - before for x in align_by_times(units, index, starts, stops)]
+    if progress_bar is not None:
+        progress_bar.value = 0
+        progress_bar.description = 'reading spike data'
+
+    out = []
+    for i, x in enumerate(align_by_times(units, index, starts, stops)):
+        out.append(x - before)
+        if progress_bar is not None:
+            progress_bar.value = i / len(units)
+
+    return out
 
 
 def get_unobserved_intervals(units, time_window, units_select=()):

@@ -16,7 +16,29 @@ def infer_categorical_columns(dynamic_table: DynamicTable):
     return categorical_cols
 
 
-def group_and_sort(group_vals=None, order_vals=None, limit=None, window=None):
+def group_and_sort(group_vals=None, group_select=None, order_vals=None, discard_rows=None, limit=None):
+    """
+    Logical flow:
+    0) Apply discard_rows - throw out any listed rows
+    1) Apply group select - Return only values that are within this group
+    2) Apply order - If group is provided, items are sorted first by group and then by order
+    3) Apply limit - Applied per group
+    4) Apply window - Return only items [int] through [int]. Useful for plotting
+
+    Parameters
+    ----------
+    group_vals: array-like of str
+        ['a', 'b', 'b', 'a', 'a', 'b', 'b', 'c']
+    group_select: array-like of str
+        ['a', 'b']
+    order_vals: array-like of ints
+        [0, 3, 4, 1, 2, 5, 6, 7]
+    limit: int
+
+    Returns
+    -------
+
+    """
 
     if group_vals is not None:
         if order_vals is None:
@@ -32,6 +54,35 @@ def group_and_sort(group_vals=None, order_vals=None, limit=None, window=None):
         else:
             order = np.argsort(order_vals)
 
+    # apply discard rows
+    if discard_rows is not None:
+        keep = np.logical_not(np.isin(order, discard_rows))
+        order = order[keep]
+        if group_inds is not None:
+            group_inds = group_inds[keep]
+
+    # apply discard NaN categories
+    try:
+        if any(np.isnan(labels)):
+            nan_labs = np.isnan(labels)
+            keep = ~np.isin(group_inds, np.where(nan_labs)[0])
+            group_inds = group_inds[keep]
+            order = order[keep]
+            labels = labels[~np.isnan(labels)]
+    except TypeError:  # if labels are strings
+        pass
+
+    # apply discard groups (but keep labels)
+    if group_select is not None:
+        keep = np.isin(labels[group_inds], group_select)
+        group_inds = group_inds[keep]
+        order = order[keep]
+
+    # remove groups that are missing
+    if labels is not None:
+        labels = labels[np.isin(range(len(labels)), group_inds)]
+        _, group_inds = np.unique(group_inds, return_inverse=True)
+
     # apply limit
     inds = list()
     if limit is not None:
@@ -42,11 +93,5 @@ def group_and_sort(group_vals=None, order_vals=None, limit=None, window=None):
             group_inds = group_inds[inds]
         else:
             order = order[:limit]
-
-    # apply window
-    if window is not None:
-        order = order[window[0]:window[1]]
-        if group_inds is not None:
-            group_inds = group_inds[window[0]:window[1]]
 
     return order, group_inds, labels
