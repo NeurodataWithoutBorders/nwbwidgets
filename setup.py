@@ -7,7 +7,7 @@ with open('README.md') as f:
 setup(
     author='Neurodata Without Border (NWB) developers',
     author_email='ben.dichter@gmail.com',
-    version='0.2.2',
+    version='0.2.3',
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
                  'Framework :: Jupyter',
@@ -34,7 +34,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     name='nwbwidgets',
-    packages=['nwbwidgets', 'nwbwidgets/utils'],
+    packages=['nwbwidgets', 'nwbwidgets/utils', 'nwbwidgets/analysis'],
     python_requires='>=2.7',
     setup_requires=['setuptools>=38.6.0', 'setuptools_scm'],
     url='https://github.com/NeurodataWithoutBorders/nwb-jupyter-widgets')
