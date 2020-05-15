@@ -27,6 +27,7 @@ setup(
                       'ndx_grayscalevolume',
                       'plotly',
                       'scikit-image',
+                      'tqdm',
                       'ndx-icephys-meta'],
     license='MIT',
     keywords=['jupyter', 'hdf5', 'notebook', 'nwb'],
