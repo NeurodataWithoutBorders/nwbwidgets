@@ -4,12 +4,12 @@ from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
 import hdmf
 from functools import partial
-from ndx_icephys_meta.icephys import SweepSequences
+from ndx_icephys_meta.icephys import SequentialRecordingsTable
 
 
 default_neurodata_vis_spec = {
     pynwb.NWBFile: file.show_nwbfile,
-    SweepSequences: icephys.show_sweep_sequences,
+    SequentialRecordingsTable: icephys.show_sequential_recordings,
     pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict({
