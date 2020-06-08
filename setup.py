@@ -28,7 +28,7 @@ setup(
                       'plotly',
                       'scikit-image',
                       'tqdm>=4.36.0',
-                      'ndx-icephys-meta'],
+                      'ndx-icephys-meta>0.1.0'],
     license='MIT',
     keywords=['jupyter', 'hdf5', 'notebook', 'nwb'],
     long_description=long_description,
