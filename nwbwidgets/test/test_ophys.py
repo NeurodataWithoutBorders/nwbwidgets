@@ -84,22 +84,22 @@ class CalciumImagingTestCase(unittest.TestCase):
         assert isinstance(show_two_photon_series(self.image_series, default_neurodata_vis_spec), widgets.Widget)
         
     def test_show_df_over_f(self):
-        assert isinstance(show_df_over_f(self.df_over_f,default_neurodata_vis_spec),widgets.Widget)
+        assert isinstance(show_df_over_f(self.df_over_f, default_neurodata_vis_spec), widgets.Widget)
         
     def test_show_plane_segmentation_2d(self):
         color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
-        assert isinstance(show_plane_segmentation_2d(self.ps,color_by='pixel_mask',color_wheel=color_wheel),widgets.Widget)
+        assert isinstance(show_plane_segmentation_2d(self.ps, color_by='pixel_mask', color_wheel=color_wheel), widgets.Widget)
         
     def test_plane_segmentation_2d_widget(self):
-        assert isinstance(plane_segmentation_2d_widget(self.ps),widgets.Widget)
+        assert isinstance(plane_segmentation_2d_widget(self.ps), widgets.Widget)
         
     def test_show_plane_segmentation_3d(self):
-        assert isinstance(show_plane_segmentation_3d(self.ps),widgets.Widget)
+        assert isinstance(show_plane_segmentation_3d(self.ps), widgets.Widget)
         
     def test_show_plane_segmentation(self):
-        assert isinstance(show_plane_segmentation(self.ps,default_neurodata_vis_spec),widgets.Widget)
+        assert isinstance(show_plane_segmentation(self.ps, default_neurodata_vis_spec), widgets.Widget)
         
     def test_show_image_segmentation(self):
-        assert isinstance(show_image_segmentation(self.img_seg,default_neurodata_vis_spec),widgets.Widget)
+        assert isinstance(show_image_segmentation(self.img_seg, default_neurodata_vis_spec), widgets.Widget)
 
 
