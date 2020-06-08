@@ -39,7 +39,7 @@ class CalciumImagingTestCase(unittest.TestCase):
                                                      location='my favorite brain location', reference_frame='A frame to refer to',
                                                      grid_spacing=(.01, .01))
 
-        self.image_series = TwoPhotonSeries(name='test_iS', dimension=[2],
+        self.image_series = TwoPhotonSeries(name='test_iS', dimension=[2], data=np.random.rand(10, 5, 5, 3),
                                        external_file=['images.tiff'], imaging_plane=imaging_plane,
                                        starting_frame=[0], format='tiff', starting_time=0.0, rate=1.0)
         nwbfile.add_acquisition(self.image_series)
