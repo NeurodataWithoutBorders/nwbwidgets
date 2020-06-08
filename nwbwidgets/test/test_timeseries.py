@@ -6,7 +6,6 @@ from nwbwidgets.timeseries import traces_widget, show_ts_fields, show_timeseries
 import unittest
 
 
-
 def test_timeseries_widget():
     ts = TimeSeries(name='name', description='no description',
                     data=np.array([[1., 2., 3., 4.],
@@ -14,7 +13,8 @@ def test_timeseries_widget():
                     rate=100.)
 
     traces_widget(ts)
-    
+
+
 class ShowTimeSeriesTestCase(unittest.TestCase):
     
     def setUp(self):
@@ -29,26 +29,20 @@ class ShowTimeSeriesTestCase(unittest.TestCase):
     
     def test_show_timeseries_mpl(self):
         ax = show_timeseries_mpl(self.ts, zero_start=True, title='Test show_timeseries_mpl')
-        assert isinstance(ax,plt.Subplot)
-     
+        assert isinstance(ax, plt.Subplot)
+
+
 class PlotTracesTestCase(unittest.TestCase):
     
     def setUp(self):
-        
-        self.time_start = 1
-        self.time_duration = None
-        self.trace_window = None
-        self.title = 'Plot Traces'
-        self.ylabel = 'traces'
-        self.data = np.random.rand(160,3)
+        self.data = np.random.rand(160, 3)
     
     def test_plot_traces(self):
 
         ts = TimeSeries(name='test_timeseries', data=self.data, unit='m', starting_time=0.0, rate=20.0)
-        plot_traces(ts, self.time_start, self.time_duration, self.trace_window, self.title, self.ylabel)
+        plot_traces(ts)
         
     def test_plot_traces_fix(self):
 
-        data = self.data.T
-        ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=20.0)
-        plot_traces(ts, self.time_start, self.time_duration, self.trace_window, self.title, self.ylabel)
+        ts = TimeSeries(name='test_timeseries', data=self.data.T, unit='m', starting_time=0.0, rate=20.0)
+        plot_traces(ts)
