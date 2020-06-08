@@ -36,10 +36,11 @@ class CalciumImagingTestCase(unittest.TestCase):
         nwbfile.add_device(device)
         optical_channel = OpticalChannel('my_optchan', 'description', 500.)
         imaging_plane = nwbfile.create_imaging_plane('my_imgpln', optical_channel, 'a very interesting part of the brain',
-                                                     device, 600., 300., 'GFP', 'my favorite brain location',
-                                                     np.ones((5, 5, 3)), 4.0, 'manifold unit', 'A frame to refer to')
+                                                     device=device, excitation_lambda=600., imaging_rate=300., indicator='GFP', 
+                                                     location='my favorite brain location', reference_frame='A frame to refer to',
+                                                     grid_spacing=(.01, .01))
 
-        self.image_series = TwoPhotonSeries(name='test_iS', dimension=[2],data=np.random.rand(10, 5, 5, 3),
+        self.image_series = TwoPhotonSeries(name='test_iS', dimension=[2], data=np.random.rand(10, 5, 5, 3),
                                        external_file=['images.tiff'], imaging_plane=imaging_plane,
                                        starting_frame=[0], format='tiff', starting_time=0.0, rate=1.0)
         nwbfile.add_acquisition(self.image_series)
