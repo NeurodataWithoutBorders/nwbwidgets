@@ -23,7 +23,7 @@ def compute_smoothed_firing_rate(spike_times, tt, sigma_in_secs):
 
 
 # ported from the chronux MATLAB package
-def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=10):
+def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
     """ Find peristimulus time histogram smoothed by a gaussian kernel
         The time units of the arrays in data, sig and t
         should be the same, e.g. seconds

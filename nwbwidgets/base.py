@@ -1,7 +1,6 @@
 from nwbwidgets import view
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
-from IPython import display
 from collections.abc import Iterable
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface
@@ -9,6 +8,7 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 from typing import Union
 import pandas as pd
+from IPython import display
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -25,11 +25,10 @@ def show_fields(node, **kwargs) -> widgets.Widget:
     return vbox
 
 
-# def show_dynamic_table(node: DynamicTable, **kwargs):
-def show_dynamic_table(node, **kwargs) -> widgets.Widget:
+def render_dataframe(df):
     out1 = widgets.Output()
     with out1:
-        display.display(node.to_dataframe())
+        display.display(df.to_dataframe())
     return out1
 
 
@@ -131,6 +130,35 @@ def lazy_tabs(in_dict: dict, node, style: GroupingWidget = widgets.Tab) -> Group
     return tab
 
 
+class LazyTab(widgets.Tab):
+    """A lazy tab object where multiple visualizations can be used for a single node and are generated on the fly"""
+    def __init__(self, func_dict, data):
+        """
+        Parameters
+        ----------
+        func_dict: dict
+            keys are labels for tabs and values are functions
+        data: NWBDataInterface
+            instance of neurodata type to visualize
+        """
+
+        tabs_spec = list(func_dict.items())
+        children = [tabs_spec[0][1](data)] + [widgets.HTML('Rendering...') for _ in range(len(tabs_spec) - 1)]
+
+        super().__init__(children=children)
+
+        [self.set_title(i, label) for i, (label, _) in enumerate(tabs_spec)]
+
+        def on_selected_index(change):
+            if isinstance(change.owner.children[change.new], widgets.HTML):
+                children[change.new] = vis2widget(tabs_spec[change.new][1](data))
+                change.owner.children = children
+
+        self.observe(on_selected_index, names='selected_index')
+
+
+
+
 def lazy_show_over_data(list_, func_, labels=None, style: GroupingWidget = widgets.Tab) -> GroupingWidget:
     """
     Apply same function to list of data in lazy tabs or lazy accordion
@@ -178,13 +206,17 @@ def nwb2widget(node,  neurodata_vis_spec: dict, **pass_kwargs) -> widgets.Widget
 
 def vis2widget(vis) -> widgets.Widget:
     if isinstance(vis, widgets.Widget):
-        return vis
+        out = vis
     elif isinstance(vis, plt.Figure):
-        return fig2widget(vis)
+        out = fig2widget(vis)
     elif isinstance(vis, plt.Axes):
-        return fig2widget(vis.get_figure())
+        out = fig2widget(vis.get_figure())
     else:
         raise ValueError('unsupported vis type {}'.format(type(vis)))
+
+    out.add_class("custom_theme")
+
+    return out
 
 
 def fig2widget(fig: Figure, **kwargs) -> widgets.Widget:

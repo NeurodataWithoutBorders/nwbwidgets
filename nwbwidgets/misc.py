@@ -375,7 +375,7 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
 
     data = np.asarray(data)
     if ax is None:
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(9.7, 7))
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
         handles = []

@@ -4,11 +4,13 @@ import numpy as np
 
 from pynwb.misc import Units
 import ipywidgets as widgets
+from hdmf.common import DynamicTable
 
 from .misc import RasterWidget, PSTHWidget, RasterGridWidget
 from .view import default_neurodata_vis_spec
 from .utils.pynwb import robust_unique
 from .controllers import GroupAndSortController
+from .base import lazy_tabs, render_dataframe
 
 
 class AllenRasterWidget(RasterWidget):
@@ -88,8 +90,27 @@ class AllenRasterGridWidget(RasterGridWidget):
         return control_states
 
 
+def allen_show_dynamic_table(node: DynamicTable, **kwargs) -> widgets.Widget:
+    if node.name == 'electrodes':
+        return allen_show_electrodes(node)
+    return render_dataframe(node)
+
+
+def allen_show_electrodes(node: DynamicTable):
+    from ccfwidget import CCFWidget
+
+    return lazy_tabs(
+        dict(
+            table=render_dataframe,
+            CCF=CCFWidget
+        ),
+        node
+    )
+
+
 def load_allen_widgets():
     default_neurodata_vis_spec[Units]['Session Raster'] = AllenRasterWidget
     default_neurodata_vis_spec[Units]['Grouped PSTH'] = AllenPSTHWidget
     default_neurodata_vis_spec[Units]['Raster Grid'] = AllenRasterGridWidget
+    default_neurodata_vis_spec[DynamicTable] = allen_show_dynamic_table
 
