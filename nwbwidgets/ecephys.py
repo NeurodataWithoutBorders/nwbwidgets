@@ -4,7 +4,6 @@ from ipywidgets import widgets
 from scipy.signal import stft
 from pynwb.ecephys import LFP, SpikeEventSeries
 from .base import fig2widget, nwb2widget
-from IPython import display
 
 
 def show_lfp(node: LFP, neurodata_vis_spec: dict):
@@ -20,13 +19,6 @@ def show_spectrogram(neurodata, channel=0, **kwargs):
     ax.set_xlabel('time')
     ax.set_ylabel('frequency')
     plt.show(ax)
-
-
-def ElectrodesWidget(node):
-    out1 = widgets.Output()
-    with out1:
-        display.display(node.to_dataframe())
-    return out1
 
 
 def show_spike_event_series(ses: SpikeEventSeries, **kwargs):

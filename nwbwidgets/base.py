@@ -8,7 +8,8 @@ from matplotlib.pyplot import Figure
 from datetime import datetime
 from typing import Union
 import pandas as pd
-from IPython import display
+import qgrid
+import hdmf
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -25,11 +26,12 @@ def show_fields(node, **kwargs) -> widgets.Widget:
     return vbox
 
 
+def show_dynamic_table(node: hdmf.common.DynamicTable, **kwargs):
+    return render_dataframe(node.to_dataframe())
+
+
 def render_dataframe(df):
-    out1 = widgets.Output()
-    with out1:
-        display.display(df.to_dataframe())
-    return out1
+    return qgrid.show_grid(df, column_options={'editable': False})
 
 
 def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: dict) -> widgets.Widget:

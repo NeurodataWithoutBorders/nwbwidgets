@@ -5,16 +5,6 @@ from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, tim
 import hdmf
 from functools import partial
 from ndx_icephys_meta.icephys import SweepSequences
-from ipywidgets import widgets
-from .ecephys import ElectrodesWidget
-from .base import render_dataframe
-
-
-# def show_dynamic_table(node: DynamicTable, **kwargs):
-def show_dynamic_table(node, **kwargs) -> widgets.Widget:
-    if node.name == 'electrodes':
-        return ElectrodesWidget(node)
-    return render_dataframe(node)
 
 
 default_neurodata_vis_spec = {
@@ -26,7 +16,7 @@ default_neurodata_vis_spec = {
         'Session Raster': misc.RasterWidget,
         'Grouped PSTH': misc.PSTHWidget,
         'Raster Grid': misc.RasterGridWidget,
-        'table': show_dynamic_table}),
+        'table': base.show_dynamic_table}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_fields,
     pynwb.ophys.ImagingPlane: base.show_fields,
@@ -42,7 +32,7 @@ default_neurodata_vis_spec = {
         'times': misc.show_annotations}),
     pynwb.core.LabelledDict: base.dict2accordion,
     pynwb.ProcessingModule: base.processing_module,
-    hdmf.common.DynamicTable: show_dynamic_table,
+    hdmf.common.DynamicTable: base.show_dynamic_table,
     pynwb.ecephys.ElectricalSeries: OrderedDict({
         'Fields': timeseries.show_ts_fields,
         'Traces': partial(timeseries.traces_widget,
