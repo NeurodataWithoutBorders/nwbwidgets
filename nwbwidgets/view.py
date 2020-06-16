@@ -36,7 +36,7 @@ default_neurodata_vis_spec = {
     ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
     pynwb.ophys.PlaneSegmentation: ophys.show_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
-    pynwb.ophys.RoiResponseSeries: timeseries.traces_widget,
+    pynwb.ophys.RoiResponseSeries: timeseries.show_timeseries,
     pynwb.misc.AnnotationSeries: OrderedDict({
         'text': base.show_text_fields,
         'times': misc.show_annotations}),
@@ -45,7 +45,7 @@ default_neurodata_vis_spec = {
     hdmf.common.DynamicTable: show_dynamic_table,
     pynwb.ecephys.ElectricalSeries: OrderedDict({
         'Fields': timeseries.show_ts_fields,
-        'Traces': partial(timeseries.traces_widget,
+        'Traces': partial(timeseries.show_timeseries,
                           start=0, dur=10,
                           trace_starting_range=(0, 5)),
     }),

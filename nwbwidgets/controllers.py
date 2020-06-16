@@ -346,7 +346,10 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 self.limit_cb.value = False
 
                 if hasattr(self.range_controller, 'slider'):
-                    self.range_controller.slider.max = len(self.dynamic_table) - len(self.discard_rows)
+                    if self.discard_rows is None:
+                        self.range_controller.slider.max = len(self.dynamic_table)
+                    else:
+                        self.range_controller.slider.max = len(self.dynamic_table) - len(self.discard_rows)
             else:
                 self.set_group_by(group_by)
 
