@@ -114,6 +114,10 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
     if fig is None:
         fig = go.FigureWidget()
     else:
+        kwargs.update_traces()
+
+
+
         fig.data = None
     aux_leg = []
     for i in range(nUnits):
@@ -157,8 +161,39 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
             plot_bgcolor="rgb(245, 245, 245)",
         )
     return fig
+"""NEW CLASS"""
+class plane_segmentation_2d_widget(widgets.HBox):
+    def __init__(self, plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type', threshold=.01, fig=None,**kwargs):
+        super().__init__() #is the underlying structure an HBox?
+        self.categorical_columns = infer_categorical_columns(plane_seg)
+        self.plane_seg = PlaneSegmentation
+        self.kwargs = [] #this is how i handled **kwargs, not sure if this is right, consturcted a list
+        #could not just say: self.**kwargs = **kwargs
+        for x in range(0, len(**kwargs)):
+            self.kwargs.append(**kwargs[x])
+        if len(self.categorical_columns) == 1:
+            self.color_by = list(self.categorical_columns.keys())[0] #changing local variables to instance variables?
+            return show_plane_segmentation_2d(plane_seg, color_by=color_by, **kwargs)
+        elif len(self.categorical_columns) > 1:
+            self.cat_controller = widgets.Dropdown(options=list(self.categorical_columns), description='color by')
+            self.out_fig = show_plane_segmentation_2d(plane_seg, color_by=self.cat_controller.value, **kwargs)
+
+    def on_change(self, change): #get rid of outfig as a parameter
+        if change['new'] and isinstance(change['new'], dict):
+            ind = change['new']['index']
+            if isinstance(ind, int):
+                color_by = change['owner'].options[ind]
+                show_plane_segmentation_2d(self.plane_seg, color_by=color_by, fig=self.out_fig, self.kwargs) #replace outfig with instance variable
+
+            self.cat_controller.observe(self.on_change)
+
+            return widgets.VBox(children=[self.cat_controller, self.out_fig])
+        else:
+            return show_plane_segmentation_2d(self.plane_seg, color_by=None, self.kwargs)
 
 
+
+#TODO: make this into class
 def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
 
     categorical_columns = infer_categorical_columns(plane_seg)
