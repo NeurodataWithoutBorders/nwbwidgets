@@ -88,16 +88,16 @@ def compute_outline(image_mask, threshold):
 compute_outline = MemoizeMutable(compute_outline)
 
 
-def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type',
+def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by=None,
                                threshold=.01, fig=None):
     """
 
     Parameters
     ----------
-    plane_seg
-    color_wheel
-    color_by
-    threshold
+    plane_seg: PlaneSegmentation
+    color_wheel: list
+    color_by: str
+    threshold: float
     fig: plotly.graph_objects.Figure, options
 
     Returns
@@ -116,6 +116,15 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
     else:
         fig.data = None
     aux_leg = []
+
+    dummy_trace = go.Scatter(
+        x=[None], y=[None],
+        name='<b>{}</b>'.format(color_by),
+        # set opacity = 0
+        line={'color': 'rgba(0, 0, 0, 0)'}
+    )
+    fig.add_trace(dummy_trace)
+
     for i in range(nUnits):
         if plane_seg[color_by][i] not in aux_leg:
             show_leg = True
@@ -123,6 +132,7 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
         else:
             show_leg = False
         kwargs = dict()
+
         if color_by:
             c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
             kwargs.update(line_color=c)
