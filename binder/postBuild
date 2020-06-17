@@ -1,0 +1,3 @@
+#!/bin/bash#!
+
+wget -O sub-YutaMouse41_ses-YutaMouse41-150829_behavior+ecephys.nwb https://girder.dandiarchive.org/api/v1/item/5e740e1b368d3c79a8006c71/download
