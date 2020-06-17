@@ -51,8 +51,8 @@ default_neurodata_vis_spec = {
     }),
     pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: OrderedDict({
-        'over time': behavior.show_spatial_series_over_time,
-        'trace': behavior.show_spatial_series}),
+        'over time': timeseries.SeparateTracesPlotlyWidget,
+        'trace': behavior.plotly_show_spatial_trace}),
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
     pynwb.image.RGBImage: image.show_rbg_image,
     pynwb.image.ImageSeries: image.show_image_series,
