@@ -8,7 +8,6 @@ from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
 from plotly import graph_objects as go
 
 
-
 def show_position(node: Position, neurodata_vis_spec: dict):
 
     if len(node.spatial_series.keys()) == 1:
