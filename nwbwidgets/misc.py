@@ -212,16 +212,19 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 
 class PSTHWidget(widgets.VBox):
-    def __init__(self, units: Units, unit_index=0, unit_controller=None, sigma_in_secs=.05, ntt=1000):
+    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0, unit_controller=None, sigma_in_secs=.05, ntt=1000):
 
         self.units = units
 
         super().__init__()
 
-        self.trials = self.get_trials()
-        if self.trials is None:
-            self.children = [widgets.HTML('No trials present')]
-            return
+        if trials is None:
+            self.trials = self.get_trials()
+            if self.trials is None:
+                self.children = [widgets.HTML('No trials present')]
+                return
+        else:
+            self.trials = trials
 
         if unit_controller is None:
             nunits = len(units['spike_times'].data)
@@ -530,15 +533,18 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
 
 class RasterGridWidget(widgets.VBox):
 
-    def __init__(self, units: Units, unit_index=0):
+    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0):
         super().__init__()
 
         self.units = units
 
-        self.trials = self.get_trials()
-        if self.trials is None:
-            self.children = [widgets.HTML('No trials present')]
-            return
+        if trials is None:
+            self.trials = self.get_trials()
+            if self.trials is None:
+                self.children = [widgets.HTML('No trials present')]
+                return
+        else:
+            self.trials = trials
 
         groups = list(self.trials.colnames)
 

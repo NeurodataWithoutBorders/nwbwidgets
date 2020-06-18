@@ -18,31 +18,36 @@ class AllenRasterWidget(RasterWidget):
         return AllenRasterGroupAndSortController(self.units, group_by=group_by)
 
 
-class AllenPSTHWidget(PSTHWidget):
+class TimeIntervalsSelector(widgets.VBox):
 
-    def __init__(self, units: Units, unit_index=0, unit_controller=None, sigma_in_secs=.05, ntt=1000):
+    InnerWidget = None
 
-        super().__init__(units, unit_index, unit_controller, sigma_in_secs, ntt)
+    def __init__(self, units, **kwargs):
 
-        self.stimulus_type_dd = widgets.Dropdown(options=np.unique(self.trials['stimulus_name'][:]).tolist(),
-                                                 label='drifting_gratings',
+        super().__init__()
+        self.units = units
+        self.kwargs = kwargs
+        self.intervals_tables = units.get_ancestor('NWBFile').intervals
+        self.stimulus_type_dd = widgets.Dropdown(options=list(self.intervals_tables.keys()),
                                                  description='stimulus type')
-
+        trials = list(self.intervals_tables.values())[0]
         self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
-
-        self.children = [self.stimulus_type_dd] + list(self.children)
-
-    def get_trials(self):
-        return self.units.get_ancestor('NWBFile').epochs
+        psth_widget = self.InnerWidget(units, trials, **kwargs)
+        self.children = [self.stimulus_type_dd, psth_widget]
 
     def stimulus_type_dd_callback(self, change):
-        self.gas.discard_rows = np.where(self.trials['stimulus_name'][:] != self.stimulus_type_dd.value)[0]
+        self.children = [self.stimulus_type_dd, widgets.HTML('Rendering...')]
+        trials = self.intervals_tables[self.stimulus_type_dd.value]
+        psth_widget = self.InnerWidget(self.units, trials, **self.kwargs)
+        self.children = [self.stimulus_type_dd, psth_widget]
 
-    def make_group_and_sort(self, window=False):
-        discard_rows = np.where(self.trials['stimulus_name'][:] != 'drifting_gratings')[0]
-        gas = GroupAndSortController(self.trials, window=window, start_discard_rows=discard_rows)
 
-        return gas
+class AllenPSTHWidget(TimeIntervalsSelector):
+    InnerWidget = PSTHWidget
+
+
+class AllenRasterGridWidget(TimeIntervalsSelector):
+    InnerWidget = RasterGridWidget
 
 
 class AllenRasterGroupAndSortController(GroupAndSortController):
@@ -52,7 +57,9 @@ class AllenRasterGroupAndSortController(GroupAndSortController):
         self.electrodes = self.dynamic_table.get_ancestor('NWBFile').electrodes
 
         groups = super().get_groups()
-        groups.update({name: np.unique(self.electrodes[name][:]) for name in self.electrodes.colnames})
+        for name in self.electrodes.colnames:
+            if not name == 'group':
+                groups.update(**{name: np.unique(self.electrodes[name][:])})
         return groups
 
     def get_orderable_cols(self):
@@ -74,20 +81,23 @@ class AllenRasterGroupAndSortController(GroupAndSortController):
                 inds = [np.argmax(ids == val) for val in self.dynamic_table['peak_channel_id'][:]]
                 return self.electrodes[by][:][inds][rows_select]
 
-
+"""
 class AllenRasterGridWidget(RasterGridWidget):
     def get_trials(self):
-        return self.units.get_ancestor('NWBFile').epochs
+        return self.units.get_ancestor('NWBFile').intervals['dot_motion_presentations']
 
     def select_trials(self):
-        self.controls['trials_select'] = widgets.Dropdown(options=np.unique(self.trials['stimulus_name'][:]).tolist(),
-                                                          label='drifting_gratings',
-                                                          description='trial select')
-        self.children = list(self.children) + [self.controls['trials_select']]
+        self.intervals_tables = self.units.get_ancestor('NWBFile').intervals
 
-    def process_controls(self, control_states):
-        control_states['trials_select'] = self.trials['stimulus_name'][:] == control_states.pop('trials_select')
-        return control_states
+        self.stimulus_type_dd = widgets.Dropdown(options=list(self.intervals_tables.keys()),
+                                                 description='stimulus type')
+
+        self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
+        self.children = list(self.children) + [self.stimulus_type_dd]
+
+    def stimulus_type_dd_callback(self, change):
+        self.trials = self.intervals_tables[self.stimulus_type_dd.value]
+"""
 
 
 def allen_show_dynamic_table(node: DynamicTable, **kwargs) -> widgets.Widget:
