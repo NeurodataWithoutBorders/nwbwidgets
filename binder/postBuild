@@ -1,1 +1,2 @@
 wget -q -O "sub-an041_ses-20140825_obj-kghsci.nwb" "https://girder.dandiarchive.org/api/v1/item/5e73acbc368d3c79a8006930/download"
+wget -q -O "sub-744912845_ses-766640955.nwb" "https://girder.dandiarchive.org/api/v1/item/5eda555ce82be273d48e42ce/download"
