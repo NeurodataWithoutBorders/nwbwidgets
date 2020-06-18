@@ -81,24 +81,6 @@ class AllenRasterGroupAndSortController(GroupAndSortController):
                 inds = [np.argmax(ids == val) for val in self.dynamic_table['peak_channel_id'][:]]
                 return self.electrodes[by][:][inds][rows_select]
 
-"""
-class AllenRasterGridWidget(RasterGridWidget):
-    def get_trials(self):
-        return self.units.get_ancestor('NWBFile').intervals['dot_motion_presentations']
-
-    def select_trials(self):
-        self.intervals_tables = self.units.get_ancestor('NWBFile').intervals
-
-        self.stimulus_type_dd = widgets.Dropdown(options=list(self.intervals_tables.keys()),
-                                                 description='stimulus type')
-
-        self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
-        self.children = list(self.children) + [self.stimulus_type_dd]
-
-    def stimulus_type_dd_callback(self, change):
-        self.trials = self.intervals_tables[self.stimulus_type_dd.value]
-"""
-
 
 def allen_show_dynamic_table(node: DynamicTable, **kwargs) -> widgets.Widget:
     if node.name == 'electrodes':
