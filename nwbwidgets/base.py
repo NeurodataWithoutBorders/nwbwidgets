@@ -9,6 +9,8 @@ from datetime import datetime
 from typing import Union
 import pandas as pd
 from IPython import display
+import ipysheet
+import h5py
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -263,3 +265,41 @@ def df2accordion(df: pd.DataFrame, by, func, style: GroupingWidget = widgets.Acc
     else:
         labels, idfs = zip(*df.groupby(by))
         return lazy_show_over_data(idfs, func, labels=labels, style=style)
+
+
+def show_dset(dset: h5py.Dataset, **kwargs):
+    return widgets.VBox(children=[
+        show_dict(dict(dset.attrs)),
+        dataset_to_sheet(dset)
+    ])
+
+
+def dataset_to_sheet(dset:h5py.Dataset):
+    if dset.ndim == 1:
+        nrows = len(dset)
+
+        sheet = ipysheet.easy.sheet(rows=nrows, columns=1, column_headers=False)
+        for row in range(nrows):
+            ipysheet.easy.cell(row, 0, dset[row], read_only=True)
+    elif dset.ndim == 2:
+        nrows, ncols = dset.shape
+
+        sheet = ipysheet.easy.sheet(rows=nrows, columns=ncols, column_headers=False)
+        for row, col in zip(range(nrows), range(ncols)):
+            ipysheet.easy.cell(row, col, dset[row, col], read_only=True)
+    else:
+        # do not know how to render datasets that have 3 or more dimensions
+        return widgets.HTML(print(dset))
+    return sheet
+
+
+def show_dict(in_dict) -> widgets.Widget:
+    field_lay = widgets.Layout(max_height='40px', max_width='600px',
+                               min_height='30px', min_width='130px')
+    info = []
+    for key, val in in_dict.items():
+        lbl_key = widgets.Label(key+':', layout=field_lay)
+        lbl_val = widgets.Label(str(val), layout=field_lay)
+        info.append(widgets.HBox(children=[lbl_key, lbl_val]))
+    vbox = widgets.VBox(info)
+    return vbox

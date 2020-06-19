@@ -3,11 +3,11 @@ import ndx_grayscalevolume
 from collections import OrderedDict
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
 import hdmf
-from functools import partial
 from ndx_icephys_meta.icephys import SweepSequences
 from ipywidgets import widgets
 from .ecephys import ElectrodesWidget
 from .base import render_dataframe
+import h5py
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
@@ -57,6 +57,7 @@ default_neurodata_vis_spec = {
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: timeseries.show_timeseries,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
+    h5py.Dataset: base.show_dset
 }
 
 
