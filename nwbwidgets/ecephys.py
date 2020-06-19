@@ -2,9 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from scipy.signal import stft
-from pynwb.ecephys import LFP, SpikeEventSeries
+from pynwb.ecephys import LFP, SpikeEventSeries, ElectricalSeries
 from .base import fig2widget, nwb2widget
 from IPython import display
+from .timeseries import BaseGroupedTraceWidget
 
 
 def show_lfp(node: LFP, neurodata_vis_spec: dict):
@@ -73,3 +74,8 @@ def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
     hbox1 = widgets.HBox(children=[vbox0, out_fig])
 
     return hbox1
+
+
+class ElectricalSeriesWidget(BaseGroupedTraceWidget):
+    def __init__(self, electrical_series: ElectricalSeries, neurodata_vis_spec=None, **kwargs):
+        super().__init__(electrical_series, 'electrodes', **kwargs)

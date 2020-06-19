@@ -10,6 +10,9 @@ import ipywidgets as widgets
 import plotly.graph_objects as go
 from skimage import measure
 
+from .timeseries import BaseGroupedTraceWidget
+
+
 
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
@@ -209,3 +212,8 @@ def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
     fig = p3.figure()
     p3.volshow(vol.data, tf=linear_transfer_function([0, 0, 0], max_opacity=.1))
     return fig
+
+
+class RoiResponseSeriesWidget(BaseGroupedTraceWidget):
+    def __init__(self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs):
+        super().__init__(roi_response_series, 'rois', **kwargs)

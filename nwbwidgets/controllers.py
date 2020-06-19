@@ -302,7 +302,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.set_group_by(group_by)
 
         self.children = self.get_children()
-        self.layout = Layout(width='280px')
+        self.layout = Layout(width='290px')
         self.update_value()
 
     def get_children(self):

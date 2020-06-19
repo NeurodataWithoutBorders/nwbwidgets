@@ -212,7 +212,8 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 
 class PSTHWidget(widgets.VBox):
-    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0, unit_controller=None, sigma_in_secs=.05, ntt=1000):
+    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0, unit_controller=None,
+                 sigma_in_secs=.05, ntt=1000):
 
         self.units = units
 
