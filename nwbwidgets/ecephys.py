@@ -80,7 +80,11 @@ class ElectricalSeriesWidget(BaseGroupedTraceWidget):
     def __init__(self, electrical_series: ElectricalSeries, neurodata_vis_spec=None,
                  foreign_time_window_controller=None, foreign_group_and_sort_controller=None,
                  **kwargs):
-        super().__init__(electrical_series, 'electrodes',
+        if foreign_group_and_sort_controller is not None:
+            table = None
+        else:
+            table = 'electrodes'
+        super().__init__(electrical_series, table,
                          foreign_time_window_controller=foreign_time_window_controller,
                          foreign_group_and_sort_controller=foreign_group_and_sort_controller,
                          **kwargs)

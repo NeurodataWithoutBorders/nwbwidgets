@@ -86,6 +86,7 @@ def show_session_raster(units: Units, time_window=None, units_window=None, show_
 class RasterWidget(widgets.HBox):
     def __init__(self, units: Units,
                  foreign_time_window_controller: StartAndDurationController = None,
+                 foreign_group_and_sort_controller: GroupAndSortController = None,
                  group_by=None):
         super().__init__()
 
@@ -98,10 +99,11 @@ class RasterWidget(widgets.HBox):
                                                                      duration=5)
         else:
             self.time_window_controller = foreign_time_window_controller
-            self.tmin = self.time_window_controller.vmin
-            self.tmax = self.time_window_controller.vmax
 
-        self.gas = self.make_group_and_sort(group_by=group_by)
+        if foreign_group_and_sort_controller:
+            self.gas = foreign_group_and_sort_controller
+        else:
+            self.gas = self.make_group_and_sort(group_by=group_by)
 
         self.progress_bar = widgets.HBox()
 
@@ -114,17 +116,31 @@ class RasterWidget(widgets.HBox):
 
         out_fig = interactive_output(show_session_raster, self.controls)
 
-        self.children = [
-                self.gas,
-                widgets.VBox(
-                    children=[
-                        self.time_window_controller,
-                        self.progress_bar,
-                        out_fig,
-                    ],
-                    layout=Layout(width="100%")
-                )
-            ]
+        if foreign_time_window_controller:
+            right_panel = widgets.VBox(
+                children=[
+                    self.progress_bar,
+                    out_fig,
+                ],
+                layout=Layout(width="100%")
+            )
+        else:
+            right_panel = widgets.VBox(
+                        children=[
+                            self.time_window_controller,
+                            self.progress_bar,
+                            out_fig,
+                        ],
+                        layout=Layout(width="100%")
+                    )
+
+        if foreign_group_and_sort_controller:
+            self.children = [right_panel]
+        else:
+            self.children = [
+                    self.gas,
+                    right_panel
+                ]
 
         self.layout = Layout(width="100%")
 

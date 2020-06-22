@@ -8,8 +8,9 @@ from abc import abstractmethod
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from .controllers import StartAndDurationController,  RangeController, GroupAndSortController
+from .controllers import StartAndDurationController,  GroupAndSortController
 from .utils.widgets import interactive_output
+from .utils.plotly import multi_trace
 
 color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -138,7 +139,7 @@ def show_timeseries(node, **kwargs):
     if len(node.data.shape) == 1:
         return SingleTracePlotlyWidget(node, **kwargs)
     elif len(node.data.shape) == 2:
-        return TracesWidget(node, **kwargs)
+        return BaseGroupedTraceWidget(node, **kwargs)
     else:
         raise ValueError('Visualization for TimeSeries that has data with shape {} not implemented'.
                          format(node.data.shape))
@@ -191,40 +192,6 @@ class SingleTraceWidget(AbstractTraceWidget):
             self.children = [self.out_fig]
         else:
             self.children = [self.time_window_controller, self.out_fig]
-
-
-class TracesWidget(AbstractTraceWidget):
-    def __init__(self, timeseries: TimeSeries, neurodata_vis_spec: dict = None,
-                 foreign_time_window_controller: StartAndDurationController = None,
-                 foreign_traces_controller: RangeController = None, trace_starting_range=None,
-                 **kwargs):
-
-        if foreign_traces_controller is None:
-            if trace_starting_range is None:
-                trace_starting_range = (0, min(30, timeseries.data.shape[1]))
-            self.trace_controller = RangeController(
-                0, timeseries.data.shape[1], start_range=trace_starting_range, description='channels', dtype='int',
-                orientation='vertical')
-        else:
-            self.trace_controller = foreign_traces_controller
-
-        super().__init__(timeseries, foreign_time_window_controller, **kwargs)
-
-    def set_children(self):
-
-        self.children = (self.time_window_controller,
-                         widgets.HBox(children=[
-                             self.trace_controller,
-                             self.out_fig
-                         ])
-                         )
-
-    def set_controls(self, **kwargs):
-        super().set_controls()
-        self.controls.update(trace_window=self.trace_controller)
-
-    def mpl_plotter(self, **kwargs):
-        return plot_traces(**kwargs)
 
 
 class SingleTracePlotlyWidget(SingleTraceWidget):
@@ -306,7 +273,7 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
         self.controls['time_window'].observe(on_change)
 
 
-def _prep_timeseries(time_series, time_window, order):
+def _prep_timeseries(time_series, time_window=None, order=None):
     if time_window is None:
         t_ind_start = 0
         t_ind_stop = None
@@ -333,6 +300,9 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
+    if order is None:
+        order = np.arange(time_series.data.shape[1])
+
     mini_data, tt, offsets = _prep_timeseries(time_series, time_window, order)
 
     if group_inds is not None:
@@ -355,7 +325,7 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
     ax.set_xlabel('time (s)')
 
     if len(offsets):
-        ax.set_ylim(-offsets[0]/2, offsets[-1] + offsets[0]/2)
+        ax.set_ylim(-offsets[0], offsets[-1] + offsets[0])
     if len(order) <= 30:
         ax.set_yticks(offsets)
         ax.set_yticklabels(order)
@@ -364,25 +334,23 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
 
 
 def plot_grouped_traces_plotly(time_series: TimeSeries, time_window, order, group_inds=None, labels=None,
-                               colors=color_wheel, **kwargs):
+                               colors=color_wheel, fig=None, **kwargs):
     mini_data, tt, offsets = _prep_timeseries(time_series, time_window, order)
 
-    fig = go.FigureWidget()
+    if fig is None:
+        fig = go.FigureWidget()
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
-        for igroup, ui in enumerate(ugroup_inds):
-            color = colors[ugroup_inds[igroup] % len(colors)]
-            for i_trace, trace_index in enumerate(np.where(group_inds == ui)[0]):
-                if i_trace:
-                    showlegend = True
-                else:
-                    showlegend = False
-
-                fig.add_scatter(x=tt, y=mini_data[:, trace_index],
-                                legendgroup=labels[igroup], showlegend=showlegend, line={'color': color})
+        for igroup, ui in enumerate(ugroup_inds[::-1]):
+            color = colors[ugroup_inds[::-1][igroup] % len(colors)]
+            group_data = mini_data[:, group_inds == ui].T
+            multi_trace(tt, group_data, color, labels[ui], fig=fig)
+    else:
+        multi_trace(tt, mini_data.T, 'black', fig=fig)
     fig.update_layout(
         title=time_series.name,
         xaxis_title="time (s)")
+    fig.update_yaxes(tickvals=list(offsets), ticktext=[str(i) for i in order])
 
     return fig
 
@@ -405,8 +373,6 @@ class BaseGroupedTraceWidget(widgets.HBox):
 
         if dynamic_table_region_name is not None and foreign_group_and_sort_controller is not None:
             raise TypeError('You cannot supply both `dynamic_table_region_name` and `foreign_group_and_sort_controller`.')
-        elif dynamic_table_region_name is None and foreign_group_and_sort_controller is None:
-            raise TypeError('supply either `dynamic_table_region_name` or `foreign_group_and_sort_controller`.')
 
         super().__init__()
         self.time_series = time_series
@@ -418,20 +384,24 @@ class BaseGroupedTraceWidget(widgets.HBox):
             self.tmax = get_timeseries_maxt(time_series)
             self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
                                                                      duration=5)
-        if foreign_group_and_sort_controller is None:
-            dynamic_table_region = getattr(time_series, dynamic_table_region_name)
-            table = dynamic_table_region.table
-            referenced_rows = dynamic_table_region.data
-            discard_rows = [x for x in range(len(table)) if x not in referenced_rows]
-            self.gas = GroupAndSortController(dynamic_table=table, start_discard_rows=discard_rows)
-        else:
-            self.gas = foreign_group_and_sort_controller
 
         self.controls = dict(
             time_series=widgets.fixed(self.time_series),
-            time_window=self.time_window_controller,
-            gas=self.gas,
+            time_window=self.time_window_controller
         )
+        if foreign_group_and_sort_controller is None:
+            if dynamic_table_region_name is not None:
+                dynamic_table_region = getattr(time_series, dynamic_table_region_name)
+                table = dynamic_table_region.table
+                referenced_rows = dynamic_table_region.data
+                discard_rows = [x for x in range(len(table)) if x not in referenced_rows]
+                self.gas = GroupAndSortController(dynamic_table=table, start_discard_rows=discard_rows)
+                self.controls.update(gas=self.gas)
+            else:
+                self.gas = None
+        else:
+            self.gas = foreign_group_and_sort_controller
+            self.controls.update(gas=self.gas)
 
         out_fig = interactive_output(mpl_plotter, self.controls)
 
@@ -446,7 +416,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 layout=widgets.Layout(width="100%")
             )
 
-        if foreign_group_and_sort_controller:
+        if foreign_group_and_sort_controller or self.gas is None:
             self.children = [right_panel]
         else:
 
