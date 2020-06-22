@@ -84,18 +84,20 @@ def show_session_raster(units: Units, time_window=None, units_window=None, show_
 
 
 class RasterWidget(widgets.HBox):
-    def __init__(self, units: Units, time_window_controller=None, group_by=None):
+    def __init__(self, units: Units,
+                 foreign_time_window_controller: StartAndDurationController = None,
+                 group_by=None):
         super().__init__()
 
         self.units = units
 
-        if time_window_controller is None:
+        if foreign_time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
             self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
                                                                      duration=5)
         else:
-            self.time_window_controller = time_window_controller
+            self.time_window_controller = foreign_time_window_controller
             self.tmin = self.time_window_controller.vmin
             self.tmax = self.time_window_controller.vmax
 

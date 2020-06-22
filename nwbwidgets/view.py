@@ -43,10 +43,7 @@ default_neurodata_vis_spec = {
     pynwb.core.LabelledDict: base.dict2accordion,
     pynwb.ProcessingModule: base.processing_module,
     hdmf.common.DynamicTable: show_dynamic_table,
-    pynwb.ecephys.ElectricalSeries: OrderedDict({
-        'Fields': timeseries.show_ts_fields,
-        'Traces': ecephys.ElectricalSeriesWidget,
-    }),
+    pynwb.ecephys.ElectricalSeries: ecephys.ElectricalSeriesWidget,
     pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: OrderedDict({
         'over time': timeseries.SeparateTracesPlotlyWidget,
