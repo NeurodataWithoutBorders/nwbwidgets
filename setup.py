@@ -7,7 +7,7 @@ with open('README.md') as f:
 setup(
     author='Neurodata Without Border (NWB) developers',
     author_email='ben.dichter@gmail.com',
-    version='0.3.1',
+    version='0.4.0',
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
                  'Framework :: Jupyter',
@@ -29,7 +29,8 @@ setup(
                       'scikit-image',
                       'tqdm>=4.36.0',
                       'ndx-icephys-meta',
-                      'ipysheet'],
+                      'ipysheet',
+                      'zarr'],
     license='MIT',
     keywords=['jupyter', 'hdf5', 'notebook', 'nwb'],
     long_description=long_description,

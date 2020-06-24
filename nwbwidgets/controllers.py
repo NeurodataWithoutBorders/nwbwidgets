@@ -329,7 +329,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.group_sm.options = tuple(groups[::-1])
         self.group_sm.value = self.group_sm.options
         self.group_sm.disabled = False
-        self.group_sm.rows = min(len(groups), 20)
+        self.group_sm.rows = min(len(groups)+1, 20)
         self.limit_cb.disabled = False
         self.group_and_sort()
 
