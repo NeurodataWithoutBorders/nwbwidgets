@@ -113,86 +113,109 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
     nUnits = data.shape[0]
     if fig is None:
         fig = go.FigureWidget()
-    else:
-        kwargs.update_traces()
+        aux_leg = []
+        for i in range(nUnits):
+            if plane_seg[color_by][i] not in aux_leg:
+                show_leg = True
+                aux_leg.append(plane_seg[color_by][i])
+            else:
+                show_leg = False
+            kwargs = dict()
+            if color_by:
+                c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
+                kwargs.update(line_color=c)
+            # hover text
+            hovertext = '<b>roi_id</b>: ' + str(plane_seg.id[i])
+            rois_cols = list(plane_seg.colnames)
+            if 'roi_id' in rois_cols:
+                rois_cols.remove('roi_id')
+            sec_str = '<br>'.join([col + ': ' + str(plane_seg[col][i]) for col in rois_cols if
+                                   isinstance(plane_seg[col][i], (int, float, np.integer, np.float, str))])
+            hovertext += '<br>' + sec_str
+            # form cell borders
+            x, y = compute_outline(plane_seg['image_mask'][i], threshold)
 
-
-
-        fig.data = None
-    aux_leg = []
-    for i in range(nUnits):
-        if plane_seg[color_by][i] not in aux_leg:
-            show_leg = True
-            aux_leg.append(plane_seg[color_by][i])
-        else:
-            show_leg = False
-        kwargs = dict()
-        if color_by:
-            c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
-            kwargs.update(line_color=c)
-        # hover text
-        hovertext = '<b>roi_id</b>: ' + str(plane_seg.id[i])
-        rois_cols = list(plane_seg.colnames)
-        if 'roi_id' in rois_cols:
-            rois_cols.remove('roi_id')
-        sec_str = '<br>'.join([col + ': ' + str(plane_seg[col][i]) for col in rois_cols if
-                               isinstance(plane_seg[col][i], (int, float, np.integer, np.float, str))])
-        hovertext += '<br>' + sec_str
-        # form cell borders
-        x, y = compute_outline(plane_seg['image_mask'][i], threshold)
-
-        fig.add_trace(
-            go.Scatter(
-                x=x, y=y,
-                fill='toself',
-                mode='lines',
-                name=str(plane_seg[color_by][i]),
-                legendgroup=str(plane_seg[color_by][i]),
-                showlegend=show_leg,
-                text=hovertext,
-                hovertext='text',
-                line=dict(width=.5),
-                **kwargs
+            fig.add_trace(
+                go.Scatter(
+                    x=x, y=y,
+                    fill='toself',
+                    mode='lines',
+                    name=str(plane_seg[color_by][i]),
+                    legendgroup=str(plane_seg[color_by][i]),
+                    showlegend=show_leg,
+                    text=hovertext,
+                    hovertext='text',
+                    line=dict(width=.5),
+                    **kwargs
+                )
             )
-        )
-        fig.update_layout(
-            width=700, height=500,
-            margin=go.layout.Margin(l=60, r=60, b=60, t=60, pad=1),
-            plot_bgcolor="rgb(245, 245, 245)",
-        )
+            fig.update_layout(
+                width=700, height=500,
+                margin=go.layout.Margin(l=60, r=60, b=60, t=60, pad=1),
+                plot_bgcolor="rgb(245, 245, 245)",
+            )
+    else:
+        fig.update_traces(visible = False)
+        for i in range(len(fig.data)):
+            fig.data[i].line.color = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
+        fig.update_traces(visible = True)
+        """kwargs.update_traces()
+Here change the traces?
+"""
+        #fig.data = None
+
     return fig
+
 """NEW CLASS"""
-class plane_segmentation_2d_widget(widgets.HBox):
+class plane_segmentation_2d_widget(widgets.VBox):
     def __init__(self, plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type', threshold=.01, fig=None,**kwargs):
         super().__init__() #is the underlying structure an HBox?
         self.categorical_columns = infer_categorical_columns(plane_seg)
-        self.plane_seg = PlaneSegmentation
-        self.kwargs = [] #this is how i handled **kwargs, not sure if this is right, consturcted a list
-        #could not just say: self.**kwargs = **kwargs
-        for x in range(0, len(**kwargs)):
-            self.kwargs.append(**kwargs[x])
+        self.plane_seg = plane_seg
+
         if len(self.categorical_columns) == 1:
             self.color_by = list(self.categorical_columns.keys())[0] #changing local variables to instance variables?
-            return show_plane_segmentation_2d(plane_seg, color_by=color_by, **kwargs)
+            self.children = [show_plane_segmentation_2d(plane_seg, color_by=color_by, **kwargs)]
         elif len(self.categorical_columns) > 1:
             self.cat_controller = widgets.Dropdown(options=list(self.categorical_columns), description='color by')
             self.out_fig = show_plane_segmentation_2d(plane_seg, color_by=self.cat_controller.value, **kwargs)
 
-    def on_change(self, change): #get rid of outfig as a parameter
-        if change['new'] and isinstance(change['new'], dict):
-            ind = change['new']['index']
-            if isinstance(ind, int):
-                color_by = change['owner'].options[ind]
-                show_plane_segmentation_2d(self.plane_seg, color_by=color_by, fig=self.out_fig, self.kwargs) #replace outfig with instance variable
-
-            self.cat_controller.observe(self.on_change)
-
-            return widgets.VBox(children=[self.cat_controller, self.out_fig])
+            def on_change(change): #get rid of outfig as a parameter
+                if change['new'] and isinstance(change['new'], dict):
+                    ind = change['new']['index']
+                    if isinstance(ind, int):
+                        color_by = change['owner'].options[ind]
+                        self.update_trace_plane_segmentation_2d(color_by)
+                        """call an update function here, no longer want to rewrite"""
+                       # show_plane_segmentation_2d(self.plane_seg, color_by=color_by, fig=self.out_fig, **kwargs) #replace outfig with instance variable
+            self.cat_controller.observe(on_change)
+            self.children=[self.cat_controller, self.out_fig]
         else:
-            return show_plane_segmentation_2d(self.plane_seg, color_by=None, self.kwargs)
+            self.children = [show_plane_segmentation_2d(self.plane_seg, color_by=None, **kwargs)]
+    def update_trace_plane_segmentation_2d(self, color_by):
+        display = self.children[1]
+        children = list(self.children)
+        children[1] = widgets.HTML('Rendering...')
+        self.children = children
+        cats = np.unique(self.plane_seg[color_by][:])
+        colors = {}
+        for i in range(len(display.data)):
+
+            display.data[i].line.color = color_wheel[np.where(cats == self.plane_seg[color_by][i])[0][0]]
+
+            if not display.data[i].line.color in colors:
+                colors[display.data[i].line.color] = []
+            colors[display.data[i].line.color].append(display.data[i].line)
+        display.update_layout(showlegend=False)
+        children[1] = display
+        self.children = children
+        for x in colors.keys():
+            #display.add_trace(colors[x])
+            """Here I was trying to retrace by color so that the legend could be updated"""
+        display.update_layout(showlegend=True)
 
 
-
+"""
 #TODO: make this into class
 def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
 
@@ -220,7 +243,7 @@ def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
     else:
         return show_plane_segmentation_2d(plane_seg, color_by=None, **kwargs)
 
-
+"""
 def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
     if 'voxel_mask' in plane_seg:
         return show_plane_segmentation_3d(plane_seg)

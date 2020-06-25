@@ -24,7 +24,7 @@ default_neurodata_vis_spec = {
     pynwb.ophys.ImageSegmentation: ophys.show_image_segmentation,
     pynwb.ophys.TwoPhotonSeries: ophys.show_two_photon_series,
     ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
-    pynwb.ophys.PlaneSegmentation: ophys.show_plane_segmentation,
+    pynwb.ophys.PlaneSegmentation: ophys.plane_segmentation_2d_widget,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     pynwb.ophys.RoiResponseSeries: timeseries.traces_widget,
     pynwb.misc.AnnotationSeries: OrderedDict({
