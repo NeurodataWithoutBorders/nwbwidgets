@@ -75,7 +75,7 @@ def event_group(times_list, offset=0, color='Black', label=None, fig=None, marke
     return fig
 
 
-class Peakaboo:
+class Peekaboo:
     """Make a plotly figure disappear as it is being updated"""
 
     def __init__(self, container, index, placeholder=widgets.HTML('Rendering...')):
