@@ -10,7 +10,6 @@ import ipywidgets as widgets
 import plotly.graph_objects as go
 from skimage import measure
 
-
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
 
@@ -155,64 +154,74 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
                 plot_bgcolor="rgb(245, 245, 245)",
             )
     else:
-        fig.update_traces(visible = False)
+        fig.update_traces(visible=False)
         for i in range(len(fig.data)):
             fig.data[i].line.color = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
-        fig.update_traces(visible = True)
+        fig.update_traces(visible=True)
         """kwargs.update_traces()
 Here change the traces?
 """
-        #fig.data = None
+        # fig.data = None
 
     return fig
 
+
 """NEW CLASS"""
+
+
 class plane_segmentation_2d_widget(widgets.VBox):
-    def __init__(self, plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type', threshold=.01, fig=None,**kwargs):
-        super().__init__() #is the underlying structure an HBox?
+    def __init__(self, plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type', threshold=.01,
+                 fig=None, **kwargs):
+        super().__init__()  # is the underlying structure an HBox?
         self.categorical_columns = infer_categorical_columns(plane_seg)
         self.plane_seg = plane_seg
 
         if len(self.categorical_columns) == 1:
-            self.color_by = list(self.categorical_columns.keys())[0] #changing local variables to instance variables?
+            self.color_by = list(self.categorical_columns.keys())[0]  # changing local variables to instance variables?
             self.children = [show_plane_segmentation_2d(plane_seg, color_by=color_by, **kwargs)]
         elif len(self.categorical_columns) > 1:
             self.cat_controller = widgets.Dropdown(options=list(self.categorical_columns), description='color by')
             self.out_fig = show_plane_segmentation_2d(plane_seg, color_by=self.cat_controller.value, **kwargs)
 
-            def on_change(change): #get rid of outfig as a parameter
+            def on_change(change):  # get rid of outfig as a parameter
                 if change['new'] and isinstance(change['new'], dict):
                     ind = change['new']['index']
                     if isinstance(ind, int):
                         color_by = change['owner'].options[ind]
                         self.update_trace_plane_segmentation_2d(color_by)
                         """call an update function here, no longer want to rewrite"""
-                       # show_plane_segmentation_2d(self.plane_seg, color_by=color_by, fig=self.out_fig, **kwargs) #replace outfig with instance variable
+                    # show_plane_segmentation_2d(self.plane_seg, color_by=color_by, fig=self.out_fig, **kwargs) #replace outfig with instance variable
+
             self.cat_controller.observe(on_change)
-            self.children=[self.cat_controller, self.out_fig]
+            self.children = [self.cat_controller, self.out_fig]
         else:
             self.children = [show_plane_segmentation_2d(self.plane_seg, color_by=None, **kwargs)]
+
     def update_trace_plane_segmentation_2d(self, color_by):
         display = self.children[1]
         children = list(self.children)
         children[1] = widgets.HTML('Rendering...')
         self.children = children
         cats = np.unique(self.plane_seg[color_by][:])
-        colors = {}
+        legendgroups = []
+        label = None
         for i in range(len(display.data)):
-
-            display.data[i].line.color = color_wheel[np.where(cats == self.plane_seg[color_by][i])[0][0]]
-
-            if not display.data[i].line.color in colors:
-                colors[display.data[i].line.color] = []
-            colors[display.data[i].line.color].append(display.data[i].line)
-        display.update_layout(showlegend=False)
+            color = color_wheel[np.where(cats == self.plane_seg[color_by][i])[0][0]] #store the color
+            display.data[i].line.color = color #set the color
+            display.data[i].legendgroup = color #set the legend group to the color
+            if color not in legendgroups: #compile a list of the legendgroups
+                legendgroups.append(color)
+        for i in range(len(display.data)): #loop through the data
+            display.data[i].showlegend = False #initially hide legend
+            if display.data[i].legendgroup in legendgroups: #show legend if it has not already been showed
+                display.data[i].name = str(self.plane_seg[color_by][i])
+                #set the new name of the legend
+                display.data[i].showlegend = True
+                #set the new display setting
+                legendgroups.remove(display.data[i].legendgroup)
+                #remove the legend group from the list 'to display'
         children[1] = display
         self.children = children
-        for x in colors.keys():
-            #display.add_trace(colors[x])
-            """Here I was trying to retrace by color so that the legend could be updated"""
-        display.update_layout(showlegend=True)
 
 
 """
@@ -244,6 +253,8 @@ def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
         return show_plane_segmentation_2d(plane_seg, color_by=None, **kwargs)
 
 """
+
+
 def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
     if 'voxel_mask' in plane_seg:
         return show_plane_segmentation_3d(plane_seg)
