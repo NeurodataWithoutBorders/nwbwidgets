@@ -573,7 +573,7 @@ class RasterGridWidget(widgets.VBox):
         else:
             self.trials = trials
 
-        groups = list(self.trials.colnames)
+        groups = self.get_groups()
 
         rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows')
         cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols')
@@ -634,9 +634,9 @@ class RasterGridWidget(widgets.VBox):
 
 
 def plot_grouped_events_plotly(data, window=None, group_inds=None, colors=color_wheel, labels=None,
-                               show_legend=True, unobserved_intervals_list=None, progress_bar=None, fig=None):
+                               show_legend=True, unobserved_intervals_list=None, progress_bar=None, fig=None, **kwargs):
 
-    data = np.array(data)
+    data = np.array(data, dtype=object)
 
     if fig is None:
         fig = go.FigureWidget()
@@ -651,11 +651,12 @@ def plot_grouped_events_plotly(data, window=None, group_inds=None, colors=color_
                         offset=offset,
                         label=labels[ui],
                         color=color,
-                        fig=fig)
+                        fig=fig,
+                        **kwargs)
             offset += len(this_data)
 
     else:
-        event_group(data, fig=fig)
+        event_group(data, fig=fig, **kwargs)
 
     fig.update_layout(xaxis_title="time (s)")
 
@@ -781,6 +782,10 @@ def show_session_raster_plotly(units: Units, fig, time_window=None, order=None, 
     #    unobserved_intervals_list = None
 
     fig.update_yaxes(tickvals=[], ticktext=[])
+    if len(order) <= 100:
+        kwargs.update(marker='line-ns', line_width=2)
+    else:
+        kwargs.update(line_width=1)
     fig = plot_grouped_events_plotly(data=data, fig=fig, **kwargs)
     if len(order) <= 40:
         fig.update_yaxes(tickvals=np.arange(len(order)), ticktext=[str(i) for i in order])
