@@ -6,7 +6,7 @@ A library of widgets for visualization NWB data in a Jupyter notebook (or lab). 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 
-authors: Ben Dichter (bdichter@lbl.gov) and Matt McCormick (matt.mccormick@kitware.com)
+authors: Ben Dichter (ben.dichter@catalystneuro.com) and Matt McCormick (matt.mccormick@kitware.com)
 
 
 ## Installation
