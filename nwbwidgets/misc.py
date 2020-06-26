@@ -15,7 +15,7 @@ from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time
 from .utils.mpl import create_big_ax
 from .utils.widgets import interactive_output
 from .analysis.spikes import compute_smoothed_firing_rate
-from .utils.plotly import event_group, Peakaboo
+from .utils.plotly import event_group, Peekaboo
 import plotly.graph_objects as go
 
 
@@ -734,7 +734,7 @@ class RasterWidgetPlotly(widgets.HBox):
     def update_fig(self, change):
         time_window = self.time_window_controller.value
         gas_kwargs = self.gas.value
-        with Peakaboo(self.children[1], 1):
+        with Peekaboo(self.children[1], 1):
             self.fig.data = None
             show_session_raster_plotly(self.units, self.fig, time_window, **gas_kwargs)
 
