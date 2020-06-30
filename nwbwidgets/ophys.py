@@ -153,26 +153,32 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
                 margin=go.layout.Margin(l=60, r=60, b=60, t=60, pad=1),
                 plot_bgcolor="rgb(245, 245, 245)",
             )
-    else:
-        fig.update_traces(visible=False)
-        for i in range(len(fig.data)):
-            fig.data[i].line.color = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
-        fig.update_traces(visible=True)
-        """kwargs.update_traces()
-Here change the traces?
-"""
-        # fig.data = None
-
     return fig
 
 
-"""NEW CLASS"""
+class Peekaboo:
+    """Make a plotly figure disappear as it is being updated"""
+
+    def __init__(self, container, index, placeholder=widgets.HTML('Rendering...')):
+        self.container = container
+        self.index = index
+        self.placeholder = placeholder
+
+    def __enter__(self):
+        self.children = list(self.container.children)
+        self.fig = self.children[self.index]
+        self.children[self.index] = self.placeholder
+        self.container.children = self.children
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.children[self.index] = self.fig
+        self.container.children = self.children
 
 
 class plane_segmentation_2d_widget(widgets.VBox):
     def __init__(self, plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by='neuron_type', threshold=.01,
                  fig=None, **kwargs):
-        super().__init__()  # is the underlying structure an HBox?
+        super().__init__()
         self.categorical_columns = infer_categorical_columns(plane_seg)
         self.plane_seg = plane_seg
 
@@ -183,14 +189,12 @@ class plane_segmentation_2d_widget(widgets.VBox):
             self.cat_controller = widgets.Dropdown(options=list(self.categorical_columns), description='color by')
             self.out_fig = show_plane_segmentation_2d(plane_seg, color_by=self.cat_controller.value, **kwargs)
 
-            def on_change(change):  # get rid of outfig as a parameter
+            def on_change(change):
                 if change['new'] and isinstance(change['new'], dict):
                     ind = change['new']['index']
                     if isinstance(ind, int):
                         color_by = change['owner'].options[ind]
                         self.update_trace_plane_segmentation_2d(color_by)
-                        """call an update function here, no longer want to rewrite"""
-                    # show_plane_segmentation_2d(self.plane_seg, color_by=color_by, fig=self.out_fig, **kwargs) #replace outfig with instance variable
 
             self.cat_controller.observe(on_change)
             self.children = [self.cat_controller, self.out_fig]
@@ -200,59 +204,28 @@ class plane_segmentation_2d_widget(widgets.VBox):
     def update_trace_plane_segmentation_2d(self, color_by):
         display = self.children[1]
         children = list(self.children)
-        children[1] = widgets.HTML('Rendering...')
-        self.children = children
+        peekaboo = Peekaboo(self, 1)
+        peekaboo.__enter__()
         cats = np.unique(self.plane_seg[color_by][:])
         legendgroups = []
         label = None
         for i in range(len(display.data)):
-            color = color_wheel[np.where(cats == self.plane_seg[color_by][i])[0][0]] #store the color
-            display.data[i].line.color = color #set the color
-            display.data[i].legendgroup = color #set the legend group to the color
-            if color not in legendgroups: #compile a list of the legendgroups
+            color = color_wheel[np.where(cats == self.plane_seg[color_by][i])[0][0]]  # store the color
+            display.data[i].line.color = color  # set the color
+            display.data[i].legendgroup = color  # set the legend group to the color
+            if color not in legendgroups:  # compile a list of the legendgroups
                 legendgroups.append(color)
-        for i in range(len(display.data)): #loop through the data
-            display.data[i].showlegend = False #initially hide legend
-            if display.data[i].legendgroup in legendgroups: #show legend if it has not already been showed
+        for i in range(len(display.data)):  # loop through the data
+            display.data[i].showlegend = False  # initially hide legend
+            if display.data[i].legendgroup in legendgroups:  # show legend if it has not already been showed
                 display.data[i].name = str(self.plane_seg[color_by][i])
-                #set the new name of the legend
+                # set the new name of the legend
                 display.data[i].showlegend = True
-                #set the new display setting
+                # set the new display setting
                 legendgroups.remove(display.data[i].legendgroup)
-                #remove the legend group from the list 'to display'
+                # remove the legend group from the list 'to display'
         children[1] = display
-        self.children = children
-
-
-"""
-#TODO: make this into class
-def plane_segmentation_2d_widget(plane_seg: PlaneSegmentation, **kwargs):
-
-    categorical_columns = infer_categorical_columns(plane_seg)
-
-    if len(categorical_columns) == 1:
-        color_by = list(categorical_columns.keys())[0]
-        return show_plane_segmentation_2d(plane_seg, color_by=color_by, **kwargs)
-
-    elif len(categorical_columns) > 1:
-        cat_controller = widgets.Dropdown(options=list(categorical_columns), description='color by')
-
-        out_fig = show_plane_segmentation_2d(plane_seg, color_by=cat_controller.value, **kwargs)
-
-        def on_change(change, out_fig=out_fig):
-            if change['new'] and isinstance(change['new'], dict):
-                ind = change['new']['index']
-                if isinstance(ind, int):
-                    color_by = change['owner'].options[ind]
-                    show_plane_segmentation_2d(plane_seg, color_by=color_by, fig=out_fig, **kwargs)
-
-        cat_controller.observe(on_change)
-
-        return widgets.VBox(children=[cat_controller, out_fig])
-    else:
-        return show_plane_segmentation_2d(plane_seg, color_by=None, **kwargs)
-
-"""
+        peekaboo.__exit__(None, None, None)
 
 
 def show_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
