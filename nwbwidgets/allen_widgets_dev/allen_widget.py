@@ -67,7 +67,11 @@ class AllenWidget(widgets.VBox):
         self.output_fig = widgets.Output()
 
         with self.output_fig:
-            self.fig, self.axs = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=(9, 5))
+            self.fig, self.axs = plt.subplots(nrows=2, ncols=1, sharex=True, constrained_layout=True, figsize=(9, 5))
+            self.fig.canvas.toolbar_position = 'right'
+            self.fig.canvas.toolbar.collapsed = False
+            self.fig.canvas.footer_visible = False
+            self.fig.canvas.header_visible = False
 
         self.plot(b=0)
 
