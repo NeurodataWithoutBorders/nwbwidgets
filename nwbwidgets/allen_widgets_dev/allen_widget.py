@@ -3,6 +3,8 @@ from pathlib import Path
 from pynwb import NWBHDF5IO
 import matplotlib.pyplot as plt
 import numpy as np
+from nwbwidgets.controllers import StartAndDurationController
+from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 
 
 class AllenWidget(widgets.VBox):
@@ -28,10 +30,11 @@ class AllenWidget(widgets.VBox):
 
     def plot(self, b):
         # Plot Electrophysiology
-        rate_e = self.nwb.acquisition['filtered_membrane_voltage'].rate
-        n_samples_e = self.nwb.acquisition['filtered_membrane_voltage'].data.shape[0]
+        rate_e = self.nwb.processing['ecephys']['filtered_membrane_voltage'].rate
+        n_samples_e = self.nwb.processing['ecephys']['filtered_membrane_voltage'].data.shape[0]
         xx_e = np.arange(n_samples_e) / rate_e
-        self.axs[0].plot(xx_e, 500*self.nwb.acquisition['filtered_membrane_voltage'].data[:])
+        self.axs[0].plot(xx_e, 500*self.nwb.processing['ecephys']['filtered_membrane_voltage'].data[:])
+        self.axs[0].set_ylabel('Vm (mV)')
 
         # Plot Optophysiology
         rate_o = self.nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'].rate
@@ -39,9 +42,10 @@ class AllenWidget(widgets.VBox):
         xx_o = np.arange(n_samples_o) / rate_o
         self.axs[1].plot(xx_o, self.nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'].data[:])
         self.axs[1].set_xlabel('Time [s]')
+        self.axs[1].set_ylabel('Fluorescence (AU)')
 
-        ymax = max(max(500*self.nwb.acquisition['filtered_membrane_voltage'].data[:]), max(self.nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'].data[:])) + 0.4
-        ymin = min(min(500*self.nwb.acquisition['filtered_membrane_voltage'].data[:]), min(self.nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'].data[:])) - 0.5
+        ymax = max(max(500*self.nwb.processing['ecephys']['filtered_membrane_voltage'].data[:]), max(self.nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'].data[:])) + 0.4
+        ymin = min(min(500*self.nwb.processing['ecephys']['filtered_membrane_voltage'].data[:]), min(self.nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'].data[:])) - 0.5
 
         self.axs[0].set_ylim(ymin, ymax)
         self.axs[1].set_ylim(ymin, ymax)
@@ -75,7 +79,14 @@ class AllenWidget(widgets.VBox):
 
         self.plot(b=0)
 
-        self.output_box = widgets.VBox([header_box, self.output_fig])
+        self.tmin = get_timeseries_mint(self.nwb.processing['ecephys']['filtered_membrane_voltage'])
+        self.tmax = get_timeseries_maxt(self.nwb.processing['ecephys']['filtered_membrane_voltage'])
+
+        self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin, duration=5)
+        
+
+        self.output_box = widgets.VBox([self.time_window_controller, header_box, self.output_fig])
+
 
         # Children
         self.children = [self.output_box]
