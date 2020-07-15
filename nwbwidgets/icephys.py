@@ -1,5 +1,5 @@
 from .base import lazy_show_over_data, GroupingWidget
-from .timeseries import show_timeseries_mpl
+from .timeseries import show_indexed_timeseries_mpl
 from ipywidgets import widgets
 import matplotlib.pyplot as plt
 from ndx_icephys_meta.icephys import SweepSequences
@@ -19,7 +19,7 @@ def show_single_sweep_sequence(sweep_sequence, axs=None, title=None, **kwargs) -
     axs: [matplotlib.pyplot.Axes, matplotlib.pyplot.Axes], optional
     title: str, optional
     kwargs: dict
-        passed to show_timeseries_mpl
+        passed to show_indexed_timeseries_mpl
 
     Returns
     -------
@@ -35,10 +35,10 @@ def show_single_sweep_sequence(sweep_sequence, axs=None, title=None, **kwargs) -
         fig = axs[0].get_figure()
     for i in range(nsweeps):
         start, stop, ts = sweep_sequence['recordings'].iloc[i]['response'].iloc[0]
-        show_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[0], zero_start=True, xlabel='', title=title, **kwargs)
+        show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[0], zero_start=True, xlabel='', title=title, **kwargs)
 
         start, stop, ts = sweep_sequence['recordings'].iloc[i]['stimulus'].iloc[0]
-        show_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[1], zero_start=True, **kwargs)
+        show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[1], zero_start=True, **kwargs)
     return fig
 
 

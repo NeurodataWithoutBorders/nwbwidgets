@@ -302,7 +302,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.set_group_by(group_by)
 
         self.children = self.get_children()
-        self.layout = Layout(width='280px')
+        self.layout = Layout(width='290px')
         self.update_value()
 
     def get_children(self):
@@ -329,7 +329,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.group_sm.options = tuple(groups[::-1])
         self.group_sm.value = self.group_sm.options
         self.group_sm.disabled = False
-        self.group_sm.rows = min(len(groups), 20)
+        self.group_sm.rows = min(len(groups)+1, 20)
         self.limit_cb.disabled = False
         self.group_and_sort()
 
@@ -346,7 +346,10 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 self.limit_cb.value = False
 
                 if hasattr(self.range_controller, 'slider'):
-                    self.range_controller.slider.max = len(self.dynamic_table) - len(self.discard_rows)
+                    if self.discard_rows is None:
+                        self.range_controller.slider.max = len(self.dynamic_table)
+                    else:
+                        self.range_controller.slider.max = len(self.dynamic_table) - len(self.discard_rows)
             else:
                 self.set_group_by(group_by)
 

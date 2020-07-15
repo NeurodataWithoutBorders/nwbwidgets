@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pynwb import TimeSeries
 from ipywidgets import widgets
-from nwbwidgets.timeseries import traces_widget, show_ts_fields, show_timeseries, plot_traces, show_timeseries_mpl
+from nwbwidgets.timeseries import traces_widget, show_ts_fields, show_timeseries, plot_traces, show_indexed_timeseries_mpl
 import unittest
 
 
@@ -27,8 +27,8 @@ class ShowTimeSeriesTestCase(unittest.TestCase):
     def test_show_timeseries(self):
         assert isinstance(show_timeseries(self.ts, istart=5, istop=56), widgets.Widget)
     
-    def test_show_timeseries_mpl(self):
-        ax = show_timeseries_mpl(self.ts, zero_start=True, title='Test show_timeseries_mpl')
+    def test_show_indexed_timeseries_mpl(self):
+        ax = show_indexed_timeseries_mpl(self.ts, zero_start=True, title='Test show_indexed_timeseries_mpl')
         assert isinstance(ax, plt.Subplot)
 
 

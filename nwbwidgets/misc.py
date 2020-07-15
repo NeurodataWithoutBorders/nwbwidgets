@@ -15,6 +15,9 @@ from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time
 from .utils.mpl import create_big_ax
 from .utils.widgets import interactive_output
 from .analysis.spikes import compute_smoothed_firing_rate
+from .utils.plotly import event_group, Peekaboo
+import plotly.graph_objects as go
+
 
 from ipywidgets import Layout
 
@@ -84,22 +87,26 @@ def show_session_raster(units: Units, time_window=None, units_window=None, show_
 
 
 class RasterWidget(widgets.HBox):
-    def __init__(self, units: Units, time_window_controller=None, group_by=None):
+    def __init__(self, units: Units,
+                 foreign_time_window_controller: StartAndDurationController = None,
+                 foreign_group_and_sort_controller: GroupAndSortController = None,
+                 group_by=None):
         super().__init__()
 
         self.units = units
 
-        if time_window_controller is None:
+        if foreign_time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
             self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
                                                                      duration=5)
         else:
-            self.time_window_controller = time_window_controller
-            self.tmin = self.time_window_controller.vmin
-            self.tmax = self.time_window_controller.vmax
+            self.time_window_controller = foreign_time_window_controller
 
-        self.gas = self.make_group_and_sort(group_by=group_by)
+        if foreign_group_and_sort_controller:
+            self.gas = foreign_group_and_sort_controller
+        else:
+            self.gas = self.make_group_and_sort(group_by=group_by)
 
         self.progress_bar = widgets.HBox()
 
@@ -112,17 +119,31 @@ class RasterWidget(widgets.HBox):
 
         out_fig = interactive_output(show_session_raster, self.controls)
 
-        self.children = [
-                self.gas,
-                widgets.VBox(
-                    children=[
-                        self.time_window_controller,
-                        self.progress_bar,
-                        out_fig,
-                    ],
-                    layout=Layout(width="100%")
-                )
-            ]
+        if foreign_time_window_controller:
+            right_panel = widgets.VBox(
+                children=[
+                    self.progress_bar,
+                    out_fig,
+                ],
+                layout=Layout(width="100%")
+            )
+        else:
+            right_panel = widgets.VBox(
+                        children=[
+                            self.time_window_controller,
+                            self.progress_bar,
+                            out_fig,
+                        ],
+                        layout=Layout(width="100%")
+                    )
+
+        if foreign_group_and_sort_controller:
+            self.children = [right_panel]
+        else:
+            self.children = [
+                    self.gas,
+                    right_panel
+                ]
 
         self.layout = Layout(width="100%")
 
@@ -212,16 +233,20 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 
 class PSTHWidget(widgets.VBox):
-    def __init__(self, units: Units, unit_index=0, unit_controller=None, sigma_in_secs=.05, ntt=1000):
+    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0, unit_controller=None,
+                 sigma_in_secs=.05, ntt=1000):
 
         self.units = units
 
         super().__init__()
 
-        self.trials = self.get_trials()
-        if self.trials is None:
-            self.children = [widgets.HTML('No trials present')]
-            return
+        if trials is None:
+            self.trials = self.get_trials()
+            if self.trials is None:
+                self.children = [widgets.HTML('No trials present')]
+                return
+        else:
+            self.trials = trials
 
         if unit_controller is None:
             nunits = len(units['spike_times'].data)
@@ -374,8 +399,13 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
     """
 
     data = np.asarray(data)
+    legend_kwargs = dict()
     if ax is None:
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(9.7, 7))
+        if hasattr(fig, 'canvas'):
+            fig.canvas.header_visible = False
+        else:
+            legend_kwargs.update(bbox_to_anchor=(1.01, 1))
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
         handles = []
@@ -396,7 +426,7 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
             handles.append(event_collection[0])
         if show_legend:
             ax.legend(handles=handles[::-1], labels=list(labels[ugroup_inds][::-1]), loc='upper left',
-                      bbox_to_anchor=(1.01, 1))
+                      bbox_to_anchor=(1.01, 1), **legend_kwargs)
     else:
         ax.eventplot(data, orientation='horizontal', color='k', lineoffsets=np.arange(len(data)) + offset)
 
@@ -530,17 +560,20 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
 
 class RasterGridWidget(widgets.VBox):
 
-    def __init__(self, units: Units, unit_index=0):
+    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0):
         super().__init__()
 
         self.units = units
 
-        self.trials = self.get_trials()
-        if self.trials is None:
-            self.children = [widgets.HTML('No trials present')]
-            return
+        if trials is None:
+            self.trials = self.get_trials()
+            if self.trials is None:
+                self.children = [widgets.HTML('No trials present')]
+                return
+        else:
+            self.trials = trials
 
-        groups = list(self.trials.colnames)
+        groups = self.get_groups()
 
         rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows')
         cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols')
@@ -598,3 +631,170 @@ class RasterGridWidget(widgets.VBox):
 
     def process_controls(self, control_states):
         return control_states
+
+
+def plot_grouped_events_plotly(data, window=None, group_inds=None, colors=color_wheel, labels=None,
+                               show_legend=True, unobserved_intervals_list=None, progress_bar=None, fig=None, **kwargs):
+
+    data = np.array(data, dtype=object)
+
+    if fig is None:
+        fig = go.FigureWidget()
+    if group_inds is not None:
+        ugroup_inds = np.unique(group_inds)
+        offset = 0
+        for i in np.arange(len(ugroup_inds)):
+            ui = ugroup_inds[i]
+            color = colors[ugroup_inds[i] % len(colors)]
+            this_data = data[group_inds == ui]
+            event_group(this_data,
+                        offset=offset,
+                        label=labels[ui],
+                        color=color,
+                        fig=fig,
+                        **kwargs)
+            offset += len(this_data)
+
+    else:
+        event_group(data, fig=fig, **kwargs)
+
+    fig.update_layout(xaxis_title="time (s)")
+
+    return fig
+
+
+class RasterWidgetPlotly(widgets.HBox):
+
+    def __init__(self, units: Units,
+                 foreign_time_window_controller: StartAndDurationController = None,
+                 foreign_group_and_sort_controller: GroupAndSortController = None,
+                 group_by=None, fig: go.FigureWidget = None):
+        super().__init__()
+
+        self.units = units
+
+        if foreign_time_window_controller is None:
+            self.tmin = get_min_spike_time(units)
+            self.tmax = get_max_spike_time(units)
+            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
+                                                                     duration=5)
+        else:
+            self.time_window_controller = foreign_time_window_controller
+
+        if foreign_group_and_sort_controller:
+            self.gas = foreign_group_and_sort_controller
+        else:
+            self.gas = GroupAndSortController(dynamic_table=self.units, group_by=group_by)
+
+        self.show_legend_cb = widgets.Checkbox(value=True, description='show legend')
+
+        if fig is None:
+            self.fig = go.FigureWidget()
+            self.fig.update_layout(margin=dict(l=20, r=20, t=30, b=20))
+        else:
+            self.fig = fig
+        show_session_raster_plotly(self.units, self.fig, self.time_window_controller.value, **self.gas.value)
+
+        # set children
+        if foreign_time_window_controller:
+            right_panel = widgets.VBox(
+                children=[
+                    self.progress_bar,
+                    self.fig,
+                ],
+                layout=Layout(width="100%")
+            )
+        else:
+            right_panel = widgets.VBox(
+                        children=[
+                            self.time_window_controller,
+                            self.fig,
+                            self.show_legend_cb
+                        ],
+                        layout=Layout(width="100%")
+                    )
+
+        if foreign_group_and_sort_controller:
+            self.children = [right_panel]
+        else:
+            self.children = [
+                    self.gas,
+                    right_panel
+                ]
+
+        self.layout = Layout(width="100%")
+
+        self.time_window_controller.observe(self.update_fig, 'value')
+        self.gas.observe(self.update_fig, 'value')
+        self.show_legend_cb.observe(self.toggle_legend, 'value')
+
+    def toggle_legend(self, change):
+        self.fig.update_layout(showlegend=self.show_legend_cb.value)
+
+    def update_fig(self, change):
+        time_window = self.time_window_controller.value
+        gas_kwargs = self.gas.value
+        with Peekaboo(self.children[1], 1):
+            self.fig.data = None
+            show_session_raster_plotly(self.units, self.fig, time_window, **gas_kwargs)
+
+
+def show_session_raster_plotly(units: Units, fig, time_window=None, order=None, progress_bar=None, **kwargs):
+    """
+
+    Parameters
+    ----------
+    units: pynwb.misc.Units
+    time_window: [int, int]
+    show_obs_intervals: bool
+    order: array-like, optional
+    group_inds: array-like, optional
+    labels: array-like, optional
+    show_legend: bool
+        default = True
+        Does not show legend if color_by is None or 'id'.
+    progress_bar: FloatProgress, optional
+
+    Returns
+    -------
+    go.FigureWidget
+
+    """
+
+    if time_window is None:
+        time_window = [get_min_spike_time(units), get_max_spike_time(units)]
+
+    if order is None:
+        order = np.arange(len(units), dtype='int')
+
+    if progress_bar:
+        this_iter = ProgressBar(order, desc='reading spike data', leave=False)
+        progress_bar = this_iter.container
+    else:
+        this_iter = order
+    data = []
+    for unit in this_iter:
+        data.append(get_spike_times(units, unit, time_window))
+
+    #if show_obs_intervals:
+    #    unobserved_intervals_list = get_unobserved_intervals(units, time_window, order)
+    #else:
+    #    unobserved_intervals_list = None
+
+    fig.update_yaxes(tickvals=[], ticktext=[])
+    if len(order) <= 100:
+        kwargs.update(marker='line-ns', line_width=2)
+    else:
+        kwargs.update(line_width=1)
+    fig = plot_grouped_events_plotly(data=data, fig=fig, **kwargs)
+    if len(order) <= 40:
+        fig.update_yaxes(tickvals=np.arange(len(order)), ticktext=[str(i) for i in order])
+
+    fig.update_layout(
+        title='units',
+        xaxis_title="time (s)",
+        legend=dict(x=1., y=0, traceorder='reversed'),
+        xaxis=dict(range=time_window),
+        yaxis=dict(range=[-.5, len(order)+.5]))
+
+    return fig
