@@ -287,13 +287,12 @@ def _prep_timeseries(time_series, time_window=None, order=None):
 
     if len(time_series.data.shape) > 1:
         mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][:, inverse_sort]
+        gap = np.median(np.nanstd(mini_data, axis=0)) * 20
+        offsets = np.arange(len(order)) * gap
+        mini_data = mini_data + offsets
     else:
         mini_data = time_series.data[t_ind_start:t_ind_stop]
-
-    gap = np.median(np.nanstd(mini_data, axis=0)) * 20
-    offsets = np.arange(len(order)) * gap
-
-    mini_data = mini_data + offsets
+        offsets = [0]
 
     return mini_data, tt, offsets
 
@@ -328,7 +327,7 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
     ax.set_xlim((tt[0], tt[-1]))
     ax.set_xlabel('time (s)')
 
-    if len(offsets):
+    if len(offsets) > 1:
         ax.set_ylim(-offsets[0], offsets[-1] + offsets[0])
     if len(order) <= 30:
         ax.set_yticks(offsets)
