@@ -60,5 +60,5 @@ default_neurodata_vis_spec = {
 }
 
 
-def nwb2widget(node,  neurodata_vis_spec=default_neurodata_vis_spec):
+def nwb2widget(node, neurodata_vis_spec=default_neurodata_vis_spec):
     return base.nwb2widget(node, neurodata_vis_spec)

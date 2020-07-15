@@ -284,7 +284,11 @@ def _prep_timeseries(time_series, time_window=None, order=None):
     tt = get_timeseries_tt(time_series, t_ind_start, t_ind_stop)
 
     unique_sorted_order, inverse_sort = np.unique(order, return_inverse=True)
-    mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][:, inverse_sort]
+
+    if len(time_series.data.shape) > 1:
+        mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][:, inverse_sort]
+    else:
+        mini_data = time_series.data[t_ind_start:t_ind_stop]
 
     gap = np.median(np.nanstd(mini_data, axis=0)) * 20
     offsets = np.arange(len(order)) * gap
@@ -453,8 +457,3 @@ class MultiTimeSeriesWidget(widgets.VBox):
         widgets = [widget_class(time_series, foreign_time_window_controller=self.time_window_controller)
                    for widget_class, time_series in zip(widget_class_list, time_series_list)]
         self.children = [self.time_window_controller] + widgets
-
-
-
-
-
