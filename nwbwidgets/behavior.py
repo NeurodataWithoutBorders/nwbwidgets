@@ -5,6 +5,7 @@ from ipywidgets import widgets
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 from nwbwidgets import base
 from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
+from plotly import graph_objects as go
 
 
 def show_position(node: Position, neurodata_vis_spec: dict):
@@ -96,3 +97,48 @@ def show_spatial_series(node: SpatialSeries, **kwargs):
         raise NotImplementedError
 
     return fig
+
+
+def plotly_show_spatial_trace(node):
+    data, unit = get_timeseries_in_units(node)
+    tt = get_timeseries_tt(node)
+
+    fig = go.FigureWidget()
+
+    if len(data.shape) == 1:
+        fig.add_trace(go.Scatter(x=tt, y=data))
+        fig.update_xaxes(title_text='time (s)')
+        if unit:
+            fig.update_yaxes(title_text='x ({})'.format(unit))
+        else:
+            fig.update_yaxes(title_text='x')
+
+    elif data.shape[1] == 2:
+        fig.add_trace(go.Scatter(x=data[:, 0], y=data[:, 1]))
+        if unit:
+            fig.update_xaxes(title_text='x ({})'.format(unit))
+            fig.update_yaxes(title_text='y ({})'.format(unit))
+        else:
+            fig.update_xaxes(title_text='x')
+            fig.update_yaxes(title_text='y')
+        fig.update_layout(height=600, width=600)
+
+    elif data.shape[1] == 3:
+        fig.add_trace(go.Scatter3d(
+            x=data[:, 0], y=data[:, 1], z=data[:, 2]
+        ))
+
+        if unit:
+            fig.update_xaxes(title_text='x ({})'.format(unit))
+            fig.update_yaxes(title_text='y ({})'.format(unit))
+            fig.update_zaxes(title_text='z ({})'.format(unit))
+        else:
+            fig.update_xaxes(title_text='x')
+            fig.update_yaxes(title_text='y')
+            fig.update_zaxes(title_text='z')
+
+    fig.update_layout(title=node.name, hovermode=False)
+
+    return fig
+
+

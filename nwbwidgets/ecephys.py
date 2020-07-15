@@ -2,8 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
 from scipy.signal import stft
-from pynwb.ecephys import LFP, SpikeEventSeries
+from pynwb.ecephys import LFP, SpikeEventSeries, ElectricalSeries
 from .base import fig2widget, nwb2widget
+from IPython import display
+from .timeseries import BaseGroupedTraceWidget
 
 
 def show_lfp(node: LFP, neurodata_vis_spec: dict):
@@ -19,6 +21,13 @@ def show_spectrogram(neurodata, channel=0, **kwargs):
     ax.set_xlabel('time')
     ax.set_ylabel('frequency')
     plt.show(ax)
+
+
+def ElectrodesWidget(node):
+    out1 = widgets.Output()
+    with out1:
+        display.display(node.to_dataframe())
+    return out1
 
 
 def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
@@ -65,3 +74,17 @@ def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
     hbox1 = widgets.HBox(children=[vbox0, out_fig])
 
     return hbox1
+
+
+class ElectricalSeriesWidget(BaseGroupedTraceWidget):
+    def __init__(self, electrical_series: ElectricalSeries, neurodata_vis_spec=None,
+                 foreign_time_window_controller=None, foreign_group_and_sort_controller=None,
+                 **kwargs):
+        if foreign_group_and_sort_controller is not None:
+            table = None
+        else:
+            table = 'electrodes'
+        super().__init__(electrical_series, table,
+                         foreign_time_window_controller=foreign_time_window_controller,
+                         foreign_group_and_sort_controller=foreign_group_and_sort_controller,
+                         **kwargs)

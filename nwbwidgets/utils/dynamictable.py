@@ -72,16 +72,16 @@ def group_and_sort(group_vals=None, group_select=None, order_vals=None, discard_
     except TypeError:  # if labels are strings
         pass
 
-    # apply discard groups (but keep labels)
-    if group_select is not None:
-        keep = np.isin(labels[group_inds], group_select)
-        group_inds = group_inds[keep]
-        order = order[keep]
-
-    # remove groups that are missing
     if labels is not None:
+        # remove groups that are missing
         labels = labels[np.isin(range(len(labels)), group_inds)]
         _, group_inds = np.unique(group_inds, return_inverse=True)
+
+        # apply discard groups (but keep labels)
+        if group_select is not None:
+            keep = np.isin(labels[group_inds], group_select)
+            group_inds = group_inds[keep]
+            order = order[keep]
 
     # apply limit
     inds = list()
