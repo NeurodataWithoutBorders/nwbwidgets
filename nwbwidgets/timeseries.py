@@ -7,7 +7,7 @@ from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_times
 from abc import abstractmethod
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
+from functools import partial
 from .controllers import StartAndDurationController,  GroupAndSortController
 from .utils.widgets import interactive_output
 from .utils.plotly import multi_trace
@@ -298,7 +298,7 @@ def _prep_timeseries(time_series, time_window=None, order=None):
 
 
 def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, ax=None, figsize=(9.7, 7),
-                        group_inds=None, labels=None, colors=color_wheel, show_legend=True, **kwargs):
+                        group_inds=None, labels=None, colors=color_wheel, show_legend=True,**kwargs):
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -365,7 +365,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
     def __init__(self, time_series: TimeSeries, dynamic_table_region_name=None,
                  foreign_time_window_controller: StartAndDurationController = None,
                  foreign_group_and_sort_controller: GroupAndSortController = None,
-                 mpl_plotter=plot_grouped_traces, **kwargs):
+                 mpl_plotter=plot_grouped_traces, allen_dashboard=False, **kwargs):
         """
 
         Parameters
@@ -409,7 +409,10 @@ class BaseGroupedTraceWidget(widgets.HBox):
             self.gas = foreign_group_and_sort_controller
             self.controls.update(gas=self.gas)
 
-        out_fig = interactive_output(mpl_plotter, self.controls)
+        if allen_dashboard:
+            out_fig = interactive_output(partial(mpl_plotter, figsize=(6, 3)), self.controls)
+        else:
+            out_fig = interactive_output(mpl_plotter, self.controls)
 
         if foreign_time_window_controller:
             right_panel = out_fig
