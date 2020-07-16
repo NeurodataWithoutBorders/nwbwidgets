@@ -16,7 +16,8 @@ from tifffile import imread, TiffFile
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
 
-class WidgetTwoPhotonSeries(widgets.VBox):
+class TwoPhotonSeriesWidget(widgets.VBox):
+    """Widget showing Image stack recorded over time from 2-photon microscope."""
     def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
         super().__init__()
 
@@ -72,35 +73,7 @@ class WidgetTwoPhotonSeries(widgets.VBox):
 
 
 def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
-    return WidgetTwoPhotonSeries(indexed_timeseries=indexed_timeseries, neurodata_vis_spec=neurodata_vis_spec)
-#     output = widgets.Output()
-#
-#     if len(indexed_timeseries.data.shape) == 3:
-#         def show_image(index=0):
-#             fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
-#             ax.imshow(indexed_timeseries.data[index], cmap='gray')
-#             output.clear_output(wait=True)
-#             with output:
-#                 plt.show(fig)
-#     elif len(indexed_timeseries.data.shape) == 4:
-#         import ipyvolume.pylab as p3
-#
-#         def show_image(index=0):
-#             p3.figure()
-#             p3.volshow(indexed_timeseries.data[index], tf=linear_transfer_function([0, 0, 0], max_opacity=.3))
-#             output.clear_output(wait=True)
-#             with output:
-#                 p3.show()
-#     else:
-#         raise NotImplementedError
-#
-#     slider = widgets.IntSlider(value=0, min=0,
-#                                max=indexed_timeseries.data.shape[0] - 1,
-#                                orientation='horizontal')
-#     slider.observe(lambda change: show_image(change.new), names='value')
-#     show_image()
-#
-#     return widgets.VBox([output, slider])
+    return TwoPhotonSeriesWidget(indexed_timeseries=indexed_timeseries, neurodata_vis_spec=neurodata_vis_spec)
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
