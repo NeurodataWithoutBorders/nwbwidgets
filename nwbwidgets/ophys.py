@@ -72,10 +72,6 @@ class TwoPhotonSeriesWidget(widgets.VBox):
         self.children = [output, slider]
 
 
-def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
-    return TwoPhotonSeriesWidget(indexed_timeseries=indexed_timeseries, neurodata_vis_spec=neurodata_vis_spec)
-
-
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
     if len(df_over_f.roi_response_series) == 1:
         title, input = list(df_over_f.roi_response_series.items())[0]
