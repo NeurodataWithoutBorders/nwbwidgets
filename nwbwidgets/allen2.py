@@ -22,8 +22,7 @@ class AllenDashboard(widgets.VBox):
         self.electrical = ElectricalSeriesWidget(
             electrical_series=nwb.processing['ecephys'].data_interfaces['filtered_membrane_voltage'],
             foreign_time_window_controller=self.time_window_controller,
-            foreign_group_and_sort_controller=None,
-            neurodata_vis_spec=None
+            dynamic_table_region_name=None
         )
 
         self.fluorescence = RoiResponseSeriesWidget(
@@ -33,6 +32,6 @@ class AllenDashboard(widgets.VBox):
             dynamic_table_region_name=None
         )
 
-        self.output_box = widgets.VBox([self.time_window_controller, self.fluorescence, self.electrical])
+        self.output_box = widgets.VBox([self.time_window_controller, self.electrical, self.fluorescence])
 
         self.children = [self.output_box]

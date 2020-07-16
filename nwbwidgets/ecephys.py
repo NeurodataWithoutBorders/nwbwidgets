@@ -79,11 +79,11 @@ def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
 class ElectricalSeriesWidget(BaseGroupedTraceWidget):
     def __init__(self, electrical_series: ElectricalSeries, neurodata_vis_spec=None,
                  foreign_time_window_controller=None, foreign_group_and_sort_controller=None,
-                 **kwargs):
+                 dynamic_table_region_name='electrodes', **kwargs):
         if foreign_group_and_sort_controller is not None:
             table = None
         else:
-            table = 'electrodes'
+            table = dynamic_table_region_name
         super().__init__(electrical_series, table,
                          foreign_time_window_controller=foreign_time_window_controller,
                          foreign_group_and_sort_controller=foreign_group_and_sort_controller,
