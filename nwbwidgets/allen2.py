@@ -8,7 +8,8 @@ import ipywidgets as widgets
 from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 from .controllers import StartAndDurationController,  GroupAndSortController
 from .utils.widgets import interactive_output
-from .timeseries import _prep_timeseries, color_wheel
+from .timeseries import _prep_timeseries, color_wheel, StartAndDurationController
+from .ophys import RoiResponseSeriesWidget
 
 
 def plot_grouped_traces_allen(time_series: TimeSeries, time_window=None, order=None, ax=None, figsize=(8, 3),
@@ -125,13 +126,29 @@ class BaseAllen(widgets.HBox):
         self.layout = widgets.Layout(width="100%")
 
 
-class Allen(widgets.VBox):
-    def __init__(self, electrical_serie, fluorescence_serie):
+class AllenDashboard(widgets.VBox):
+    def __init__(self, nwb):
         super().__init__()
-        self.electrical = AllenElectrical(electrical_serie)
-        self.fluorescence = AllenOphys(fluorescence_serie)
 
-        self.output_box = widgets.VBox([self.electrical, self.fluorescence])
+        # self.tmin = get_timeseries_mint(time_series)
+        # self.tmax = get_timeseries_maxt(time_series)
+        self.time_window_controller = StartAndDurationController(
+            tmin=0,
+            tmax=120,
+            start=0,
+            duration=5
+        )
+
+        # self.electrical = AllenElectrical(electrical_serie)
+
+        self.fluorescence = RoiResponseSeriesWidget(
+            roi_response_series=nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'],
+            foreign_time_window_controller=self.time_window_controller,
+            foreign_group_and_sort_controller=None,
+            dynamic_table_region_name=None
+        )
+
+        self.output_box = widgets.VBox([self.time_window_controller, self.fluorescence])
 
         self.children = [self.output_box]
 

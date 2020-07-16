@@ -304,7 +304,10 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
         fig, ax = plt.subplots(figsize=figsize)
 
     if order is None:
-        order = np.arange(time_series.data.shape[1])
+        if len(time_series.data.shape) > 1:
+            order = np.arange(time_series.data.shape[1])
+        else:
+            order = [0]
 
     mini_data, tt, offsets = _prep_timeseries(time_series, time_window, order)
 
