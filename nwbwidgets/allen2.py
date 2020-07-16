@@ -9,6 +9,7 @@ from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 from .controllers import StartAndDurationController,  GroupAndSortController
 from .utils.widgets import interactive_output
 from .timeseries import _prep_timeseries, color_wheel, StartAndDurationController
+from .ecephys import ElectricalSeriesWidget
 from .ophys import RoiResponseSeriesWidget
 
 
@@ -139,7 +140,11 @@ class AllenDashboard(widgets.VBox):
             duration=5
         )
 
-        # self.electrical = AllenElectrical(electrical_serie)
+        self.electrical = ElectricalSeriesWidget(
+            electrical_series=nwb.processing['ecephys'].data_interfaces['filtered_membrane_voltage'],
+            foreign_time_window_controller=self.time_window_controller,
+            dynamic_table_region_name=None
+        )
 
         self.fluorescence = RoiResponseSeriesWidget(
             roi_response_series=nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'],
@@ -148,7 +153,7 @@ class AllenDashboard(widgets.VBox):
             dynamic_table_region_name=None
         )
 
-        self.output_box = widgets.VBox([self.time_window_controller, self.fluorescence])
+        self.output_box = widgets.VBox([self.time_window_controller, self.electrical, self.fluorescence])
 
         self.children = [self.output_box]
 
