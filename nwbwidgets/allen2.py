@@ -84,22 +84,24 @@ class AllenDashboard(widgets.VBox):
         self.fluorescence.out_fig.add_trace(self.frame_point)
 
         # Updates frame point
-        def change_frame(change):
-            if isinstance(change['new'], int):
-                self.electrical.out_fig.data[1].x = [change['new'], change['new']]
-                self.fluorescence.out_fig.data[1].x = [change['new'], change['new']]
-        self.frame_controller.observe(change_frame)
-
-        hbox_header = widgets.HBox([self.btn_spike_times, self.time_window_controller])
-        vbox_widgets = widgets.VBox([self.frame_controller, self.electrical, self.fluorescence])
-        hbox_widgets = widgets.HBox([vbox_widgets, self.photon_series])
-
-        self.children = [hbox_header, hbox_widgets]
+        self.frame_controller.observe(self.update_frame_point)
 
         # Updates list of valid spike times at each change in time range
         self.time_window_controller.observe(self.updated_time_range)
 
+        # Layout
+        hbox_header = widgets.HBox([self.btn_spike_times, self.time_window_controller])
+        vbox_widgets = widgets.VBox([self.frame_controller, self.electrical, self.fluorescence])
+        hbox_widgets = widgets.HBox([vbox_widgets, self.photon_series])
+        self.children = [hbox_header, hbox_widgets]
+
         self.update_spike_traces()
+
+    def update_frame_point(self, change):
+        """Updates Image frame and frame point relative position on temporal traces"""
+        if isinstance(change['new'], int):
+            self.electrical.out_fig.data[1].x = [change['new'], change['new']]
+            self.fluorescence.out_fig.data[1].x = [change['new'], change['new']]
 
     def updated_time_range(self, change=None):
         """Operations to run whenever time range gets updated"""
