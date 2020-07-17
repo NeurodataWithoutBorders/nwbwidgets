@@ -1,8 +1,80 @@
+from .controllers import StartAndDurationController
+from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_timeseries_mint,
+                               timeseries_time_to_ind, get_timeseries_in_units)
+from ipywidgets import widgets, fixed
 import matplotlib.pyplot as plt
-import ipywidgets as widgets
+import plotly.graph_objects as go
 import pynwb
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
 from .base import fig2widget
+from tifffile import imread, TiffFile
+
+
+class ImageSeriesWidget(widgets.VBox):
+    """Widget showing ImageSeries."""
+    def __init__(self, imageseries: ImageSeries,
+                 foreign_time_window_controller: StartAndDurationController = None,
+                 **kwargs):
+        super().__init__()
+        self.imageseries = imageseries
+        self.controls = {}
+        self.out_fig = None
+
+        # Set controller
+        if foreign_time_window_controller is None:
+            tmin = get_timeseries_mint(imageseries)
+            tmax = get_timeseries_maxt(imageseries)
+            self.time_window_controller = StartAndDurationController(
+                tmax, tmin, start_value=tmin, duration=min(5, tmax - tmin))
+        else:
+            self.time_window_controller = foreign_time_window_controller
+        self.set_controls(**kwargs)
+
+        # Make widget figure
+        self.set_out_fig()
+
+    def set_controls(self, **kwargs):
+        self.controls.update(timeseries=fixed(self.imageseries), time_window=self.time_window_controller)
+        self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
+
+    def set_out_fig(self):
+        imageseries = self.controls['timeseries'].value
+        time_window = self.controls['time_window'].value
+
+        output = widgets.Output()
+
+        if imageseries.external_file is not None:
+            path_ext_file = imageseries.external_file[0]
+            # Get Frames dimensions
+            tif = TiffFile(path_ext_file)
+            n_samples = len(tif.pages)
+            page = tif.pages[0]
+            n_y, n_x = page.shape
+
+            # Read first frame
+            image = imread(path_ext_file, key=0)
+            self.out_fig = go.FigureWidget(
+                data=go.Heatmap(
+                    z=image,
+                    colorscale='gray',
+                    showscale=False,
+                )
+            )
+            self.out_fig.update_layout(
+                xaxis=go.layout.XAxis(showticklabels=False, ticks=""),
+                yaxis=go.layout.YAxis(showticklabels=False, ticks=""),
+            )
+
+            def on_change(change):
+                # Read frame
+                mid_timestamp = (change['new'][1] + change['new'][0]) / 2
+                frame_number = int(mid_timestamp * imageseries.rate)
+                image = imread(path_ext_file, key=frame_number)
+                self.out_fig.data[0].z = image
+
+        self.controls['time_window'].observe(on_change)
+
+        self.children = [self.out_fig]
 
 
 def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):

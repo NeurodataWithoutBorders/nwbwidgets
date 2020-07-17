@@ -1,9 +1,9 @@
 from ipywidgets import widgets
-from pynwb import TimeSeries
 # from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 from .controllers import StartAndDurationController
-from .ophys import RoiResponseSeriesWidget, TwoPhotonSeriesWidget
+# from .ophys import TwoPhotonSeriesWidget
 from .timeseries import SingleTracePlotlyWidget
+from .image import ImageSeriesWidget
 
 
 class AllenDashboard(widgets.VBox):
@@ -33,8 +33,9 @@ class AllenDashboard(widgets.VBox):
             title=None,
             xaxis_title=None,
             width=500,
-            height=300,
+            height=230,
             margin=dict(l=8, r=8, t=8, b=8),
+            xaxis={"showticklabels": False, "ticks": ""},
         )
         # Fluorescence single trace
         self.fluorescence = SingleTracePlotlyWidget(
@@ -44,13 +45,16 @@ class AllenDashboard(widgets.VBox):
         self.fluorescence.out_fig.update_layout(
             title=None,
             width=500,
-            height=300,
+            height=230,
             margin=dict(l=8, r=8, t=8, b=8),
         )
         # Two photon imaging
-        self.photon_series = TwoPhotonSeriesWidget(
-            indexed_timeseries=nwb.acquisition['raw_ophys'],
-            neurodata_vis_spec=None
+        self.photon_series = ImageSeriesWidget(
+            imageseries=nwb.acquisition['raw_ophys'],
+            foreign_time_window_controller=self.time_window_controller,
+        )
+        self.photon_series.out_fig.update_layout(
+            margin=dict(l=10, r=5, t=5, b=5),
         )
 
         hbox_header = widgets.HBox([self.btn_lines, self.time_window_controller])

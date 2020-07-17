@@ -7,8 +7,7 @@ from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_times
 from abc import abstractmethod
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from functools import partial
-from .controllers import StartAndDurationController,  GroupAndSortController
+from .controllers import StartAndDurationController, GroupAndSortController
 from .utils.widgets import interactive_output
 from .utils.plotly import multi_trace
 
