@@ -24,6 +24,7 @@ class AllenDashboard(widgets.VBox):
             start=0,
             duration=5
         )
+
         # Electrophys single trace
         self.electrical = SingleTracePlotlyWidget(
             timeseries=nwb.processing['ecephys'].data_interfaces['filtered_membrane_voltage'],
@@ -66,21 +67,41 @@ class AllenDashboard(widgets.VBox):
             margin=dict(l=30, r=5, t=35, b=35),
         )
 
+        # Frame controller
+        self.frame_controller = widgets.IntSlider(
+            value=0,
+            min=0,
+            max=10,
+            step=1,
+            description='Frame:',
+            continuous_update=False,
+            orientation='horizontal',
+        )
+
         # Add line traces marking Image frame point
         self.frame_point = go.Scatter(x=[2, 2], y=[-1000, 1000])
-        # self.electrical.out_fig.add_trace(self.frame_point)
-        # self.fluorescence.out_fig.add_trace(self.frame_point)
+        self.electrical.out_fig.add_trace(self.frame_point)
+        self.fluorescence.out_fig.add_trace(self.frame_point)
 
-        hbox_header = widgets.HBox([self.btn_spike_times, self.time_window_controller])
-        vbox_widgets = widgets.VBox([self.electrical, self.fluorescence])
-        hbox_widgets = widgets.HBox([vbox_widgets, self.photon_series])
-
-        self.children = [hbox_header, hbox_widgets]
+        # Updates frame point
+        self.frame_controller.observe(self.update_frame_point)
 
         # Updates list of valid spike times at each change in time range
         self.time_window_controller.observe(self.updated_time_range)
 
+        # Layout
+        hbox_header = widgets.HBox([self.btn_spike_times, self.time_window_controller])
+        vbox_widgets = widgets.VBox([self.frame_controller, self.electrical, self.fluorescence])
+        hbox_widgets = widgets.HBox([vbox_widgets, self.photon_series])
+        self.children = [hbox_header, hbox_widgets]
+
         self.update_spike_traces()
+
+    def update_frame_point(self, change):
+        """Updates Image frame and frame point relative position on temporal traces"""
+        if isinstance(change['new'], int):
+            self.electrical.out_fig.data[1].x = [change['new'], change['new']]
+            self.fluorescence.out_fig.data[1].x = [change['new'], change['new']]
 
     def updated_time_range(self, change=None):
         """Operations to run whenever time range gets updated"""
@@ -99,7 +120,10 @@ class AllenDashboard(widgets.VBox):
                 # self.electrical.out_fig.add_trace(spike_trace)
         else:
             self.btn_spike_times.description = 'Show spike times'
-            self.fluorescence.out_fig.data = [self.fluorescence.out_fig.data[0]]
+            self.fluorescence.out_fig.data = [
+                self.fluorescence.out_fig.data[0],
+                self.fluorescence.out_fig.data[1]
+            ]
             # self.electrical.out_fig.data = [self.electrical.out_fig.data[0]]
 
     def update_spike_traces(self):
