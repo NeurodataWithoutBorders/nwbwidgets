@@ -24,6 +24,7 @@ class AllenDashboard(widgets.VBox):
             start=0,
             duration=5
         )
+
         # Electrophys single trace
         self.electrical = SingleTracePlotlyWidget(
             timeseries=nwb.processing['ecephys'].data_interfaces['filtered_membrane_voltage'],
@@ -66,13 +67,31 @@ class AllenDashboard(widgets.VBox):
             margin=dict(l=30, r=5, t=35, b=35),
         )
 
+        # Frame controller
+        self.frame_controller = widgets.IntSlider(
+            value=0,
+            min=0,
+            max=10,
+            step=1,
+            description='Frame:',
+            continuous_update=False,
+            orientation='horizontal',
+        )
+
         # Add line traces marking Image frame point
         self.frame_point = go.Scatter(x=[2, 2], y=[-1000, 1000])
-        # self.electrical.out_fig.add_trace(self.frame_point)
-        # self.fluorescence.out_fig.add_trace(self.frame_point)
+        self.electrical.out_fig.add_trace(self.frame_point)
+        self.fluorescence.out_fig.add_trace(self.frame_point)
+
+        # Updates frame point
+        def change_frame(change):
+            if isinstance(change['new'], int):
+                self.electrical.out_fig.data[1].x = [change['new'], change['new']]
+                self.fluorescence.out_fig.data[1].x = [change['new'], change['new']]
+        self.frame_controller.observe(change_frame)
 
         hbox_header = widgets.HBox([self.btn_spike_times, self.time_window_controller])
-        vbox_widgets = widgets.VBox([self.electrical, self.fluorescence])
+        vbox_widgets = widgets.VBox([self.frame_controller, self.electrical, self.fluorescence])
         hbox_widgets = widgets.HBox([vbox_widgets, self.photon_series])
 
         self.children = [hbox_header, hbox_widgets]
