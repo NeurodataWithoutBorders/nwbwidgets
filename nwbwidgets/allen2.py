@@ -1,19 +1,18 @@
 from ipywidgets import widgets
-# from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 from .controllers import StartAndDurationController
 import plotly.graph_objects as go
 from .timeseries import SingleTracePlotlyWidget
 from .image import ImageSeriesWidget
+import numpy as np
+from tifffile import imread, TiffFile
 
 
 class AllenDashboard(widgets.VBox):
     def __init__(self, nwb):
         super().__init__()
         self.nwb = nwb
-
-        # self.tmin = get_timeseries_mint(time_series)
-        # self.tmax = get_timeseries_maxt(time_series)
         self.show_spikes = False
+
         self.btn_spike_times = widgets.Button(description='Show spike times', button_style='')
         self.btn_spike_times.on_click(self.spikes_viewer)
 
@@ -70,8 +69,8 @@ class AllenDashboard(widgets.VBox):
         # Frame controller
         self.frame_controller = widgets.IntSlider(
             value=0,
-            min=0,
-            max=10,
+            min=self.time_window_controller.value[0],
+            max=self.time_window_controller.value[1],
             step=1,
             description='Frame:',
             continuous_update=False,
@@ -100,16 +99,37 @@ class AllenDashboard(widgets.VBox):
     def update_frame_point(self, change):
         """Updates Image frame and frame point relative position on temporal traces"""
         if isinstance(change['new'], int):
+            self.change = change['new']
             self.electrical.out_fig.data[1].x = [change['new'], change['new']]
             self.fluorescence.out_fig.data[1].x = [change['new'], change['new']]
+
+            frame_number = int(change['new'] * self.nwb.acquisition['raw_ophys'].rate)
+            path_ext_file = self.nwb.acquisition['raw_ophys'].external_file[0]
+            image = imread(path_ext_file, key=frame_number)
+            self.photon_series.out_fig.data[0].z = image
 
     def updated_time_range(self, change=None):
         """Operations to run whenever time range gets updated"""
         self.update_spike_traces()
         self.show_spikes = False
+
+        # check if up or down slider
+        if self.time_window_controller.value[0] >= self.frame_controller.min:
+            self.frame_controller.max = self.time_window_controller.value[1]
+            self.frame_controller.min = self.time_window_controller.value[0]
+        else:
+            self.frame_controller.min = self.time_window_controller.value[0]
+            self.frame_controller.max = self.time_window_controller.value[1]
+
+        xpoint = round(np.mean(self.time_window_controller.value))
+        self.frame_point = go.Scatter(x=[xpoint, xpoint], y=[-1000, 1000])
+        self.frame_controller.value = xpoint
+
         self.btn_spike_times.description = 'Show spike times'
         self.fluorescence.out_fig.data = [self.fluorescence.out_fig.data[0]]
         self.electrical.out_fig.data = [self.electrical.out_fig.data[0]]
+        self.electrical.out_fig.add_trace(self.frame_point)
+        self.fluorescence.out_fig.add_trace(self.frame_point)
 
     def spikes_viewer(self, b=None):
         self.show_spikes = not self.show_spikes
