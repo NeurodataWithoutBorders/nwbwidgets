@@ -120,7 +120,10 @@ class AllenDashboard(widgets.VBox):
                 # self.electrical.out_fig.add_trace(spike_trace)
         else:
             self.btn_spike_times.description = 'Show spike times'
-            self.fluorescence.out_fig.data = [self.fluorescence.out_fig.data[0]]
+            self.fluorescence.out_fig.data = [
+                self.fluorescence.out_fig.data[0],
+                self.fluorescence.out_fig.data[1]
+            ]
             # self.electrical.out_fig.data = [self.electrical.out_fig.data[0]]
 
     def update_spike_traces(self):
