@@ -240,5 +240,5 @@ def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
 
 class RoiResponseSeriesWidget(BaseGroupedTraceWidget):
     def __init__(self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None,
-                 dynamic_table_region_name='rois', allen_dashboard=False,**kwargs):
-        super().__init__(roi_response_series, dynamic_table_region_name, allen_dashboard=allen_dashboard, **kwargs)
+                 dynamic_table_region_name='rois', **kwargs):
+        super().__init__(roi_response_series, dynamic_table_region_name, **kwargs)

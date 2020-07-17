@@ -195,36 +195,42 @@ class SingleTraceWidget(AbstractTraceWidget):
 
 
 class SingleTracePlotlyWidget(SingleTraceWidget):
+    def __init__(self, timeseries: TimeSeries,
+                 foreign_time_window_controller: StartAndDurationController = None,
+                 **kwargs):
+        super().__init__(timeseries=timeseries,
+                         foreign_time_window_controller=foreign_time_window_controller,
+                         **kwargs)
 
     def set_out_fig(self):
-
         timeseries = self.controls['timeseries'].value
-
         time_window = self.controls['time_window'].value
 
         istart = timeseries_time_to_ind(timeseries, time_window[0])
         istop = timeseries_time_to_ind(timeseries, time_window[1])
-
         yy, units = get_timeseries_in_units(timeseries, istart, istop)
 
-        self.out_fig = go.FigureWidget(data=go.Scatter(
-            x=get_timeseries_tt(timeseries, istart, istop),
-            y=yy))
+        self.out_fig = go.FigureWidget(
+            data=go.Scatter(
+                x=get_timeseries_tt(timeseries, istart, istop),
+                y=list(yy)
+            )
+        )
 
         self.out_fig.update_layout(
             title=timeseries.name,
             xaxis_title="time (s)",
-            yaxis_title=units)
+            yaxis_title=units,
+            margin=dict(l=8, r=8, t=8, b=8),
+        )
 
         def on_change(change):
             time_window = self.controls['time_window'].value
             istart = timeseries_time_to_ind(timeseries, time_window[0])
             istop = timeseries_time_to_ind(timeseries, time_window[1])
-
             yy, units = get_timeseries_in_units(timeseries, istart, istop)
-
             self.out_fig.data[0].x = get_timeseries_tt(timeseries, istart, istop)
-            self.out_fig.data[0].y = yy
+            self.out_fig.data[0].y = list(yy)
 
         self.controls['time_window'].observe(on_change)
 
@@ -365,7 +371,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
     def __init__(self, time_series: TimeSeries, dynamic_table_region_name=None,
                  foreign_time_window_controller: StartAndDurationController = None,
                  foreign_group_and_sort_controller: GroupAndSortController = None,
-                 mpl_plotter=plot_grouped_traces, allen_dashboard=False, **kwargs):
+                 mpl_plotter=plot_grouped_traces, **kwargs):
         """
 
         Parameters
@@ -374,6 +380,8 @@ class BaseGroupedTraceWidget(widgets.HBox):
         dynamic_table_region_name: str, optional
         foreign_time_window_controller: StartAndDurationController, optional
         foreign_group_and_sort_controller: GroupAndSortController, optional
+        mpl_plotter: function
+            Choose function to use when creating figures
         kwargs
         """
 
@@ -393,7 +401,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
 
         self.controls = dict(
             time_series=widgets.fixed(self.time_series),
-            time_window=self.time_window_controller
+            time_window=self.time_window_controller,
         )
         if foreign_group_and_sort_controller is None:
             if dynamic_table_region_name is not None:
@@ -409,10 +417,8 @@ class BaseGroupedTraceWidget(widgets.HBox):
             self.gas = foreign_group_and_sort_controller
             self.controls.update(gas=self.gas)
 
-        if allen_dashboard:
-            out_fig = interactive_output(partial(mpl_plotter, figsize=(6, 3)), self.controls)
-        else:
-            out_fig = interactive_output(mpl_plotter, self.controls)
+        # Sets up interactive output controller
+        out_fig = interactive_output(mpl_plotter, self.controls)
 
         if foreign_time_window_controller:
             right_panel = out_fig
