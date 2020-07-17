@@ -220,7 +220,6 @@ class SingleTracePlotlyWidget(SingleTraceWidget):
             title=timeseries.name,
             xaxis_title="time (s)",
             yaxis_title=units,
-            margin=dict(l=8, r=8, t=8, b=8),
         )
 
         def on_change(change):
@@ -230,6 +229,11 @@ class SingleTracePlotlyWidget(SingleTraceWidget):
             yy, units = get_timeseries_in_units(timeseries, istart, istop)
             self.out_fig.data[0].x = get_timeseries_tt(timeseries, istart, istop)
             self.out_fig.data[0].y = list(yy)
+
+            self.out_fig.update_layout(
+                yaxis={"range": [min(yy), max(yy)], "autorange": False},
+                xaxis={"range": [min(self.out_fig.data[0].x), max(self.out_fig.data[0].x)], "autorange": False}
+            )
 
         self.controls['time_window'].observe(on_change)
 
