@@ -220,6 +220,8 @@ class SingleTracePlotlyWidget(SingleTraceWidget):
             title=timeseries.name,
             xaxis_title="time (s)",
             yaxis_title=units,
+            yaxis={"range": [min(yy), max(yy)], "autorange": False},
+            xaxis={"range": [min(self.out_fig.data[0].x), max(self.out_fig.data[0].x)], "autorange": False}
         )
 
         def on_change(change):
