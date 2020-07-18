@@ -5,6 +5,7 @@ from .image import ImageSeriesWidget
 import plotly.graph_objects as go
 from ipywidgets import widgets, Layout
 from tifffile import imread
+from pathlib import Path
 import numpy as np
 
 
@@ -77,8 +78,9 @@ class AllenDashboard(widgets.VBox):
             step=1,
             description='Frame: ',
             continuous_update=False,
+            readout=False,
             orientation='horizontal',
-            layout=Layout(width='800px'),
+            layout=Layout(width='660px'),
         )
 
         # Add line traces marking Image frame point
@@ -109,7 +111,7 @@ class AllenDashboard(widgets.VBox):
             self.fluorescence.out_fig.data[1].x = [change['new'], change['new']]
 
             frame_number = int(change['new'] * self.nwb.acquisition['raw_ophys'].rate)
-            path_ext_file = self.nwb.acquisition['raw_ophys']
+            path_ext_file = Path(self.nwb.acquisition['raw_ophys'].external_file[0])
             image = imread(path_ext_file, key=frame_number)
             self.photon_series.out_fig.data[0].z = image
 
