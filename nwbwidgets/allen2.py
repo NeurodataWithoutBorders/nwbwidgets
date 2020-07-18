@@ -54,8 +54,7 @@ class AllenDashboard(widgets.VBox):
             showlegend=False,
             width=800,
             height=230,
-            margin=dict(l=65, r=8, t=20, b=8),
-            yaxis_title='DF/F',
+            margin=dict(l=70, r=8, t=8, b=8),
             yaxis={"range": [min(self.fluorescence.out_fig.data[0].y), max(self.fluorescence.out_fig.data[0].y)],
                    "autorange": False},
             # xaxis={"autorange": False}
@@ -97,6 +96,7 @@ class AllenDashboard(widgets.VBox):
         hbox_header = widgets.HBox([self.btn_spike_times, self.time_window_controller])
         vbox_widgets = widgets.VBox([self.frame_controller, self.electrical, self.fluorescence])
         hbox_widgets = widgets.HBox([vbox_widgets, self.photon_series])
+
         self.children = [hbox_header, hbox_widgets]
 
         self.update_spike_traces()
@@ -109,7 +109,7 @@ class AllenDashboard(widgets.VBox):
             self.fluorescence.out_fig.data[1].x = [change['new'], change['new']]
 
             frame_number = int(change['new'] * self.nwb.acquisition['raw_ophys'].rate)
-            path_ext_file = self.nwb.acquisition['raw_ophys'].external_file[0]
+            path_ext_file = self.nwb.acquisition['raw_ophys']
             image = imread(path_ext_file, key=frame_number)
             self.photon_series.out_fig.data[0].z = image
 
