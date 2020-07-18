@@ -1,7 +1,7 @@
 from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
-from .controllers import StartAndDurationController
-from .timeseries import SingleTracePlotlyWidget
-from .image import ImageSeriesWidget
+from nwbwidgets.controllers import StartAndDurationController
+from nwbwidgets.timeseries import SingleTracePlotlyWidget
+from nwbwidgets.image import ImageSeriesWidget
 import plotly.graph_objects as go
 from ipywidgets import widgets, Layout
 from tifffile import imread
@@ -38,7 +38,7 @@ class AllenDashboard(widgets.VBox):
             showlegend=False,
             xaxis_title=None,
             yaxis_title='Volts',
-            width=850,
+            width=840,
             height=230,
             margin=dict(l=60, r=200, t=8, b=20),
             # yaxis={"position": 0, "anchor": "free"},
@@ -56,7 +56,7 @@ class AllenDashboard(widgets.VBox):
         self.fluorescence.out_fig.update_layout(
             title=None,
             showlegend=False,
-            width=850,
+            width=840,
             height=230,
             margin=dict(l=60, r=200, t=8, b=20),
             yaxis_title='dF/F',
