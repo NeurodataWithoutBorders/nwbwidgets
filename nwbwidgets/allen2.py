@@ -1,10 +1,11 @@
-from ipywidgets import widgets
+from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 from .controllers import StartAndDurationController
-import plotly.graph_objects as go
 from .timeseries import SingleTracePlotlyWidget
 from .image import ImageSeriesWidget
+import plotly.graph_objects as go
+from ipywidgets import widgets, Layout
+from tifffile import imread
 import numpy as np
-from tifffile import imread, TiffFile
 
 
 class AllenDashboard(widgets.VBox):
@@ -17,11 +18,13 @@ class AllenDashboard(widgets.VBox):
         self.btn_spike_times.on_click(self.spikes_viewer)
 
         # Start time and duration controller
+        self.tmin = get_timeseries_mint(nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'])
+        self.tmax = get_timeseries_maxt(nwb.processing['ophys'].data_interfaces['fluorescence'].roi_response_series['roi_response_series'])
         self.time_window_controller = StartAndDurationController(
-            tmin=0,
-            tmax=120,
+            tmin=self.tmin,
+            tmax=self.tmax,
             start=0,
-            duration=5
+            duration=5,
         )
 
         # Electrophys single trace
@@ -33,9 +36,9 @@ class AllenDashboard(widgets.VBox):
             title=None,
             showlegend=False,
             xaxis_title=None,
-            width=600,
+            width=800,
             height=230,
-            margin=dict(l=0, r=8, t=8, b=8),
+            margin=dict(l=0, r=8, t=8, b=20),
             # yaxis={"position": 0, "anchor": "free"},
             yaxis={"range": [min(self.electrical.out_fig.data[0].y), max(self.electrical.out_fig.data[0].y)],
                    "autorange": False},
@@ -49,9 +52,10 @@ class AllenDashboard(widgets.VBox):
         self.fluorescence.out_fig.update_layout(
             title=None,
             showlegend=False,
-            width=600,
+            width=800,
             height=230,
-            margin=dict(l=65, r=8, t=8, b=8),
+            margin=dict(l=65, r=8, t=20, b=8),
+            yaxis_title='DF/F',
             yaxis={"range": [min(self.fluorescence.out_fig.data[0].y), max(self.fluorescence.out_fig.data[0].y)],
                    "autorange": False},
             # xaxis={"autorange": False}
@@ -63,7 +67,7 @@ class AllenDashboard(widgets.VBox):
         )
         self.photon_series.out_fig.update_layout(
             showlegend=False,
-            margin=dict(l=30, r=5, t=35, b=35),
+            margin=dict(l=30, r=5, t=65, b=65),
         )
 
         # Frame controller
@@ -72,9 +76,10 @@ class AllenDashboard(widgets.VBox):
             min=self.time_window_controller.value[0],
             max=self.time_window_controller.value[1],
             step=1,
-            description='Frame:',
+            description='Frame: ',
             continuous_update=False,
             orientation='horizontal',
+            layout=Layout(width='800px'),
         )
 
         # Add line traces marking Image frame point
