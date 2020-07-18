@@ -86,11 +86,11 @@ class AllenDashboard(widgets.VBox):
             continuous_update=False,
             readout=False,
             orientation='horizontal',
-            layout=Layout(width='650px'),
+            layout=Layout(width='645px'),
         )
 
         # Add line traces marking Image frame point
-        self.frame_point = go.Scatter(x=[2, 2], y=[-1000, 1000])
+        self.frame_point = go.Scatter(x=[0, 0], y=[-1000, 1000])
         self.electrical.out_fig.add_trace(self.frame_point)
         self.fluorescence.out_fig.add_trace(self.frame_point)
 
@@ -129,6 +129,7 @@ class AllenDashboard(widgets.VBox):
         self.frame_controller.min = self.time_window_controller.value[0]
         self.frame_controller.max = self.time_window_controller.value[1]
         xpoint = round(np.mean(self.time_window_controller.value))
+        self.frame_controller.value = xpoint
         self.electrical.out_fig.data[1].x = [xpoint, xpoint]
         self.fluorescence.out_fig.data[1].x = [xpoint, xpoint]
 
