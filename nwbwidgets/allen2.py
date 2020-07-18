@@ -37,6 +37,7 @@ class AllenDashboard(widgets.VBox):
             title=None,
             showlegend=False,
             xaxis_title=None,
+            yaxis_title='Volts',
             width=800,
             height=230,
             margin=dict(l=0, r=8, t=8, b=20),
@@ -56,6 +57,7 @@ class AllenDashboard(widgets.VBox):
             width=800,
             height=230,
             margin=dict(l=70, r=8, t=8, b=8),
+            yaxis_title='dF/F',
             yaxis={"range": [min(self.fluorescence.out_fig.data[0].y), max(self.fluorescence.out_fig.data[0].y)],
                    "autorange": False},
             # xaxis={"autorange": False}
