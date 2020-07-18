@@ -126,8 +126,12 @@ class AllenDashboard(widgets.VBox):
         self.show_spikes = False
 
         # Update frame slider
-        self.frame_controller.min = self.time_window_controller.value[0]
-        self.frame_controller.max = self.time_window_controller.value[1]
+        if self.time_window_controller.value[1] < self.frame_controller.min:
+            self.frame_controller.min = self.time_window_controller.value[0]
+            self.frame_controller.max = self.time_window_controller.value[1]
+        else:
+            self.frame_controller.max = self.time_window_controller.value[1]
+            self.frame_controller.min = self.time_window_controller.value[0]
         xpoint = round(np.mean(self.time_window_controller.value))
         self.frame_controller.value = xpoint
         self.electrical.out_fig.data[1].x = [xpoint, xpoint]
