@@ -5,7 +5,7 @@ from nwbwidgets.image import ImageSeriesWidget
 import plotly.graph_objects as go
 from ipywidgets import widgets, Layout
 from tifffile import imread
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import numpy as np
 
 
@@ -116,7 +116,12 @@ class AllenDashboard(widgets.VBox):
             self.fluorescence.out_fig.data[1].x = [change['new'], change['new']]
 
             frame_number = int(change['new'] * self.nwb.acquisition['raw_ophys'].rate)
-            path_ext_file = Path(self.nwb.acquisition['raw_ophys'].external_file[0])
+            file_path = self.nwb.acquisition['raw_ophys'].external_file[0]
+            if "\\" in file_path:
+                win_path = PureWindowsPath(file_path)
+                path_ext_file = Path(win_path)
+            else:
+                path_ext_file = Path(file_path)
             image = imread(path_ext_file, key=frame_number)
             self.photon_series.out_fig.data[0].z = image
 

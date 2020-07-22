@@ -8,6 +8,7 @@ import pynwb
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
 from .base import fig2widget
 from tifffile import imread, TiffFile
+from pathlib import Path, PureWindowsPath
 
 
 class ImageSeriesWidget(widgets.VBox):
@@ -40,11 +41,16 @@ class ImageSeriesWidget(widgets.VBox):
     def set_out_fig(self):
         imageseries = self.controls['timeseries'].value
         time_window = self.controls['time_window'].value
-
         output = widgets.Output()
 
         if imageseries.external_file is not None:
-            path_ext_file = imageseries.external_file[0]
+            file_path = imageseries.external_file[0]
+            if "\\" in file_path:
+                win_path = PureWindowsPath(file_path)
+                path_ext_file = Path(win_path)
+            else:
+                path_ext_file = Path(file_path)
+
             # Get Frames dimensions
             tif = TiffFile(path_ext_file)
             n_samples = len(tif.pages)
