@@ -11,8 +11,9 @@ from pynwb.file import Subject
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb import ProcessingModule
 from pynwb.behavior import Position, SpatialSeries
-from nwbwidgets.base import show_neurodata_base,processing_module, nwb2widget, show_text_fields, \
-fig2widget, vis2widget, show_fields, show_dynamic_table, df2accordion, lazy_show_over_data
+from nwbwidgets.base import show_neurodata_base, processing_module, nwb2widget, show_text_fields, \
+    fig2widget, vis2widget, show_fields, df2accordion, lazy_show_over_data
+from nwbwidgets.view import show_dynamic_table
 import unittest
 import pytest
     
@@ -28,7 +29,7 @@ def test_show_neurodata_base():
                       related_publications='https://doi.org/10.1088/1741-2552/aaa904',
                       experimenter='Dr. Pack')
     
-    assert isinstance(show_neurodata_base(nwbfile,default_neurodata_vis_spec), widgets.Widget)
+    assert isinstance(show_neurodata_base(nwbfile, default_neurodata_vis_spec), widgets.Widget)
     
 
 def test_show_text_fields():
@@ -41,20 +42,20 @@ class ProcessingModuleTestCase(unittest.TestCase):
     
     def setUp(self):
         spatial_series = SpatialSeries(name='position',
-                                   data=np.linspace(0, 1, 20),
-                                   rate=50.,
-                                   reference_frame='starting gate')
+                                       data=np.linspace(0, 1, 20),
+                                       rate=50.,
+                                       reference_frame='starting gate')
         self.position = Position(spatial_series=spatial_series)
     
     def test_processing_module(self):
 
         start_time = datetime(2020, 1, 29, 11, tzinfo=tzlocal())
-        nwbfile = NWBFile(session_description='Test Session',  
-                      identifier='NWBPM',  
-                      session_start_time=start_time)
+        nwbfile = NWBFile(session_description='Test Session',
+                          identifier='NWBPM',
+                          session_start_time=start_time)
 
         behavior_module = ProcessingModule(name='behavior',
-                                                       description='preprocessed behavioral data')
+                                           description='preprocessed behavioral data')
         nwbfile.add_processing_module(behavior_module)
 
         nwbfile.processing['behavior'].add(self.position)
@@ -122,28 +123,31 @@ def test_show_dynamic_table():
 
 def test_df2accordion():
     df = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
-                     columns=['a', 'b', 'c'])
+                      columns=['a', 'b', 'c'])
+
     def func_fig(data):
-        fig=plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 5))
         plt.plot(data)
         return fig
-    df2accordion(df=df,by='a',func=func_fig)
+    df2accordion(df=df, by='a', func=func_fig)
     
     
 def test_df2accordion_single():
     df = pd.DataFrame(np.array([1]),
-                     columns=['a'])
+                      columns=['a'])
+
     def func_fig(data):
-        fig=plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 5))
         plt.plot(data)
         return fig
-    df2accordion(df=df,by='a',func=func_fig)
+    df2accordion(df=df, by='a', func=func_fig)
     
     
 def test_lazy_show_over_data():
     list_ = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
     def func_fig(data):
         fig=plt.figure(figsize=(10, 5))
         plt.plot(data)
         return fig
-    assert isinstance(lazy_show_over_data(list_=list_,func_=func_fig),widgets.Widget)
+    assert isinstance(lazy_show_over_data(list_=list_, func_=func_fig), widgets.Widget)
