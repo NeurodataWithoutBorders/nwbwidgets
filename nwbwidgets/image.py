@@ -1,6 +1,5 @@
 from .controllers import StartAndDurationController
-from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_timeseries_mint,
-                               timeseries_time_to_ind, get_timeseries_in_units)
+from .utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 from ipywidgets import widgets, fixed
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -120,7 +119,7 @@ def show_grayscale_image(grayscale_image: GrayscaleImage, neurodata_vis_spec=Non
     return fig
 
 
-def show_rbg_image(rgb_image: RGBImage, neurodata_vis_spec=None):
+def show_rbga_image(rgb_image: RGBImage, neurodata_vis_spec=None):
     fig, ax = plt.subplots()
     plt.imshow(rgb_image.data[:])
     plt.axis('off')

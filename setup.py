@@ -5,8 +5,8 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(
-    author='Neurodata Without Border (NWB) developers',
-    author_email='ben.dichter@gmail.com',
+    author='Ben Dichter',
+    author_email='ben.dichter@catalystneuro.com',
     version='0.4.0',
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
@@ -31,7 +31,8 @@ setup(
                       'ndx-icephys-meta',
                       'ipysheet',
                       'zarr',
-                      'ccfwidget'],
+                      'ccfwidget',
+                      'tifffile'],
     license='MIT',
     keywords=['jupyter', 'hdf5', 'notebook', 'nwb'],
     long_description=long_description,
