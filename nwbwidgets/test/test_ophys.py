@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime
 from dateutil.tz import tzlocal
 from pynwb import NWBFile
@@ -8,14 +7,13 @@ from ndx_grayscalevolume import GrayscaleVolume
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence, DfOverF
 from pynwb.device import Device
-from nwbwidgets.ophys import show_grayscale_volume,show_two_photon_series,show_df_over_f
+from nwbwidgets.ophys import show_grayscale_volume, show_two_photon_series, show_df_over_f
 import unittest
 
 
-
 def test_show_grayscale_volume():
-    vol = GrayscaleVolume(name='vol',data=np.random.rand(2700).reshape((30,30,3)))
-    assert isinstance(show_grayscale_volume(vol, default_neurodata_vis_spec),widgets.Widget)
+    vol = GrayscaleVolume(name='vol', data=np.random.rand(2700).reshape((30, 30, 3)))
+    assert isinstance(show_grayscale_volume(vol, default_neurodata_vis_spec), widgets.Widget)
     
     
 class CalciumImagingTestCase(unittest.TestCase):
@@ -30,17 +28,27 @@ class CalciumImagingTestCase(unittest.TestCase):
                                                   'dwarves to reclaim vast treasures.'),
                           session_id='LONELYMTN')
 
-
         device = Device('imaging_device_1')
         nwbfile.add_device(device)
         optical_channel = OpticalChannel('my_optchan', 'description', 500.)
-        imaging_plane = nwbfile.create_imaging_plane('my_imgpln', optical_channel, 'a very interesting part of the brain',
-                                                     device, 600., 300., 'GFP', 'my favorite brain location',
-                                                     np.ones((5, 5, 3)), 4.0, 'manifold unit', 'A frame to refer to')
+        imaging_plane = nwbfile.create_imaging_plane(
+            name='imgpln1',
+            optical_channel=optical_channel,
+            description='a fake ImagingPlane',
+            device=device,
+            excitation_lambda=600.,
+            imaging_rate=300.,
+            indicator='GFP',
+            location='somewhere in the brain',
+            reference_frame='unknown',
+            origin_coords=[10, 20],
+            origin_coords_unit='millimeters',
+            grid_spacing=[0.001, 0.001],
+            grid_spacing_unit='millimeters')
 
         self.image_series = TwoPhotonSeries(name='test_iS', dimension=[2],data=np.random.rand(10, 5, 5, 3),
-                                       external_file=['images.tiff'], imaging_plane=imaging_plane,
-                                       starting_frame=[0], format='tiff', starting_time=0.0, rate=1.0)
+                                            external_file=['images.tiff'], imaging_plane=imaging_plane,
+                                            starting_frame=[0], format='tiff', starting_time=0.0, rate=1.0)
         nwbfile.add_acquisition(self.image_series)
 
 
