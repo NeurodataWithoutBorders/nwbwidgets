@@ -6,46 +6,70 @@ from ndx_grayscalevolume import GrayscaleVolume
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .utils.functional import MemoizeMutable
+from .timeseries import BaseGroupedTraceWidget
 import ipywidgets as widgets
 import plotly.graph_objects as go
 from skimage import measure
-
-from .timeseries import BaseGroupedTraceWidget
-
+from tifffile import imread, TiffFile
 
 
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
 
-def show_two_photon_series(indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
-    output = widgets.Output()
+class TwoPhotonSeriesWidget(widgets.VBox):
+    """Widget showing Image stack recorded over time from 2-photon microscope."""
+    def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
+        super().__init__()
 
-    if len(indexed_timeseries.data.shape) == 3:
-        def show_image(index=0):
-            fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
-            ax.imshow(indexed_timeseries.data[index], cmap='gray')
-            output.clear_output(wait=True)
-            with output:
-                plt.show(fig)
-    elif len(indexed_timeseries.data.shape) == 4:
-        import ipyvolume.pylab as p3
+        output = widgets.Output()
 
-        def show_image(index=0):
-            p3.figure()
-            p3.volshow(indexed_timeseries.data[index], tf=linear_transfer_function([0, 0, 0], max_opacity=.3))
-            output.clear_output(wait=True)
-            with output:
-                p3.show()
-    else:
-        raise NotImplementedError
+        if indexed_timeseries.data is None:
+            if indexed_timeseries.external_file is not None:
+                path_ext_file = indexed_timeseries.external_file[0]
+                # Get Frames dimensions
+                tif = TiffFile(path_ext_file)
+                n_samples = len(tif.pages)
+                page = tif.pages[0]
+                n_y, n_x = page.shape
 
-    slider = widgets.IntSlider(value=0, min=0,
-                               max=indexed_timeseries.data.shape[0] - 1,
-                               orientation='horizontal')
-    slider.observe(lambda change: show_image(change.new), names='value')
-    show_image()
+                def show_image(index=0):
+                    fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
+                    # Read first frame
+                    image = imread(path_ext_file, key=int(index))
+                    ax.imshow(image, cmap='gray')
+                    output.clear_output(wait=True)
+                    with output:
+                        plt.show(fig)
+                slider = widgets.IntSlider(value=0, min=0,
+                                           max=n_samples - 1,
+                                           orientation='horizontal')
+        else:
+            if len(indexed_timeseries.data.shape) == 3:
+                def show_image(index=0):
+                    fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
+                    ax.imshow(indexed_timeseries.data[index], cmap='gray')
+                    output.clear_output(wait=True)
+                    with output:
+                        plt.show(fig)
+            elif len(indexed_timeseries.data.shape) == 4:
+                import ipyvolume.pylab as p3
 
-    return widgets.VBox([output, slider])
+                def show_image(index=0):
+                    p3.figure()
+                    p3.volshow(indexed_timeseries.data[index], tf=linear_transfer_function([0, 0, 0], max_opacity=.3))
+                    output.clear_output(wait=True)
+                    with output:
+                        p3.show()
+            else:
+                raise NotImplementedError
+
+            slider = widgets.IntSlider(value=0, min=0,
+                                       max=indexed_timeseries.data.shape[0] - 1,
+                                       orientation='horizontal')
+
+        slider.observe(lambda change: show_image(change.new), names='value')
+        show_image()
+        self.children = [output, slider]
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
@@ -215,5 +239,6 @@ def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
 
 
 class RoiResponseSeriesWidget(BaseGroupedTraceWidget):
-    def __init__(self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs):
-        super().__init__(roi_response_series, 'rois', **kwargs)
+    def __init__(self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None,
+                 dynamic_table_region_name='rois', **kwargs):
+        super().__init__(roi_response_series, dynamic_table_region_name, **kwargs)
