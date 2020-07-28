@@ -253,20 +253,26 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
 
         data, units = get_timeseries_in_units(timeseries, istart, istop)
 
-        self.out_fig = go.FigureWidget(make_subplots(rows=data.shape[1], cols=1))
-
         tt = get_timeseries_tt(timeseries, istart, istop)
 
-        for i, (yy, xyz) in enumerate(zip(data.T, ('x', 'y', 'z'))):
-            self.out_fig.add_trace(
-                go.Scatter(x=tt, y=yy),
-                row=i + 1, col=1)
-            if units:
-                yaxes_label = '{} ({})'.format(xyz, units)
-            else:
-                yaxes_label = xyz
-            self.out_fig.update_yaxes(title_text=yaxes_label, row=i+1, col=1)
-        self.out_fig.update_xaxes(title_text='time (s)', row=i+1, col=1)
+        if len(data.shape) > 1:
+            self.out_fig = go.FigureWidget(make_subplots(rows=data.shape[1], cols=1))
+
+            for i, (yy, xyz) in enumerate(zip(data.T, ('x', 'y', 'z'))):
+                self.out_fig.add_trace(
+                    go.Scatter(x=tt, y=yy),
+                    row=i + 1, col=1)
+                if units:
+                    yaxes_label = '{} ({})'.format(xyz, units)
+                else:
+                    yaxes_label = xyz
+                self.out_fig.update_yaxes(title_text=yaxes_label, row=i+1, col=1)
+            self.out_fig.update_xaxes(title_text='time (s)', row=i + 1, col=1)
+        else:
+            self.out_fig = go.FigureWidget()
+            self.out_fig.add_trace(go.Scatter(x=tt, y=data))
+            self.out_fig.update_xaxes(title_text='time (s)')
+
         self.out_fig.update_layout(showlegend=False, title=timeseries.name)
 
         def on_change(change):
@@ -277,9 +283,10 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
             tt = get_timeseries_tt(timeseries, istart, istop)
             yy, units = get_timeseries_in_units(timeseries, istart, istop)
 
-            for i, dd in enumerate(yy.T):
-                self.out_fig.data[i].x = tt
-                self.out_fig.data[i].y = dd
+            with self.out_fig.batch_update():
+                for i, dd in enumerate(yy.T):
+                    self.out_fig.data[i].x = tt
+                    self.out_fig.data[i].y = dd
 
         self.controls['time_window'].observe(on_change)
 
