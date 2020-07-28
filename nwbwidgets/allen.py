@@ -105,4 +105,3 @@ def load_allen_widgets():
     default_neurodata_vis_spec[Units]['Grouped PSTH'] = AllenPSTHWidget
     default_neurodata_vis_spec[Units]['Raster Grid'] = AllenRasterGridWidget
     default_neurodata_vis_spec[DynamicTable] = allen_show_dynamic_table
-
