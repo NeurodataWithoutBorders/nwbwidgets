@@ -734,7 +734,7 @@ class RasterWidgetPlotly(widgets.HBox):
     def update_fig(self, change):
         time_window = self.time_window_controller.value
         gas_kwargs = self.gas.value
-        with Peekaboo(self.children[1], 1):
+        with self.fig.batch_update():
             self.fig.data = None
             show_session_raster_plotly(self.units, self.fig, time_window, **gas_kwargs)
 
