@@ -131,11 +131,11 @@ def plotly_show_spatial_trace(node):
         if unit:
             fig.update_xaxes(title_text='x ({})'.format(unit))
             fig.update_yaxes(title_text='y ({})'.format(unit))
-            fig.update_zaxes(title_text='z ({})'.format(unit))
+            #fig.update_zaxes(title_text='z ({})'.format(unit))
         else:
             fig.update_xaxes(title_text='x')
             fig.update_yaxes(title_text='y')
-            fig.update_zaxes(title_text='z')
+            #fig.update_zaxes(title_text='z')
 
     fig.update_layout(title=node.name, hovermode=False)
 
