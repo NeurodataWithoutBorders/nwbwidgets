@@ -20,7 +20,7 @@ def show_fields(node, **kwargs) -> widgets.Widget:
                                min_height='30px', min_width='130px')
     info = []
     for key, val in node.fields.items():
-        lbl_key = widgets.Label(key+':', layout=field_lay)
+        lbl_key = widgets.Label(key + ':', layout=field_lay)
         lbl_val = widgets.Label(str(val), layout=field_lay)
         info.append(widgets.HBox(children=[lbl_key, lbl_val]))
     vbox = widgets.VBox(info)
@@ -46,14 +46,14 @@ def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: dict) -> wid
     labels = []
     for key, value in node.fields.items():
         if isinstance(value, (str, datetime)):
-            lbl_key = widgets.Label(key+':', layout=field_lay)
+            lbl_key = widgets.Label(key + ':', layout=field_lay)
             lbl_val = widgets.Label(str(value), layout=field_lay)
             info.append(widgets.HBox(children=[lbl_key, lbl_val]))
         elif key == 'related_publications':
             pub_list = []
             for pub in value:
-                pub_list.append(widgets.HTML(value="<a href=http://dx.doi.org/"+pub[4:]+">"+pub+"</a>"))
-            lbl_key = widgets.Label(key+':', layout=field_lay)
+                pub_list.append(widgets.HTML(value="<a href=http://dx.doi.org/" + pub[4:] + ">" + pub + "</a>"))
+            lbl_key = widgets.Label(key + ':', layout=field_lay)
             pub_list.insert(0, lbl_key)
             info.append(widgets.HBox(children=pub_list))
         elif key == 'experimenter':
@@ -159,8 +159,6 @@ class LazyTab(widgets.Tab):
         self.observe(on_selected_index, names='selected_index')
 
 
-
-
 def lazy_show_over_data(list_, func_, labels=None, style: GroupingWidget = widgets.Tab) -> GroupingWidget:
     """
     Apply same function to list of data in lazy tabs or lazy accordion
@@ -192,7 +190,7 @@ def lazy_show_over_data(list_, func_, labels=None, style: GroupingWidget = widge
     return out
 
 
-def nwb2widget(node,  neurodata_vis_spec: dict, **pass_kwargs) -> widgets.Widget:
+def nwb2widget(node, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.Widget:
     for ndtype in type(node).__mro__:
         if ndtype in neurodata_vis_spec:
             spec = neurodata_vis_spec[ndtype]
