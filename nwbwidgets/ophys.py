@@ -1,17 +1,17 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhotonSeries, ImageSegmentation
-from pynwb.base import NWBDataInterface
-from ndx_grayscalevolume import GrayscaleVolume
-from .utils.cmaps import linear_transfer_function
-from .utils.dynamictable import infer_categorical_columns
-from .utils.functional import MemoizeMutable
-from .timeseries import BaseGroupedTraceWidget
 import ipywidgets as widgets
+import matplotlib.pyplot as plt
+import numpy as np
 import plotly.graph_objects as go
+from ndx_grayscalevolume import GrayscaleVolume
+from pynwb.base import NWBDataInterface
+from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhotonSeries, ImageSegmentation
 from skimage import measure
 from tifffile import imread, TiffFile
 
+from .timeseries import BaseGroupedTraceWidget
+from .utils.cmaps import linear_transfer_function
+from .utils.dynamictable import infer_categorical_columns
+from .utils.functional import MemoizeMutable
 
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
@@ -239,6 +239,5 @@ def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
 
 
 class RoiResponseSeriesWidget(BaseGroupedTraceWidget):
-    def __init__(self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None,
-                 dynamic_table_region_name='rois', **kwargs):
-        super().__init__(roi_response_series, dynamic_table_region_name, **kwargs)
+    def __init__(self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs):
+        super().__init__(roi_response_series, 'rois', **kwargs)
