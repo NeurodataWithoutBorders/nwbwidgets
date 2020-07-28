@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pynwb import TimeSeries
 from ipywidgets import widgets
-from nwbwidgets.timeseries import traces_widget, show_ts_fields, show_timeseries, plot_traces, show_indexed_timeseries_mpl
+from nwbwidgets.timeseries import (BaseGroupedTraceWidget, show_ts_fields, show_timeseries, plot_traces,
+                                   show_indexed_timeseries_mpl)
 import unittest
 
 
@@ -12,13 +13,13 @@ def test_timeseries_widget():
                                    [11., 12., 13., 14.]]),
                     rate=100.)
 
-    traces_widget(ts)
+    BaseGroupedTraceWidget(ts)
 
 
 class ShowTimeSeriesTestCase(unittest.TestCase):
     
     def setUp(self):
-        data = np.random.rand(160,3)
+        data = np.random.rand(160, 3)
         self.ts = TimeSeries(name='test_timeseries', data=data, unit='m', starting_time=0.0, rate=1.0)
 
     def test_show_ts_fields(self):
