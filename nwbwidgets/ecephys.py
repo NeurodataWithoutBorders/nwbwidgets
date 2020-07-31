@@ -21,7 +21,7 @@ def show_spectrogram(neurodata, channel=0, **kwargs):
     ax.set_ylim(0, max(f))
     ax.set_xlabel('time')
     ax.set_ylabel('frequency')
-    plt.show(ax)
+    fig.show()
 
 
 def ElectrodesWidget(node):
@@ -43,7 +43,7 @@ def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
         ax.plot(np.mean(data, axis=1), color='k')
         ax.set_xlabel('Time')
         ax.set_ylabel('Amplitude')
-        plt.show()
+        fig.show()
         return fig2widget(fig)
 
     if len(ses.data.shape) == 3:

@@ -40,7 +40,7 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                     ax.imshow(image, cmap='gray')
                     output.clear_output(wait=True)
                     with output:
-                        plt.show(fig)
+                        fig.show()
 
                 slider = widgets.IntSlider(value=0, min=0,
                                            max=n_samples - 1,
@@ -52,7 +52,7 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                     ax.imshow(indexed_timeseries.data[index], cmap='gray')
                     output.clear_output(wait=True)
                     with output:
-                        plt.show(fig)
+                        fig.show()
             elif len(indexed_timeseries.data.shape) == 4:
                 import ipyvolume.pylab as p3
 

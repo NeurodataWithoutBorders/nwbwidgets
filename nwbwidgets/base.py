@@ -224,7 +224,7 @@ def vis2widget(vis) -> widgets.Widget:
 def fig2widget(fig: Figure, **kwargs) -> widgets.Widget:
     out = widgets.Output()
     with out:
-        plt.show(fig)
+        fig.show()
     return out
 
 

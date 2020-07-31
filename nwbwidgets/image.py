@@ -89,7 +89,7 @@ def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
     def show_image(index=0):
         fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
         ax.imshow(image_series.data[index, :, :], cmap='gray')
-        plt.show()
+        fig.show()
         return fig2widget(fig)
 
     slider = widgets.IntSlider(value=0, min=0,
