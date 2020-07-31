@@ -1,14 +1,15 @@
-
-import numpy as np
-import matplotlib.pyplot as plt
+import unittest
 from datetime import datetime
+
+import matplotlib.pyplot as plt
+import numpy as np
 from dateutil.tz import tzlocal
+from ipywidgets import widgets
+from nwbwidgets.misc import show_psth_raster, PSTHWidget, show_decomposition_traces, show_decomposition_series, \
+    RasterWidget, \
+    show_session_raster, show_annotations, RasterGridWidget, raster_grid
 from pynwb import NWBFile
 from pynwb.misc import DecompositionSeries, AnnotationSeries
-from ipywidgets import widgets
-from nwbwidgets.misc import show_psth_raster, PSTHWidget, show_decomposition_traces, show_decomposition_series, RasterWidget, \
-    show_session_raster, show_annotations, RasterGridWidget, raster_grid
-import unittest
 
 
 def test_show_psth():
@@ -18,10 +19,10 @@ def test_show_psth():
 
 def test_show_annotations():
     timestamps = np.array([0., 1., 2., 3., 4., 5., 6.])
-    annotations = AnnotationSeries(name='test_annotations',timestamps=timestamps)
+    annotations = AnnotationSeries(name='test_annotations', timestamps=timestamps)
     show_annotations(annotations)
 
-    
+
 class ShowPSTHTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -66,22 +67,20 @@ class ShowPSTHTestCase(unittest.TestCase):
 
     def test_raster_grid(self):
         trials = self.nwbfile.units.get_ancestor('NWBFile').trials
-        assert isinstance(raster_grid(self.nwbfile.units, time_intervals=trials, index=0, before=0.5, after=20.0), plt.Figure)
+        assert isinstance(raster_grid(self.nwbfile.units, time_intervals=trials, index=0, before=0.5, after=20.0),
+                          plt.Figure)
 
-    
+
 class ShowDecompositionTestCase(unittest.TestCase):
 
     def setUp(self):
-    
         data = np.random.rand(160, 2, 3)
 
         self.ds = DecompositionSeries(name='Test Decomposition', data=data,
                                       metric='amplitude', rate=1.0)
 
     def test_show_decomposition_traces(self):
-
         assert isinstance(show_decomposition_traces(self.ds), widgets.Widget)
 
     def test_show_decomposition_series(self):
-
         assert isinstance(show_decomposition_series(self.ds), widgets.Widget)
