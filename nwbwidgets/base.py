@@ -1,16 +1,17 @@
-from nwbwidgets import view
-import matplotlib.pyplot as plt
-from ipywidgets import widgets
 from collections.abc import Iterable
-from pynwb import ProcessingModule
-from pynwb.core import NWBDataInterface
-from matplotlib.pyplot import Figure
 from datetime import datetime
 from typing import Union
+
+import h5py
+import ipysheet
+import matplotlib.pyplot as plt
 import pandas as pd
 from IPython import display
-import ipysheet
-import h5py
+from ipywidgets import widgets
+from matplotlib.pyplot import Figure
+from nwbwidgets import view
+from pynwb import ProcessingModule
+from pynwb.core import NWBDataInterface
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -41,8 +42,8 @@ def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: dict) -> wid
     """
     field_lay = widgets.Layout(max_height='40px', max_width='500px',
                                min_height='30px', min_width='180px')
-    info = []         # string data type, exposed as a Text widget
-    neuro_data = []   # more complex data types, also with children
+    info = []  # string data type, exposed as a Text widget
+    neuro_data = []  # more complex data types, also with children
     labels = []
     for key, value in node.fields.items():
         if isinstance(value, (str, datetime)):
@@ -134,6 +135,7 @@ def lazy_tabs(in_dict: dict, node, style: GroupingWidget = widgets.Tab) -> Group
 
 class LazyTab(widgets.Tab):
     """A lazy tab object where multiple visualizations can be used for a single node and are generated on the fly"""
+
     def __init__(self, func_dict, data):
         """
         Parameters
@@ -272,7 +274,7 @@ def show_dset(dset: h5py.Dataset, **kwargs):
     ])
 
 
-def dataset_to_sheet(dset:h5py.Dataset):
+def dataset_to_sheet(dset: h5py.Dataset):
     if dset.ndim == 1:
         nrows = len(dset)
 
@@ -296,7 +298,7 @@ def show_dict(in_dict) -> widgets.Widget:
                                min_height='30px', min_width='130px')
     info = []
     for key, val in in_dict.items():
-        lbl_key = widgets.Label(key+':', layout=field_lay)
+        lbl_key = widgets.Label(key + ':', layout=field_lay)
         lbl_val = widgets.Label(str(val), layout=field_lay)
         info.append(widgets.HBox(children=[lbl_key, lbl_val]))
     vbox = widgets.VBox(info)

@@ -1,15 +1,17 @@
-import numpy as np
+from abc import abstractmethod
+
 import matplotlib.pyplot as plt
+import numpy as np
+import plotly.graph_objects as go
 from ipywidgets import widgets, fixed
+from plotly.subplots import make_subplots
 from pynwb import TimeSeries
+
+from .controllers import StartAndDurationController, GroupAndSortController
+from .utils.plotly import multi_trace
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind, get_timeseries_in_units)
-from abc import abstractmethod
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from .controllers import StartAndDurationController, GroupAndSortController
 from .utils.widgets import interactive_output
-from .utils.plotly import multi_trace
 
 color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -21,7 +23,7 @@ def show_ts_fields(node):
     return widgets.VBox(info)
 
 
-def show_timeseries_mpl(time_series: TimeSeries, time_window=None, ax=None,  zero_start=False, xlabel=None, ylabel=None,
+def show_timeseries_mpl(time_series: TimeSeries, time_window=None, ax=None, zero_start=False, xlabel=None, ylabel=None,
                         title=None, figsize=None, **kwargs):
     """
 
@@ -47,14 +49,13 @@ def show_timeseries_mpl(time_series: TimeSeries, time_window=None, ax=None,  zer
         istart = 0
         istop = None
 
-    return show_indexed_timeseries_mpl(time_series, istart=istart, istop=istop, ax=ax,  zero_start=zero_start,
+    return show_indexed_timeseries_mpl(time_series, istart=istart, istop=istop, ax=ax, zero_start=zero_start,
                                        xlabel=xlabel, ylabel=ylabel, title=title, figsize=figsize, **kwargs)
 
 
 def show_indexed_timeseries_mpl(node: TimeSeries, istart=0, istop=None, ax=None,
                                 zero_start=False, xlabel='time (s)', ylabel=None, title=None, figsize=None,
                                 neurodata_vis_spec=None, **kwargs):
-
     if ylabel is None and node.unit:
         ylabel = node.unit
 
@@ -183,7 +184,6 @@ class AbstractTraceWidget(widgets.VBox):
 
 
 class SingleTraceWidget(AbstractTraceWidget):
-
     mpl_plotter = show_timeseries
 
     def set_children(self):
@@ -266,7 +266,7 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
                     yaxes_label = '{} ({})'.format(xyz, units)
                 else:
                     yaxes_label = xyz
-                self.out_fig.update_yaxes(title_text=yaxes_label, row=i+1, col=1)
+                self.out_fig.update_yaxes(title_text=yaxes_label, row=i + 1, col=1)
             self.out_fig.update_xaxes(title_text='time (s)', row=i + 1, col=1)
         else:
             self.out_fig = go.FigureWidget()
@@ -291,7 +291,19 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
         self.controls['time_window'].observe(on_change)
 
 
-def _prep_timeseries(time_series, time_window=None, order=None):
+def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
+    """Pull dataset region from entire dataset. Return tt and offests used for plotting
+
+    Parameters
+    ----------
+    time_series: TimeSeries
+    time_window
+    order
+
+    Returns
+    -------
+
+    """
     if time_window is None:
         t_ind_start = 0
         t_ind_stop = None
@@ -316,8 +328,7 @@ def _prep_timeseries(time_series, time_window=None, order=None):
 
 
 def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, ax=None, figsize=(9.7, 7),
-                        group_inds=None, labels=None, colors=color_wheel, show_legend=True,**kwargs):
-
+                        group_inds=None, labels=None, colors=color_wheel, show_legend=True, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
@@ -398,7 +409,8 @@ class BaseGroupedTraceWidget(widgets.HBox):
         """
 
         if dynamic_table_region_name is not None and foreign_group_and_sort_controller is not None:
-            raise TypeError('You cannot supply both `dynamic_table_region_name` and `foreign_group_and_sort_controller`.')
+            raise TypeError(
+                'You cannot supply both `dynamic_table_region_name` and `foreign_group_and_sort_controller`.')
 
         super().__init__()
         self.time_series = time_series

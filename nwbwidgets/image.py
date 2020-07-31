@@ -1,17 +1,20 @@
-from .controllers import StartAndDurationController
-from .utils.timeseries import get_timeseries_maxt, get_timeseries_mint
-from ipywidgets import widgets, fixed
+from pathlib import Path, PureWindowsPath
+
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import pynwb
+from ipywidgets import widgets, fixed
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
-from .base import fig2widget
 from tifffile import imread, TiffFile
-from pathlib import Path, PureWindowsPath
+
+from .base import fig2widget
+from .controllers import StartAndDurationController
+from .utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 
 
 class ImageSeriesWidget(widgets.VBox):
     """Widget showing ImageSeries."""
+
     def __init__(self, imageseries: ImageSeries,
                  foreign_time_window_controller: StartAndDurationController = None,
                  **kwargs):
@@ -83,7 +86,6 @@ class ImageSeriesWidget(widgets.VBox):
 
 
 def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
-
     def show_image(index=0):
         fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
         ax.imshow(image_series.data[index, :, :], cmap='gray')

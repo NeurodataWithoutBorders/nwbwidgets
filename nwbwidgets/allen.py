@@ -1,16 +1,15 @@
 from typing import Iterable
 
-import numpy as np
-
-from pynwb.misc import Units
 import ipywidgets as widgets
+import numpy as np
 from hdmf.common import DynamicTable
+from pynwb.misc import Units
 
-from .misc import RasterWidget, PSTHWidget, RasterGridWidget
-from .view import default_neurodata_vis_spec
-from .utils.pynwb import robust_unique
-from .controllers import GroupAndSortController
 from .base import lazy_tabs, render_dataframe
+from .controllers import GroupAndSortController
+from .misc import RasterWidget, PSTHWidget, RasterGridWidget
+from .utils.pynwb import robust_unique
+from .view import default_neurodata_vis_spec
 
 
 class AllenRasterWidget(RasterWidget):
@@ -19,11 +18,9 @@ class AllenRasterWidget(RasterWidget):
 
 
 class TimeIntervalsSelector(widgets.VBox):
-
     InnerWidget = None
 
     def __init__(self, units, **kwargs):
-
         super().__init__()
         self.units = units
         self.kwargs = kwargs

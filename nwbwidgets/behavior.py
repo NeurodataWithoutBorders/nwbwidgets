@@ -1,15 +1,15 @@
-from nwbwidgets import view
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from ipywidgets import widgets
-from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 from nwbwidgets import base
-from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
+from nwbwidgets import view
 from plotly import graph_objects as go
+from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
+
+from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
 
 
 def show_position(node: Position, neurodata_vis_spec: dict):
-
     if len(node.spatial_series.keys()) == 1:
         for value in node.spatial_series.values():
             return view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec)
@@ -22,7 +22,6 @@ def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dic
 
 
 def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
-
     text_widget = base.show_text_fields(
         node, exclude=('timestamps_unit', 'comments', 'data', 'timestamps', 'interval'))
 
@@ -59,7 +58,6 @@ def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
 
 
 def show_spatial_series(node: SpatialSeries, **kwargs):
-
     data, unit = get_timeseries_in_units(node)
     tt = get_timeseries_tt(node)
 
@@ -131,14 +129,12 @@ def plotly_show_spatial_trace(node):
         if unit:
             fig.update_xaxes(title_text='x ({})'.format(unit))
             fig.update_yaxes(title_text='y ({})'.format(unit))
-            #fig.update_zaxes(title_text='z ({})'.format(unit))
+            # fig.update_zaxes(title_text='z ({})'.format(unit))
         else:
             fig.update_xaxes(title_text='x')
             fig.update_yaxes(title_text='y')
-            #fig.update_zaxes(title_text='z')
+            # fig.update_zaxes(title_text='z')
 
     fig.update_layout(title=node.name, hovermode=False)
 
     return fig
-
-

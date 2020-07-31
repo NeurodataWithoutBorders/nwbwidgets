@@ -1,21 +1,20 @@
-import pynwb
-import ndx_grayscalevolume
 from collections import OrderedDict
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
-import hdmf
-from ndx_icephys_meta.icephys import SweepSequences
-from ipywidgets import widgets
-from .ecephys import ElectrodesWidget
-from .base import render_dataframe
+
 import h5py
+import hdmf
+import ndx_grayscalevolume
+import pynwb
 import zarr
+from ipywidgets import widgets
+from ndx_icephys_meta.icephys import SweepSequences
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
 def show_dynamic_table(node, **kwargs) -> widgets.Widget:
     if node.name == 'electrodes':
-        return ElectrodesWidget(node)
-    return render_dataframe(node)
+        return ecephys.ElectrodesWidget(node)
+    return base.render_dataframe(node)
 
 
 default_neurodata_vis_spec = {

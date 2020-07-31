@@ -1,12 +1,14 @@
+from functools import partial
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from ipywidgets import widgets
+from matplotlib.pyplot import Figure
+from ndx_icephys_meta.icephys import SweepSequences
+
 from .base import lazy_show_over_data, GroupingWidget
 from .timeseries import show_indexed_timeseries_mpl
-from ipywidgets import widgets
-import matplotlib.pyplot as plt
-from ndx_icephys_meta.icephys import SweepSequences
-from functools import partial
-import numpy as np
-from matplotlib.pyplot import Figure
-import pandas as pd
 
 
 def show_single_sweep_sequence(sweep_sequence, axs=None, title=None, **kwargs) -> Figure:
@@ -35,7 +37,8 @@ def show_single_sweep_sequence(sweep_sequence, axs=None, title=None, **kwargs) -
         fig = axs[0].get_figure()
     for i in range(nsweeps):
         start, stop, ts = sweep_sequence['recordings'].iloc[i]['response'].iloc[0]
-        show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[0], zero_start=True, xlabel='', title=title, **kwargs)
+        show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[0], zero_start=True, xlabel='', title=title,
+                                    **kwargs)
 
         start, stop, ts = sweep_sequence['recordings'].iloc[i]['stimulus'].iloc[0]
         show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[1], zero_start=True, **kwargs)
@@ -67,7 +70,7 @@ def show_sweep_sequence_reps(stim_df: pd.DataFrame, **kwargs) -> Figure:
     for i, (sweep, sweep_axs) in enumerate(zip(stim_df['sweeps'], axs.T)):
         if i:
             kwargs.update(ylabel='')
-        show_single_sweep_sequence(sweep, axs=sweep_axs, title='rep {}'.format(i+1), **kwargs)
+        show_single_sweep_sequence(sweep, axs=sweep_axs, title='rep {}'.format(i + 1), **kwargs)
     return fig
 
 

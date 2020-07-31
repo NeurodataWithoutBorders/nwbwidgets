@@ -1,10 +1,11 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from ipywidgets import widgets
-from scipy.signal import stft
-from pynwb.ecephys import LFP, SpikeEventSeries, ElectricalSeries
-from .base import fig2widget, nwb2widget
+import numpy as np
 from IPython import display
+from ipywidgets import widgets
+from pynwb.ecephys import LFP, SpikeEventSeries, ElectricalSeries
+from scipy.signal import stft
+
+from .base import fig2widget, nwb2widget
 from .timeseries import BaseGroupedTraceWidget
 
 
@@ -15,7 +16,7 @@ def show_lfp(node: LFP, neurodata_vis_spec: dict):
 
 def show_spectrogram(neurodata, channel=0, **kwargs):
     fig, ax = plt.subplots()
-    f, t, Zxx = stft(neurodata.data[:, channel], neurodata.rate, nperseg=2*17)
+    f, t, Zxx = stft(neurodata.data[:, channel], neurodata.rate, nperseg=2 * 17)
     ax.imshow(np.log(np.abs(Zxx)), aspect='auto', extent=[0, max(t), 0, max(f)], origin='lower')
     ax.set_ylim(0, max(f))
     ax.set_xlabel('time')
@@ -54,7 +55,7 @@ def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
     # Controls
     field_lay = widgets.Layout(max_height='40px', max_width='100px',
                                min_height='30px', min_width='70px')
-    spk_ind = widgets.BoundedIntText(value=0, min=0, max=nSpikes-1,
+    spk_ind = widgets.BoundedIntText(value=0, min=0, max=nSpikes - 1,
                                      layout=field_lay)
     controls = {'spk_ind': spk_ind}
     out_fig = widgets.interactive_output(control_plot, controls)

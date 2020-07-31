@@ -1,12 +1,13 @@
-from ipywidgets import widgets, Layout, ValueWidget, link, HBox
-from ipywidgets.widgets.widget_description import DescriptionWidget
-import numpy as np
-from hdmf.common import DynamicTable
-from .utils.dynamictable import group_and_sort, infer_categorical_columns
-from .utils.pynwb import robust_unique
 from typing import Iterable
 
+import numpy as np
+from hdmf.common import DynamicTable
+from ipywidgets import widgets, Layout, ValueWidget, link, HBox
+from ipywidgets.widgets.widget_description import DescriptionWidget
 from tqdm.notebook import tqdm as tqdm_notebook
+
+from .utils.dynamictable import group_and_sort, infer_categorical_columns
+from .utils.pynwb import robust_unique
 
 
 class RangeController(widgets.HBox, ValueWidget, DescriptionWidget):
@@ -139,6 +140,7 @@ class StartAndDurationController(HBox, ValueWidget, DescriptionWidget):
     """
     Can be used in place of the RangeController.
     """
+
     def __init__(self, tmax, tmin=0, start_value=None, duration=1., dtype='float', description='window (s)',
                  **kwargs):
 
@@ -232,6 +234,7 @@ class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
         labels=array-like(str) | None
     )
     """
+
     def __init__(self, dynamic_table: DynamicTable):
         super().__init__()
 
@@ -282,7 +285,8 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         range_controller_max = min(30, self.nitems)
         if window is None:
-            self.range_controller = RangeController(0, self.nitems, start_value=(0, range_controller_max), dtype='int', description='units',
+            self.range_controller = RangeController(0, self.nitems, start_value=(0, range_controller_max), dtype='int',
+                                                    description='units',
                                                     orientation='vertical')
             self.range_controller.observe(self.range_controller_observer)
             self.window = self.range_controller.value
@@ -329,7 +333,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.group_sm.options = tuple(groups[::-1])
         self.group_sm.value = self.group_sm.options
         self.group_sm.disabled = False
-        self.group_sm.rows = min(len(groups)+1, 20)
+        self.group_sm.rows = min(len(groups) + 1, 20)
         self.limit_cb.disabled = False
         self.group_and_sort()
 

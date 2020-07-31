@@ -1,8 +1,11 @@
+import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.graph_objects as go
 from ndx_grayscalevolume import GrayscaleVolume
 from pynwb.base import NWBDataInterface
 from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhotonSeries, ImageSegmentation
+from skimage import measure
 from tifffile import imread, TiffFile
 
 from .timeseries import BaseGroupedTraceWidget
@@ -10,15 +13,12 @@ from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .utils.functional import MemoizeMutable
 
-import ipywidgets as widgets
-import plotly.graph_objects as go
-from skimage import measure
-
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
 
 class TwoPhotonSeriesWidget(widgets.VBox):
     """Widget showing Image stack recorded over time from 2-photon microscope."""
+
     def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
         super().__init__()
 
@@ -41,6 +41,7 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                     output.clear_output(wait=True)
                     with output:
                         plt.show(fig)
+
                 slider = widgets.IntSlider(value=0, min=0,
                                            max=n_samples - 1,
                                            orientation='horizontal')
@@ -180,10 +181,10 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
                 **kwargs
             )
         )
-        #fig.update_layout(
+        # fig.update_layout(
         #    margin=go.layout.Margin(l=60, r=60, b=60, t=60, pad=1),
         #    plot_bgcolor="rgb(245, 245, 245)",
-        #)
+        # )
         width = 800
         fig.update_layout(
             width=width,

@@ -1,25 +1,21 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.graph_objects as go
 import pynwb
 import scipy
-from ipywidgets import widgets, fixed, FloatProgress
+from ipywidgets import widgets, fixed, FloatProgress, Layout
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
+from .analysis.spikes import compute_smoothed_firing_rate
 from .controllers import make_trial_event_controller, GroupAndSortController, StartAndDurationController, ProgressBar
 from .utils.dynamictable import infer_categorical_columns
+from .utils.mpl import create_big_ax
+from .utils.plotly import event_group
 from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals, \
     get_unobserved_intervals
-from .utils.mpl import create_big_ax
 from .utils.widgets import interactive_output
-from .analysis.spikes import compute_smoothed_firing_rate
-from .utils.plotly import event_group, Peekaboo
-import plotly.graph_objects as go
-
-
-from ipywidgets import Layout
 
 color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -129,21 +125,21 @@ class RasterWidget(widgets.HBox):
             )
         else:
             right_panel = widgets.VBox(
-                        children=[
-                            self.time_window_controller,
-                            self.progress_bar,
-                            out_fig,
-                        ],
-                        layout=Layout(width="100%")
-                    )
+                children=[
+                    self.time_window_controller,
+                    self.progress_bar,
+                    out_fig,
+                ],
+                layout=Layout(width="100%")
+            )
 
         if foreign_group_and_sort_controller:
             self.children = [right_panel]
         else:
             self.children = [
-                    self.gas,
-                    right_panel
-                ]
+                self.gas,
+                right_panel
+            ]
 
         self.layout = Layout(width="100%")
 
@@ -167,7 +163,7 @@ def show_decomposition_series(node, **kwargs):
                                min_height='30px', min_width='130px')
     vbox = []
     for key, val in node.fields.items():
-        lbl_key = widgets.Label(key+':', layout=field_lay)
+        lbl_key = widgets.Label(key + ':', layout=field_lay)
         lbl_val = widgets.Label(str(val), layout=field_lay)
         vbox.append(widgets.HBox(children=[lbl_key, lbl_val]))
     children[0] = widgets.VBox(vbox)
@@ -185,17 +181,17 @@ def show_decomposition_traces(node: DecompositionSeries):
     def control_plot(x0, x1, ch0, ch1):
         fig, ax = plt.subplots(nrows=nBands, ncols=1, sharex=True, figsize=(14, 7))
         for bd in range(nBands):
-            data = node.data[x0:x1, ch0:ch1+1, bd]
+            data = node.data[x0:x1, ch0:ch1 + 1, bd]
             xx = np.arange(x0, x1)
             mu_array = np.mean(data, 0)
             sd_array = np.std(data, 0)
             offset = np.mean(sd_array) * 5
-            yticks = [i*offset for i in range(ch1+1-ch0)]
-            for i in range(ch1+1-ch0):
+            yticks = [i * offset for i in range(ch1 + 1 - ch0)]
+            for i in range(ch1 + 1 - ch0):
                 ax[bd].plot(xx, data[:, i] - mu_array[i] + yticks[i])
             ax[bd].set_ylabel('Ch #', fontsize=20)
             ax[bd].set_yticks(yticks)
-            ax[bd].set_yticklabels([str(i) for i in range(ch0, ch1+1)])
+            ax[bd].set_yticklabels([str(i) for i in range(ch0, ch1 + 1)])
             ax[bd].tick_params(axis='both', which='major', labelsize=16)
         ax[bd].set_xlabel('Time [ms]', fontsize=20)
         return fig
@@ -208,12 +204,12 @@ def show_decomposition_traces(node: DecompositionSeries):
     # Controls
     field_lay = widgets.Layout(max_height='40px', max_width='100px',
                                min_height='30px', min_width='70px')
-    x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000*nSamples/fs-100),
+    x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000 * nSamples / fs - 100),
                                 layout=field_lay)
-    x1 = widgets.BoundedIntText(value=nSamples, min=100, max=int(1000*nSamples/fs),
+    x1 = widgets.BoundedIntText(value=nSamples, min=100, max=int(1000 * nSamples / fs),
                                 layout=field_lay)
-    ch0 = widgets.BoundedIntText(value=0, min=0, max=int(nChannels-1), layout=field_lay)
-    ch1 = widgets.BoundedIntText(value=10, min=0, max=int(nChannels-1), layout=field_lay)
+    ch0 = widgets.BoundedIntText(value=0, min=0, max=int(nChannels - 1), layout=field_lay)
+    ch1 = widgets.BoundedIntText(value=10, min=0, max=int(nChannels - 1), layout=field_lay)
 
     controls = {
         'x0': x0,
@@ -268,7 +264,7 @@ class PSTHWidget(widgets.VBox):
             before=before_slider,
             start_label=trial_event_controller,
             gas=self.gas,
-            #progress_bar=fixed(progress_bar)
+            # progress_bar=fixed(progress_bar)
         )
 
         out_fig = interactive_output(trials_psth, self.controls)
@@ -349,7 +345,6 @@ def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
 
 def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000,
                        align_line_color=(.7, .7, .7)):
-
     all_data = np.hstack(data)
     if not len(all_data):
         return
@@ -635,7 +630,6 @@ class RasterGridWidget(widgets.VBox):
 
 def plot_grouped_events_plotly(data, window=None, group_inds=None, colors=color_wheel, labels=None,
                                show_legend=True, unobserved_intervals_list=None, progress_bar=None, fig=None, **kwargs):
-
     data = np.array(data, dtype=object)
 
     if fig is None:
@@ -706,21 +700,21 @@ class RasterWidgetPlotly(widgets.HBox):
             )
         else:
             right_panel = widgets.VBox(
-                        children=[
-                            self.time_window_controller,
-                            self.fig,
-                            self.show_legend_cb
-                        ],
-                        layout=Layout(width="100%")
-                    )
+                children=[
+                    self.time_window_controller,
+                    self.fig,
+                    self.show_legend_cb
+                ],
+                layout=Layout(width="100%")
+            )
 
         if foreign_group_and_sort_controller:
             self.children = [right_panel]
         else:
             self.children = [
-                    self.gas,
-                    right_panel
-                ]
+                self.gas,
+                right_panel
+            ]
 
         self.layout = Layout(width="100%")
 
@@ -776,9 +770,9 @@ def show_session_raster_plotly(units: Units, fig, time_window=None, order=None, 
     for unit in this_iter:
         data.append(get_spike_times(units, unit, time_window))
 
-    #if show_obs_intervals:
+    # if show_obs_intervals:
     #    unobserved_intervals_list = get_unobserved_intervals(units, time_window, order)
-    #else:
+    # else:
     #    unobserved_intervals_list = None
 
     fig.update_yaxes(tickvals=[], ticktext=[])
@@ -795,6 +789,6 @@ def show_session_raster_plotly(units: Units, fig, time_window=None, order=None, 
         xaxis_title="time (s)",
         legend=dict(x=1., y=0, traceorder='reversed'),
         xaxis=dict(range=time_window),
-        yaxis=dict(range=[-.5, len(order)+.5]))
+        yaxis=dict(range=[-.5, len(order) + .5]))
 
     return fig
