@@ -1,6 +1,5 @@
 import plotly.graph_objects as go
 import numpy as np
-from ipywidgets import widgets
 
 
 def multi_trace(x, y, color, label=None, fig=None):
@@ -74,22 +73,3 @@ def event_group(times_list, offset=0, color='Black', label=None, fig=None, marke
 
     return fig
 
-
-class Peekaboo:
-    """Make a plotly figure disappear as it is being updated"""
-
-    def __init__(self, container, index, placeholder=widgets.HTML('Rendering...')):
-        self.container = container
-        self.index = index
-        self.placeholder = placeholder
-
-    def __enter__(self):
-
-        self.children = list(self.container.children)
-        self.fig = self.children[self.index]
-        self.children[self.index] = self.placeholder
-        self.container.children = self.children
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.children[self.index] = self.fig
-        self.container.children = self.children
