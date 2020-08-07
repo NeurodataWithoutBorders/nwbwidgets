@@ -160,7 +160,7 @@ class StartAndDurationController(HBox, ValueWidget, DescriptionWidget):
             readout=True,
             readout_format='.2f',
             style={'description_width': 'initial'},
-            layout=Layout(width='100%', min_width='500px'))
+            layout=Layout(width='100%', min_width='450px'))
 
         self.duration = widgets.BoundedFloatText(
             value=duration,

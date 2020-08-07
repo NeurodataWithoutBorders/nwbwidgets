@@ -176,7 +176,8 @@ class AbstractTraceWidget(widgets.VBox):
         return
 
     def set_controls(self, **kwargs):
-        self.controls.update(timeseries=fixed(self.timeseries), time_window=self.time_window_controller)
+        self.controls.update(timeseries=fixed(self.timeseries),
+                             time_window=self.time_window_controller)
         self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
     def set_out_fig(self):

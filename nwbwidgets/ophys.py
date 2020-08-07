@@ -152,10 +152,12 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
         else:
             show_leg = False
         kwargs = dict()
-
+        layout_kwargs = dict()
         if color_by:
             c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
             kwargs.update(line_color=c)
+        else:
+            layout_kwargs.update(title=color_by)
         # hover text
         hovertext = '<b>roi_id</b>: ' + str(plane_seg.id[i])
         rois_cols = list(plane_seg.colnames)
@@ -185,20 +187,28 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
         #    margin=go.layout.Margin(l=60, r=60, b=60, t=60, pad=1),
         #    plot_bgcolor="rgb(245, 245, 245)",
         # )
-        width = 800
+        width = 600
         fig.update_layout(
             width=width,
-            height=width * plane_seg['image_mask'].shape[2] / plane_seg['image_mask'].shape[1],
+            #height=width * plane_seg['image_mask'].shape[2] / plane_seg['image_mask'].shape[1],
             yaxis=dict(
                 range=[0, plane_seg['image_mask'].shape[2]],
-                mirror=True
+                mirror=True,
+                scaleanchor="x",
+                scaleratio=1
             ),
-            title=color_by,
             xaxis=dict(
                 range=[0, plane_seg['image_mask'].shape[1]],
                 mirror=True
-            )
+            ),
+            margin=dict(t=5),
+            **layout_kwargs
         )
+    fig.update_layout(
+        yaxis=dict(
+            range=[0, plane_seg['image_mask'].shape[2]]
+        )
+    )
 
     return fig
 
@@ -233,7 +243,6 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         cats = np.unique(self.plane_seg[color_by][:])
         legendgroups = []
         with self.fig.batch_update():
-            self.fig.update_layout(title=color_by)
             for color_val, data in zip(self.plane_seg[color_by][:], self.fig.data):
                 color = self.color_wheel[np.where(cats == color_val)[0][0]]  # store the color
                 data.line.color = color  # set the color
@@ -249,7 +258,6 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                 yaxis=dict(
                     range=[0, self.plane_seg['image_mask'].shape[2]]
                 ),
-                title=color_by,
                 xaxis=dict(
                     range=[0, self.plane_seg['image_mask'].shape[1]]
                 )
