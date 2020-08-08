@@ -94,8 +94,7 @@ class RasterWidget(widgets.HBox):
         if foreign_time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
-            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
-                                                                     duration=5)
+            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
         else:
             self.time_window_controller = foreign_time_window_controller
 
@@ -670,8 +669,7 @@ class RasterWidgetPlotly(widgets.HBox):
         if foreign_time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
-            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
-                                                                     duration=5)
+            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
         else:
             self.time_window_controller = foreign_time_window_controller
 

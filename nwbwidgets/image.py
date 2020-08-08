@@ -27,8 +27,7 @@ class ImageSeriesWidget(widgets.VBox):
         if foreign_time_window_controller is None:
             tmin = get_timeseries_mint(imageseries)
             tmax = get_timeseries_maxt(imageseries)
-            self.time_window_controller = StartAndDurationController(
-                tmax, tmin, start_value=tmin, duration=min(5, tmax - tmin))
+            self.time_window_controller = StartAndDurationController(tmax, tmin)
         else:
             self.time_window_controller = foreign_time_window_controller
         self.set_controls(**kwargs)

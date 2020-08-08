@@ -36,6 +36,7 @@ def show_timeseries_mpl(time_series: TimeSeries, time_window=None, ax=None, zero
     xlabel: str
     ylabel: str
     title: str
+    figsize: tuple, optional
     kwargs
 
     Returns
@@ -159,8 +160,7 @@ class AbstractTraceWidget(widgets.VBox):
         if foreign_time_window_controller is None:
             tmin = get_timeseries_mint(timeseries)
             tmax = get_timeseries_maxt(timeseries)
-            self.time_window_controller = StartAndDurationController(
-                tmax, tmin, start_value=tmin, duration=min(5, tmax - tmin))
+            self.time_window_controller = StartAndDurationController(tmax, tmin)
         else:
             self.time_window_controller = foreign_time_window_controller
 
@@ -421,8 +421,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
         else:
             self.tmin = get_timeseries_mint(time_series)
             self.tmax = get_timeseries_maxt(time_series)
-            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
-                                                                     duration=5)
+            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
 
         self.controls = dict(
             time_series=widgets.fixed(self.time_series),
@@ -487,8 +486,7 @@ class MultiTimeSeriesWidget(widgets.VBox):
         else:
             self.tmin = min(get_timeseries_mint(time_series) for time_series in time_series_list)
             self.tmax = max(get_timeseries_maxt(time_series) for time_series in time_series_list)
-        self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
-                                                                 duration=5)
+        self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
 
         widgets = [widget_class(time_series, foreign_time_window_controller=self.time_window_controller)
                    for widget_class, time_series in zip(widget_class_list, time_series_list)]
