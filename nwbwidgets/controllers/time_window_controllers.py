@@ -41,17 +41,9 @@ class WindowController(HBox, ValueWidget, DescriptionWidget):
     #    """Must be window in seconds"""
     #    pass
 
+    @abstractmethod
     def get_children(self):
-
-        if self.orientation == 'horizontal':
-            return self.get_element_order()
-        else:
-            return [widgets.VBox(
-                self.get_element_order(),
-                layout=widgets.Layout(display='flex',
-                                      flex_flow='column',
-                                      align_items='center')
-            )]
+        pass
 
     @abstractmethod
     def move_up(self, change):
@@ -67,10 +59,6 @@ class WindowController(HBox, ValueWidget, DescriptionWidget):
 
     @abstractmethod
     def move_end(self, change):
-        pass
-
-    @abstractmethod
-    def get_element_order(self):
         pass
 
 
@@ -151,14 +139,29 @@ class RangeController(WindowController):
         value_range = self.value[1] - self.value[0]
         self.value = (self.vmax - value_range, self.vmax)
 
-    def get_element_order(self):
-        return [
-            self.slider,
-            self.to_start_button,
-            self.backwards_button,
-            self.forward_button,
-            self.to_end_button
-        ]
+    def get_children(self):
+
+        if self.orientation == 'horizontal':
+            return [
+                self.slider,
+                self.to_start_button,
+                self.forward_button,
+                self.backwards_button,
+                self.to_end_button
+            ]
+        else:
+            return [widgets.VBox(
+                [
+                    self.slider,
+                    self.to_end_button,
+                    self.forward_button,
+                    self.backwards_button,
+                    self.to_start_button,
+                ],
+                layout=widgets.Layout(display='flex',
+                                      flex_flow='column',
+                                      align_items='center')
+            )]
 
 
 class StartAndDurationController(WindowController):
@@ -182,6 +185,9 @@ class StartAndDurationController(WindowController):
         kwargs: dict
         """
 
+        if tmin > tmax:
+            raise ValueError('tmax and tmin were probably entered in the wrong order. tmax should be first')
+
         super().__init__(tmin, tmax, start_value, description, **kwargs)
 
         self.slider = widgets.FloatSlider(
@@ -195,7 +201,7 @@ class StartAndDurationController(WindowController):
             readout=True,
             readout_format='.2f',
             style={'description_width': 'initial'},
-            layout=Layout(width='100%', min_width='450px'))
+            layout=Layout(width='100%', min_width='250px'))
 
         link((self.slider, 'description'), (self, 'description'))
 
@@ -262,12 +268,29 @@ class StartAndDurationController(WindowController):
     def move_end(self, change):
         self.slider.value = self.vmax - self.duration.value
 
-    def get_element_order(self):
-        return [
-            self.slider,
-            self.duration,
-            self.to_start_button,
-            self.backwards_button,
-            self.forward_button,
-            self.to_end_button
-        ]
+    def get_children(self):
+
+        if self.orientation == 'horizontal':
+            return [
+                self.slider,
+                self.duration,
+                self.to_start_button,
+                self.backwards_button,
+                self.forward_button,
+                self.to_end_button
+            ]
+        else:
+            return [widgets.VBox(
+                [
+                    self.slider,
+                    self.duration,
+                    self.to_end_button,
+                    self.forward_button,
+                    self.backwards_button,
+                    self.to_start_button,
+
+                ],
+                layout=widgets.Layout(display='flex',
+                                      flex_flow='column',
+                                      align_items='center')
+            )]
