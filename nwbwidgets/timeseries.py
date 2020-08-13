@@ -361,7 +361,7 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
     ax.set_xlabel('time (s)')
 
     if len(offsets) > 1:
-        ax.set_ylim(-offsets[0], offsets[-1] + offsets[0])
+        ax.set_ylim(offsets[0] - (offsets[1] - offsets[0])/2, offsets[-1] + (offsets[-1] - offsets[-2])/2)
     if len(order) <= 30:
         ax.set_yticks(offsets)
         ax.set_yticklabels(order)
