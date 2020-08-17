@@ -5,6 +5,8 @@ from ipywidgets import widgets
 from pynwb.ecephys import LFP, SpikeEventSeries, ElectricalSeries
 from scipy.signal import stft
 
+import plotly.graph_objects as go
+
 from .base import fig2widget, nwb2widget
 from .timeseries import BaseGroupedTraceWidget
 
@@ -89,3 +91,25 @@ class ElectricalSeriesWidget(BaseGroupedTraceWidget):
                          foreign_time_window_controller=foreign_time_window_controller,
                          foreign_group_and_sort_controller=foreign_group_and_sort_controller,
                          **kwargs)
+
+
+class SpectrumWidget(widgets.HBox):
+
+    def __init__(self, spectrum, **kwargs):
+        super().__init__()
+        self.fig = go.FigureWidget()
+
+        for i, power in enumerate(spectrum.power[:].T):
+            self.fig.add_trace(
+                go.Scatter(
+                    x=spectrum.frequencies[:],
+                    y=power,
+                    hovertext='channel {}'.format(i),
+                    name='channel {}'.format(i)
+                )
+            )
+            self.fig.update_layout(
+                xaxis_title='frequency (Hz)',
+                yaxis_title='power'
+            )
+        self.children = [self.fig]

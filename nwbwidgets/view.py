@@ -7,6 +7,7 @@ import pynwb
 import zarr
 from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
+from ndx_spectrum import Spectrum
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
 
 
@@ -58,7 +59,8 @@ default_neurodata_vis_spec = {
     pynwb.core.NWBContainer: base.show_neurodata_base,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
     h5py.Dataset: base.show_dset,
-    zarr.core.Array: base.show_dset
+    zarr.core.Array: base.show_dset,
+    Spectrum: ecephys.SpectrumWidget
 }
 
 
