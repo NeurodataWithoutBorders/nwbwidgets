@@ -170,7 +170,7 @@ class StartAndDurationController(WindowController):
     """
     DEFAULT_DURATION = 5
 
-    def __init__(self, tmax, tmin=0, start_value=None, description='window (s)', **kwargs):
+    def __init__(self, tmax, tmin=0, start_value=None, description='start (s)', **kwargs):
         """
 
         Parameters
