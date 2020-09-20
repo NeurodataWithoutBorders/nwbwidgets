@@ -170,7 +170,7 @@ class StartAndDurationController(WindowController):
     """
     DEFAULT_DURATION = 5
 
-    def __init__(self, tmax, tmin=0, start_value=None, description='window (s)', **kwargs):
+    def __init__(self, tmax, tmin=0, start_value=None, description='start (s)', **kwargs):
         """
 
         Parameters
@@ -274,20 +274,20 @@ class StartAndDurationController(WindowController):
             return [
                 self.slider,
                 self.duration,
-                self.to_start_button,
+                #self.to_start_button,
                 self.backwards_button,
                 self.forward_button,
-                self.to_end_button
+                #self.to_end_button
             ]
         else:
             return [widgets.VBox(
                 [
                     self.slider,
                     self.duration,
-                    self.to_end_button,
+                    #self.to_end_button,
                     self.forward_button,
                     self.backwards_button,
-                    self.to_start_button,
+                    #self.to_start_button,
 
                 ],
                 layout=widgets.Layout(display='flex',

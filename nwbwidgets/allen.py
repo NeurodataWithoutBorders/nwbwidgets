@@ -13,8 +13,10 @@ from .view import default_neurodata_vis_spec
 
 
 class AllenRasterWidget(RasterWidget):
-    def make_group_and_sort(self, group_by=None):
-        return AllenRasterGroupAndSortController(self.units, group_by=group_by)
+    def make_group_and_sort(self, group_by=None, control_order=False):
+        return AllenRasterGroupAndSortController(self.units,
+                                                 group_by=group_by,
+                                                 control_order=control_order)
 
 
 class TimeIntervalsSelector(widgets.VBox):
@@ -101,4 +103,4 @@ def load_allen_widgets():
     default_neurodata_vis_spec[Units]['Session Raster'] = AllenRasterWidget
     default_neurodata_vis_spec[Units]['Grouped PSTH'] = AllenPSTHWidget
     default_neurodata_vis_spec[Units]['Raster Grid'] = AllenRasterGridWidget
-    default_neurodata_vis_spec[DynamicTable] = allen_show_dynamic_table
+    #default_neurodata_vis_spec[DynamicTable] = allen_show_dynamic_table

@@ -101,7 +101,7 @@ class RasterWidget(widgets.HBox):
         if foreign_group_and_sort_controller:
             self.gas = foreign_group_and_sort_controller
         else:
-            self.gas = self.make_group_and_sort(group_by=group_by)
+            self.gas = self.make_group_and_sort(group_by=group_by, control_order=False)
 
         self.progress_bar = widgets.HBox()
 
@@ -142,8 +142,8 @@ class RasterWidget(widgets.HBox):
 
         self.layout = Layout(width="100%")
 
-    def make_group_and_sort(self, group_by=None):
-        return GroupAndSortController(self.units, group_by=group_by)
+    def make_group_and_sort(self, group_by=None, control_order=True):
+        return GroupAndSortController(self.units, group_by=group_by, control_order=control_order)
 
 
 def show_decomposition_series(node, **kwargs):
@@ -245,13 +245,15 @@ class PSTHWidget(widgets.VBox):
 
         if unit_controller is None:
             nunits = len(units['spike_times'].data)
-            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], value=unit_index, description='unit')
+            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], value=unit_index,
+                                               description='unit',
+                                               layout=Layout(width='200px'))
 
-        trial_event_controller = make_trial_event_controller(self.trials)
-        before_slider = widgets.FloatSlider(.5, min=0, max=5., description='before (s)', continuous_update=False)
-        after_slider = widgets.FloatSlider(2., min=0, max=5., description='after (s)', continuous_update=False)
+        trial_event_controller = make_trial_event_controller(self.trials, layout=Layout(width='200px'))
+        before_ft = widgets.FloatText(.5, min=0, description='before (s)', layout=Layout(width='200px'))
+        after_ft = widgets.FloatText(2., min=0, description='after (s)', layout=Layout(width='200px'))
 
-        self.gas = self.make_group_and_sort(window=False)
+        self.gas = self.make_group_and_sort(window=False, control_order=False)
 
         self.controls = dict(
             units=fixed(units),
@@ -259,8 +261,8 @@ class PSTHWidget(widgets.VBox):
             sigma_in_secs=fixed(sigma_in_secs),
             ntt=fixed(ntt),
             index=unit_controller,
-            after=after_slider,
-            before=before_slider,
+            after=after_ft,
+            before=before_ft,
             start_label=trial_event_controller,
             gas=self.gas,
             # progress_bar=fixed(progress_bar)
@@ -274,8 +276,8 @@ class PSTHWidget(widgets.VBox):
                 widgets.VBox([
                     unit_controller,
                     trial_event_controller,
-                    before_slider,
-                    after_slider,
+                    before_ft,
+                    after_ft,
                 ])
             ]),
             out_fig
@@ -284,13 +286,14 @@ class PSTHWidget(widgets.VBox):
     def get_trials(self):
         return self.units.get_ancestor('NWBFile').trials
 
-    def make_group_and_sort(self, window=None):
-        return GroupAndSortController(self.trials, window=window)
+    def make_group_and_sort(self, window=None, control_order=False):
+        return GroupAndSortController(self.trials, window=window, control_order=control_order)
 
 
 def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
                 before=0., after=1., order=None, group_inds=None, labels=None,
-                sigma_in_secs=0.05, ntt=1000, progress_bar=None, trials=None):
+                sigma_in_secs=0.05, ntt=1000, progress_bar=None, trials=None,
+                figsize=(7, 7)):
     """
 
     Parameters
@@ -311,6 +314,9 @@ def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
         standard deviation of gaussian kernel
     ntt:
         Number of time points to use for smooth curve
+    progress_bar:
+    trials:
+    figsize: tuple, optional
 
     Returns
     -------
@@ -329,7 +335,7 @@ def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
                                             order,
                                             progress_bar=progress_bar)
 
-    fig, axs = plt.subplots(2, 1, figsize=(10, 10))
+    fig, axs = plt.subplots(2, 1, figsize=figsize)
 
     show_psth_raster(data, before, after, group_inds, labels, ax=axs[0], progress_bar=progress_bar)
 
@@ -344,22 +350,26 @@ def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
 
 def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000,
                        align_line_color=(.7, .7, .7)):
-    all_data = np.hstack(data)
-    if not len(all_data):
+    if not len(data):  # TODO: when does this occur?
         return
+    all_data = np.hstack(data)
     tt = np.linspace(min(all_data), max(all_data), ntt)
     smoothed = np.array([compute_smoothed_firing_rate(x, tt, sigma_in_secs) for x in data])
 
     if group_inds is None:
-        group_inds = np.zeros((len(smoothed)))
+        group_inds = np.zeros((len(smoothed)), dtype=np.int)
     group_stats = []
-    for group in range(len(np.unique(group_inds))):
+    for group in np.unique(group_inds):
         this_mean = np.mean(smoothed[group_inds == group], axis=0)
         err = scipy.stats.sem(smoothed[group_inds == group], axis=0)
-        group_stats.append({'mean': this_mean,
-                            'lower': this_mean - 2 * err,
-                            'upper': this_mean + 2 * err})
-    for stats, color in zip(group_stats, color_wheel):
+        group_stats.append(
+            dict(mean=this_mean,
+                 lower=this_mean - 2 * err,
+                 upper=this_mean + 2 * err,
+                 group=group)
+        )
+    for stats in group_stats:
+        color = color_wheel[stats['group']]
         ax.plot(tt, stats['mean'], color=color)
         ax.fill_between(tt, stats['lower'], stats['upper'], alpha=.2, color=color)
     ax.set_xlim([-before, after])
@@ -370,7 +380,8 @@ def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.
 
 
 def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=None, labels=None,
-                        show_legend=True, offset=0, unobserved_intervals_list=None, progress_bar=None):
+                        show_legend=True, offset=0, unobserved_intervals_list=None, progress_bar=None,
+                        figsize=(8, 6)):
     """
 
     Parameters
@@ -386,6 +397,7 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
     offset: number, optional
     unobserved_intervals_list: array-like, optional
     progress_bar: FloatProgress, optional
+    figsize: tuple, optional
 
     Returns
     -------
@@ -395,7 +407,7 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
     data = np.asarray(data)
     legend_kwargs = dict()
     if ax is None:
-        fig, ax = plt.subplots(figsize=(9.7, 7))
+        fig, ax = plt.subplots(figsize=figsize)
         if hasattr(fig, 'canvas'):
             fig.canvas.header_visible = False
         else:
@@ -432,6 +444,7 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
     ax.set_ylim(np.array([-.5, len(data) - .5]) + offset)
     if len(data) <= 30:
         ax.set_yticks(range(offset, len(data) + offset))
+        ax.set_yticklabels(range(offset, len(data) + offset))
 
     return ax
 

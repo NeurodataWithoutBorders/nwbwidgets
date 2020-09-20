@@ -36,11 +36,11 @@ def show_single_sweep_sequence(sweep_sequence, axs=None, title=None, **kwargs) -
     else:
         fig = axs[0].get_figure()
     for i in range(nsweeps):
-        start, stop, ts = sweep_sequence['recordings'].iloc[i]['response'].iloc[0]
+        start, stop, ts = sweep_sequence['recordings'].iloc[i]['response'].iloc[0][0]
         show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[0], zero_start=True, xlabel='', title=title,
                                     **kwargs)
 
-        start, stop, ts = sweep_sequence['recordings'].iloc[i]['stimulus'].iloc[0]
+        start, stop, ts = sweep_sequence['recordings'].iloc[i]['stimulus'].iloc[0][0]
         show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[1], zero_start=True, **kwargs)
     return fig
 

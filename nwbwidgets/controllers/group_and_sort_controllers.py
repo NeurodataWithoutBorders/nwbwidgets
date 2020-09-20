@@ -37,7 +37,8 @@ class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
 
 
 class GroupAndSortController(AbstractGroupAndSortController):
-    def __init__(self, dynamic_table: DynamicTable, group_by=None, window=None, start_discard_rows=None):
+    def __init__(self, dynamic_table: DynamicTable, group_by=None, window=None, start_discard_rows=None,
+                 control_order=True, control_limit=True):
         """
 
         Parameters
@@ -49,6 +50,8 @@ class GroupAndSortController(AbstractGroupAndSortController):
         super().__init__(dynamic_table)
 
         groups = self.get_groups()
+        self.control_order = control_order
+        self.control_limit = control_limit
 
         self.discard_rows = start_discard_rows
 
@@ -56,9 +59,10 @@ class GroupAndSortController(AbstractGroupAndSortController):
                                                 layout=Layout(max_width='70px'))
         self.limit_bit.observe(self.limit_bit_observer)
 
-        self.limit_cb = widgets.Checkbox(description='limit', style={'description_width': 'initial'}, disabled=True,
-                                         indent=False, layout=Layout(max_width='70px'))
-        self.limit_cb.observe(self.limit_cb_observer)
+        if control_limit:
+            self.limit_cb = widgets.Checkbox(description='limit', style={'description_width': 'initial'}, disabled=True,
+                                             indent=False, layout=Layout(max_width='70px'))
+            self.limit_cb.observe(self.limit_cb_observer)
 
         self.order_dd = widgets.Dropdown(options=[None] + list(groups), description='order by',
                                          layout=Layout(max_width='120px'), style={'description_width': 'initial'})
@@ -95,14 +99,44 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.update_value()
 
     def get_children(self):
-        children = [
-            widgets.HBox(children=(self.group_sm, self.range_controller)),
-            widgets.HBox(children=(self.limit_cb, self.limit_bit), layout=Layout(max_width='90%')),
-            widgets.HBox(children=(self.order_dd, self.ascending_dd), layout=Layout(max_width='90%')),
-        ]
+        children = []
 
         if self.group_dd:
-            children.insert(0, self.group_dd)
+            children.append(self.group_dd)
+
+        children.append(
+            widgets.HBox(
+                children=(
+                    self.group_sm,
+                    self.range_controller)
+            )
+        )
+
+        if self.control_limit:
+            children.append(
+                widgets.HBox(
+                    children=(
+                        self.limit_cb,
+                        self.limit_bit
+                    ),
+                    layout=Layout(
+                        max_width='90%'
+                    )
+                )
+            )
+
+        if self.control_order:
+            children.append(
+                widgets.HBox(
+                    children=(
+                        self.order_dd,
+                        self.ascending_dd
+                    ),
+                    layout=Layout(
+                        max_width='90%'
+                    )
+                )
+            )
 
         return children
 
@@ -115,10 +149,10 @@ class GroupAndSortController(AbstractGroupAndSortController):
         if self.group_vals.dtype == np.float:
             group_vals = group_vals[~np.isnan(group_vals)]
         groups = np.unique(group_vals)
+        self.group_sm.rows = min(len(groups), 20)
         self.group_sm.options = tuple(groups[::-1])
         self.group_sm.value = self.group_sm.options
         self.group_sm.disabled = False
-        self.group_sm.rows = min(len(groups) + 1, 20)
         self.limit_cb.disabled = False
         self.group_and_sort()
 
@@ -133,6 +167,9 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 self.group_by = None
                 self.limit = None
                 self.limit_cb.value = False
+                self.group_sm.options = []
+                self.group_sm.visible = False
+                self.group_sm.rows = 1
 
                 if hasattr(self.range_controller, 'slider'):
                     if self.discard_rows is None:

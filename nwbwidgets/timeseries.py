@@ -70,7 +70,7 @@ def show_indexed_timeseries_mpl(node: TimeSeries, istart=0, istop=None, ax=None,
 
     ax.plot(tt, data, **kwargs)
     ax.set_xlabel(xlabel)
-    if node.unit:
+    if ylabel is not None:
         ax.set_ylabel(ylabel)
     if title is not None:
         ax.set_title(title)
@@ -78,6 +78,34 @@ def show_indexed_timeseries_mpl(node: TimeSeries, istart=0, istop=None, ax=None,
     ax.autoscale(enable=True, axis='x', tight=True)
 
     return ax
+
+
+def show_indexed_timeseries_plotly(
+        timeseries: TimeSeries, istart=None, istop=None,
+        fig: go.FigureWidget = None, col=None, row=None, zero_start=False,
+        xlabel='time (s)', ylabel=None, title=None,
+        neurodata_vis_spec=None, **kwargs):
+    if ylabel is None and timeseries.unit:
+        ylabel = timeseries.unit
+
+    tt = get_timeseries_tt(timeseries, istart=istart, istop=istop)
+    if zero_start:
+        tt = tt - tt[0]
+    data, unit = get_timeseries_in_units(timeseries, istart=istart, istop=istop)
+
+    trace_kwargs = dict()
+    if col is not None or row is not None:
+        trace_kwargs.update(row=row, col=col)
+    fig.add_trace(x=tt, y=data, **trace_kwargs, **kwargs)
+    layout_kwargs = dict(xaxis_title=xlabel)
+    if ylabel is not None:
+        layout_kwargs.update(yaxis_title=ylabel)
+    if title is not None:
+        layout_kwargs.update(title=title)
+
+    fig.update_layout(**layout_kwargs)
+
+
 
 
 def plot_traces(timeseries: TimeSeries, time_window=None, trace_window=None,

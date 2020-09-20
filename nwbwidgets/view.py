@@ -13,7 +13,7 @@ from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, tim
 # def show_dynamic_table(node: DynamicTable, **kwargs):
 def show_dynamic_table(node, **kwargs) -> widgets.Widget:
     if node.name == 'electrodes':
-        return ecephys.ElectrodesWidget(node)
+        return ecephys.show_electrodes(node)
     return base.render_dataframe(node)
 
 

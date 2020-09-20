@@ -303,3 +303,19 @@ def show_dict(in_dict) -> widgets.Widget:
         info.append(widgets.HBox(children=[lbl_key, lbl_val]))
     vbox = widgets.VBox(info)
     return vbox
+
+
+def df_to_hover_text(df: pd.DataFrame):
+    return [row_to_hover_text(row) for _, row in df.iterrows()]
+
+
+def row_to_hover_text(row):
+    text_rows = []
+    for key, val in list(row.to_dict().items()):
+        if isinstance(val, (int, float)) and abs(val) > 1e5:
+            text_rows.append('{}: {:.2e}'.format(key, val))
+        elif isinstance(val, (int, str)):
+            text_rows.append('{}: {}'.format(key, val))
+        elif isinstance(val, float):
+            text_rows.append('{}: {:.3f}'.format(key, val))
+    return '<br>'.join(text_rows)

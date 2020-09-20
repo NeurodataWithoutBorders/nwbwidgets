@@ -135,6 +135,13 @@ def plotly_show_spatial_trace(node):
             fig.update_yaxes(title_text='y')
             # fig.update_zaxes(title_text='z')
 
-    fig.update_layout(title=node.name, hovermode=False)
+    fig.update_layout(
+        hovermode=False,
+        margin=dict(t=5),
+        yaxis=dict(
+            scaleanchor="x",
+            scaleratio=1
+        )
+    )
 
     return fig
