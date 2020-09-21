@@ -3,7 +3,7 @@ from pathlib import Path, PureWindowsPath
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import pynwb
-from ipywidgets import widgets, fixed
+from ipywidgets import widgets, fixed, Layout
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
 from tifffile import imread, TiffFile
 
@@ -85,18 +85,27 @@ class ImageSeriesWidget(widgets.VBox):
 
 
 def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
-    def show_image(index=0):
+    def show_image(index=0, mode='rgb'):
         fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
-        ax.imshow(image_series.data[index, :, :], cmap='gray')
+        image = image_series.data[index, :, :]
+        if mode == 'bgr':
+            image = image[:, :, ::-1]
+        ax.imshow(image, cmap='gray', aspect='auto')
         fig.show()
         return fig2widget(fig)
 
     slider = widgets.IntSlider(value=0, min=0,
                                max=image_series.data.shape[0] - 1,
-                               orientation='horizontal')
-    controls = {'index': slider}
+                               orientation='horizontal',
+                               continuous_update=False,
+                               description='index')
+    mode = widgets.Dropdown(options=('rgb', 'bgr'),
+                            layout=Layout(width='200px'),
+                            description='mode')
+    controls = {'index': slider, 'mode': mode}
     out_fig = widgets.interactive_output(show_image, controls)
-    vbox = widgets.VBox(children=[out_fig, slider])
+    vbox = widgets.VBox(children=[
+        out_fig, slider, mode])
 
     return vbox
 
