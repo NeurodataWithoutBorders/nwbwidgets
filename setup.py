@@ -7,7 +7,7 @@ with open('README.md') as f:
 setup(
     author='Ben Dichter',
     author_email='ben.dichter@catalystneuro.com',
-    version='0.4.0',
+    version='0.5.0',
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
                  'Framework :: Jupyter',
