@@ -38,7 +38,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     name='nwbwidgets',
-    packages=['nwbwidgets', 'nwbwidgets/utils', 'nwbwidgets/analysis'],
+    packages=['nwbwidgets', 'nwbwidgets/utils', 'nwbwidgets/analysis', 'nwbwidgets/controllers'],
     python_requires='>=2.7',
     setup_requires=['setuptools>=38.6.0', 'setuptools_scm'],
     url='https://github.com/NeurodataWithoutBorders/nwb-jupyter-widgets')
