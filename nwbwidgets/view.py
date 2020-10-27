@@ -29,7 +29,6 @@ default_neurodata_vis_spec = {
         'table': show_dynamic_table}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_fields,
-    pynwb.ophys.ImagingPlane: base.show_fields,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
     pynwb.ophys.ImageSegmentation: ophys.show_image_segmentation,
     pynwb.ophys.TwoPhotonSeries: ophys.TwoPhotonSeriesWidget,
