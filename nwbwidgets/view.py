@@ -7,7 +7,7 @@ import pynwb
 import zarr
 from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file, placefield
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
@@ -47,7 +47,8 @@ default_neurodata_vis_spec = {
     pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: OrderedDict({
         'over time': timeseries.SeparateTracesPlotlyWidget,
-        'trace': behavior.plotly_show_spatial_trace}),
+        'trace': behavior.plotly_show_spatial_trace,
+        'rate map': placefield.PlaceFieldWidget}),
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
     pynwb.image.RGBImage: image.show_rbga_image,
     pynwb.image.RGBAImage: image.show_rbga_image,
