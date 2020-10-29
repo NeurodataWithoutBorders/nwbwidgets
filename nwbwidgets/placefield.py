@@ -12,7 +12,6 @@ from .utils.units import get_spike_times
 from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
 from .base import vis2widget
 
-
 import plotly.graph_objects as go
 
 
@@ -273,9 +272,11 @@ class PlaceFieldWidget(widgets.HBox):
         super().__init__()
 
         self.units = spatial_series.get_ancestor('NWBFile').units
-
-        self.pos, self.unit = get_timeseries_in_units(spatial_series)
         self.pos_tt = get_timeseries_tt(spatial_series)
+
+        istart = 0
+        istop = None
+        self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
 
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
@@ -304,13 +305,6 @@ class PlaceFieldWidget(widgets.HBox):
             vis2widget(out_fig)
         ]
 
-        # fig = go.FigureWidget()
-        # fig.add_trace(go.Image(z=filtered_firing_rate))
-
-        # self.children = [fig]
-
-        # return vis2widget(plotly_show_spatial_trace(self.receptive_fields))
-
     def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd=0.0184):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
@@ -319,6 +313,132 @@ class PlaceFieldWidget(widgets.HBox):
 
         occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
             self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd)
+
+        fig, ax = plt.subplots()
+
+        im = ax.imshow(filtered_firing_rate,
+                       extent=[edges_x[0], edges_x[-1], edges_y[0], edges_y[-1]],
+                       aspect='equal')
+        ax.set_xlabel('x ({})'.format(self.unit))
+        ax.set_ylabel('y ({})'.format(self.unit))
+
+        cbar = plt.colorbar(im)
+        cbar.ax.set_ylabel('firing rate (Hz)')
+
+        return fig
+
+
+def compute_1d_occupancy(pos, spatial_bins, sampling_rate):
+    finite_lin_pos = pos[np.isfinite(pos)]
+
+    occupancy = np.histogram(
+        finite_lin_pos, bins=spatial_bins)[0][:-2] / sampling_rate
+
+    return occupancy
+
+
+def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
+                               spatial_bin_len=0.0168):
+    """The occupancy and number of spikes, speed-gated, binned, and smoothed
+    over position
+
+    Parameters
+    ----------
+    pos: np.ndarray
+        linearized position
+    pos_tt: np.ndarray
+        sample times in seconds
+    spikes: np.ndarray
+        for a single cell in seconds
+    gaussian_sd: float (optional)
+        in meters. Default = 5.57 cm
+    spatial_bin_len: float (optional)
+        in meters. Default = 1.68 cm
+
+
+    Returns
+    -------
+    xx: np.ndarray
+        center of position bins in meters
+    occupancy: np.ndarray
+        time in each spatial bin in seconds, during appropriate trials and
+        while running
+    filtered_n_spikes: np.ndarray
+        number of spikes in each spatial bin,  during appropriate trials, while
+        running, and processed with a Gaussian filter
+
+    """
+
+    spatial_bins = np.arange(np.min(pos), np.max(pos) + spatial_bin_len,
+                             spatial_bin_len)
+
+    sampling_rate = len(pos_tt) / (np.max(pos_tt) - np.min(pos_tt))
+
+    occupancy = compute_1d_occupancy(pos, spatial_bins, sampling_rate)
+
+    # find pos_tt bin associated with each spike
+    spike_pos_inds = find_nearest(spikes, pos_tt)
+
+    pos_on_spikes = pos[spike_pos_inds]
+    finite_pos_on_spikes = pos_on_spikes[np.isfinite(pos_on_spikes)]
+
+    n_spikes = np.histogram(finite_pos_on_spikes, bins=spatial_bins)[0][:-2]
+
+    firing_rate = n_spikes / occupancy
+
+    filtered_firing_rate = gaussian_filter(
+        firing_rate, gaussian_sd / spatial_bin_len)
+    xx = spatial_bins[:-3] + (spatial_bins[1] - spatial_bins[0]) / 2
+
+    return xx, occupancy, filtered_firing_rate
+
+
+class PlaceField_1D_Widget(widgets.HBox):
+
+    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, **kwargs):
+        super().__init__()
+
+        self.units = spatial_series.get_ancestor('NWBFile').units
+        self.pos_tt = get_timeseries_tt(spatial_series)
+
+        istart = 0
+        istop = None
+        self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
+
+        self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
+
+        # Put widget controls here:
+        # - Minimum firing rate
+        # - Place field thresh (% of local max)
+
+        bft_gaussian = BoundedFloatText(value=0.0557, min=0, max=99999, description='gaussian sd (m)')
+        bft_spatial_bin_len = BoundedFloatText(value=0.0168, min=0, max=99999, description='spatial bin length (m)')
+        dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
+
+        self.controls = dict(
+            gaussian_sd=bft_gaussian,
+            spatial_bin_len=bft_spatial_bin_len,
+            index=dd_unit_select
+        )
+
+        out_fig = interactive_output(self.do_1d_rate_map, self.controls)
+
+        self.children = [
+            widgets.VBox([
+                bft_gaussian,
+                dd_unit_select
+            ]),
+            vis2widget(out_fig)
+        ]
+
+    def do_1d_rate_map(self, index=0, gaussian_sd=0.0557, spatial_bin_len=0.0168):
+        tmin = min(self.pos_tt)
+        tmax = max(self.pos_tt)
+
+        spikes = get_spike_times(self.units, index, [tmin, tmax])
+
+        occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_linear_firing_rate(
+            self.pos, self.pos_tt, spikes, gaussian_sd=gaussian_sd, spatial_bin_len=spatial_bin_len)
 
         fig, ax = plt.subplots()
 
