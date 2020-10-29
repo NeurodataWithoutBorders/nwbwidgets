@@ -5,15 +5,15 @@ from scipy.ndimage.filters import gaussian_filter, maximum_filter
 import matplotlib.pyplot as plt
 
 import pynwb
-from pynwb.misc import Units
-from .behavior import plotly_show_spatial_trace
-from .base import vis2widget
-from ipywidgets import widgets
+from ipywidgets import widgets, BoundedFloatText, Dropdown
+
+from .utils.widgets import interactive_output
 from .utils.units import get_spike_times
 from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
+from .base import vis2widget
+
 
 import plotly.graph_objects as go
-
 
 
 ## To-do
@@ -268,48 +268,61 @@ def compute_2d_place_fields(firing_rate, min_firing_rate=1, thresh=0.2,
 
 class PlaceFieldWidget(widgets.HBox):
 
-    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, index=0, **kwargs):
-
+    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, **kwargs):
         super().__init__()
 
-        units = spatial_series.get_ancestor('NWBFile').units
+        self.units = spatial_series.get_ancestor('NWBFile').units
 
-        # Initialize receptive fields
-        # Get pos
-        pos, unit = get_timeseries_in_units(spatial_series)
-        # Get time
-        pos_tt = get_timeseries_tt(spatial_series)
-        # Get spikes
-        spikes = get_spike_times(units, index, [min(pos_tt), max(pos_tt)])
-        # Pixel width?
-        pixel_width = (np.nanmax(pos) - np.nanmin(pos)) / 1000
+        self.pos, self.unit = get_timeseries_in_units(spatial_series)
+        self.pos_tt = get_timeseries_tt(spatial_series)
+
+        self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
         # Put widget controls here:
-        # - Gaussian SD
-        # - Speed threshold
         # - Minimum firing rate
         # - Place field thresh (% of local max)
 
-        occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(pos, pos_tt, spikes, pixel_width)  # speed_thresh=0.03, gaussian_sd=0.0184,
-        # x_start=None, x_stop=None, y_start=None, y_stop=None)
+        bft_gaussian = BoundedFloatText(value=0.0184, min=0, max=np.Inf, desciription='gaussian sd (cm)')
+        bft_speed = BoundedFloatText(value=0.03, min=0, max=np.Inf, description='speed threshold (cm/s)')
+        dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
 
-        # self.compute_2d_place_fields() # min_firing_rate=1, thresh=0.2,
-        #                                            # min_size=100):
+        self.controls = dict(
+            gaussian_sd=bft_gaussian,
+            speed_thresh=bft_speed,
+            index=dd_unit_select
+        )
 
-        #fig, ax = plt.subplots()
+        out_fig = interactive_output(self.do_rate_map, self.controls)
 
-        #ax.imshow(filtered_firing_rate,
-        #          extent=[edges_x[0], edges_x[-1], edges_y[0], edges_y[-1]],
-        #          aspect='equal')
-        #
-        #self.children = [vis2widget(fig)]
+        self.children = [
+            widgets.VBox([
+                bft_gaussian,
+                bft_speed,
+                dd_unit_select
+            ]),
+            vis2widget(out_fig)
+        ]
 
-        fig = go.FigureWidget()
-        fig.add_trace(go.Image(z=filtered_firing_rate))
+        # fig = go.FigureWidget()
+        # fig.add_trace(go.Image(z=filtered_firing_rate))
 
-        self.children = [fig]
+        # self.children = [fig]
 
         # return vis2widget(plotly_show_spatial_trace(self.receptive_fields))
 
-    # Put place field code here
+    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd=0.0184):
+        tmin = min(self.pos_tt)
+        tmax = max(self.pos_tt)
 
+        spikes = get_spike_times(self.units, index, [tmin, tmax])
+
+        occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
+            self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd)
+
+        fig, ax = plt.subplots()
+
+        ax.imshow(filtered_firing_rate,
+                  extent=[edges_x[0], edges_x[-1], edges_y[0], edges_y[-1]],
+                  aspect='equal')
+
+        return fig
