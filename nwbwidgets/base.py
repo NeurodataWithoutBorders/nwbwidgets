@@ -13,6 +13,8 @@ from nwbwidgets import view
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface
 
+from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
+
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
 
@@ -225,6 +227,7 @@ def fig2widget(fig: Figure, **kwargs) -> widgets.Widget:
     out = widgets.Output()
     with out:
         fig.show()
+        show_inline_matplotlib_plots()
     return out
 
 

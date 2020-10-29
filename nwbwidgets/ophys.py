@@ -151,19 +151,15 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
     all_hover = df_to_hover_text(plane_seg.to_dataframe())
 
     for i in range(nUnits):
-        if plane_seg[color_by][i] not in aux_leg:
-            show_leg = True
-            aux_leg.append(plane_seg[color_by][i])
-        else:
-            show_leg = False
-        kwargs = dict()
-
-        if color_by:
+        kwargs = dict(showlegend=False)
+        if color_by is not None:
+            if plane_seg[color_by][i] not in aux_leg:
+                kwargs.update(showlegend=True)
+                aux_leg.append(plane_seg[color_by][i])
             c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
             kwargs.update(line_color=c,
                           name=str(plane_seg[color_by][i]),
                           legendgroup=str(plane_seg[color_by][i]),
-                          showlegend=show_leg,
                           )
 
         # form cell borders

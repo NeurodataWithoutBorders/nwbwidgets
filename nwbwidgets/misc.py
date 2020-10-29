@@ -1,3 +1,5 @@
+from functools import partial
+
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
@@ -106,13 +108,13 @@ class RasterWidget(widgets.HBox):
         self.progress_bar = widgets.HBox()
 
         self.controls = dict(
-            units=fixed(self.units),
             time_window=self.time_window_controller,
-            gas=self.gas,
-            progress_bar=fixed(self.progress_bar)
+            gas=self.gas
         )
 
-        out_fig = interactive_output(show_session_raster, self.controls)
+        plot_func = partial(show_session_raster, units=self.units, progress_bar=self.progress_bar)
+
+        out_fig = interactive_output(plot_func, self.controls)
 
         if foreign_time_window_controller:
             right_panel = widgets.VBox(
@@ -353,6 +355,8 @@ def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.
     if not len(data):  # TODO: when does this occur?
         return
     all_data = np.hstack(data)
+    if not len(all_data):  # no spikes
+        return
     tt = np.linspace(min(all_data), max(all_data), ntt)
     smoothed = np.array([compute_smoothed_firing_rate(x, tt, sigma_in_secs) for x in data])
 
