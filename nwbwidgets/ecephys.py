@@ -9,6 +9,7 @@ import pynwb
 
 from .base import fig2widget, nwb2widget, lazy_tabs, render_dataframe
 from .timeseries import BaseGroupedTraceWidget
+from .anatomy import show_brainrender
 
 
 def show_lfp(ndobj: LFP, neurodata_vis_spec: dict):
@@ -89,6 +90,7 @@ def show_electrodes(electrodes_table):
     else:
         if electrodes_table.get_ancestor('NWBFile').subject.species \
                 in ('mouse', 'Mus musculus'):
+            in_dict.update(brainrender=show_brainrender)
             in_dict.update(CCF=show_ccf)
 
     return lazy_tabs(in_dict, electrodes_table)
