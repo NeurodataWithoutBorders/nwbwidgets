@@ -23,7 +23,7 @@ default_neurodata_vis_spec = {
     pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict({
-        'Session Raster': misc.RasterWidgetPlotly,
+        'Session Raster': misc.RasterWidget,
         'Grouped PSTH': misc.PSTHWidget,
         'Raster Grid': misc.RasterGridWidget,
         'table': show_dynamic_table}),
