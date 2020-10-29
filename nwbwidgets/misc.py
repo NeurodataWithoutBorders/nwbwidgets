@@ -112,7 +112,7 @@ class RasterWidget(widgets.HBox):
             gas=self.gas
         )
 
-        plot_func = partial(show_session_raster, units=self.units, progress_bar=fixed(self.progress_bar))
+        plot_func = partial(show_session_raster, units=self.units, progress_bar=self.progress_bar)
 
         out_fig = interactive_output(plot_func, self.controls)
 
