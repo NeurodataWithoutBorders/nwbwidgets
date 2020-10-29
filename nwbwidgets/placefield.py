@@ -282,8 +282,8 @@ class PlaceFieldWidget(widgets.HBox):
         # - Minimum firing rate
         # - Place field thresh (% of local max)
 
-        bft_gaussian = BoundedFloatText(value=0.0184, min=0, max=np.Inf, desciription='gaussian sd (cm)')
-        bft_speed = BoundedFloatText(value=0.03, min=0, max=np.Inf, description='speed threshold (cm/s)')
+        bft_gaussian = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd (cm)')
+        bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)')
         dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
 
         self.controls = dict(
@@ -321,8 +321,13 @@ class PlaceFieldWidget(widgets.HBox):
 
         fig, ax = plt.subplots()
 
-        ax.imshow(filtered_firing_rate,
-                  extent=[edges_x[0], edges_x[-1], edges_y[0], edges_y[-1]],
-                  aspect='equal')
+        im = ax.imshow(filtered_firing_rate,
+                       extent=[edges_x[0], edges_x[-1], edges_y[0], edges_y[-1]],
+                       aspect='equal')
+        ax.set_xlabel('x ({})'.format(self.unit))
+        ax.set_ylabel('y ({})'.format(self.unit))
+
+        cbar = plt.colorbar(im)
+        cbar.ax.set_ylabel('firing rate (Hz)')
 
         return fig
