@@ -33,10 +33,10 @@ import plotly.graph_objects as go
 # [] Modify plotly_show_spatial_trace to plot 2D heatmap representing place fields or create new figure function?
 # [] Dropdown that controls which unit
 
-# [] Work in buttons / dropdowns / sliders to modify following parameters in place field calculation:
+# [x] Work in buttons / dropdowns / sliders to modify following parameters in place field calculation:
 # [] Different epochs
-# [] Gaussian SD
-# [] Speed threshold
+# [x] Gaussian SD
+# [x] Speed threshold
 # [] Minimum firing rate
 # [] Place field thresh (% of local max)
 
@@ -201,9 +201,6 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
         in Hz
 
     """
-    # pixel_width=0.0092,
-    # field_len = 0.46
-    # edges = np.arange(0, field_len + pixel_width, pixel_width)
 
     x_start = np.nanmin(pos[:, 0]) if x_start is None else x_start
     x_stop = np.nanmax(pos[:, 0]) if x_stop is None else x_stop
@@ -219,9 +216,13 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     n_spikes = compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh)
 
     firing_rate = n_spikes / occupancy  # in Hz
-    firing_rate[np.isnan(firing_rate)] = 0
+    firing_rate[np.isnan(firing_rate)] = 0  # get rid of NaNs so convolution works
 
     filtered_firing_rate = gaussian_filter(firing_rate, gaussian_sd / pixel_width)
+
+    # filter occupancy to create a mask so non-explored regions are nan'ed
+    filtered_occupancy = gaussian_filter(occupancy, gaussian_sd / pixel_width / 8)
+    filtered_firing_rate[filtered_occupancy.astype('bool') < .00001] = np.nan
 
     return occupancy, filtered_firing_rate, [edges_x, edges_y]
 
