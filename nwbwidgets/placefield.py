@@ -369,10 +369,9 @@ def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
 
     """
 
-    spatial_bins = np.arange(np.min(pos), np.max(pos) + spatial_bin_len,
-                             spatial_bin_len)
+    spatial_bins = np.arange(np.nanmin(pos), np.nanmax(pos) + spatial_bin_len, spatial_bin_len)
 
-    sampling_rate = len(pos_tt) / (np.max(pos_tt) - np.min(pos_tt))
+    sampling_rate = len(pos_tt) / (np.nanmax(pos_tt) - np.nanmin(pos_tt))
 
     occupancy = compute_1d_occupancy(pos, spatial_bins, sampling_rate)
 
@@ -384,7 +383,7 @@ def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
 
     n_spikes = np.histogram(finite_pos_on_spikes, bins=spatial_bins)[0][:-2]
 
-    firing_rate = n_spikes / occupancy
+    firing_rate = np.nan_to_num(n_spikes / occupancy)
 
     filtered_firing_rate = gaussian_filter(
         firing_rate, gaussian_sd / spatial_bin_len)
@@ -426,6 +425,7 @@ class PlaceField_1D_Widget(widgets.HBox):
         self.children = [
             widgets.VBox([
                 bft_gaussian,
+                bft_spatial_bin_len,
                 dd_unit_select
             ]),
             vis2widget(out_fig)
@@ -437,18 +437,14 @@ class PlaceField_1D_Widget(widgets.HBox):
 
         spikes = get_spike_times(self.units, index, [tmin, tmax])
 
-        occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_linear_firing_rate(
+        xx, occupancy, filtered_firing_rate = compute_linear_firing_rate(
             self.pos, self.pos_tt, spikes, gaussian_sd=gaussian_sd, spatial_bin_len=spatial_bin_len)
 
         fig, ax = plt.subplots()
 
-        im = ax.imshow(filtered_firing_rate,
-                       extent=[edges_x[0], edges_x[-1], edges_y[0], edges_y[-1]],
-                       aspect='equal')
+        fig = ax.plot(xx, filtered_firing_rate, '-')
         ax.set_xlabel('x ({})'.format(self.unit))
-        ax.set_ylabel('y ({})'.format(self.unit))
+        ax.set_ylabel('firing rate (Hz)')
 
-        cbar = plt.colorbar(im)
-        cbar.ax.set_ylabel('firing rate (Hz)')
 
         return fig
