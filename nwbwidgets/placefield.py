@@ -3,33 +3,41 @@ from scipy.ndimage import label
 from scipy.ndimage.filters import gaussian_filter, maximum_filter
 
 import matplotlib.pyplot as plt
+import nelpy.plotting as nlp
 
 import pynwb
 from ipywidgets import widgets, BoundedFloatText, Dropdown
+
 
 from .utils.widgets import interactive_output
 from .utils.units import get_spike_times
 from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
 from .base import vis2widget
 
-import plotly.graph_objects as go
-
 
 ## To-do
-# [] Create PlaceFieldWidget class
-# [X] Refactor place field calculation code to deal with nwb data type
-# [X] Incorporate place field fxns into class
-# [X] Change all internal attributes references
-# [X]Change all internal method references
+# [X] Create PlaceFieldWidget class
+    # [X] Refactor place field calculation code to deal with nwb data type
+        # [X] Incorporate place field fxns into class
+        # [X] Change all internal attributes references
+        # [X]Change all internal method references
 
-# [X] Get pos
-# [X] Get time
-# [X] Get spikes
-# [] Get trials / epochs
+    # [X] Get pos
+    # [X] Get time
+    # [X] Get spikes
+    # [] Get trials / epochs
 
-# [] Submit draft PR
+# [X] Submit draft PR
 
-# [] Modify plotly_show_spatial_trace to plot 2D heatmap representing place fields or create new figure function?
+    # [] 1D Place Field Widget
+        # [X] Incorporate nelpy package into widget
+        # [] Add foreign group and sort controller to pick unit groups and ranges?
+        # [] Normalized firing rate figure?
+        # [] Add collapsed unit vizualization?
+        # [] Scale bar?
+        # [] Sort place cell tuning curves by peak firing rate position?
+        # [] Color palette control?
+
 # [] Dropdown that controls which unit
 
 # [x] Work in buttons / dropdowns / sliders to modify following parameters in place field calculation:
@@ -395,9 +403,18 @@ def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
 class PlaceField_1D_Widget(widgets.HBox):
 
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, **kwargs):
+                 # foreign_group_and_sort_controller: GroupAndSortController = None,
+                 # group_by=None,
+
         super().__init__()
 
+        # if foreign_group_and_sort_controller:
+        #     self.gas = foreign_group_and_sort_controller
+        # else:
+        #     self.gas = self.make_group_and_sort(group_by=group_by, control_order=False)
+
         self.units = spatial_series.get_ancestor('NWBFile').units
+
         self.pos_tt = get_timeseries_tt(spatial_series)
 
         istart = 0
@@ -417,7 +434,7 @@ class PlaceField_1D_Widget(widgets.HBox):
         self.controls = dict(
             gaussian_sd=bft_gaussian,
             spatial_bin_len=bft_spatial_bin_len,
-            index=dd_unit_select
+            # index=dd_unit_select
         )
 
         out_fig = interactive_output(self.do_1d_rate_map, self.controls)
@@ -426,25 +443,95 @@ class PlaceField_1D_Widget(widgets.HBox):
             widgets.VBox([
                 bft_gaussian,
                 bft_spatial_bin_len,
-                dd_unit_select
+                # dd_unit_select
             ]),
             vis2widget(out_fig)
         ]
 
-    def do_1d_rate_map(self, index=0, gaussian_sd=0.0557, spatial_bin_len=0.0168):
+    def do_1d_rate_map(self, gaussian_sd=0.0557, spatial_bin_len=0.0168):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
 
-        spikes = get_spike_times(self.units, index, [tmin, tmax])
+        index = np.arange(len(self.units))
 
+        spikes = get_spike_times(self.units, index[0], [tmin, tmax])
         xx, occupancy, filtered_firing_rate = compute_linear_firing_rate(
             self.pos, self.pos_tt, spikes, gaussian_sd=gaussian_sd, spatial_bin_len=spatial_bin_len)
 
+        all_unit_firing_rate = np.zeros([len(self.units), len(xx)])
+        all_unit_firing_rate[0] = filtered_firing_rate
+
+        for ind in index[1:]:
+            spikes = get_spike_times(self.units, ind, [tmin, tmax])
+            _, _, all_unit_firing_rate[ind] = compute_linear_firing_rate(
+                self.pos, self.pos_tt, spikes, gaussian_sd=gaussian_sd, spatial_bin_len=spatial_bin_len)
+
+        # npl.set_palette(npl.colors.rainbow)
+        # with npl.FigureManager(show=True, figsize=(8, 8)) as (fig, ax):
+        #     npl.utils.skip_if_no_output(fig)
         fig, ax = plt.subplots()
+        plot_tuning_curves1D(all_unit_firing_rate, xx, ax=ax, unit_labels=index)
 
-        fig = ax.plot(xx, filtered_firing_rate, '-')
-        ax.set_xlabel('x ({})'.format(self.unit))
-        ax.set_ylabel('firing rate (Hz)')
-
+        # fig = ax.plot(xx, filtered_firing_rate, '-')
+        # ax.set_xlabel('x ({})'.format(self.unit))
+        # ax.set_ylabel('firing rate (Hz)')
 
         return fig
+
+def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, unit_labels=None, fill=True, color=None):
+    """
+    WARNING! This function is not complete, and hence 'private',
+    and may be moved somewhere else later on.
+
+    If pad=0 then the y-axis is assumed to be firing rate
+    """
+    xmin = bin_pos[0]
+    xmax = bin_pos[-1]
+    xvals = bin_pos
+
+    n_units, n_ext = ratemap.shape
+
+    # if normalize:
+    #     peak_firing_rates = ratemap.max(axis=1)
+    #     ratemap = (ratemap.T / peak_firing_rates).T
+
+    # determine max firing rate
+    max_firing_rate = ratemap.max()
+
+    if xvals is None:
+        xvals = np.arange(n_ext)
+    if xmin is None:
+        xmin = xvals[0]
+    if xmax is None:
+        xmax = xvals[-1]
+
+    for unit, curve in enumerate(ratemap):
+        if color is None:
+            line = ax.plot(xvals, unit*pad + curve, zorder=int(10+2*n_units-2*unit))
+        else:
+            line = ax.plot(xvals, unit*pad + curve, zorder=int(10+2*n_units-2*unit), color=color)
+        if fill:
+            # Get the color from the current curve
+            fillcolor = line[0].get_color()
+            ax.fill_between(xvals, unit*pad, unit*pad + curve, alpha=0.3, color=fillcolor, zorder=int(10+2*n_units-2*unit-1))
+
+    ax.set_xlim(xmin, xmax)
+    if pad != 0:
+        yticks = np.arange(n_units)*pad + 0.5*pad
+        ax.set_yticks(yticks)
+        ax.set_yticklabels(unit_labels)
+        ax.set_xlabel('external variable')
+        ax.set_ylabel('unit')
+        nlp.utils.no_yticks(ax)
+        nlp.utils.clear_left(ax)
+    else:
+        if normalize:
+            ax.set_ylabel('normalized firing rate')
+        else:
+            ax.set_ylabel('firing rate [Hz]')
+        ax.set_ylim(0)
+
+    nlp.utils.clear_top(ax)
+    nlp.utils.clear_right(ax)
+
+    return ax
