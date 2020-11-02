@@ -1,4 +1,4 @@
-from collections import OrderedDict, abc
+from collections import OrderedDict
 
 import h5py
 import hdmf
