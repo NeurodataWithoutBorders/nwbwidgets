@@ -8,16 +8,16 @@ import numpy as np
 from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
 
 
-def show_spectrum(node, **kwargs):
+def show_spectrum(node: Spectrum, **kwargs) -> widgets.Widget:
     if isinstance(node, Spectrum):
-        power = _data_to_array(node.power)
-        if len(power.shape)==2:
-            no_channels = power.shape[1]
+        if len(node.power.shape)==2:
+            no_channels = node.power.shape[1]
         else:
             no_channels = 1
         out = widgets.Output()
         with out:
-            widgets.interact(lambda channel_no: sp(node, channel_no), channel_no=(0, no_channels, 1))
+            widgets.interact(
+                lambda channel_no: get_spectrum_figure(node, channel_no), channel_no=(0, no_channels, 1))
             show_inline_matplotlib_plots()
         return out
     else:
