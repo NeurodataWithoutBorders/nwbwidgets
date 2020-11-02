@@ -1,5 +1,4 @@
 from ndx_spectrum import Spectrum
-import warnings
 import matplotlib.pyplot as plt
 from ipywidgets import widgets
 import numpy as np
