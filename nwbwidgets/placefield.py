@@ -234,46 +234,6 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     return occupancy, filtered_firing_rate, [edges_x, edges_y]
 
 
-def compute_2d_place_fields(firing_rate, min_firing_rate=1, thresh=0.2,
-                            min_size=100):
-    """Compute place fields
-
-    Parameters
-    ----------
-    firing_rate: np.ndarray(NxN, dtype=float)
-    min_firing_rate: float
-        in Hz
-    thresh: float
-        % of local max
-    min_size: float
-        minimum size of place field in pixels
-
-    Returns
-    -------
-    receptive_fields: np.ndarray(NxN, dtype=int)
-        Each receptive field is labeled with a unique integer
-    """
-    local_maxima_inds = firing_rate == maximum_filter(firing_rate, 3)
-    n_receptive_fields = 0
-    firing_rate = firing_rate.copy()
-    receptive_fields = {}
-    for local_max in np.flipud(np.sort(firing_rate[local_maxima_inds])):
-        labeled_image, num_labels = label(firing_rate > max(local_max * thresh,
-                                                            min_firing_rate))
-        if not num_labels:  # nothing above min_firing_thresh
-            return
-        for i in range(1, num_labels + 1):
-            image_label = labeled_image == i
-            if local_max in firing_rate[image_label]:
-                break
-            if np.sum(image_label) >= min_size:
-                n_receptive_fields += 1
-                receptive_fields[image_label] = n_receptive_fields
-                firing_rate[image_label] = 0
-
-    return receptive_fields
-
-
 class PlaceFieldWidget(widgets.HBox):
 
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, **kwargs):
@@ -336,8 +296,11 @@ class PlaceFieldWidget(widgets.HBox):
         return fig
 
 
-def compute_1d_occupancy(pos, spatial_bins, sampling_rate):
-    finite_lin_pos = pos[np.isfinite(pos)]
+def compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate, speed_thresh=0.03):
+
+    is_running = compute_speed(pos, pos_tt) > speed_thresh
+    run_pos = pos[is_running, :]
+    finite_lin_pos = run_pos[np.isfinite(run_pos)]
 
     occupancy = np.histogram(
         finite_lin_pos, bins=spatial_bins)[0][:-2] / sampling_rate
@@ -346,7 +309,7 @@ def compute_1d_occupancy(pos, spatial_bins, sampling_rate):
 
 
 def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
-                               spatial_bin_len=0.0168):
+                               spatial_bin_len=0.0168, speed_thresh=0.03):
     """The occupancy and number of spikes, speed-gated, binned, and smoothed
     over position
 
@@ -376,16 +339,17 @@ def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
         running, and processed with a Gaussian filter
 
     """
-
     spatial_bins = np.arange(np.nanmin(pos), np.nanmax(pos) + spatial_bin_len, spatial_bin_len)
 
     sampling_rate = len(pos_tt) / (np.nanmax(pos_tt) - np.nanmin(pos_tt))
 
-    occupancy = compute_1d_occupancy(pos, spatial_bins, sampling_rate)
+    occupancy = compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate)
+
+    is_running = compute_speed(pos, pos_tt) > speed_thresh
 
     # find pos_tt bin associated with each spike
     spike_pos_inds = find_nearest(spikes, pos_tt)
-
+    spike_pos_inds = spike_pos_inds[is_running[spike_pos_inds]]
     pos_on_spikes = pos[spike_pos_inds]
     finite_pos_on_spikes = pos_on_spikes[np.isfinite(pos_on_spikes)]
 
