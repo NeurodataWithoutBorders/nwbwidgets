@@ -52,7 +52,7 @@ def get_spectrum_figure(spectrum,channel_no, freqs):
     if channel_no[0] != channel_no[1]:
         range_ = range(channel_no[0] - 1, channel_no[1] - 1)
     else:
-        range_ = channel_no[0]
+        range_ = channel_no[0]-1
     if 'power' in spectrum.fields and 'phase' in spectrum.fields:
         fig, axs = plt.subplots(2, 1, sharex=True)
         axs[0].semilogy(np.asarray(spectrum.frequencies)[start_id:end_id],
