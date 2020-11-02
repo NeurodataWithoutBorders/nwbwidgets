@@ -7,8 +7,9 @@ import numpy as np
 
 def show_spectrum(node: Spectrum, **kwargs) -> widgets.Widget:
     if isinstance(node, Spectrum):
-        if len(node.power.shape)==2:
-            no_channels = node.power.shape[1]
+        data = node.power if 'power' in node.fields else node.phase
+        if len(data.shape)==2:
+            no_channels = data.shape[1]
         else:
             no_channels = 1
         freqs_all = np.asarray(node.frequencies)
