@@ -54,13 +54,16 @@ def get_spectrum_figure(spectrum,channel_no, freqs):
         range_ = range(channel_no[0] - 1, channel_no[1] - 1)
     else:
         range_ = channel_no[0]-1
-    if 'power' in spectrum.fields and 'phase' in spectrum.fields:
+    if 'power' in spectrum.fields:
         power_data = np.asarray(spectrum.power)
-        if len(power_data.shape)==1:
+        if len(power_data.shape) == 1:
             power_data = power_data[:, np.newaxis]
+    if 'phase' in spectrum.fields:
         phase_data = np.asarray(spectrum.phase)
-        if len(phase_data.shape)==1:
+        if len(phase_data.shape) == 1:
             phase_data = phase_data[:, np.newaxis]
+    # make plots:
+    if 'power' in spectrum.fields and 'phase' in spectrum.fields:
         fig, axs = plt.subplots(2, 1, sharex=True)
         axs[0].semilogy(all_freqs[start_id:end_id],
                         power_data[start_id:end_id,range_])
@@ -69,18 +72,12 @@ def get_spectrum_figure(spectrum,channel_no, freqs):
                     phase_data[start_id:end_id,range_])
         axs[1].set_ylabel('phase')
     elif 'power' in spectrum.fields:
-        power_data = np.asarray(spectrum.power)
-        if len(power_data.shape) == 1:
-            power_data = power_data[:, np.newaxis]
         fig, ax = plt.subplots()
         ax.set_xlabel('frequency')
         ax.semilogy(all_freqs[start_id:end_id],
                     power_data[start_id:end_id,range_])
         ax.set_ylabel('Power')
     elif 'phase' in spectrum.fields:
-        phase_data = np.asarray(spectrum.phase)
-        if len(phase_data.shape) == 1:
-            phase_data = phase_data[:, np.newaxis]
         fig, ax = plt.subplots()
         ax.plot(all_freqs[start_id:end_id],
                 phase_data[start_id:end_id,range_])
