@@ -24,36 +24,29 @@ def show_spectrum(node, **kwargs):
         warnings.warn('neurodatatype not of type: Spectrum')
 
 
-def _data_to_array(data):
-    if isinstance(data, Dataset):
-        return data[()]
-    else:
-        return np.array(data)
-
-
-def sp(spectrum,channel_no):
+def get_spectrum_figure(spectrum,channel_no):
     if 'power' in spectrum.fields and 'phase' in spectrum.fields:
         fig, axs = plt.subplots(2, 1, sharex=True)
-        axs[0].semilogy(_data_to_array(spectrum.frequencies),
-                    _data_to_array(spectrum.power)[:, channel_no])
+        axs[0].semilogy(np.asarray(spectrum.frequencies),
+                    np.asarray(spectrum.power)[:, channel_no])
         axs[0].set_ylabel('Power')
-        axs[1].plot(_data_to_array(spectrum.frequencies),
-                _data_to_array(spectrum.phase)[:, channel_no])
+        axs[1].plot(np.asarray(spectrum.frequencies),
+                np.asarray(spectrum.phase)[:, channel_no])
         axs[1].set_ylabel('phase')
         return fig
     elif 'power' in spectrum.fields:
         fig = plt.figure()
         ax = fig.gca()
         ax.set_xlabel('frequency')
-        ax.semilogy(_data_to_array(spectrum.frequencies),
-                    _data_to_array(spectrum.power)[:,channel_no])
+        ax.semilogy(np.asarray(spectrum.frequencies),
+                    np.asarray(spectrum.power)[:,channel_no])
         ax.set_ylabel('Power')
         return fig
     elif 'phase' in spectrum.fields:
         fig = plt.figure()
         ax = fig.gca()
-        ax.plot(_data_to_array(spectrum.frequencies),
-                _data_to_array(spectrum.phase)[:,channel_no])
+        ax.plot(np.asarray(spectrum.frequencies),
+                np.asarray(spectrum.phase)[:,channel_no])
         ax.set_ylabel('phase')
         ax.set_xlabel('frequency')
         return fig
