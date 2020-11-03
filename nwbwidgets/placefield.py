@@ -6,13 +6,14 @@ import matplotlib.pyplot as plt
 import nelpy.plotting as nlp
 
 import pynwb
-from ipywidgets import widgets, BoundedFloatText, Dropdown
+from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox
 
 
 from .utils.widgets import interactive_output
 from .utils.units import get_spike_times
 from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
 from .base import vis2widget
+from .controllers import  GroupAndSortController
 
 
 ## To-do
@@ -31,6 +32,7 @@ from .base import vis2widget
 
     # [] 1D Place Field Widget
         # [X] Incorporate nelpy package into widget
+        # [X] Speed threshold implementation
         # [] Add foreign group and sort controller to pick unit groups and ranges?
         # [] Normalized firing rate figure?
         # [] Add collapsed unit vizualization?
@@ -366,20 +368,20 @@ def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
 
 class PlaceField_1D_Widget(widgets.HBox):
 
-    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, **kwargs):
-                 # foreign_group_and_sort_controller: GroupAndSortController = None,
-                 # group_by=None,
+    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries,
+                 foreign_group_and_sort_controller: GroupAndSortController = None,
+                 group_by=None, **kwargs):
 
         super().__init__()
-
-        # if foreign_group_and_sort_controller:
-        #     self.gas = foreign_group_and_sort_controller
-        # else:
-        #     self.gas = self.make_group_and_sort(group_by=group_by, control_order=False)
 
         self.units = spatial_series.get_ancestor('NWBFile').units
 
         self.pos_tt = get_timeseries_tt(spatial_series)
+
+        if foreign_group_and_sort_controller:
+            self.gas = foreign_group_and_sort_controller
+        else:
+            self.gas = self.make_group_and_sort(group_by=group_by, control_order=False)
 
         istart = 0
         istop = None
@@ -393,48 +395,66 @@ class PlaceField_1D_Widget(widgets.HBox):
 
         bft_gaussian = BoundedFloatText(value=0.0557, min=0, max=99999, description='gaussian sd (m)')
         bft_spatial_bin_len = BoundedFloatText(value=0.0168, min=0, max=99999, description='spatial bin length (m)')
-        dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
+        cb_normalize_select = Checkbox(value=False, description='normalize', indent=False)
+        cb_collapsed_select = Checkbox(value=False, description='collapsed', indent=False)
 
         self.controls = dict(
+            gas=self.gas,
             gaussian_sd=bft_gaussian,
             spatial_bin_len=bft_spatial_bin_len,
-            # index=dd_unit_select
+            normalize=cb_normalize_select,
+            collapsed=cb_collapsed_select
         )
 
         out_fig = interactive_output(self.do_1d_rate_map, self.controls)
-
+        checkboxes = widgets.HBox([cb_normalize_select, cb_collapsed_select])
         self.children = [
             widgets.VBox([
                 bft_gaussian,
                 bft_spatial_bin_len,
-                # dd_unit_select
+                checkboxes,
+                self.gas,
             ]),
             vis2widget(out_fig)
         ]
 
-    def do_1d_rate_map(self, gaussian_sd=0.0557, spatial_bin_len=0.0168):
+    def make_group_and_sort(self, group_by=None, control_order=True):
+        return GroupAndSortController(self.units, group_by=group_by, control_order=control_order)
+
+    def do_1d_rate_map(self, units_window=None, order=None, group_inds=None, labels=None, normalize=False,
+                       collapsed=False, gaussian_sd=0.0557, spatial_bin_len=0.0168, **kwargs):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
 
-        index = np.arange(len(self.units))
+
+        print('Order is {}'.format(order))
+        print('Units_window is {}'.format(units_window))
+        print('Group_inds is {}'.format(group_inds))
+        print('Labels is {}'.format(labels))
+        if order.any() == None:
+            index = np.arange(0, len(self.units))
+        else:
+            index = order
 
         spikes = get_spike_times(self.units, index[0], [tmin, tmax])
         xx, occupancy, filtered_firing_rate = compute_linear_firing_rate(
             self.pos, self.pos_tt, spikes, gaussian_sd=gaussian_sd, spatial_bin_len=spatial_bin_len)
 
-        all_unit_firing_rate = np.zeros([len(self.units), len(xx)])
+        all_unit_firing_rate = np.zeros([len(index), len(xx)])
         all_unit_firing_rate[0] = filtered_firing_rate
-
+        firing_rate_ind = 0
         for ind in index[1:]:
             spikes = get_spike_times(self.units, ind, [tmin, tmax])
-            _, _, all_unit_firing_rate[ind] = compute_linear_firing_rate(
+            _, _, all_unit_firing_rate[firing_rate_ind] = compute_linear_firing_rate(
                 self.pos, self.pos_tt, spikes, gaussian_sd=gaussian_sd, spatial_bin_len=spatial_bin_len)
+            firing_rate_ind += 1
 
         # npl.set_palette(npl.colors.rainbow)
         # with npl.FigureManager(show=True, figsize=(8, 8)) as (fig, ax):
         #     npl.utils.skip_if_no_output(fig)
         fig, ax = plt.subplots()
-        plot_tuning_curves1D(all_unit_firing_rate, xx, ax=ax, unit_labels=index)
+        plot_tuning_curves1D(all_unit_firing_rate, xx, ax=ax, unit_labels=index, normalize=normalize,
+                             collapsed=collapsed)
 
         # fig = ax.plot(xx, filtered_firing_rate, '-')
         # ax.set_xlabel('x ({})'.format(self.unit))
@@ -442,7 +462,8 @@ class PlaceField_1D_Widget(widgets.HBox):
 
         return fig
 
-def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, unit_labels=None, fill=True, color=None):
+def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, unit_labels=None, fill=True, color=None,
+                         collapsed=False):
     """
     WARNING! This function is not complete, and hence 'private',
     and may be moved somewhere else later on.
@@ -455,12 +476,14 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
 
     n_units, n_ext = ratemap.shape
 
-    # if normalize:
-    #     peak_firing_rates = ratemap.max(axis=1)
-    #     ratemap = (ratemap.T / peak_firing_rates).T
-
-    # determine max firing rate
-    max_firing_rate = ratemap.max()
+    if normalize:
+        peak_firing_rates = ratemap.max(axis=1)
+        ratemap = (ratemap.T / peak_firing_rates).T
+        pad = 1
+    # # determine max firing rate
+    # max_firing_rate = ratemap.max()
+    if collapsed:
+        pad = 0
 
     if xvals is None:
         xvals = np.arange(n_ext)
