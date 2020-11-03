@@ -37,31 +37,31 @@ def show_spectrum(node: Spectrum, **kwargs) -> widgets.Widget:
     out = widgets.Output()
     with out:
         widgets.interact(
-            lambda channel_no, frequency_range: plot_spectrum_figure(node, channel_no, frequency_range),
-            channel_no=channel_slider,
+            lambda channel_range, frequency_range: plot_spectrum_figure(node, channel_range, frequency_range),
+            channel_range=channel_slider,
             frequency_range=freq_slider)
     return out
 
 
-def plot_spectrum_figure(spectrum, channel_no, freqs):
+def plot_spectrum_figure(spectrum, channel_nos, frequency_nos):
     """
     Plot power vs frequencies and/or phase vs frequencies.
     Parameters
     ----------
     spectrum: Spectrum
-    channel_no: tuple
+    channel_nos: tuple
         Input from the channel range slider widget: (channel_no start, channel_no end)
-    freqs: tuple
+    frequency_nos: tuple
         Input from frequency range slider widget: (freq start, freq end)
     """
     check_spectrum(spectrum)
     all_freqs = np.asarray(spectrum.frequencies)
-    start_id = (np.abs(freqs[0] - all_freqs)).argmin()
-    end_id = (np.abs(freqs[1] - all_freqs)).argmin()
-    if channel_no[0] != channel_no[1]:
-        range_ = range(channel_no[0] - 1, channel_no[1] - 1)
+    start_id = (np.abs(frequency_nos[0] - all_freqs)).argmin()
+    end_id = (np.abs(frequency_nos[1] - all_freqs)).argmin()
+    if channel_nos[0] != channel_nos[1]:
+        range_ = range(channel_nos[0] - 1, channel_nos[1] - 1)
     else:
-        range_ = channel_no[0] - 1
+        range_ = channel_nos[0] - 1
     if 'power' in spectrum.fields:
         power_data = np.asarray(spectrum.power)
         if len(power_data.shape) == 1:
