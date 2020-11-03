@@ -97,3 +97,5 @@ def check_spectrum(node):
     assert isinstance(node, Spectrum)
     assert 'frequencies' in node.fields
     assert 'power' in node.fields or 'phase' in node.fields
+    if 'power' in node.fields and 'phase' in node.fields:
+        assert node.power.shape == node.phase.shape
