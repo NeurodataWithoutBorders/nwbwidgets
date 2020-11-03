@@ -8,6 +8,7 @@ import zarr
 from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
+
 from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file, spectrum
 
 
