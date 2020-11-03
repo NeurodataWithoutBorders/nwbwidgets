@@ -426,7 +426,6 @@ class PlaceField_1D_Widget(widgets.HBox):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
 
-
         print('Order is {}'.format(order))
         print('Units_window is {}'.format(units_window))
         print('Group_inds is {}'.format(group_inds))
@@ -465,10 +464,33 @@ class PlaceField_1D_Widget(widgets.HBox):
 def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, unit_labels=None, fill=True, color=None,
                          collapsed=False):
     """
-    WARNING! This function is not complete, and hence 'private',
-    and may be moved somewhere else later on.
 
-    If pad=0 then the y-axis is assumed to be firing rate
+    Parameters
+    ----------
+    ratemap: array-like
+        An array of dim: [number of units, bin positions] with the spike rates for a unit, at every pos, in each row
+    bin_pos: array-like
+        An array representing the bin positions of ratemap for each column
+    ax: matplotlib.pyplot.ax
+        Axes object for the figure on which the ratemaps will be plotted
+    normalize: bool
+        default = False
+        Input to determine whether or not to normalize firing rates
+    pad: int
+        default = 10
+        Changes to 0 if 'collapsed' is true
+        Amount of space to put between each unit (i.e. row) in the figure
+    unit_labels: array-like
+        Unit ids for each unit in ratemap
+    collapsed: bool
+        default = False
+        Determines whether to plot the ratemaps with zero padding, i.e. at the same y coordinate, on the ratemap
+    fill: bool, optional
+
+    Returns
+    -------
+    matplotlib.pyplot.ax
+
     """
     xmin = bin_pos[0]
     xmax = bin_pos[-1]
