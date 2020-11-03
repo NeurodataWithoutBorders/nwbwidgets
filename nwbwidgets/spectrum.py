@@ -94,8 +94,8 @@ def plot_spectrum_figure(spectrum, channel_nos, frequency_nos):
 
 
 def check_spectrum(node):
-    assert isinstance(node, Spectrum)
-    assert 'frequencies' in node.fields
-    assert 'power' in node.fields or 'phase' in node.fields
+    assert isinstance(node, Spectrum), 'datatype not of type Spectrum'
+    assert 'frequencies' in node.fields, 'frequencies not found in Spectrum'
+    assert 'power' in node.fields or 'phase' in node.fields, 'neither of power/phase found in Spectrum'
     if 'power' in node.fields and 'phase' in node.fields:
-        assert node.power.shape == node.phase.shape
+        assert node.power.shape == node.phase.shape, 'power and phase arrays should be of same dims'
