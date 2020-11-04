@@ -7,7 +7,9 @@ import pynwb
 import zarr
 from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file, placefield
+from ndx_spectrum import Spectrum
+
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file, placefield, spectrum
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
@@ -58,7 +60,8 @@ default_neurodata_vis_spec = {
     pynwb.core.NWBContainer: base.show_neurodata_base,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
     h5py.Dataset: base.show_dset,
-    zarr.core.Array: base.show_dset
+    zarr.core.Array: base.show_dset,
+    Spectrum: spectrum.show_spectrum
 }
 
 
