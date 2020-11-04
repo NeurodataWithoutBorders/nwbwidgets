@@ -33,9 +33,9 @@ from .controllers import  GroupAndSortController
     # [] 1D Place Field Widget
         # [X] Incorporate nelpy package into widget
         # [X] Speed threshold implementation
-        # [] Add foreign group and sort controller to pick unit groups and ranges?
-        # [] Normalized firing rate figure?
-        # [] Add collapsed unit vizualization?
+        # [X] Add foreign group and sort controller to pick unit groups and ranges?
+        # [X] Normalized firing rate figure?
+        # [X] Add collapsed unit vizualization?
         # [] Scale bar?
         # [] Sort place cell tuning curves by peak firing rate position?
         # [] Color palette control?
@@ -48,6 +48,17 @@ from .controllers import  GroupAndSortController
 # [x] Speed threshold
 # [] Minimum firing rate
 # [] Place field thresh (% of local max)
+
+def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
+    print(spatial_series.data.shape)
+    if spatial_series.data.shape[1] == 2:
+        return PlaceFieldWidget(spatial_series)
+    elif spatial_series.data.shape[1] == 1:
+        return PlaceField_1D_Widget(spatial_series)
+    else:
+        print('Spatial series exceeds dimensionality for visualization')
+        return
+
 
 # Put widget rendering here
 class PlaceFieldWidget(widgets.HBox):
