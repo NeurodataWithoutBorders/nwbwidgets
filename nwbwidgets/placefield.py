@@ -3,7 +3,6 @@ from scipy.ndimage import label
 from scipy.ndimage.filters import gaussian_filter, maximum_filter
 
 import matplotlib.pyplot as plt
-import nelpy.plotting as nlp
 
 import pynwb
 from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox
@@ -531,8 +530,9 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
         ax.set_yticklabels(unit_labels)
         ax.set_xlabel('external variable')
         ax.set_ylabel('unit')
-        nlp.utils.no_yticks(ax)
-        nlp.utils.clear_left(ax)
+        ax.tick_params(axis=u'y', which=u'both', length=0)
+        ax.spines['left'].set_color('none')
+        ax.yaxis.set_ticks_position('right')
     else:
         if normalize:
             ax.set_ylabel('normalized firing rate')
@@ -540,7 +540,9 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
             ax.set_ylabel('firing rate [Hz]')
         ax.set_ylim(0)
 
-    nlp.utils.clear_top(ax)
-    nlp.utils.clear_right(ax)
+    ax.spines['top'].set_color('none')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.spines['right'].set_color('none')
+    ax.yaxis.set_ticks_position('left')
 
     return ax
