@@ -55,7 +55,7 @@ def compute_speed(pos, pos_tt, smooth_param=40):
     return smooth(speed, smooth_param)
 
 
-def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03):
+def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, velocity=[]):
     """Computes occupancy per bin in seconds
 
     Parameters
@@ -80,7 +80,11 @@ def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03):
     """
 
     sampling_period = (np.max(pos_tt) - np.min(pos_tt)) / len(pos_tt)
-    is_running = compute_speed(pos, pos_tt) > speed_thresh
+    if len(velocity) == 0:
+        is_running = compute_speed(pos, pos_tt) > speed_thresh
+    else:
+        is_running = self.velocity > speed_thresh
+
     run_pos = pos[is_running, :]
     occupancy = np.histogram2d(run_pos[:, 0],
                                run_pos[:, 1],
@@ -89,7 +93,7 @@ def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03):
     return occupancy, is_running
 
 
-def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03):
+def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03, velocity=[]):
     """Returns speed-gated position during spikes
 
     Parameters
@@ -111,7 +115,10 @@ def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03
     -------
     """
 
-    is_running = compute_speed(pos, pos_tt) > speed_thresh
+    if len(velocity) == 0:
+        is_running = compute_speed(pos, pos_tt) > speed_thresh
+    else:
+        is_running = velocity > speed_thresh
 
     spike_pos_inds = find_nearest(spikes, pos_tt)
     spike_pos_inds = spike_pos_inds[is_running[spike_pos_inds]]
@@ -129,7 +136,8 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
                            speed_thresh=0.03,
                            gaussian_sd=0.0184,
                            x_start=None, x_stop=None,
-                           y_start=None, y_stop=None):
+                           y_start=None, y_stop=None,
+                           velocity=[]):
     """Returns speed-gated occupancy and speed-gated and
     Gaussian-filtered firing rate
 
@@ -171,9 +179,9 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     edges_x = np.arange(x_start, x_stop, pixel_width)
     edges_y = np.arange(y_start, y_stop, pixel_width)
 
-    occupancy, running = compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh)
+    occupancy, running = compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh, velocity)
 
-    n_spikes = compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh)
+    n_spikes = compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh, velocity)
 
     firing_rate = n_spikes / occupancy  # in Hz
     firing_rate[np.isnan(firing_rate)] = 0  # get rid of NaNs so convolution works

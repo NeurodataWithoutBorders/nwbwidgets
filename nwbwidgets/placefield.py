@@ -5,7 +5,7 @@ from scipy.ndimage.filters import gaussian_filter, maximum_filter
 import matplotlib.pyplot as plt
 
 import pynwb
-from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox
+from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox, fixed
 
 from .analysis.placefields import compute_2d_firing_rate, compute_linear_firing_rate
 
@@ -66,11 +66,18 @@ class PlaceFieldWidget(widgets.HBox):
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, **kwargs):
         super().__init__()
 
+
+        if hasattr(spatial_series.get_ancestor('NWBFile'),'velocity'):
+            velocity = spatial_series.get_ancestor('NWBFile').velocity
+        else:
+            velocity = []
+
         self.units = spatial_series.get_ancestor('NWBFile').units
         self.pos_tt = get_timeseries_tt(spatial_series)
 
         istart = 0
         istop = None
+
         self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
 
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
@@ -82,11 +89,14 @@ class PlaceFieldWidget(widgets.HBox):
         bft_gaussian = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd (cm)')
         bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)')
         dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
+        cb_velocity = Checkbox(value=False, description='use velocity', indent=False)
 
         self.controls = dict(
             gaussian_sd=bft_gaussian,
             speed_thresh=bft_speed,
-            index=dd_unit_select
+            index=dd_unit_select,
+            use_velocity=cb_velocity,
+            velocity=fixed(velocity)
         )
 
         out_fig = interactive_output(self.do_rate_map, self.controls)
@@ -95,19 +105,24 @@ class PlaceFieldWidget(widgets.HBox):
             widgets.VBox([
                 bft_gaussian,
                 bft_speed,
-                dd_unit_select
+                dd_unit_select,
+                cb_velocity
             ]),
             vis2widget(out_fig)
         ]
 
-    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd=0.0184):
+    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd=0.0184, use_velocity=False, velocity=[]):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
 
         spikes = get_spike_times(self.units, index, [tmin, tmax])
-
-        occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
-            self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd)
+        if use_velocity == False:
+            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
+                self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd)
+        else:
+            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
+                self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd,
+                velocity=velocity)
 
         fig, ax = plt.subplots()
 
