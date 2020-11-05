@@ -63,7 +63,7 @@ def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
 # Put widget rendering here
 class PlaceFieldWidget(widgets.HBox):
 
-    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, **kwargs):
+    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, velocity: pynwb.TimeSeries = None, **kwargs):
         super().__init__()
 
 
