@@ -96,7 +96,6 @@ class PlaceFieldWidget(widgets.HBox):
             speed_thresh=bft_speed,
             index=dd_unit_select,
             use_velocity=cb_velocity,
-            velocity=fixed(velocity)
         )
 
         out_fig = interactive_output(self.do_rate_map, self.controls)
