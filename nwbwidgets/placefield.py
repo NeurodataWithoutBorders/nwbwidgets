@@ -201,7 +201,7 @@ class PlaceField_1D_Widget(widgets.HBox):
         print('Units_window is {}'.format(units_window))
         print('Group_inds is {}'.format(group_inds))
         print('Labels is {}'.format(labels))
-        if order.any() == None:
+        if order is None:
             index = np.arange(0, len(self.units))
         else:
             index = order
