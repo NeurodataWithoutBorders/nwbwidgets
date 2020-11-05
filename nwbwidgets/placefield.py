@@ -121,7 +121,7 @@ class PlaceFieldWidget(widgets.HBox):
         else:
             occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
                 self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd,
-                velocity=velocity)
+                velocity=self.velocity)
 
         fig, ax = plt.subplots()
 
