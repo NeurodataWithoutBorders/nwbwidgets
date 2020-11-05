@@ -118,7 +118,7 @@ class PlaceFieldWidget(widgets.HBox):
         spikes = get_spike_times(self.units, index, [tmin, tmax])
         if use_velocity == False:
             occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
-                self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd)
+                self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd, velocity=self.velocity)
         else:
             occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
                 self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd,
