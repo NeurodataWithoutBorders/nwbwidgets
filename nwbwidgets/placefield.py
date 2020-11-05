@@ -110,7 +110,7 @@ class PlaceFieldWidget(widgets.HBox):
             vis2widget(out_fig)
         ]
 
-    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd=0.0184, use_velocity=False, velocity=[]):
+    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd=0.0184, use_velocity=False):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
 
