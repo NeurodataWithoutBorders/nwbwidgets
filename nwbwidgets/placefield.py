@@ -74,7 +74,7 @@ class PlaceFieldWidget(widgets.HBox):
 
         self.units = spatial_series.get_ancestor('NWBFile').units
         self.pos_tt = get_timeseries_tt(spatial_series)
-
+        self.velocity = velocity
         istart = 0
         istop = None
 
