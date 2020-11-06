@@ -15,42 +15,7 @@ from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
 from .base import vis2widget
 from .controllers import  GroupAndSortController
 
-
-## To-do
-# [X] Create PlaceFieldWidget class
-    # [X] Refactor place field calculation code to deal with nwb data type
-        # [X] Incorporate place field fxns into class
-        # [X] Change all internal attributes references
-        # [X]Change all internal method references
-
-    # [X] Get pos
-    # [X] Get time
-    # [X] Get spikes
-    # [] Get trials / epochs
-
-# [X] Submit draft PR
-
-    # [] 1D Place Field Widget
-        # [X] Incorporate nelpy package into widget
-        # [X] Speed threshold implementation
-        # [X] Add foreign group and sort controller to pick unit groups and ranges?
-        # [X] Normalized firing rate figure?
-        # [X] Add collapsed unit vizualization?
-        # [] Scale bar?
-        # [] Sort place cell tuning curves by peak firing rate position?
-        # [] Color palette control?
-
-# [] Dropdown that controls which unit
-
-# [x] Work in buttons / dropdowns / sliders to modify following parameters in place field calculation:
-# [] Different epochs
-# [x] Gaussian SD
-# [x] Speed threshold
-# [] Minimum firing rate
-# [] Place field thresh (% of local max)
-
 def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
-    print(spatial_series.data.shape)
     if spatial_series.data.shape[1] == 2:
         return PlaceFieldWidget(spatial_series)
     elif spatial_series.data.shape[1] == 1:
@@ -59,32 +24,20 @@ def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
         print('Spatial series exceeds dimensionality for visualization')
         return
 
-
-# Put widget rendering here
 class PlaceFieldWidget(widgets.HBox):
 
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, velocity: pynwb.TimeSeries = None, **kwargs):
         super().__init__()
-
-
-        if hasattr(spatial_series.get_ancestor('NWBFile'),'velocity'):
-            velocity = spatial_series.get_ancestor('NWBFile').velocity
-        else:
-            velocity = []
-
         self.units = spatial_series.get_ancestor('NWBFile').units
         self.pos_tt = get_timeseries_tt(spatial_series)
-        self.velocity = velocity
+        if velocity is not None:
+            self.velocity = velocity
+        else:
+            self.velocity = None
         istart = 0
         istop = None
-
         self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
-
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
-
-        # Put widget controls here:
-        # - Minimum firing rate
-        # - Place field thresh (% of local max)
 
         bft_gaussian = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd (cm)')
         bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)')
@@ -138,16 +91,20 @@ class PlaceFieldWidget(widgets.HBox):
 
 
 class PlaceField_1D_Widget(widgets.HBox):
-
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries,
                  foreign_group_and_sort_controller: GroupAndSortController = None,
-                 group_by=None, **kwargs):
+                 group_by=None,
+                 velocity: pynwb.TimeSeries = None,
+                 **kwargs):
 
         super().__init__()
 
         self.units = spatial_series.get_ancestor('NWBFile').units
-
         self.pos_tt = get_timeseries_tt(spatial_series)
+        if velocity is not None:
+            self.velocity = velocity
+        else:
+            self.velocity = None
 
         if foreign_group_and_sort_controller:
             self.gas = foreign_group_and_sort_controller
@@ -159,10 +116,6 @@ class PlaceField_1D_Widget(widgets.HBox):
         self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
 
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
-
-        # Put widget controls here:
-        # - Minimum firing rate
-        # - Place field thresh (% of local max)
 
         bft_gaussian = BoundedFloatText(value=0.0557, min=0, max=99999, description='gaussian sd (m)')
         bft_spatial_bin_len = BoundedFloatText(value=0.0168, min=0, max=99999, description='spatial bin length (m)')
@@ -197,38 +150,36 @@ class PlaceField_1D_Widget(widgets.HBox):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
 
-        print('Order is {}'.format(order))
-        print('Units_window is {}'.format(units_window))
-        print('Group_inds is {}'.format(group_inds))
-        print('Labels is {}'.format(labels))
         if order is None:
             index = np.arange(0, len(self.units))
-        else:
+        elif isinstance(order, np.ndarray):
             index = order
+        else:
+            index = [order]
 
-        spikes = get_spike_times(self.units, index[0], [tmin, tmax])
-        xx, occupancy, filtered_firing_rate = compute_linear_firing_rate(
-            self.pos, self.pos_tt, spikes, gaussian_sd=gaussian_sd, spatial_bin_len=spatial_bin_len)
-
-        all_unit_firing_rate = np.zeros([len(index), len(xx)])
-        all_unit_firing_rate[0] = filtered_firing_rate
         firing_rate_ind = 0
-        for ind in index[1:]:
+        for ind in index:
+            if firing_rate_ind == 0:
+                spikes = get_spike_times(self.units, ind, [tmin, tmax])
+                xx, _, all_unit_firing_rate_temp = compute_linear_firing_rate(self.pos, self.pos_tt, spikes,
+                                                                                          gaussian_sd=gaussian_sd,
+                                                                                          spatial_bin_len=spatial_bin_len,
+                                                                                          velocity=self.velocity)
+                all_unit_firing_rate = np.zeros([len(index), len(xx)])
+                all_unit_firing_rate[0] = all_unit_firing_rate_temp
+                firing_rate_ind += 1
+                continue
             spikes = get_spike_times(self.units, ind, [tmin, tmax])
-            _, _, all_unit_firing_rate[firing_rate_ind] = compute_linear_firing_rate(
-                self.pos, self.pos_tt, spikes, gaussian_sd=gaussian_sd, spatial_bin_len=spatial_bin_len)
+            xx, _, all_unit_firing_rate[firing_rate_ind] = compute_linear_firing_rate(self.pos, self.pos_tt, spikes,
+                                                                                      gaussian_sd=gaussian_sd,
+                                                                                      spatial_bin_len=spatial_bin_len,
+                                                                                      velocity=self.velocity)
             firing_rate_ind += 1
 
-        # npl.set_palette(npl.colors.rainbow)
-        # with npl.FigureManager(show=True, figsize=(8, 8)) as (fig, ax):
-        #     npl.utils.skip_if_no_output(fig)
+
         fig, ax = plt.subplots()
         plot_tuning_curves1D(all_unit_firing_rate, xx, ax=ax, unit_labels=index, normalize=normalize,
                              collapsed=collapsed)
-
-        # fig = ax.plot(xx, filtered_firing_rate, '-')
-        # ax.set_xlabel('x ({})'.format(self.unit))
-        # ax.set_ylabel('firing rate (Hz)')
 
         return fig
 
@@ -273,8 +224,7 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
         peak_firing_rates = ratemap.max(axis=1)
         ratemap = (ratemap.T / peak_firing_rates).T
         pad = 1
-    # # determine max firing rate
-    # max_firing_rate = ratemap.max()
+
     if collapsed:
         pad = 0
 

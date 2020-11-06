@@ -82,6 +82,7 @@ def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, veloc
     """
 
     sampling_period = (np.max(pos_tt) - np.min(pos_tt)) / len(pos_tt)
+    np.seterr(invalid='ignore')
     if velocity is None:
         is_running = compute_speed(pos, pos_tt) > speed_thresh
     else:
@@ -118,7 +119,7 @@ def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03
     Returns
     -------
     """
-
+    np.seterr(invalid='ignore')
     if velocity is None:
         is_running = compute_speed(pos, pos_tt) > speed_thresh
     else:
@@ -188,6 +189,7 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
 
     n_spikes = compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh, velocity)
 
+    np.seterr(divide='ignore')
     firing_rate = n_spikes / occupancy  # in Hz
     firing_rate[np.isnan(firing_rate)] = 0  # get rid of NaNs so convolution works
 
@@ -202,6 +204,7 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
 
 def compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate, speed_thresh=0.03, velocity=None):
 
+    np.seterr(invalid='ignore')
     if velocity is None:
         is_running = compute_speed(pos, pos_tt) > speed_thresh
     else:
@@ -252,8 +255,9 @@ def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
 
     sampling_rate = len(pos_tt) / (np.nanmax(pos_tt) - np.nanmin(pos_tt))
 
-    occupancy = compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate, velocity)
+    occupancy = compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate, speed_thresh, velocity)
 
+    np.seterr(invalid='ignore')
     is_running = compute_speed(pos, pos_tt) > speed_thresh
 
     # find pos_tt bin associated with each spike
@@ -264,6 +268,7 @@ def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
 
     n_spikes = np.histogram(finite_pos_on_spikes, bins=spatial_bins)[0][:-2]
 
+    np.seterr(divide='ignore')
     firing_rate = np.nan_to_num(n_spikes / occupancy)
 
     filtered_firing_rate = gaussian_filter(
