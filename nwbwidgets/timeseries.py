@@ -313,9 +313,13 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
             yy, units = get_timeseries_in_units(timeseries, istart, istop)
 
             with self.out_fig.batch_update():
-                for i, dd in enumerate(yy.T):
-                    self.out_fig.data[i].x = tt
-                    self.out_fig.data[i].y = dd
+                if len(yy.shape) == 1:
+                    self.out_fig.data[0].x = tt
+                    self.out_fig.data[0].y = yy
+                else:
+                    for i, dd in enumerate(yy.T):
+                        self.out_fig.data[i].x = tt
+                        self.out_fig.data[i].y = dd
 
         self.controls['time_window'].observe(on_change)
 

@@ -62,7 +62,8 @@ default_neurodata_vis_spec = {
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
     h5py.Dataset: base.show_dset,
     zarr.core.Array: base.show_dset,
-    Spectrum: spectrum.show_spectrum
+    Spectrum: spectrum.show_spectrum,
+    pynwb.behavior.CompassDirection: behavior.show_position
 }
 
 
