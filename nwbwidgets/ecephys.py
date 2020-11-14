@@ -55,7 +55,7 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
                 y=nwbobj.group_name[:],
                 mode='markers',
                 marker=dict(
-                    color=np.array(DEFAULT_PLOTLY_COLORS)[group_pos],
+                    color=np.array(DEFAULT_PLOTLY_COLORS)[group_pos % len(DEFAULT_PLOTLY_COLORS)],
                     size=15
                 ),
                 hovertext=hovertext,
