@@ -5,7 +5,7 @@ from scipy.ndimage.filters import gaussian_filter, maximum_filter
 import matplotlib.pyplot as plt
 
 import pynwb
-from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox, fixed
+from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox, Layout
 
 from .analysis.placefields import compute_2d_firing_rate, compute_linear_firing_rate
 
@@ -39,8 +39,9 @@ class PlaceFieldWidget(widgets.HBox):
         self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
-        bft_gaussian = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd (cm)')
-        bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)')
+        style = {'description_width': 'initial'}
+        bft_gaussian = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd (cm)', style=style)
+        bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)', style=style)
         dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
         cb_velocity = Checkbox(value=False, description='use velocity', indent=False)
 
@@ -100,16 +101,13 @@ class PlaceField_1D_Widget(widgets.HBox):
         super().__init__()
 
         self.units = spatial_series.get_ancestor('NWBFile').units
+        index = np.arange(1, len(self.units))
+
         self.pos_tt = get_timeseries_tt(spatial_series)
         if velocity is not None:
             self.velocity = velocity
         else:
             self.velocity = None
-
-        if foreign_group_and_sort_controller:
-            self.gas = foreign_group_and_sort_controller
-        else:
-            self.gas = self.make_group_and_sort(group_by=group_by, control_order=False)
 
         istart = 0
         istop = None
@@ -117,45 +115,48 @@ class PlaceField_1D_Widget(widgets.HBox):
 
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
-        bft_gaussian = BoundedFloatText(value=0.0557, min=0, max=99999, description='gaussian sd (m)')
-        bft_spatial_bin_len = BoundedFloatText(value=0.0168, min=0, max=99999, description='spatial bin length (m)')
+        style = {'description_width': 'initial'}
+        bft_gaussian = BoundedFloatText(value=0.0557, min=0, max=99999, description='gaussian sd (m)', style=style)
+        bft_spatial_bin_len = BoundedFloatText(value=0.0168, min=0, max=99999, description='spatial bin length (m)',
+                                               style=style)
         cb_normalize_select = Checkbox(value=False, description='normalize', indent=False)
         cb_collapsed_select = Checkbox(value=False, description='collapsed', indent=False)
+        sm_unit_select = widgets.SelectMultiple(options=index,
+                                                value=[1, 2, 3, 4, 5], rows= 20,
+                                                description='Select units', disabled=False
+                                                )
 
         self.controls = dict(
-            gas=self.gas,
             gaussian_sd=bft_gaussian,
             spatial_bin_len=bft_spatial_bin_len,
             normalize=cb_normalize_select,
-            collapsed=cb_collapsed_select
+            collapsed=cb_collapsed_select,
+            order=sm_unit_select
         )
 
         out_fig = interactive_output(self.do_1d_rate_map, self.controls)
         checkboxes = widgets.HBox([cb_normalize_select, cb_collapsed_select])
-        self.children = [
+        widget_fig = vis2widget(out_fig)
+        self.children = [widgets.HBox([
             widgets.VBox([
                 bft_gaussian,
                 bft_spatial_bin_len,
                 checkboxes,
-                self.gas,
-            ]),
-            vis2widget(out_fig)
+                sm_unit_select
+            ],
+            layout = Layout(max_width="40%")),
+            widget_fig],
+            layout = Layout(width="100%", height="100%"))
         ]
 
     def make_group_and_sort(self, group_by=None, control_order=True):
         return GroupAndSortController(self.units, group_by=group_by, control_order=control_order)
 
-    def do_1d_rate_map(self, units_window=None, order=None, group_inds=None, labels=None, normalize=False,
-                       collapsed=False, gaussian_sd=0.0557, spatial_bin_len=0.0168, **kwargs):
+    def do_1d_rate_map(self,  order=None, normalize=False, collapsed=False, gaussian_sd=0.0557,
+                       spatial_bin_len=0.0168, **kwargs):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
-
-        if order is None:
-            index = np.arange(0, len(self.units))
-        elif isinstance(order, np.ndarray):
-            index = order
-        else:
-            index = [order]
+        index = np.asarray(order)
 
         firing_rate_ind = 0
         for ind in index:
@@ -256,11 +257,11 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
         ax.spines['left'].set_color('none')
         ax.yaxis.set_ticks_position('right')
     else:
-        if normalize:
-            ax.set_ylabel('normalized firing rate')
-        else:
-            ax.set_ylabel('firing rate [Hz]')
         ax.set_ylim(0)
+    if normalize:
+        ax.set_ylabel('normalized firing rate')
+    else:
+        ax.set_ylabel('firing rate [Hz]')
 
     ax.spines['top'].set_color('none')
     ax.xaxis.set_ticks_position('bottom')
