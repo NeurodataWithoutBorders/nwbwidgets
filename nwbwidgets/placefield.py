@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.ndimage import label
 from scipy.ndimage.filters import gaussian_filter, maximum_filter
+from functools import lru_cache
 
 import matplotlib.pyplot as plt
 
@@ -13,7 +14,8 @@ from .utils.widgets import interactive_output
 from .utils.units import get_spike_times
 from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
 from .base import vis2widget
-from .controllers import  GroupAndSortController
+from .controllers import GroupAndSortController
+
 
 def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
     if spatial_series.data.shape[1] == 2:
@@ -144,9 +146,9 @@ class PlaceField_1D_Widget(widgets.HBox):
                 checkboxes,
                 sm_unit_select
             ],
-            layout = Layout(max_width="40%")),
+                layout=Layout(max_width="40%")),
             widget_fig],
-            layout = Layout(width="100%", height="100%"))
+            layout=Layout(width="100%", height="100%"))
         ]
 
     def make_group_and_sort(self, group_by=None, control_order=True):
@@ -158,31 +160,30 @@ class PlaceField_1D_Widget(widgets.HBox):
         tmax = max(self.pos_tt)
         index = np.asarray(order)
 
-        firing_rate_ind = 0
-        for ind in index:
-            if firing_rate_ind == 0:
-                spikes = get_spike_times(self.units, ind, [tmin, tmax])
-                xx, _, all_unit_firing_rate_temp = compute_linear_firing_rate(self.pos, self.pos_tt, spikes,
-                                                                                          gaussian_sd=gaussian_sd,
-                                                                                          spatial_bin_len=spatial_bin_len,
-                                                                                          velocity=self.velocity)
+        for i, ind in enumerate(index):
+
+            all_unit_firing_rate_temp, xx = self.compute_1d_firing_rate(
+                ind, tmin, tmax, gaussian_sd, spatial_bin_len)
+            if not i:
                 all_unit_firing_rate = np.zeros([len(index), len(xx)])
-                all_unit_firing_rate[0] = all_unit_firing_rate_temp
-                firing_rate_ind += 1
-                continue
-            spikes = get_spike_times(self.units, ind, [tmin, tmax])
-            xx, _, all_unit_firing_rate[firing_rate_ind] = compute_linear_firing_rate(self.pos, self.pos_tt, spikes,
-                                                                                      gaussian_sd=gaussian_sd,
-                                                                                      spatial_bin_len=spatial_bin_len,
-                                                                                      velocity=self.velocity)
-            firing_rate_ind += 1
 
+            all_unit_firing_rate[ind] = all_unit_firing_rate_temp
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(7, 7))
         plot_tuning_curves1D(all_unit_firing_rate, xx, ax=ax, unit_labels=index, normalize=normalize,
                              collapsed=collapsed)
 
         return fig
+
+    @lru_cache
+    def compute_1d_firing_rate(self, ind, tmin, tmax, gaussian_sd, spatial_bin_len):
+        spikes = get_spike_times(self.units, ind, [tmin, tmax])
+        xx, _, all_unit_firing_rate_temp = compute_linear_firing_rate(self.pos, self.pos_tt, spikes,
+                                                                      gaussian_sd=gaussian_sd,
+                                                                      spatial_bin_len=spatial_bin_len,
+                                                                      velocity=self.velocity)
+        return all_unit_firing_rate_temp, xx
+
 
 def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, unit_labels=None, fill=True, color=None,
                          collapsed=False):
@@ -194,7 +195,7 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
         An array of dim: [number of units, bin positions] with the spike rates for a unit, at every pos, in each row
     bin_pos: array-like
         An array representing the bin positions of ratemap for each column
-    ax: matplotlib.pyplot.ax
+    ax: matplotlib.pyplot.Axes
         Axes object for the figure on which the ratemaps will be plotted
     normalize: bool
         default = False
@@ -212,7 +213,7 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
 
     Returns
     -------
-    matplotlib.pyplot.ax
+    matplotlib.pyplot.Axes
 
     """
     xmin = bin_pos[0]
