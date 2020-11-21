@@ -167,7 +167,7 @@ class PlaceField_1D_Widget(widgets.HBox):
             if not i:
                 all_unit_firing_rate = np.zeros([len(index), len(xx)])
 
-            all_unit_firing_rate[ind] = all_unit_firing_rate_temp
+            all_unit_firing_rate[i] = all_unit_firing_rate_temp
 
         fig, ax = plt.subplots(figsize=(7, 7))
         plot_tuning_curves1D(all_unit_firing_rate, xx, ax=ax, unit_labels=index, normalize=normalize,
@@ -175,7 +175,7 @@ class PlaceField_1D_Widget(widgets.HBox):
 
         return fig
 
-    @lru_cache
+    @lru_cache()
     def compute_1d_firing_rate(self, ind, tmin, tmax, gaussian_sd, spatial_bin_len):
         spikes = get_spike_times(self.units, ind, [tmin, tmax])
         xx, _, all_unit_firing_rate_temp = compute_linear_firing_rate(self.pos, self.pos_tt, spikes,
