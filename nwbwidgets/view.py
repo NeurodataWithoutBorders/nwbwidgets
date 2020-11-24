@@ -50,7 +50,7 @@ default_neurodata_vis_spec = {
         'over time': timeseries.SeparateTracesPlotlyWidget,
         'trace': behavior.plotly_show_spatial_trace,
         'rate map': placefield.route_placefield,
-        '1D rate map': placefield.PlaceField_1D_Widget}),
+        '1D rate map': placefield.PlaceField1DWidget}),
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
     pynwb.image.RGBImage: image.show_rbga_image,
     pynwb.image.RGBAImage: image.show_rbga_image,

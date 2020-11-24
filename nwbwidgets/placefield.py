@@ -1,30 +1,27 @@
-import numpy as np
-from scipy.ndimage import label
-from scipy.ndimage.filters import gaussian_filter, maximum_filter
 from functools import lru_cache
 
 import matplotlib.pyplot as plt
-
+import numpy as np
 import pynwb
 from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox, Layout
 
 from .analysis.placefields import compute_2d_firing_rate, compute_linear_firing_rate
-
-from .utils.widgets import interactive_output
-from .utils.units import get_spike_times
-from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
 from .base import vis2widget
 from .controllers import GroupAndSortController
+from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
+from .utils.units import get_spike_times
+from .utils.widgets import interactive_output
 
 
 def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
     if spatial_series.data.shape[1] == 2:
         return PlaceFieldWidget(spatial_series)
     elif spatial_series.data.shape[1] == 1:
-        return PlaceField_1D_Widget(spatial_series)
+        return PlaceField1DWidget(spatial_series)
     else:
         print('Spatial series exceeds dimensionality for visualization')
         return
+
 
 class PlaceFieldWidget(widgets.HBox):
 
@@ -71,9 +68,10 @@ class PlaceFieldWidget(widgets.HBox):
         tmax = max(self.pos_tt)
 
         spikes = get_spike_times(self.units, index, [tmin, tmax])
-        if use_velocity == False:
+        if not use_velocity:
             occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
-                self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd, velocity=self.velocity)
+                self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd,
+                velocity=self.velocity)
         else:
             occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
                 self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd,
@@ -93,7 +91,7 @@ class PlaceFieldWidget(widgets.HBox):
         return fig
 
 
-class PlaceField_1D_Widget(widgets.HBox):
+class PlaceField1DWidget(widgets.HBox):
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries,
                  foreign_group_and_sort_controller: GroupAndSortController = None,
                  group_by=None,
@@ -111,9 +109,7 @@ class PlaceField_1D_Widget(widgets.HBox):
         else:
             self.velocity = None
 
-        istart = 0
-        istop = None
-        self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
+        self.pos, self.unit = get_timeseries_in_units(spatial_series)
 
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
@@ -124,7 +120,7 @@ class PlaceField_1D_Widget(widgets.HBox):
         cb_normalize_select = Checkbox(value=False, description='normalize', indent=False)
         cb_collapsed_select = Checkbox(value=False, description='collapsed', indent=False)
         sm_unit_select = widgets.SelectMultiple(options=index,
-                                                value=[1, 2, 3, 4, 5], rows= 20,
+                                                value=[1, 2, 3, 4, 5], rows=20,
                                                 description='Select units', disabled=False
                                                 )
 
@@ -154,7 +150,7 @@ class PlaceField_1D_Widget(widgets.HBox):
     def make_group_and_sort(self, group_by=None, control_order=True):
         return GroupAndSortController(self.units, group_by=group_by, control_order=control_order)
 
-    def do_1d_rate_map(self,  order=None, normalize=False, collapsed=False, gaussian_sd=0.0557,
+    def do_1d_rate_map(self, order=None, normalize=False, collapsed=False, gaussian_sd=0.0557,
                        spatial_bin_len=0.0168, **kwargs):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
@@ -206,6 +202,7 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
         Amount of space to put between each unit (i.e. row) in the figure
     unit_labels: array-like
         Unit ids for each unit in ratemap
+    color: matplotlib color
     collapsed: bool
         default = False
         Determines whether to plot the ratemaps with zero padding, i.e. at the same y coordinate, on the ratemap
@@ -239,17 +236,18 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
 
     for unit, curve in enumerate(ratemap):
         if color is None:
-            line = ax.plot(xvals, unit*pad + curve, zorder=int(10+2*n_units-2*unit))
+            line = ax.plot(xvals, unit * pad + curve, zorder=int(10 + 2 * n_units - 2 * unit))
         else:
-            line = ax.plot(xvals, unit*pad + curve, zorder=int(10+2*n_units-2*unit), color=color)
+            line = ax.plot(xvals, unit * pad + curve, zorder=int(10 + 2 * n_units - 2 * unit), color=color)
         if fill:
             # Get the color from the current curve
             fillcolor = line[0].get_color()
-            ax.fill_between(xvals, unit*pad, unit*pad + curve, alpha=0.3, color=fillcolor, zorder=int(10+2*n_units-2*unit-1))
+            ax.fill_between(xvals, unit * pad, unit * pad + curve, alpha=0.3, color=fillcolor,
+                            zorder=int(10 + 2 * n_units - 2 * unit - 1))
 
     ax.set_xlim(xmin, xmax)
     if pad != 0:
-        yticks = np.arange(n_units)*pad + 0.5*pad
+        yticks = np.arange(n_units) * pad + 0.5 * pad
         ax.set_yticks(yticks)
         ax.set_yticklabels(unit_labels)
         ax.set_xlabel('external variable')

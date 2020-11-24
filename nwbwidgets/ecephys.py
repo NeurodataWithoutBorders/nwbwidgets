@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
-from plotly.colors import DEFAULT_PLOTLY_COLORS
+import pynwb
 from ipywidgets import widgets, ValueWidget
+from plotly.colors import DEFAULT_PLOTLY_COLORS
 from pynwb.ecephys import LFP, SpikeEventSeries, ElectricalSeries
 from scipy.signal import stft
-import pynwb
 
 from .base import fig2widget, nwb2widget, lazy_tabs, render_dataframe
 from .timeseries import BaseGroupedTraceWidget
@@ -87,8 +87,8 @@ def show_electrodes(electrodes_table):
     if np.isnan(electrodes_table.x[0]):  # position is not defined
         in_dict.update(electrode_groups=ElectrodeGroupsWidget)
     else:
-        if electrodes_table.get_ancestor('NWBFile').subject.species \
-                in ('mouse', 'Mus musculus'):
+        subject = electrodes_table.get_ancestor('NWBFile').subject
+        if subject is not None and subject.species in ('mouse', 'Mus musculus'):
             in_dict.update(CCF=show_ccf)
 
     return lazy_tabs(in_dict, electrodes_table)

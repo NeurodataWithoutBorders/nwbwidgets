@@ -1,16 +1,20 @@
+from functools import lru_cache
+
 import numpy as np
-from scipy.ndimage.filters import gaussian_filter, maximum_filter
+from scipy.ndimage.filters import gaussian_filter
+
 
 def find_nearest(arr, tt):
     """Used for picking out elements of a TimeSeries based on spike times
 
     Parameters
     ----------
-    arr
-    tt
+    arr: array-like
+    tt: array-like
 
     Returns
     -------
+    indices: array-like
 
     """
     arr = arr[arr > tt[0]]
@@ -23,17 +27,19 @@ def smooth(y, box_pts):
 
     Parameters
     ----------
-    y
-    box_pts
+    y: array-like
+    box_pts: int
 
     Returns
     -------
+    output: np.array(dtype=float)
 
     """
     box = np.ones(box_pts) / box_pts
     return np.convolve(y, box, mode='same')
 
 
+@lru_cache()
 def compute_speed(pos, pos_tt, smooth_param=40):
     """Compute boolean of whether the speed of the animal was above a threshold
     for each time point
@@ -55,6 +61,7 @@ def compute_speed(pos, pos_tt, smooth_param=40):
     return smooth(speed, smooth_param)
 
 
+@lru_cache()
 def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, velocity=None):
     """Computes occupancy per bin in seconds
 
@@ -86,7 +93,7 @@ def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, veloc
     if velocity is None:
         is_running = compute_speed(pos, pos_tt) > speed_thresh
     else:
-        is_running = np.linalg.norm(self.velocity) > speed_thresh
+        is_running = np.linalg.norm(velocity) > speed_thresh
 
     run_pos = pos[is_running, :]
     occupancy = np.histogram2d(run_pos[:, 0],
@@ -96,6 +103,7 @@ def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, veloc
     return occupancy, is_running
 
 
+@lru_cache()
 def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03, velocity=None):
     """Returns speed-gated position during spikes
 
@@ -136,6 +144,7 @@ def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03
     return n_spikes
 
 
+@lru_cache()
 def compute_2d_firing_rate(pos, pos_tt, spikes,
                            pixel_width,
                            speed_thresh=0.03,
@@ -202,6 +211,7 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     return occupancy, filtered_firing_rate, [edges_x, edges_y]
 
 
+@lru_cache()
 def compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate, speed_thresh=0.03, velocity=None):
 
     np.seterr(invalid='ignore')
@@ -219,6 +229,7 @@ def compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate, speed_thresh=
     return occupancy
 
 
+@lru_cache()
 def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
                                spatial_bin_len=0.0168, speed_thresh=0.03, velocity=None):
     """The occupancy and number of spikes, speed-gated, binned, and smoothed
@@ -236,6 +247,8 @@ def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
         in meters. Default = 5.57 cm
     spatial_bin_len: float (optional)
         in meters. Default = 1.68 cm
+    speed_thresh: float (optional)
+        in m/s. Default = 0.03
     velocity: np.ndarray(dtype=float)
         pre-computed velocity
 
