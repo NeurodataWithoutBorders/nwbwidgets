@@ -55,7 +55,7 @@ default_neurodata_vis_spec = {
     pynwb.base.Image: image.show_rbga_image,
     pynwb.image.ImageSeries: image.show_image_series,
     pynwb.image.IndexSeries: image.show_index_series,
-    pynwb.TimeSeries: timeseries.show_timeseries,
+    pynwb.TimeSeries: timeseries.custom_timeseries_widget,
     pynwb.core.NWBContainer: base.show_neurodata_base,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
     h5py.Dataset: base.show_dset,

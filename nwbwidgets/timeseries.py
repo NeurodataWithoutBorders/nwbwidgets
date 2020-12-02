@@ -164,6 +164,12 @@ def plot_traces(timeseries: TimeSeries, time_window=None, trace_window=None,
     return fig
 
 
+def custom_timeseries_widget(node, **kwargs):
+    if node.name == 'Velocity':
+        return SeparateTracesPlotlyWidget(node)
+    return show_timeseries(node, **kwargs)
+
+
 def show_timeseries(node, **kwargs):
     if len(node.data.shape) == 1:
         return SingleTracePlotlyWidget(node, **kwargs)
