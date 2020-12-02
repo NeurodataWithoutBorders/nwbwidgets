@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ipywidgets import widgets
 from nwbwidgets.timeseries import (BaseGroupedTraceWidget, show_ts_fields, show_timeseries, plot_traces,
-                                   show_indexed_timeseries_mpl)
+                                   show_indexed_timeseries_mpl, custom_timeseries_widget,
+                                   SeparateTracesPlotlyWidget)
 from pynwb import TimeSeries
 
 
@@ -46,3 +47,21 @@ class PlotTracesTestCase(unittest.TestCase):
     def test_plot_traces_fix(self):
         ts = TimeSeries(name='test_timeseries', data=self.data.T, unit='m', starting_time=0.0, rate=20.0)
         plot_traces(ts)
+
+
+class CustomTimeSeriesTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.data = np.random.rand(160, 2)
+
+    def test_custom_timeseries_widget_for_velocity(self):
+        self.ts = TimeSeries(name='Velocity', data=self.data, unit='m', starting_time=0.0,
+                             rate=1.0)
+
+        assert isinstance(custom_timeseries_widget(self.ts), SeparateTracesPlotlyWidget)
+
+    def test_custom_timeseries_widget_default_behavior(self):
+        self.ts = TimeSeries(name='test_timeseries', data=self.data, unit='m', starting_time=0.0,
+                             rate=1.0)
+
+        assert isinstance(custom_timeseries_widget(self.ts), BaseGroupedTraceWidget)
