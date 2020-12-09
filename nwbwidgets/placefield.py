@@ -28,7 +28,10 @@ def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
 
 class PlaceFieldWidget(widgets.HBox):
 
-    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries, velocity: pynwb.TimeSeries = None, **kwargs):
+    def __init__(self, spatial_series: pynwb.behavior.SpatialSeries,
+                 velocity: pynwb.TimeSeries = None,
+                 towers: pynwb.epoch.TimeIntervals = None,
+                 **kwargs):
         super().__init__()
         self.units = spatial_series.get_ancestor('NWBFile').units
         self.pos_tt = get_timeseries_tt(spatial_series)
@@ -36,9 +39,26 @@ class PlaceFieldWidget(widgets.HBox):
             self.velocity = velocity
         else:
             self.velocity = None
+
         istart = 0
         istop = None
         self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
+        if towers is not None:
+            left_towers = towers.left cue_onset
+            right_towers = towers.right_cue_onset
+            tt = self.pos_tt[:, 0]
+            ss = np.zeros_like(tt)
+            ss[np.searchsorted(tt, right_towers)] += 1
+            ss[np.searchsorted(tt, left_towers)] -= 1
+            starts = np.searchsorted(tt, towers.start_time)
+            ends = np.searchsorted(tt, towers.stop_time)
+            ss = np.zeros_like(tt)
+            for start, end in zip(starts,ends):
+                ss[start:end] = np.cumsum(ss[start:end])
+
+            self.pos[:, 0] = self.pos[:, 1]
+            self.pos[:, 1] = states
+
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
         style = {'description_width': 'initial'}
@@ -51,7 +71,7 @@ class PlaceFieldWidget(widgets.HBox):
             gaussian_sd=bft_gaussian,
             speed_thresh=bft_speed,
             index=dd_unit_select,
-            use_velocity=cb_velocity,
+            use_velocity=cb_velocity
         )
 
         out_fig = interactive_output(self.do_rate_map, self.controls)
@@ -61,7 +81,7 @@ class PlaceFieldWidget(widgets.HBox):
                 bft_gaussian,
                 bft_speed,
                 dd_unit_select,
-                cb_velocity
+                cb_velocity,
             ]),
             vis2widget(out_fig)
         ]
@@ -72,12 +92,16 @@ class PlaceFieldWidget(widgets.HBox):
 
         spikes = get_spike_times(self.units, index, [tmin, tmax])
         if use_velocity == False:
-            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
-                self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd, velocity=self.velocity)
+            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(self.pos, self.pos_tt, spikes,
+                                                                                         self.pixel_width,
+                                                                                         speed_thresh=speed_thresh,
+                                                                                         gaussian_sd=gaussian_sd)
         else:
-            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(
-                self.pos, self.pos_tt, spikes, self.pixel_width, speed_thresh=speed_thresh, gaussian_sd=gaussian_sd,
-                velocity=self.velocity)
+            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(self.pos, self.pos_tt, spikes,
+                                                                                         self.pixel_width,
+                                                                                         speed_thresh=speed_thresh,
+                                                                                         gaussian_sd=gaussian_sd,
+                                                                                         velocity=self.velocity)
 
         fig, ax = plt.subplots()
 
@@ -167,7 +191,7 @@ class PlaceField_1D_Widget(widgets.HBox):
             if not i:
                 all_unit_firing_rate = np.zeros([len(index), len(xx)])
 
-            all_unit_firing_rate[ind] = all_unit_firing_rate_temp
+            all_unit_firing_rate[i] = all_unit_firing_rate_temp
 
         fig, ax = plt.subplots(figsize=(7, 7))
         plot_tuning_curves1D(all_unit_firing_rate, xx, ax=ax, unit_labels=index, normalize=normalize,
@@ -175,7 +199,7 @@ class PlaceField_1D_Widget(widgets.HBox):
 
         return fig
 
-    @lru_cache
+    @lru_cache()
     def compute_1d_firing_rate(self, ind, tmin, tmax, gaussian_sd, spatial_bin_len):
         spikes = get_spike_times(self.units, ind, [tmin, tmax])
         xx, _, all_unit_firing_rate_temp = compute_linear_firing_rate(self.pos, self.pos_tt, spikes,
