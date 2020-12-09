@@ -1,21 +1,17 @@
-import numpy as np
-from scipy.ndimage import label
-from scipy.ndimage.filters import gaussian_filter, maximum_filter
 from functools import lru_cache
 
 import matplotlib.pyplot as plt
-
+import numpy as np
 import pynwb
 from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox, Layout
 
 from .analysis.placefields import compute_2d_firing_rate, compute_linear_firing_rate
 
+from .base import vis2widget
+from .controllers import GroupAndSortController
 from .utils.widgets import interactive_output
 from .utils.units import get_spike_times
 from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
-from .base import vis2widget
-from .controllers import GroupAndSortController
-
 
 def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
     if spatial_series.data.shape[1] == 2:
