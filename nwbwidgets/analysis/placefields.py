@@ -39,7 +39,6 @@ def smooth(y, box_pts):
     return np.convolve(y, box, mode='same')
 
 
-@lru_cache()
 def compute_speed(pos, pos_tt, smooth_param=40):
     """Compute boolean of whether the speed of the animal was above a threshold
     for each time point
@@ -61,7 +60,6 @@ def compute_speed(pos, pos_tt, smooth_param=40):
     return smooth(speed, smooth_param)
 
 
-@lru_cache()
 def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, velocity=None):
     """Computes occupancy per bin in seconds
 
@@ -103,7 +101,6 @@ def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, veloc
     return occupancy, is_running
 
 
-@lru_cache()
 def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03, velocity=None):
     """Returns speed-gated position during spikes
 
@@ -144,11 +141,11 @@ def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03
     return n_spikes
 
 
-@lru_cache()
 def compute_2d_firing_rate(pos, pos_tt, spikes,
                            pixel_width,
                            speed_thresh=0.03,
-                           gaussian_sd=0.0184,
+                           gaussian_sd_x=0.0184,
+                           gaussian_sd_y=0.0184,
                            x_start=None, x_stop=None,
                            y_start=None, y_stop=None,
                            velocity=None):
@@ -166,8 +163,10 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     pixel_width: float
     speed_thresh: float, optional
         in meters. Default = 3.0 cm/s
-    gaussian_sd: float, optional
-        in meters. Default = 1.84 cm
+    gaussian_sd_x: float, optional
+        width of gaussian kernel in x-dim, in meters. Default = 1.84 cm
+    gaussian_sd_y: float, optional
+        width of gaussian kernel in y-dim, in meters. Default = 1.84 cm
     x_start: float, optional
     x_stop: float, optional
     y_start: float, optional
@@ -201,17 +200,17 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     np.seterr(divide='ignore')
     firing_rate = n_spikes / occupancy  # in Hz
     firing_rate[np.isnan(firing_rate)] = 0  # get rid of NaNs so convolution works
-
-    filtered_firing_rate = gaussian_filter(firing_rate, gaussian_sd / pixel_width)
+    sigmas = [gaussian_sd_y / pixel_width, gaussian_sd_x / pixel_width]
+    filtered_firing_rate = gaussian_filter(firing_rate, sigmas)
 
     # filter occupancy to create a mask so non-explored regions are nan'ed
-    filtered_occupancy = gaussian_filter(occupancy, gaussian_sd / pixel_width / 8)
+    sigmas_occ = [gaussian_sd_y / pixel_width / 8, gaussian_sd_x / pixel_width / 8]
+    filtered_occupancy = gaussian_filter(occupancy, sigmas_occ)
     filtered_firing_rate[filtered_occupancy.astype('bool') < .00001] = np.nan
 
     return occupancy, filtered_firing_rate, [edges_x, edges_y]
 
 
-@lru_cache()
 def compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate, speed_thresh=0.03, velocity=None):
 
     np.seterr(invalid='ignore')
@@ -229,7 +228,6 @@ def compute_1d_occupancy(pos, pos_tt, spatial_bins, sampling_rate, speed_thresh=
     return occupancy
 
 
-@lru_cache()
 def compute_linear_firing_rate(pos, pos_tt, spikes, gaussian_sd=0.0557,
                                spatial_bin_len=0.0168, speed_thresh=0.03, velocity=None):
     """The occupancy and number of spikes, speed-gated, binned, and smoothed

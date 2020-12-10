@@ -17,7 +17,7 @@ def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
     if spatial_series.data.shape[1] == 2:
         return PlaceFieldWidget(spatial_series)
     elif spatial_series.data.shape[1] == 1:
-        return PlaceField_1D_Widget(spatial_series)
+        return PlaceField1DWidget(spatial_series)
     else:
         print('Spatial series exceeds dimensionality for visualization')
         return
@@ -26,7 +26,6 @@ class PlaceFieldWidget(widgets.HBox):
 
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries,
                  velocity: pynwb.TimeSeries = None,
-                 towers: pynwb.epoch.TimeIntervals = None,
                  **kwargs):
         super().__init__()
         self.units = spatial_series.get_ancestor('NWBFile').units
@@ -36,35 +35,20 @@ class PlaceFieldWidget(widgets.HBox):
         else:
             self.velocity = None
 
-        istart = 0
-        istop = None
-        self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
-        if towers is not None:
-            left_towers = towers.left cue_onset
-            right_towers = towers.right_cue_onset
-            tt = self.pos_tt[:, 0]
-            ss = np.zeros_like(tt)
-            ss[np.searchsorted(tt, right_towers)] += 1
-            ss[np.searchsorted(tt, left_towers)] -= 1
-            starts = np.searchsorted(tt, towers.start_time)
-            ends = np.searchsorted(tt, towers.stop_time)
-            ss = np.zeros_like(tt)
-            for start, end in zip(starts,ends):
-                ss[start:end] = np.cumsum(ss[start:end])
-
-            self.pos[:, 0] = self.pos[:, 1]
-            self.pos[:, 1] = states
+        self.pos, self.unit = get_timeseries_in_units(spatial_series)
 
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
         style = {'description_width': 'initial'}
-        bft_gaussian = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd (cm)', style=style)
+        bft_gaussian_x = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd x (cm)', style=style)
+        bft_gaussian_y = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd y (cm)', style=style)
         bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)', style=style)
         dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
         cb_velocity = Checkbox(value=False, description='use velocity', indent=False)
 
         self.controls = dict(
-            gaussian_sd=bft_gaussian,
+            gaussian_sd_x=bft_gaussian_x,
+            gaussian_sd_y=bft_gaussian_y,
             speed_thresh=bft_speed,
             index=dd_unit_select,
             use_velocity=cb_velocity
@@ -74,7 +58,8 @@ class PlaceFieldWidget(widgets.HBox):
 
         self.children = [
             widgets.VBox([
-                bft_gaussian,
+                bft_gaussian_x,
+                bft_gaussian_y,
                 bft_speed,
                 dd_unit_select,
                 cb_velocity,
@@ -82,23 +67,12 @@ class PlaceFieldWidget(widgets.HBox):
             vis2widget(out_fig)
         ]
 
-    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd=0.0184, use_velocity=False):
-        tmin = min(self.pos_tt)
-        tmax = max(self.pos_tt)
-
-        spikes = get_spike_times(self.units, index, [tmin, tmax])
-        if use_velocity == False:
-            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(self.pos, self.pos_tt, spikes,
-                                                                                         self.pixel_width,
+    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd_x=0.0184, gaussian_sd_y=0.0184, use_velocity=False):
+        occupancy, filtered_firing_rate, [edges_x, edges_y] = self.compute_twodim_firing_rate(index=index,
                                                                                          speed_thresh=speed_thresh,
-                                                                                         gaussian_sd=gaussian_sd)
-        else:
-            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(self.pos, self.pos_tt, spikes,
-                                                                                         self.pixel_width,
-                                                                                         speed_thresh=speed_thresh,
-                                                                                         gaussian_sd=gaussian_sd,
-                                                                                         velocity=self.velocity)
-
+                                                                                         gaussian_sd_x=gaussian_sd_x,
+                                                                                         gaussian_sd_y=gaussian_sd_y,
+                                                                                         use_velocity=use_velocity)
         fig, ax = plt.subplots()
 
         im = ax.imshow(filtered_firing_rate,
@@ -112,11 +86,29 @@ class PlaceFieldWidget(widgets.HBox):
 
         return fig
 
+    @lru_cache()
+    def compute_twodim_firing_rate(self, index=0, speed_thresh=0.03, gaussian_sd_x=0.0184, gaussian_sd_y=0.0184,
+                                   use_velocity=False):
+        tmin = min(self.pos_tt)
+        tmax = max(self.pos_tt)
+        spikes = get_spike_times(self.units, index, [tmin, tmax])
+        if use_velocity == False:
+            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(self.pos, self.pos_tt, spikes,
+                                                                                         self.pixel_width,
+                                                                                         speed_thresh=speed_thresh,
+                                                                                         gaussian_sd_x=gaussian_sd_x,
+                                                                                         gaussian_sd_y=gaussian_sd_y)
+        else:
+            occupancy, filtered_firing_rate, [edges_x, edges_y] = compute_2d_firing_rate(self.pos, self.pos_tt, spikes,
+                                                                                         self.pixel_width,
+                                                                                         speed_thresh=speed_thresh,
+                                                                                         gaussian_sd_x=gaussian_sd_x,
+                                                                                         gaussian_sd_y=gaussian_sd_y,
+                                                                                         velocity=self.velocity)
+        return occupancy, filtered_firing_rate, [edges_x, edges_y]
 
-class PlaceField_1D_Widget(widgets.HBox):
+class PlaceField1DWidget(widgets.HBox):
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries,
-                 foreign_group_and_sort_controller: GroupAndSortController = None,
-                 group_by=None,
                  velocity: pynwb.TimeSeries = None,
                  **kwargs):
 
@@ -131,9 +123,7 @@ class PlaceField_1D_Widget(widgets.HBox):
         else:
             self.velocity = None
 
-        istart = 0
-        istop = None
-        self.pos, self.unit = get_timeseries_in_units(spatial_series, istart, istop)
+        self.pos, self.unit = get_timeseries_in_units(spatial_series)
 
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
@@ -144,7 +134,7 @@ class PlaceField_1D_Widget(widgets.HBox):
         cb_normalize_select = Checkbox(value=False, description='normalize', indent=False)
         cb_collapsed_select = Checkbox(value=False, description='collapsed', indent=False)
         sm_unit_select = widgets.SelectMultiple(options=index,
-                                                value=[1, 2, 3, 4, 5], rows= 20,
+                                                value=[1, 2, 3, 4, 5], rows=20,
                                                 description='Select units', disabled=False
                                                 )
 
@@ -171,10 +161,7 @@ class PlaceField_1D_Widget(widgets.HBox):
             layout=Layout(width="100%", height="100%"))
         ]
 
-    def make_group_and_sort(self, group_by=None, control_order=True):
-        return GroupAndSortController(self.units, group_by=group_by, control_order=control_order)
-
-    def do_1d_rate_map(self,  order=None, normalize=False, collapsed=False, gaussian_sd=0.0557,
+    def do_1d_rate_map(self, order=None, normalize=False, collapsed=False, gaussian_sd=0.0557,
                        spatial_bin_len=0.0168, **kwargs):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)
@@ -182,8 +169,7 @@ class PlaceField_1D_Widget(widgets.HBox):
 
         for i, ind in enumerate(index):
 
-            all_unit_firing_rate_temp, xx = self.compute_1d_firing_rate(
-                ind, tmin, tmax, gaussian_sd, spatial_bin_len)
+            all_unit_firing_rate_temp, xx = self.compute_1d_firing_rate(ind, tmin, tmax, gaussian_sd, spatial_bin_len)
             if not i:
                 all_unit_firing_rate = np.zeros([len(index), len(xx)])
 
@@ -259,17 +245,18 @@ def plot_tuning_curves1D(ratemap, bin_pos, ax=None, normalize=False, pad=10, uni
 
     for unit, curve in enumerate(ratemap):
         if color is None:
-            line = ax.plot(xvals, unit*pad + curve, zorder=int(10+2*n_units-2*unit))
+            line = ax.plot(xvals, unit * pad + curve, zorder=int(10 + 2 * n_units - 2 * unit))
         else:
-            line = ax.plot(xvals, unit*pad + curve, zorder=int(10+2*n_units-2*unit), color=color)
+            line = ax.plot(xvals, unit * pad + curve, zorder=int(10 + 2 * n_units - 2 * unit), color=color)
         if fill:
             # Get the color from the current curve
             fillcolor = line[0].get_color()
-            ax.fill_between(xvals, unit*pad, unit*pad + curve, alpha=0.3, color=fillcolor, zorder=int(10+2*n_units-2*unit-1))
+            ax.fill_between(xvals, unit * pad, unit * pad + curve, alpha=0.3, color=fillcolor,
+                            zorder=int(10 + 2 * n_units - 2 * unit - 1))
 
     ax.set_xlim(xmin, xmax)
     if pad != 0:
-        yticks = np.arange(n_units)*pad + 0.5*pad
+        yticks = np.arange(n_units) * pad + 0.5 * pad
         ax.set_yticks(yticks)
         ax.set_yticklabels(unit_labels)
         ax.set_xlabel('external variable')
