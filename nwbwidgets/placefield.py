@@ -8,7 +8,6 @@ from ipywidgets import widgets, BoundedFloatText, Dropdown, Checkbox, Layout
 from .analysis.placefields import compute_2d_firing_rate, compute_linear_firing_rate
 
 from .base import vis2widget
-from .controllers import GroupAndSortController
 from .utils.widgets import interactive_output
 from .utils.units import get_spike_times
 from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
