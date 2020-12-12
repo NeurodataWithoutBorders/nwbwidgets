@@ -34,16 +34,11 @@ class PlaceFieldWidget(widgets.HBox):
         else:
             self.velocity = None
 
-        self.pos, self.unit = get_timeseries_in_units(spatial_series)
+        self.get_position(spatial_series)
 
         self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
 
-        style = {'description_width': 'initial'}
-        bft_gaussian_x = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd x (cm)', style=style)
-        bft_gaussian_y = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd y (cm)', style=style)
-        bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)', style=style)
-        dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
-        cb_velocity = Checkbox(value=False, description='use velocity', indent=False)
+        bft_gaussian_x, bft_gaussian_y, bft_speed, dd_unit_select, cb_velocity = self.get_controls()
 
         self.controls = dict(
             gaussian_sd_x=bft_gaussian_x,
@@ -65,6 +60,19 @@ class PlaceFieldWidget(widgets.HBox):
             ]),
             vis2widget(out_fig)
         ]
+
+    def get_position(self, spatial_series):
+        self.pos, self.unit = get_timeseries_in_units(spatial_series)
+
+    def get_controls(self):
+        style = {'description_width': 'initial'}
+        bft_gaussian_x = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd x (cm)', style=style)
+        bft_gaussian_y = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd y (cm)', style=style)
+        bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)', style=style)
+        dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
+        cb_velocity = Checkbox(value=False, description='use velocity', indent=False)
+
+        return bft_gaussian_x, bft_gaussian_y, bft_speed, dd_unit_select, cb_velocity
 
     def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd_x=0.0184, gaussian_sd_y=0.0184, use_velocity=False):
         occupancy, filtered_firing_rate, [edges_x, edges_y] = self.compute_twodim_firing_rate(index=index,
