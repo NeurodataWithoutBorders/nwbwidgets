@@ -8,11 +8,11 @@ from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhoton
 from skimage import measure
 from tifffile import imread, TiffFile
 
+from .base import df_to_hover_text
 from .timeseries import BaseGroupedTraceWidget
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .utils.functional import MemoizeMutable
-from .base import df_to_hover_text
 
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
@@ -126,7 +126,7 @@ def show_plane_segmentation_2d(
         fig: go.Figure = None,
         width: int = 600,
         ref_image=None
-        ):
+):
     """
 
     Parameters
