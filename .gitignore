@@ -129,3 +129,6 @@ dmypy.json
 
 # nwb
 **.nwb
+nwbwidgets/controllers/group_and_sort_controllers_multi_select.py
+nwbwidgets/placefield_group_and_sort.py
+nwbwidgets/towers_task_placefield.py

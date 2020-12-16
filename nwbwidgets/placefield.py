@@ -24,10 +24,13 @@ def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
 class PlaceFieldWidget(widgets.HBox):
 
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries,
-                 velocity: pynwb.TimeSeries = None,
+                 velocity: pynwb.TimeSeries = None, units = None,
                  **kwargs):
         super().__init__()
-        self.units = spatial_series.get_ancestor('NWBFile').units
+        if units is None:
+            self.units = spatial_series.get_ancestor('NWBFile').units
+        else:
+            self.units = units
         self.pos_tt = get_timeseries_tt(spatial_series)
         if velocity is not None:
             self.velocity = velocity
@@ -36,7 +39,7 @@ class PlaceFieldWidget(widgets.HBox):
 
         self.get_position(spatial_series)
 
-        self.pixel_width = (np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000
+        self.get_pixel_width()
 
         bft_gaussian_x, bft_gaussian_y, bft_speed, dd_unit_select, cb_velocity = self.get_controls()
 
@@ -60,6 +63,9 @@ class PlaceFieldWidget(widgets.HBox):
             ]),
             vis2widget(out_fig)
         ]
+
+    def get_pixel_width(self):
+        self.pixel_width = [(np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000] * 2
 
     def get_position(self, spatial_series):
         self.pos, self.unit = get_timeseries_in_units(spatial_series)

@@ -190,8 +190,8 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     y_start = np.nanmin(pos[:, 1]) if y_start is None else y_start
     y_stop = np.nanmax(pos[:, 1]) if y_stop is None else y_stop
 
-    edges_x = np.arange(x_start, x_stop, pixel_width)
-    edges_y = np.arange(y_start, y_stop, pixel_width)
+    edges_x = np.arange(x_start, x_stop, pixel_width[1])
+    edges_y = np.arange(y_start, y_stop, pixel_width[0])
 
     occupancy, running = compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh, velocity)
 
@@ -200,13 +200,13 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     np.seterr(divide='ignore')
     firing_rate = n_spikes / occupancy  # in Hz
     firing_rate[np.isnan(firing_rate)] = 0  # get rid of NaNs so convolution works
-    sigmas = [gaussian_sd_y / pixel_width, gaussian_sd_x / pixel_width]
+    sigmas = [gaussian_sd_y / pixel_width[1], gaussian_sd_x / pixel_width[0]]
     filtered_firing_rate = gaussian_filter(firing_rate, sigmas)
 
     # filter occupancy to create a mask so non-explored regions are nan'ed
-    sigmas_occ = [gaussian_sd_y / pixel_width / 8, gaussian_sd_x / pixel_width / 8]
+    sigmas_occ = [gaussian_sd_y / pixel_width[1] / 8, gaussian_sd_x / pixel_width[0] / 8]
     filtered_occupancy = gaussian_filter(occupancy, sigmas_occ)
-    filtered_firing_rate[filtered_occupancy.astype('bool') < .00001] = np.nan
+    # filtered_firing_rate[filtered_occupancy.astype('bool') < .00001] = np.nan
 
     return occupancy, filtered_firing_rate, [edges_x, edges_y]
 
