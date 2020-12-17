@@ -56,11 +56,14 @@ def compute_speed(pos, pos_tt, smooth_param=40):
     running: np.ndarray(dtype=bool)
 
     """
-    speed = np.hstack((0, np.sqrt(np.sum(np.diff(pos.T) ** 2, axis=0)) / np.diff(pos_tt)))
+    if len(pos.shape) > 1:
+        speed = np.hstack((0, np.sqrt(np.sum(np.diff(pos.T) ** 2, axis=0)) / np.diff(pos_tt)))
+    else:
+        speed = np.hstack((0, np.sqrt(np.diff(pos.T) ** 2) / np.diff(pos_tt)))
     return smooth(speed, smooth_param)
 
 
-def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, velocity=None):
+def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, pixel_width, speed_thresh=0.03, velocity=None):
     """Computes occupancy per bin in seconds
 
     Parameters
@@ -73,6 +76,7 @@ def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, veloc
         edges of histogram in meters
     edges_y: array-like
         edges of histogram in meters
+    pixel_width: array-like
     speed_thresh: float, optional
         in meters. Default = 3.0 cm/s
     velocity: np.ndarray(dtype=float)
@@ -89,19 +93,22 @@ def compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh=0.03, veloc
     sampling_period = (np.max(pos_tt) - np.min(pos_tt)) / len(pos_tt)
     np.seterr(invalid='ignore')
     if velocity is None:
-        is_running = compute_speed(pos, pos_tt) > speed_thresh
+        if pixel_width[1] is not int(1):
+            is_running = compute_speed(pos, pos_tt) > speed_thresh
+        else:
+            is_running = compute_speed(pos[:, 0], pos_tt) > speed_thresh
     else:
         is_running = np.linalg.norm(velocity) > speed_thresh
 
     run_pos = pos[is_running, :]
-    occupancy = np.histogram2d(run_pos[:, 0],
-                               run_pos[:, 1],
-                               [edges_x, edges_y])[0] * sampling_period  # in seconds
+    occupancy = np.histogram2d(run_pos[:, 1],
+                               run_pos[:, 0],
+                               [edges_y, edges_x])[0] * sampling_period  # in seconds
 
     return occupancy, is_running
 
 
-def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03, velocity=None):
+def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, pixel_width, speed_thresh=0.03, velocity=None):
     """Returns speed-gated position during spikes
 
     Parameters
@@ -116,6 +123,7 @@ def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03
         edges of histogram in meters
     edges_y: np.ndarray(dtype=float)
         edges of histogram in meters
+    pixel_width: array
     speed_thresh: float
         in meters. Default = 3.0 cm/s
     velocity: np.ndarray(dtype=float)
@@ -126,7 +134,10 @@ def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03
     """
     np.seterr(invalid='ignore')
     if velocity is None:
-        is_running = compute_speed(pos, pos_tt) > speed_thresh
+        if pixel_width[1] is not int(1):
+            is_running = compute_speed(pos, pos_tt) > speed_thresh
+        else:
+            is_running = compute_speed(pos[:, 0], pos_tt) > speed_thresh
     else:
         is_running = np.linalg.norm(velocity) > speed_thresh
 
@@ -134,9 +145,9 @@ def compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh=0.03
     spike_pos_inds = spike_pos_inds[is_running[spike_pos_inds]]
     pos_on_spikes = pos[spike_pos_inds, :]
 
-    n_spikes = np.histogram2d(pos_on_spikes[:, 0],
-                              pos_on_spikes[:, 1],
-                              [edges_x, edges_y])[0]
+    n_spikes = np.histogram2d(pos_on_spikes[:, 1],
+                              pos_on_spikes[:, 0],
+                              [edges_y, edges_x])[0]
 
     return n_spikes
 
@@ -160,7 +171,7 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
         (time,) in seconds
     spikes: np.ndarray(dtype=float)
         in seconds
-    pixel_width: float
+    pixel_width: array-like
     speed_thresh: float, optional
         in meters. Default = 3.0 cm/s
     gaussian_sd_x: float, optional
@@ -190,12 +201,12 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     y_start = np.nanmin(pos[:, 1]) if y_start is None else y_start
     y_stop = np.nanmax(pos[:, 1]) if y_stop is None else y_stop
 
-    edges_x = np.arange(x_start, x_stop, pixel_width[1])
-    edges_y = np.arange(y_start, y_stop, pixel_width[0])
+    edges_x = np.arange(x_start, x_stop, pixel_width[0])
+    edges_y = np.arange(y_start, y_stop, pixel_width[1])
 
-    occupancy, running = compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, speed_thresh, velocity)
+    occupancy, running = compute_2d_occupancy(pos, pos_tt, edges_x, edges_y, pixel_width, speed_thresh, velocity)
 
-    n_spikes = compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, speed_thresh, velocity)
+    n_spikes = compute_2d_n_spikes(pos, pos_tt, spikes, edges_x, edges_y, pixel_width, speed_thresh, velocity)
 
     np.seterr(divide='ignore')
     firing_rate = n_spikes / occupancy  # in Hz

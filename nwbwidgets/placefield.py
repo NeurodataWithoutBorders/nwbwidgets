@@ -34,8 +34,10 @@ class PlaceFieldWidget(widgets.HBox):
         self.pos_tt = get_timeseries_tt(spatial_series)
         if velocity is not None:
             self.velocity = velocity
+            self.disable = False
         else:
             self.velocity = None
+            self.disable = True
 
         self.get_position(spatial_series)
 
@@ -74,9 +76,9 @@ class PlaceFieldWidget(widgets.HBox):
         style = {'description_width': 'initial'}
         bft_gaussian_x = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd x (cm)', style=style)
         bft_gaussian_y = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd y (cm)', style=style)
-        bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (cm/s)', style=style)
+        bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (m/s)', style=style)
         dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
-        cb_velocity = Checkbox(value=False, description='use velocity', indent=False)
+        cb_velocity = Checkbox(value=False, description='use velocity', indent=False, disabled= self.disable)
 
         return bft_gaussian_x, bft_gaussian_y, bft_speed, dd_unit_select, cb_velocity
 
