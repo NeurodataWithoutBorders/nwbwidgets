@@ -82,14 +82,127 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
         self.children = [self.fig]
 
 
+class HumanElectrodesPlotlyWidget(widgets.VBox):
+
+    def __init__(self, electrodes: pynwb.base.DynamicTable, **kwargs):
+
+        super().__init__()
+
+        slider_kwargs = dict(
+            value=1.,
+            min=0.,
+            max=1.,
+            style={'description_width': 'initial'}
+        )
+
+        left_opacity_slider = widgets.FloatSlider(
+            description='left hemi opacity',
+            **slider_kwargs
+        )
+
+        right_opacity_slider = widgets.FloatSlider(
+            description='right hemi opacity',
+            **slider_kwargs
+        )
+
+        left_opacity_slider.observe(self.observe_left_opacity)
+        right_opacity_slider.observe(self.observe_right_opacity)
+
+        self.fig = go.FigureWidget()
+        self.plot_human_brain()
+        self.show_electrodes(electrodes)
+
+        self.children = [
+            self.fig,
+            widgets.HBox([
+                left_opacity_slider, right_opacity_slider
+            ])
+
+        ]
+
+    def show_electrodes(self, electrodes: pynwb.base.DynamicTable):
+
+        x = electrodes.x[:]
+        y = electrodes.y[:]
+        z = electrodes.z[:]
+        group_names = electrodes.group_name[:]
+        ugroups, group_inv = np.unique(group_names, return_inverse=True)
+
+        with self.fig.batch_update():
+            for i, (group, c) in enumerate(zip(ugroups, DEFAULT_PLOTLY_COLORS)):
+                selx, sely, selz = x[group_inv == i], y[group_inv == i], z[group_inv == i]
+
+                trace_kwargs = dict()
+                if group == b'GRID':
+                    trace_kwargs.update(mode='markers')
+
+                self.fig.add_trace(
+                    go.Scatter3d(x=selx, y=sely, z=selz, name=group,
+                                 marker=dict(color=c))
+                )
+
+    def plot_human_brain(self, left_opacity=1., right_opacity=1.):
+
+        from nilearn import datasets, surface
+
+        mesh = datasets.fetch_surf_fsaverage('fsaverage5')
+
+        def create_mesh(name, **kwargs):
+            vertices, triangles = surface.load_surf_mesh(mesh[name])
+            x, y, z = vertices.T
+            i, j, k = triangles.T
+
+            return go.Mesh3d(
+                x=x, y=y, z=z,
+                i=i, j=j, k=k,
+                **kwargs
+            )
+
+        kwargs = dict(
+            color='lightgray',
+            lighting=dict(
+                specular=1,
+                ambient=.9,
+                roughness=0.9,
+                diffuse=0.9
+            ),
+            hoverinfo='skip',
+        )
+
+        self.fig.add_trace(create_mesh('pial_left', opacity=left_opacity, **kwargs))
+        self.fig.add_trace(create_mesh('pial_right', opacity=right_opacity, **kwargs))
+
+        self.fig.update_layout(
+            scene=dict(
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False),
+                zaxis=dict(visible=False),
+            ),
+            height=500,
+            margin=dict(t=20, b=0)
+        )
+
+    def observe_left_opacity(self, change):
+        if 'new' in change and isinstance(change['new'], float):
+            self.fig.data[0].opacity = change['new']
+
+    def observe_right_opacity(self, change):
+        if 'new' in change and isinstance(change['new'], float):
+            self.fig.data[1].opacity = change['new']
+
+
 def show_electrodes(electrodes_table):
     in_dict = dict(table=render_dataframe)
     if np.isnan(electrodes_table.x[0]):  # position is not defined
         in_dict.update(electrode_groups=ElectrodeGroupsWidget)
     else:
-        if electrodes_table.get_ancestor('NWBFile').subject.species \
-                in ('mouse', 'Mus musculus'):
-            in_dict.update(CCF=show_ccf)
+        subject = electrodes_table.get_ancestor('NWBFile').subject
+        if subject is not None:
+            species = subject.species
+            if species in ('mouse', 'Mus musculus'):
+                in_dict.update(CCF=show_ccf)
+            elif species in ('human', 'Homo sapiens'):
+                in_dict.update(render=HumanElectrodesPlotlyWidget)
 
     return lazy_tabs(in_dict, electrodes_table)
 
