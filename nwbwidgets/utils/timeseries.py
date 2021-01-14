@@ -4,7 +4,15 @@ import numpy as np
 from bisect import bisect_left
 
 
-def get_timeseries_tt(node: TimeSeries, istart=0, istop=None) -> np.ndarray:
+def check_index(ind_start, ind_end):
+    if ind_end == ind_start:
+        if ind_end is not None:
+            ind_end = ind_start + 1
+    elif ind_start is None and ind_end == 0:
+        ind_end = 1
+    return ind_start, ind_end
+
+def get_timeseries_tt(node: TimeSeries, istart=0, istop=-1) -> np.ndarray:
     """
     For any TimeSeries, return timestamps. If the TimeSeries uses starting_time and rate, the timestamps will be
     generated.
@@ -22,6 +30,7 @@ def get_timeseries_tt(node: TimeSeries, istart=0, istop=None) -> np.ndarray:
     numpy.ndarray
 
     """
+    istart, istop = check_index(istart,istop)
     if node.timestamps is not None:
         return node.timestamps[istart:istop]
     else:
@@ -94,6 +103,7 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
     numpy.ndarray, str
 
     """
+    istart, istop = check_index(istart, istop)
     data = node.data[istart:istop]
     if node.conversion and np.isfinite(node.conversion):
         data = data * node.conversion
@@ -147,6 +157,7 @@ def align_by_times(timeseries: TimeSeries, starts, stops):
     for istart, istop in zip(starts, stops):
         ind_start = timeseries_time_to_ind(timeseries, istart)
         ind_stop = timeseries_time_to_ind(timeseries, istop, ind_min=ind_start)
+        ind_start, ind_stop = check_index(ind_start, ind_stop)
         out.append(timeseries.data[ind_start:ind_stop])
     return np.array(out)
 
