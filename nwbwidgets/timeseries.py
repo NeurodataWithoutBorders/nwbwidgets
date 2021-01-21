@@ -346,6 +346,9 @@ def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
 
     tt = get_timeseries_tt(time_series, t_ind_start, t_ind_stop)
 
+    elecs = time_series.electrodes.data[:]
+    order = np.array([np.argmax(elecs == x) for x in order])
+
     unique_sorted_order, inverse_sort = np.unique(order, return_inverse=True)
 
     if len(time_series.data.shape) > 1:
