@@ -41,13 +41,12 @@ class PlaceFieldWidget(widgets.HBox):
 
         self.get_position(spatial_series)
 
-        self.get_pixel_width()
-
-        bft_gaussian_x, bft_gaussian_y, bft_speed, dd_unit_select, cb_velocity = self.get_controls()
+        bft_gaussian_x, bft_gaussian_y, bft_bin_num, bft_speed, dd_unit_select, cb_velocity = self.get_controls()
 
         self.controls = dict(
             gaussian_sd_x=bft_gaussian_x,
             gaussian_sd_y=bft_gaussian_y,
+            bin_num=bft_bin_num,
             speed_thresh=bft_speed,
             index=dd_unit_select,
             use_velocity=cb_velocity
@@ -59,6 +58,7 @@ class PlaceFieldWidget(widgets.HBox):
             widgets.VBox([
                 bft_gaussian_x,
                 bft_gaussian_y,
+                bft_bin_num,
                 bft_speed,
                 dd_unit_select,
                 cb_velocity,
@@ -66,8 +66,8 @@ class PlaceFieldWidget(widgets.HBox):
             vis2widget(out_fig)
         ]
 
-    def get_pixel_width(self):
-        self.pixel_width = [(np.nanmax(self.pos) - np.nanmin(self.pos)) / 1000] * 2
+    def get_pixel_width(self, bin_num):
+        self.pixel_width = [(np.nanmax(self.pos) - np.nanmin(self.pos)) / bin_num] * 2
 
     def get_position(self, spatial_series):
         self.pos, self.unit = get_timeseries_in_units(spatial_series)
@@ -76,18 +76,22 @@ class PlaceFieldWidget(widgets.HBox):
         style = {'description_width': 'initial'}
         bft_gaussian_x = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd x (cm)', style=style)
         bft_gaussian_y = BoundedFloatText(value=0.0184, min=0, max=99999, description='gaussian sd y (cm)', style=style)
+        bft_bin_num = BoundedFloatText(value=1000, min=0, max=99999, description='number of bins', style=style)
         bft_speed = BoundedFloatText(value=0.03, min=0, max=99999, description='speed threshold (m/s)', style=style)
         dd_unit_select = Dropdown(options=np.arange(len(self.units)), description='unit')
         cb_velocity = Checkbox(value=False, description='use velocity', indent=False, disabled= self.disable)
 
-        return bft_gaussian_x, bft_gaussian_y, bft_speed, dd_unit_select, cb_velocity
+        return bft_gaussian_x, bft_gaussian_y, bft_bin_num, bft_speed, dd_unit_select, cb_velocity
 
-    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd_x=0.0184, gaussian_sd_y=0.0184, use_velocity=False):
-        occupancy, filtered_firing_rate, [edges_x, edges_y] = self.compute_twodim_firing_rate(index=index,
-                                                                                         speed_thresh=speed_thresh,
-                                                                                         gaussian_sd_x=gaussian_sd_x,
-                                                                                         gaussian_sd_y=gaussian_sd_y,
-                                                                                         use_velocity=use_velocity)
+    def do_rate_map(self, index=0, speed_thresh=0.03, gaussian_sd_x=0.0184, gaussian_sd_y=0.0184, bin_num=1000,
+                    use_velocity=False):
+        self.get_pixel_width(bin_num)
+        occupancy, filtered_firing_rate, [edges_x, edges_y] = self.compute_twodim_firing_rate(self.pixel_width[0],
+                                                                                              index=index,
+                                                                                              speed_thresh=speed_thresh,
+                                                                                              gaussian_sd_x=gaussian_sd_x,
+                                                                                              gaussian_sd_y=gaussian_sd_y,
+                                                                                              use_velocity=use_velocity)
         fig, ax = plt.subplots()
 
         im = ax.imshow(filtered_firing_rate,
@@ -102,7 +106,7 @@ class PlaceFieldWidget(widgets.HBox):
         return fig
 
     @lru_cache()
-    def compute_twodim_firing_rate(self, index=0, speed_thresh=0.03, gaussian_sd_x=0.0184, gaussian_sd_y=0.0184,
+    def compute_twodim_firing_rate(self, pixel_width, index=0, speed_thresh=0.03, gaussian_sd_x=0.0184, gaussian_sd_y=0.0184,
                                    use_velocity=False):
         tmin = min(self.pos_tt)
         tmax = max(self.pos_tt)

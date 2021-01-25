@@ -217,7 +217,7 @@ def compute_2d_firing_rate(pos, pos_tt, spikes,
     # filter occupancy to create a mask so non-explored regions are nan'ed
     sigmas_occ = [gaussian_sd_y / pixel_width[1] / 8, gaussian_sd_x / pixel_width[0] / 8]
     filtered_occupancy = gaussian_filter(occupancy, sigmas_occ)
-    # filtered_firing_rate[filtered_occupancy.astype('bool') < .00001] = np.nan
+    filtered_firing_rate[filtered_occupancy.astype('bool') < .00001] = np.nan
 
     return occupancy, filtered_firing_rate, [edges_x, edges_y]
 
