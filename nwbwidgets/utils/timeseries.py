@@ -12,6 +12,7 @@ def check_index(ind_start, ind_end):
         ind_end = 1
     return ind_start, ind_end
 
+
 def get_timeseries_tt(node: TimeSeries, istart=0, istop=-1) -> np.ndarray:
     """
     For any TimeSeries, return timestamps. If the TimeSeries uses starting_time and rate, the timestamps will be
@@ -149,7 +150,9 @@ def align_by_times(timeseries: TimeSeries, starts, stops):
     Args:
         timeseries: TimeSeries
         starts: array-like
+            starts in seconds
         stops: array-like
+            stops in seconds
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
