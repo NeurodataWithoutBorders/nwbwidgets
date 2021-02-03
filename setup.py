@@ -1,5 +1,8 @@
 from setuptools import setup
 
+d = {}
+exec(open("nwbwidgets/version.py").read(), None, d)
+version = d['version']
 
 with open('README.md') as f:
     long_description = f.read()
@@ -7,7 +10,7 @@ with open('README.md') as f:
 setup(
     author='Ben Dichter',
     author_email='ben.dichter@catalystneuro.com',
-    version='0.5.1',
+    version=version,
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
                  'Framework :: Jupyter',
@@ -20,7 +23,6 @@ setup(
                 'NWB-file in Jupyter Notebooks using ipywidgets.',
     install_requires=['pynwb',
                       'ipympl',
-                      'ipywidgets>=7.4',
                       'matplotlib',
                       'numpy',
                       'ipyvolume',
