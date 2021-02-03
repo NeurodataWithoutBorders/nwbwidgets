@@ -9,6 +9,7 @@ import pynwb
 
 from .base import fig2widget, nwb2widget, lazy_tabs, render_dataframe
 from .timeseries import BaseGroupedTraceWidget
+from .brains import HumanElectrodesPlotlyWidget
 
 
 def show_lfp(ndobj: LFP, neurodata_vis_spec: dict):
@@ -55,7 +56,7 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
                 y=nwbobj.group_name[:],
                 mode='markers',
                 marker=dict(
-                    color=np.array(DEFAULT_PLOTLY_COLORS)[group_pos],
+                    color=np.array(DEFAULT_PLOTLY_COLORS)[group_pos % len(DEFAULT_PLOTLY_COLORS)],
                     size=15
                 ),
                 hovertext=hovertext,
@@ -87,9 +88,13 @@ def show_electrodes(electrodes_table):
     if np.isnan(electrodes_table.x[0]):  # position is not defined
         in_dict.update(electrode_groups=ElectrodeGroupsWidget)
     else:
-        if electrodes_table.get_ancestor('NWBFile').subject.species \
-                in ('mouse', 'Mus musculus'):
-            in_dict.update(CCF=show_ccf)
+        subject = electrodes_table.get_ancestor('NWBFile').subject
+        if subject is not None:
+            species = subject.species
+            if species in ('mouse', 'Mus musculus'):
+                in_dict.update(CCF=show_ccf)
+            elif species in ('human', 'Homo sapiens'):
+                in_dict.update(render=HumanElectrodesPlotlyWidget)
 
     return lazy_tabs(in_dict, electrodes_table)
 

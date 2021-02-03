@@ -8,11 +8,11 @@ from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhoton
 from skimage import measure
 from tifffile import imread, TiffFile
 
+from .base import df_to_hover_text
 from .timeseries import BaseGroupedTraceWidget
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .utils.functional import MemoizeMutable
-from .base import df_to_hover_text
 
 color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
 
@@ -118,17 +118,29 @@ def compute_outline(image_mask, threshold):
 compute_outline = MemoizeMutable(compute_outline)
 
 
-def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_wheel, color_by=None,
-                               threshold=.01, fig=None):
+def show_plane_segmentation_2d(
+        plane_seg: PlaneSegmentation,
+        color_wheel: list = color_wheel,
+        color_by: str = None,
+        threshold: float = .01,
+        fig: go.Figure = None,
+        width: int = 600,
+        ref_image=None
+):
     """
 
     Parameters
     ----------
     plane_seg: PlaneSegmentation
-    color_wheel: list
+    color_wheel: list, optional
     color_by: str, optional
-    threshold: float
+    threshold: float, optional
     fig: plotly.graph_objects.Figure, optional
+    width: int, optional
+        width of image in pixels. Height is automatically determined
+        to be proportional
+    ref_image: image, optional
+
 
     Returns
     -------
@@ -139,7 +151,6 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
         if color_by not in plane_seg:
             raise ValueError('specified color_by parameter, {}, not in plane_seg object'.format(color_by))
         cats = np.unique(plane_seg[color_by][:])
-    else:
         layout_kwargs.update(title=color_by)
 
     data = plane_seg['image_mask'].data
@@ -147,23 +158,29 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
     if fig is None:
         fig = go.FigureWidget()
 
+    if ref_image is not None:
+        fig.add_trace(
+            go.Heatmap(
+                z=ref_image,
+                hoverinfo='skip',
+                showscale=False,
+                colorscale='gray'
+            )
+        )
+
     aux_leg = []
     all_hover = df_to_hover_text(plane_seg.to_dataframe())
 
     for i in range(nUnits):
-        if plane_seg[color_by][i] not in aux_leg:
-            show_leg = True
-            aux_leg.append(plane_seg[color_by][i])
-        else:
-            show_leg = False
-        kwargs = dict()
-
-        if color_by:
+        kwargs = dict(showlegend=False)
+        if color_by is not None:
+            if plane_seg[color_by][i] not in aux_leg:
+                kwargs.update(showlegend=True)
+                aux_leg.append(plane_seg[color_by][i])
             c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
             kwargs.update(line_color=c,
                           name=str(plane_seg[color_by][i]),
                           legendgroup=str(plane_seg[color_by][i]),
-                          showlegend=show_leg,
                           )
 
         # form cell borders
@@ -181,7 +198,6 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
             )
         )
 
-    width = 600
     fig.update_layout(
         width=width,
         yaxis=dict(
@@ -196,10 +212,9 @@ def show_plane_segmentation_2d(plane_seg: PlaneSegmentation, color_wheel=color_w
             range=[0, plane_seg['image_mask'].shape[1]],
             constrain='domain'
         ),
-        margin=dict(t=10, b=10),
+        margin=dict(t=30, b=10),
         **layout_kwargs
     )
-
     return fig
 
 

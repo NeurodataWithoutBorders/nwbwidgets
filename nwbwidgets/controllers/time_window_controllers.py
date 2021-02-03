@@ -217,7 +217,7 @@ class StartAndDurationController(WindowController):
             step=0.1,
             description='duration (s):',
             style={'description_width': 'initial'},
-            layout=Layout(max_width='140px')
+            layout=Layout(max_width='200px')
         )
 
         self.value = (self.slider.value, self.slider.value + self.duration.value)

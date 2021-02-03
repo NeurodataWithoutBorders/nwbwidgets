@@ -7,7 +7,9 @@ import pynwb
 import zarr
 from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
+from ndx_spectrum import Spectrum
+
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file, spectrum
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
@@ -23,13 +25,12 @@ default_neurodata_vis_spec = {
     pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
     pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict({
-        'Session Raster': misc.RasterWidgetPlotly,
+        'Session Raster': misc.RasterWidget,
         'Grouped PSTH': misc.PSTHWidget,
         'Raster Grid': misc.RasterGridWidget,
         'table': show_dynamic_table}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_fields,
-    pynwb.ophys.ImagingPlane: base.show_fields,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
     pynwb.ophys.ImageSegmentation: ophys.show_image_segmentation,
     pynwb.ophys.TwoPhotonSeries: ophys.TwoPhotonSeriesWidget,
@@ -58,7 +59,9 @@ default_neurodata_vis_spec = {
     pynwb.core.NWBContainer: base.show_neurodata_base,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
     h5py.Dataset: base.show_dset,
-    zarr.core.Array: base.show_dset
+    zarr.core.Array: base.show_dset,
+    Spectrum: spectrum.show_spectrum,
+    pynwb.behavior.CompassDirection: behavior.show_position
 }
 
 

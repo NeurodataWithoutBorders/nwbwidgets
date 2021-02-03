@@ -85,9 +85,12 @@ class ImageSeriesWidget(widgets.VBox):
 
 
 def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
+    if len(image_series.data.shape) == 3:
+        return show_grayscale_image_series(image_series, neurodata_vis_spec)
+
     def show_image(index=0, mode='rgb'):
         fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
-        image = image_series.data[index, :, :]
+        image = image_series.data[index]
         if mode == 'bgr':
             image = image[:, :, ::-1]
         ax.imshow(image, cmap='gray', aspect='auto')
@@ -106,6 +109,24 @@ def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
     out_fig = widgets.interactive_output(show_image, controls)
     vbox = widgets.VBox(children=[
         out_fig, slider, mode])
+
+    return vbox
+
+
+def show_grayscale_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
+    def show_image(index=0):
+        fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
+        ax.imshow(image_series.data[index], cmap='gray', aspect='auto')
+        return fig
+
+    slider = widgets.IntSlider(value=0, min=0,
+                               max=image_series.data.shape[0] - 1,
+                               orientation='horizontal',
+                               continuous_update=False,
+                               description='index')
+    controls = {'index': slider}
+    out_fig = widgets.interactive_output(show_image, controls)
+    vbox = widgets.VBox(children=[out_fig, slider])
 
     return vbox
 
