@@ -345,7 +345,6 @@ def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
         t_ind_stop = timeseries_time_to_ind(time_series, time_window[1])
 
     tt = get_timeseries_tt(time_series, t_ind_start, t_ind_stop)
-
     unique_sorted_order, inverse_sort = np.unique(order, return_inverse=True)
 
     if len(time_series.data.shape) > 1:
@@ -361,7 +360,8 @@ def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
 
 
 def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, ax=None, figsize=(9.7, 7),
-                        group_inds=None, labels=None, colors=color_wheel, show_legend=True, **kwargs):
+                        group_inds=None, labels=None, colors=color_wheel, show_legend=True,
+                        dynamic_table_region_name=None, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
@@ -371,7 +371,11 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
         else:
             order = [0]
 
-    mini_data, tt, offsets = _prep_timeseries(time_series, time_window, order)
+    if dynamic_table_region_name is not None:
+        row_ids = getattr(time_series, dynamic_table_region_name).data[:]
+        channel_inds = [np.argmax(row_ids == x) for x in order]
+
+    mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
 
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
@@ -458,6 +462,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
         self.controls = dict(
             time_series=widgets.fixed(self.time_series),
             time_window=self.time_window_controller,
+            dynamic_table_region_name=widgets.fixed(dynamic_table_region_name)
         )
         if foreign_group_and_sort_controller is None:
             if dynamic_table_region_name is not None:
@@ -472,6 +477,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
         else:
             self.gas = foreign_group_and_sort_controller
             self.controls.update(gas=self.gas)
+
 
         # Sets up interactive output controller
         out_fig = interactive_output(mpl_plotter, self.controls)
