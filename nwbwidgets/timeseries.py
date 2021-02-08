@@ -374,6 +374,8 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
     if dynamic_table_region_name is not None:
         row_ids = getattr(time_series, dynamic_table_region_name).data[:]
         channel_inds = [np.argmax(row_ids == x) for x in order]
+    else:
+        channel_inds = order
 
     mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
 
