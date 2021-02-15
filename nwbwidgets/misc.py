@@ -408,7 +408,7 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
 
     """
 
-    data = np.asarray(data)
+    data = np.asarray(data, dtype='object')
     legend_kwargs = dict()
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
