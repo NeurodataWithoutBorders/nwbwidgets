@@ -14,6 +14,8 @@ def compute_smoothed_firing_rate(spike_times, tt, sigma_in_secs):
         Returns:
               Gaussian smoothing evaluated at array t
         """
+    if len(spike_times) < 2:
+        return np.zeros_like(tt)
     binned_spikes = np.zeros_like(tt)
     binned_spikes[np.searchsorted(tt, spike_times)] += 1
     dt = np.diff(tt[:2])[0]
