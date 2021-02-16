@@ -169,18 +169,20 @@ def show_plane_segmentation_2d(
         )
 
     aux_leg = []
-    all_hover = df_to_hover_text(plane_seg.to_dataframe())
-
+    import pandas as pd
+    plane_seg_hover_df = pd.DataFrame({key:plane_seg[key].data for key in plane_seg.colnames
+                                               if key not in ['pixel_mask', 'image_mask']})
+    all_hover = df_to_hover_text(plane_seg_hover_df)
     for i in range(nUnits):
         kwargs = dict(showlegend=False)
         if color_by is not None:
-            if plane_seg[color_by][i] not in aux_leg:
+            if plane_seg_hover_df[color_by][i] not in aux_leg:
                 kwargs.update(showlegend=True)
-                aux_leg.append(plane_seg[color_by][i])
-            c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
+                aux_leg.append(plane_seg_hover_df[color_by][i])
+            c = color_wheel[np.where(cats == plane_seg_hover_df[color_by][i])[0][0]]
             kwargs.update(line_color=c,
-                          name=str(plane_seg[color_by][i]),
-                          legendgroup=str(plane_seg[color_by][i]),
+                          name=str(plane_seg_hover_df[color_by][i]),
+                          legendgroup=str(plane_seg_hover_df[color_by][i]),
                           )
 
         # form cell borders
