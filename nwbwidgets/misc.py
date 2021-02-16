@@ -230,8 +230,14 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 
 class PSTHWidget(widgets.VBox):
-    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0, unit_controller=None,
-                 sigma_in_secs=.05, ntt=1000):
+    def __init__(
+            self,
+            units: Units,
+            trials: pynwb.epoch.TimeIntervals = None,
+            unit_index=0,
+            unit_controller=None,
+            ntt=1000
+    ):
 
         self.units = units
 
@@ -247,39 +253,61 @@ class PSTHWidget(widgets.VBox):
 
         if unit_controller is None:
             nunits = len(units['spike_times'].data)
-            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], value=unit_index,
-                                               description='unit',
-                                               layout=Layout(width='200px'))
+            self.unit_controller = widgets.Dropdown(
+                options=[x for x in range(nunits)],
+                value=unit_index,
+                description='unit',
+                layout=Layout(width='200px')
+            )
 
-        trial_event_controller = make_trial_event_controller(self.trials, layout=Layout(width='200px'))
-        before_ft = widgets.FloatText(.5, min=0, description='before (s)', layout=Layout(width='200px'))
-        after_ft = widgets.FloatText(2., min=0, description='after (s)', layout=Layout(width='200px'))
+        self.trial_event_controller = make_trial_event_controller(self.trials, layout=Layout(width='200px'))
+        self.before_ft = widgets.FloatText(.5, min=0, description='before (s)', layout=Layout(width='200px'))
+        self.after_ft = widgets.FloatText(2., min=0, description='after (s)', layout=Layout(width='200px'))
+        self.psth_type_radio = widgets.RadioButtons(options=['histogram', 'gaussian'], layout=Layout(width='100px'))
+        self.bins_ft = widgets.IntText(30, min=0, description='# bins', layout=Layout(width='150px'))
+        self.gaussian_sd_ft = widgets.FloatText(
+            .05,
+            min=.001,
+            description='sd (s)',
+            layout=Layout(width='150px'),
+            active=False,
+            step=.01
+        )
 
         self.gas = self.make_group_and_sort(window=False, control_order=False)
 
         self.controls = dict(
-            units=fixed(units),
-            trials=fixed(self.trials),
-            sigma_in_secs=fixed(sigma_in_secs),
             ntt=fixed(ntt),
-            index=unit_controller,
-            after=after_ft,
-            before=before_ft,
-            start_label=trial_event_controller,
+            index=self.unit_controller,
+            after=self.after_ft,
+            before=self.before_ft,
+            start_label=self.trial_event_controller,
             gas=self.gas,
+            plot_type=self.psth_type_radio,
+            sigma_in_secs=self.gaussian_sd_ft,
+            nbins=self.bins_ft
             # progress_bar=fixed(progress_bar)
         )
 
-        out_fig = interactive_output(trials_psth, self.controls)
+        out_fig = interactive_output(self.update, self.controls)
 
         self.children = [
             widgets.HBox([
-                self.gas,
                 widgets.VBox([
-                    unit_controller,
-                    trial_event_controller,
-                    before_ft,
-                    after_ft,
+                    self.gas,
+                    widgets.HBox([
+                        self.psth_type_radio,
+                        widgets.VBox([
+                            self.gaussian_sd_ft,
+                            self.bins_ft
+                        ])
+                    ])
+                ]),
+                widgets.VBox([
+                    self.unit_controller,
+                    self.trial_event_controller,
+                    self.before_ft,
+                    self.after_ft,
                 ])
             ]),
             out_fig
@@ -291,73 +319,155 @@ class PSTHWidget(widgets.VBox):
     def make_group_and_sort(self, window=None, control_order=False):
         return GroupAndSortController(self.trials, window=window, control_order=control_order)
 
+    def update(
+            self,
+            index: int,
+            start_label: str = 'start_time',
+            before: float = 0.,
+            after: float = 1.,
+            order=None,
+            group_inds=None,
+            labels=None,
+            sigma_in_secs=0.05,
+            ntt: int = 1000,
+            progress_bar=None,
+            figsize=(7, 7),
+            nbins=30,
+            plot_type='histogram',
+            align_line_color=(.7, .7, .7)
+    ):
+        """
 
-def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
-                before=0., after=1., order=None, group_inds=None, labels=None,
-                sigma_in_secs=0.05, ntt=1000, progress_bar=None, trials=None,
-                figsize=(7, 7)):
-    """
+        Parameters
+        ----------
+        index: int
+            Index of unit
+        start_label: str, optional
+            Trial column name to align on
+        before: float
+            Time before that event (should be positive)
+        after: float
+            Time after that event
+        order
+        group_inds
+        labels
+        sigma_in_secs: float, optional
+            standard deviation of gaussian kernel
+        ntt:
+            Number of time points to use for smooth curve
+        progress_bar:
+        figsize: tuple, optional
 
-    Parameters
-    ----------
-    units: pynwb.misc.Units
-    index: int
-        Index of unit
-    start_label: str, optional
-        Trial column name to align on
-    before: float
-        Time before that event (should be positive)
-    after: float
-        Time after that event
-    order
-    group_inds
-    labels
-    sigma_in_secs: float, optional
-        standard deviation of gaussian kernel
-    ntt:
-        Number of time points to use for smooth curve
-    progress_bar:
-    trials:
-    figsize: tuple, optional
+        Returns
+        -------
+        matplotlib.Figure
 
-    Returns
-    -------
-    matplotlib.Figure
+        """
 
-    """
-    if trials is None:
-        trials = units.get_ancestor('NWBFile').trials
+        data = align_by_time_intervals(
+            self.units, index, self.trials, start_label, start_label, before, after, order, progress_bar=progress_bar)
 
-    data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after, order,
-                                   progress_bar=progress_bar)
-    # expanded data so that gaussian smoother uses larger window than is viewed
-    expanded_data = align_by_time_intervals(units, index, trials, start_label, start_label,
-                                            before + sigma_in_secs * 4,
-                                            after + sigma_in_secs * 4,
-                                            order,
-                                            progress_bar=progress_bar)
+        fig, axs = plt.subplots(2, 1, figsize=figsize)
 
-    fig, axs = plt.subplots(2, 1, figsize=figsize)
+        show_psth_raster(data, before, after, group_inds, labels, ax=axs[0], progress_bar=progress_bar)
 
-    show_psth_raster(data, before, after, group_inds, labels, ax=axs[0], progress_bar=progress_bar)
+        axs[0].set_title('PSTH for unit {}'.format(index))
+        axs[0].set_xticks([])
+        axs[0].set_xlabel('')
 
-    axs[0].set_title('PSTH for unit {}'.format(index))
-    axs[0].set_xticks([])
-    axs[0].set_xlabel('')
+        if plot_type == 'gaussian':
+            self.bins_ft.layout.visibility = 'hidden'
+            self.bins_ft.layout.height = "0px"
+            self.gaussian_sd_ft.layout.visibility = None
+            self.gaussian_sd_ft.layout.height = None
+            # expanded data so that gaussian smoother uses larger window than is viewed
+            expanded_data = align_by_time_intervals(
+                self.units,
+                index,
+                self.trials,
+                start_label,
+                start_label,
+                before + sigma_in_secs * 4,
+                after + sigma_in_secs * 4,
+                order,
+                progress_bar=progress_bar
+            )
+            show_psth_smoothed(
+                expanded_data,
+                axs[1],
+                before + sigma_in_secs * 4,
+                after + sigma_in_secs * 4,
+                group_inds,
+                sigma_in_secs=sigma_in_secs,
+                ntt=ntt
+            )
+        elif plot_type == 'histogram':
+            self.gaussian_sd_ft.layout.visibility = 'hidden'
+            self.gaussian_sd_ft.layout.height = "0px"
+            self.bins_ft.layout.visibility = None
+            self.bins_ft.layout.height = None
+            show_histogram(data, axs[1], before, after, group_inds, nbins=nbins)
+        else:
+            raise ValueError('unsupported plot type {}'.format(self.psth_type_radio.value))
 
-    show_psth_smoothed(expanded_data, axs[1], before, after, group_inds,
-                       sigma_in_secs=sigma_in_secs, ntt=ntt)
-    return fig
+        axs[1].set_xlim([-before, after])
+        axs[1].set_ylabel('firing rate (Hz)')
+        axs[1].set_xlabel('time (s)')
+        axs[1].axvline(color=align_line_color)
+
+        return fig
 
 
-def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000,
-                       align_line_color=(.7, .7, .7)):
+def show_histogram(
+        data,
+        ax: plt.Axes,
+        before: float,
+        after: float,
+        group_inds=None,
+        nbins: int = 30
+):
+    if not len(data):
+        return
+
+    if group_inds is None:
+        height, x = np.histogram(np.hstack(data), bins=nbins, range=(-before, after))
+        width = np.diff(x[:2])
+        height = height / len(data) / width
+        plt.bar(x[:-1], height, edgecolor=(.3, .3, .3), width=width, align='edge')
+    else:
+        data = np.asarray(data, dtype='object')
+        #group_inds = np.asarray(group_inds)
+        for group in np.unique(group_inds):
+            this_data = np.hstack(data[group_inds == group])
+            height, x = np.histogram(this_data, bins=nbins, range=(-before, after))
+            width = np.diff(x[:2])
+            height = height / np.sum(group_inds == group) / width
+            ax.bar(
+                x[:-1],
+                height,
+                color=color_wheel[group],
+                edgecolor=(.3, .3, .3),
+                width=width,
+                align='edge',
+                alpha=.6
+            )
+
+
+def show_psth_smoothed(
+        data,
+        ax,
+        before: float,
+        after: float,
+        group_inds=None,
+        sigma_in_secs: float = .05,
+        ntt: int = 1000,
+):
     if not len(data):  # TODO: when does this occur?
         return
     all_data = np.hstack(data)
     if not len(all_data):  # no spikes
         return
-    tt = np.linspace(min(all_data), max(all_data), ntt)
+    tt = np.linspace(-before, after, ntt)
     smoothed = np.array([compute_smoothed_firing_rate(x, tt, sigma_in_secs) for x in data])
 
     if group_inds is None:
@@ -367,20 +477,17 @@ def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.
         this_mean = np.mean(smoothed[group_inds == group], axis=0)
         err = scipy.stats.sem(smoothed[group_inds == group], axis=0)
         group_stats.append(
-            dict(mean=this_mean,
-                 lower=this_mean - 2 * err,
-                 upper=this_mean + 2 * err,
-                 group=group)
+            dict(
+                mean=this_mean,
+                lower=this_mean - 2 * err,
+                upper=this_mean + 2 * err,
+                group=group
+            )
         )
     for stats in group_stats:
         color = color_wheel[stats['group']]
         ax.plot(tt, stats['mean'], color=color)
         ax.fill_between(tt, stats['lower'], stats['upper'], alpha=.2, color=color)
-    ax.set_xlim([-before, after])
-    ax.set_ylabel('firing rate (Hz)')
-    ax.set_xlabel('time (s)')
-
-    ax.axvline(color=align_line_color)
 
 
 def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=None, labels=None,
