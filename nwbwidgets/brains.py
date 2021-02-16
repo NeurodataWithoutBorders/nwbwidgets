@@ -110,7 +110,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
 
     def show_electrodes(self, electrodes: pynwb.base.DynamicTable):
 
-        positions = np.c_[electrodes.x, electrodes.y, electrodes.z]
+        positions = np.c_[electrodes.x[:], electrodes.y[:], electrodes.z[:]]
         group_names = electrodes.group_name[:]
         ugroups, group_inv = np.unique(group_names, return_inverse=True)
 
