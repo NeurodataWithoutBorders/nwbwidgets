@@ -154,7 +154,7 @@ def show_plane_segmentation_2d(
         layout_kwargs.update(title=color_by)
 
     data = plane_seg['image_mask'].data
-    nUnits = data.shape[0]
+    nUnits = len(data)
     if fig is None:
         fig = go.FigureWidget()
 
