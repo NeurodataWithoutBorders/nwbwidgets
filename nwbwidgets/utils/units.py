@@ -151,7 +151,7 @@ def get_unobserved_intervals(units, time_window, units_select=()):
     unobserved_intervals_list = []
     for i_unit in units_select:
         intervals = units['obs_intervals'][i_unit]  # TODO: use bisect here
-        intervals = np.array(intervals)
+        intervals = np.array(intervals, dtype='object')
         these_obs_intervals = intervals[(intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])]
         unobs_intervals = np.c_[these_obs_intervals[:-1, 1], these_obs_intervals[1:, 0]]
 

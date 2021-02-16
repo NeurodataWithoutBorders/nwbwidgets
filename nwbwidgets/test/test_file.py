@@ -1,9 +1,9 @@
-import ipywidgets as widgets
 from datetime import datetime
-from dateutil.tz import tzlocal
-from pynwb import NWBFile
 
+import ipywidgets as widgets
+from dateutil.tz import tzlocal
 from nwbwidgets import nwb2widget
+from pynwb import NWBFile
 
 
 def test_nwbfile():
@@ -14,4 +14,4 @@ def test_nwbfile():
                       experiment_description='We recorded from two macaque monkeys during memory-guided saccade task',
                       session_id='LONELYMTL')
 
-    assert(isinstance(nwb2widget(nwbfile), widgets.Widget))
+    assert (isinstance(nwb2widget(nwbfile), widgets.Widget))

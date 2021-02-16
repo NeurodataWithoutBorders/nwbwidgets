@@ -1,13 +1,16 @@
 from setuptools import setup
 
+d = {}
+exec(open("nwbwidgets/version.py").read(), None, d)
+version = d['version']
 
 with open('README.md') as f:
     long_description = f.read()
 
 setup(
-    author='Neurodata Without Border (NWB) developers',
-    author_email='ben.dichter@gmail.com',
-    version='0.2.3',
+    author='Ben Dichter',
+    author_email='ben.dichter@catalystneuro.com',
+    version=version,
     classifiers=['Operating System :: OS Independent',
                  'Development Status :: 3 - Alpha',
                  'Framework :: Jupyter',
@@ -20,7 +23,6 @@ setup(
                 'NWB-file in Jupyter Notebooks using ipywidgets.',
     install_requires=['pynwb',
                       'ipympl',
-                      'ipywidgets>=7.4',
                       'matplotlib',
                       'numpy',
                       'ipyvolume',
@@ -28,13 +30,19 @@ setup(
                       'plotly',
                       'scikit-image',
                       'tqdm>=4.36.0',
-                      'ndx-icephys-meta'],
+                      'ndx-icephys-meta',
+                      'ipysheet',
+                      'zarr',
+                      'ccfwidget',
+                      'tifffile',
+                      'ndx-spectrum',
+                      'trimesh'],
     license='MIT',
     keywords=['jupyter', 'hdf5', 'notebook', 'nwb'],
     long_description=long_description,
     long_description_content_type='text/markdown',
     name='nwbwidgets',
-    packages=['nwbwidgets', 'nwbwidgets/utils', 'nwbwidgets/analysis'],
+    packages=['nwbwidgets', 'nwbwidgets/utils', 'nwbwidgets/analysis', 'nwbwidgets/controllers'],
     python_requires='>=2.7',
     setup_requires=['setuptools>=38.6.0', 'setuptools_scm'],
     url='https://github.com/NeurodataWithoutBorders/nwb-jupyter-widgets')

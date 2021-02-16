@@ -1,10 +1,12 @@
-from nwbwidgets import view
-from ipywidgets import widgets
 from collections.abc import Iterable
 from datetime import datetime
-from pynwb.file import NWBFile
-from .base import lazy_show_over_data
 from functools import partial
+
+from ipywidgets import widgets
+from nwbwidgets import view
+from pynwb.file import NWBFile
+
+from .base import lazy_show_over_data
 
 
 def show_nwbfile(nwbfile: NWBFile, neurodata_vis_spec: dict) -> widgets.Widget:

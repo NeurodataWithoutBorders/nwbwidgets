@@ -1,10 +1,22 @@
-import pynwb
-import ndx_grayscalevolume
 from collections import OrderedDict
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file
+
+import h5py
 import hdmf
-from functools import partial
+import ndx_grayscalevolume
+import pynwb
+import zarr
+from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
+from ndx_spectrum import Spectrum
+
+from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file, spectrum
+
+
+# def show_dynamic_table(node: DynamicTable, **kwargs):
+def show_dynamic_table(node, **kwargs) -> widgets.Widget:
+    if node.name == 'electrodes':
+        return ecephys.show_electrodes(node)
+    return base.render_dataframe(node)
 
 
 default_neurodata_vis_spec = {
@@ -16,41 +28,42 @@ default_neurodata_vis_spec = {
         'Session Raster': misc.RasterWidget,
         'Grouped PSTH': misc.PSTHWidget,
         'Raster Grid': misc.RasterGridWidget,
-        'table': base.show_dynamic_table}),
+        'table': show_dynamic_table}),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_fields,
-    pynwb.ophys.ImagingPlane: base.show_fields,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
     pynwb.ophys.ImageSegmentation: ophys.show_image_segmentation,
-    pynwb.ophys.TwoPhotonSeries: ophys.show_two_photon_series,
+    pynwb.ophys.TwoPhotonSeries: ophys.TwoPhotonSeriesWidget,
     ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
-    pynwb.ophys.PlaneSegmentation: ophys.show_plane_segmentation,
+    pynwb.ophys.PlaneSegmentation: ophys.route_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
-    pynwb.ophys.RoiResponseSeries: timeseries.traces_widget,
+    pynwb.ophys.RoiResponseSeries: ophys.RoiResponseSeriesWidget,
     pynwb.misc.AnnotationSeries: OrderedDict({
         'text': base.show_text_fields,
         'times': misc.show_annotations}),
     pynwb.core.LabelledDict: base.dict2accordion,
     pynwb.ProcessingModule: base.processing_module,
-    hdmf.common.DynamicTable: base.show_dynamic_table,
-    pynwb.ecephys.ElectricalSeries: OrderedDict({
-        'Fields': timeseries.show_ts_fields,
-        'Traces': partial(timeseries.traces_widget,
-                          start=0, dur=10,
-                          trace_starting_range=(0, 5)),
-    }),
+    hdmf.common.DynamicTable: show_dynamic_table,
+    pynwb.ecephys.ElectricalSeries: ecephys.ElectricalSeriesWidget,
     pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: OrderedDict({
-        'over time': behavior.show_spatial_series_over_time,
-        'trace': behavior.show_spatial_series}),
+        'over time': timeseries.SeparateTracesPlotlyWidget,
+        'trace': behavior.plotly_show_spatial_trace}),
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
-    pynwb.image.RGBImage: image.show_rbg_image,
+    pynwb.image.RGBImage: image.show_rbga_image,
+    pynwb.image.RGBAImage: image.show_rbga_image,
+    pynwb.base.Image: image.show_rbga_image,
     pynwb.image.ImageSeries: image.show_image_series,
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: timeseries.show_timeseries,
+    pynwb.core.NWBContainer: base.show_neurodata_base,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
+    h5py.Dataset: base.show_dset,
+    zarr.core.Array: base.show_dset,
+    Spectrum: spectrum.show_spectrum,
+    pynwb.behavior.CompassDirection: behavior.show_position
 }
 
 
-def nwb2widget(node,  neurodata_vis_spec=default_neurodata_vis_spec):
+def nwb2widget(node, neurodata_vis_spec=default_neurodata_vis_spec):
     return base.nwb2widget(node, neurodata_vis_spec)
