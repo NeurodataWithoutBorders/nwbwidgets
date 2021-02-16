@@ -31,8 +31,9 @@ def interactive_output(f, controls, process_controls=lambda x: x):
             clear_output(wait=True)
             f(**unpack_controls(controls, process_controls))
             show_inline_matplotlib_plots()
+
     for k, w in controls.items():
-        w.observe(observer, 'value')
+        w.observe(observer, "value")
     show_inline_matplotlib_plots()
     observer(None)
     return out
@@ -53,17 +54,23 @@ class Timer:
 
 
 def debounce(wait):
-    """ Decorator that will postpone a function's
-        execution until after `wait` seconds
-        have elapsed since the last time it was invoked. """
+    """Decorator that will postpone a function's
+    execution until after `wait` seconds
+    have elapsed since the last time it was invoked."""
+
     def decorator(fn):
         timer = None
+
         def debounced(*args, **kwargs):
             nonlocal timer
+
             def call_it():
                 fn(*args, **kwargs)
+
             if timer is not None:
                 timer.cancel()
             timer = Timer(wait, call_it)
+
         return debounced
+
     return decorator

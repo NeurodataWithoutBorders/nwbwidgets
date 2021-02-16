@@ -18,7 +18,7 @@ def get_spike_times(units: pynwb.misc.Units, index, in_interval):
     -------
 
     """
-    st = units['spike_times']
+    st = units["spike_times"]
     unit_start = 0 if index == 0 else st.data[index - 1]
     unit_stop = st.data[index]
     start_time, stop_time = in_interval
@@ -40,7 +40,7 @@ def get_min_spike_time(units: pynwb.misc.Units):
     -------
 
     """
-    st = units['spike_times']
+    st = units["spike_times"]
     inds = [0] + list(st.data[:-1])
     first_spikes = [st.target.data[i] for i in inds]
     return np.min(first_spikes)
@@ -57,7 +57,7 @@ def get_max_spike_time(units: pynwb.misc.Units):
     -------
 
     """
-    st = units['spike_times']
+    st = units["spike_times"]
     inds = [x - 1 for x in st.data[:]]
     last_spikes = [st.target.data[i] for i in inds]
     return np.max(last_spikes)
@@ -74,7 +74,7 @@ def align_by_times(units: pynwb.misc.Units, index, starts, stops):
         np.array
     """
 
-    st = units['spike_times']
+    st = units["spike_times"]
     unit_spike_data = st[index]
 
     istarts = searchsorted(unit_spike_data, starts)
@@ -83,8 +83,14 @@ def align_by_times(units: pynwb.misc.Units, index, starts, stops):
         yield unit_spike_data[istart:istop] - start
 
 
-def align_by_trials(units: pynwb.misc.Units, index, start_label='start_time',
-                    stop_label=None, before=0., after=1.):
+def align_by_trials(
+    units: pynwb.misc.Units,
+    index,
+    start_label="start_time",
+    stop_label=None,
+    before=0.0,
+    after=1.0,
+):
     """
     Args:
         units
@@ -99,12 +105,23 @@ def align_by_trials(units: pynwb.misc.Units, index, start_label='start_time',
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
-    trials = units.get_ancestor('NWBFile').trials
-    return align_by_time_intervals(units, index, trials, start_label, stop_label, before, after)
+    trials = units.get_ancestor("NWBFile").trials
+    return align_by_time_intervals(
+        units, index, trials, start_label, stop_label, before, after
+    )
 
 
-def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_label='start_time',
-                            stop_label='stop_time', before=0., after=0., rows_select=(), progress_bar=None):
+def align_by_time_intervals(
+    units: pynwb.misc.Units,
+    index,
+    intervals,
+    start_label="start_time",
+    stop_label="stop_time",
+    before=0.0,
+    after=0.0,
+    rows_select=(),
+    progress_bar=None,
+):
     """
     Args:
         units: time-aware neurodata_type
@@ -131,7 +148,7 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
     stops = np.array(intervals[stop_label][:])[rows_select] + after
     if progress_bar is not None:
         progress_bar.value = 0
-        progress_bar.description = 'reading spike data'
+        progress_bar.description = "reading spike data"
 
     out = []
     for i, x in enumerate(align_by_times(units, index, starts, stops)):
@@ -144,25 +161,31 @@ def align_by_time_intervals(units: pynwb.misc.Units, index, intervals, start_lab
 
 def get_unobserved_intervals(units, time_window, units_select=()):
 
-    if 'obs_intervals' not in units:
+    if "obs_intervals" not in units:
         return []
 
     # add observation intervals
     unobserved_intervals_list = []
     for i_unit in units_select:
-        intervals = units['obs_intervals'][i_unit]  # TODO: use bisect here
-        intervals = np.array(intervals, dtype='object')
-        these_obs_intervals = intervals[(intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])]
+        intervals = units["obs_intervals"][i_unit]  # TODO: use bisect here
+        intervals = np.array(intervals, dtype="object")
+        these_obs_intervals = intervals[
+            (intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])
+        ]
         unobs_intervals = np.c_[these_obs_intervals[:-1, 1], these_obs_intervals[1:, 0]]
 
         if len(these_obs_intervals):
             # handle unobserved interval on lower bound of window
             if these_obs_intervals[0, 0] > time_window[0]:
-                unobs_intervals = np.vstack(([time_window[0], these_obs_intervals[0, 0]], unobs_intervals))
+                unobs_intervals = np.vstack(
+                    ([time_window[0], these_obs_intervals[0, 0]], unobs_intervals)
+                )
 
             # handle unobserved interval on lower bound of window
             if these_obs_intervals[-1, 1] < time_window[1]:
-                unobs_intervals = np.vstack((unobs_intervals, [these_obs_intervals[-1, 1], time_window[1]]))
+                unobs_intervals = np.vstack(
+                    (unobs_intervals, [these_obs_intervals[-1, 1], time_window[1]])
+                )
         else:
             unobs_intervals = [time_window]
 
