@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
@@ -110,6 +112,7 @@ def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
     return fig
 
 
+@lru_cache(1000)
 def compute_outline(image_mask, threshold):
     x, y = zip(*measure.find_contours(image_mask, threshold)[0])
     return x, y
