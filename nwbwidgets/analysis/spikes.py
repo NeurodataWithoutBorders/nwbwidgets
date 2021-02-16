@@ -14,6 +14,8 @@ def compute_smoothed_firing_rate(spike_times, tt, sigma_in_secs):
         Returns:
               Gaussian smoothing evaluated at array t
         """
+    if len(spike_times) < 2:
+        return np.zeros_like(tt)
     binned_spikes = np.zeros_like(tt)
     binned_spikes[np.searchsorted(tt, spike_times)] += 1
     dt = np.diff(tt[:2])[0]
@@ -73,7 +75,7 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
         raise exc
 
     # input data size
-    num_channels = len(data)
+    num_t = len(data)  # number of trials
     channel_lengths = [len(ch_data) for ch_data in data]
     max_channel_length = max(channel_lengths)
 
@@ -104,21 +106,6 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
     data_lengths = [np.ma.count(ch_data) for ch_data in data]
     num_times_total = sum(data_lengths)+1
 
-    # Transposes data if necessary. The longer dimension is assumed to be time.
-    # This is to convert the data into a form compatible with Murray's routine
-    if num_channels < max_channel_length:
-        num_t = num_channels  # number of trials
-    else:
-        num_t = max_channel_length
-        # pad and transpose
-        data_transposed = np.ma.zeros((max_channel_length, num_channels))
-        data_transposed[...] = np.ma.masked
-        for n in range(num_channels):
-            data_transposed[:, n] = data[n]
-        data = data_transposed
-        del data_transposed
-        max_channel_length = num_channels
-
     # warn if spikes have low density
     L = num_times_total/(num_t*(T[1]-T[0]))
     if 2*L*num_t*sig < 1 or L < 0.1:
@@ -126,16 +113,11 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
         print('Total events: %f \nsig: %f ms \nT: %f \nevents*sig: %f\n'
               % (num_times_total, sig*1000, T, num_times_total*sig/(T[1]-T[0])))
 
-    # fine grid in case t does not have sufficient precision for gaussian_filter1d
-    num_points_extended = 6*int(5*(t_max-t_min)/sig)
-    t_extended = np.linspace(t_min, t_max, num_points_extended)
-    smooth_fr_index = np.rint((t-t_min)/(t_extended[1]-t_extended[0])).astype(np.int)
     # evaluate kernel density estimation at array t
     RR = np.zeros((num_t, num_points))
     for n in range(num_t):
         spike_times = data[n] if not np.ma.is_masked(data[n]) else data[n].compressed()
-        smooth_fr = compute_smoothed_firing_rate(spike_times, t_extended, sig)
-        RR[n, :] = smooth_fr[smooth_fr_index]
+        RR[n, :] = compute_smoothed_firing_rate(spike_times, t, sig)
 
     # find rate
     R = np.mean(RR, axis=0)
