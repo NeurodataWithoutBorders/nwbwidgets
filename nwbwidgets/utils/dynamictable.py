@@ -10,6 +10,7 @@ def infer_categorical_columns(dynamic_table: DynamicTable):
             try:  # TODO: fix this
                 unique_vals = np.unique(dynamic_table[name].data)
                 if 1 < len(unique_vals) <= (len(dynamic_table[name].data) / 2):
+                    unique_vals = [x.decode() if isinstance(x, bytes) else x for x in unique_vals]  # handle h5py 3.0
                     categorical_cols[name] = unique_vals
             except:
                 pass
@@ -82,6 +83,8 @@ def group_and_sort(group_vals=None, group_select=None, order_vals=None, discard_
             keep = np.isin(labels[group_inds], group_select)
             group_inds = group_inds[keep]
             order = order[keep]
+
+        labels = np.array([x.decode() if isinstance(x, bytes) else x for x in labels])
 
     # apply limit
     inds = list()

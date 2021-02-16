@@ -1,16 +1,17 @@
-import numpy as np
+from abc import abstractmethod
+
 import matplotlib.pyplot as plt
+import numpy as np
+import plotly.graph_objects as go
 from ipywidgets import widgets, fixed
+from plotly.subplots import make_subplots
 from pynwb import TimeSeries
+
+from .controllers import StartAndDurationController, GroupAndSortController
+from .utils.plotly import multi_trace
 from .utils.timeseries import (get_timeseries_tt, get_timeseries_maxt, get_timeseries_mint,
                                timeseries_time_to_ind, get_timeseries_in_units)
-from abc import abstractmethod
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-
-from .controllers import StartAndDurationController,  GroupAndSortController
 from .utils.widgets import interactive_output
-from .utils.plotly import multi_trace
 
 color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -22,7 +23,7 @@ def show_ts_fields(node):
     return widgets.VBox(info)
 
 
-def show_timeseries_mpl(time_series: TimeSeries, time_window=None, ax=None,  zero_start=False, xlabel=None, ylabel=None,
+def show_timeseries_mpl(time_series: TimeSeries, time_window=None, ax=None, zero_start=False, xlabel=None, ylabel=None,
                         title=None, figsize=None, **kwargs):
     """
 
@@ -35,6 +36,7 @@ def show_timeseries_mpl(time_series: TimeSeries, time_window=None, ax=None,  zer
     xlabel: str
     ylabel: str
     title: str
+    figsize: tuple, optional
     kwargs
 
     Returns
@@ -48,14 +50,13 @@ def show_timeseries_mpl(time_series: TimeSeries, time_window=None, ax=None,  zer
         istart = 0
         istop = None
 
-    return show_indexed_timeseries_mpl(time_series, istart=istart, istop=istop, ax=ax,  zero_start=zero_start,
+    return show_indexed_timeseries_mpl(time_series, istart=istart, istop=istop, ax=ax, zero_start=zero_start,
                                        xlabel=xlabel, ylabel=ylabel, title=title, figsize=figsize, **kwargs)
 
 
 def show_indexed_timeseries_mpl(node: TimeSeries, istart=0, istop=None, ax=None,
                                 zero_start=False, xlabel='time (s)', ylabel=None, title=None, figsize=None,
                                 neurodata_vis_spec=None, **kwargs):
-
     if ylabel is None and node.unit:
         ylabel = node.unit
 
@@ -69,7 +70,7 @@ def show_indexed_timeseries_mpl(node: TimeSeries, istart=0, istop=None, ax=None,
 
     ax.plot(tt, data, **kwargs)
     ax.set_xlabel(xlabel)
-    if node.unit:
+    if ylabel is not None:
         ax.set_ylabel(ylabel)
     if title is not None:
         ax.set_title(title)
@@ -77,6 +78,34 @@ def show_indexed_timeseries_mpl(node: TimeSeries, istart=0, istop=None, ax=None,
     ax.autoscale(enable=True, axis='x', tight=True)
 
     return ax
+
+
+def show_indexed_timeseries_plotly(
+        timeseries: TimeSeries, istart=None, istop=None,
+        fig: go.FigureWidget = None, col=None, row=None, zero_start=False,
+        xlabel='time (s)', ylabel=None, title=None,
+        neurodata_vis_spec=None, **kwargs):
+    if ylabel is None and timeseries.unit:
+        ylabel = timeseries.unit
+
+    tt = get_timeseries_tt(timeseries, istart=istart, istop=istop)
+    if zero_start:
+        tt = tt - tt[0]
+    data, unit = get_timeseries_in_units(timeseries, istart=istart, istop=istop)
+
+    trace_kwargs = dict()
+    if col is not None or row is not None:
+        trace_kwargs.update(row=row, col=col)
+    fig.add_trace(x=tt, y=data, **trace_kwargs, **kwargs)
+    layout_kwargs = dict(xaxis_title=xlabel)
+    if ylabel is not None:
+        layout_kwargs.update(yaxis_title=ylabel)
+    if title is not None:
+        layout_kwargs.update(title=title)
+
+    fig.update_layout(**layout_kwargs)
+
+
 
 
 def plot_traces(timeseries: TimeSeries, time_window=None, trace_window=None,
@@ -159,8 +188,7 @@ class AbstractTraceWidget(widgets.VBox):
         if foreign_time_window_controller is None:
             tmin = get_timeseries_mint(timeseries)
             tmax = get_timeseries_maxt(timeseries)
-            self.time_window_controller = StartAndDurationController(
-                tmax, tmin, start_value=tmin, duration=min(5, tmax - tmin))
+            self.time_window_controller = StartAndDurationController(tmax, tmin)
         else:
             self.time_window_controller = foreign_time_window_controller
 
@@ -176,7 +204,8 @@ class AbstractTraceWidget(widgets.VBox):
         return
 
     def set_controls(self, **kwargs):
-        self.controls.update(timeseries=fixed(self.timeseries), time_window=self.time_window_controller)
+        self.controls.update(timeseries=fixed(self.timeseries),
+                             time_window=self.time_window_controller)
         self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
     def set_out_fig(self):
@@ -184,7 +213,6 @@ class AbstractTraceWidget(widgets.VBox):
 
 
 class SingleTraceWidget(AbstractTraceWidget):
-
     mpl_plotter = show_timeseries
 
     def set_children(self):
@@ -195,36 +223,48 @@ class SingleTraceWidget(AbstractTraceWidget):
 
 
 class SingleTracePlotlyWidget(SingleTraceWidget):
+    def __init__(self, timeseries: TimeSeries,
+                 foreign_time_window_controller: StartAndDurationController = None,
+                 **kwargs):
+        super().__init__(timeseries=timeseries,
+                         foreign_time_window_controller=foreign_time_window_controller,
+                         **kwargs)
 
     def set_out_fig(self):
-
         timeseries = self.controls['timeseries'].value
-
         time_window = self.controls['time_window'].value
 
         istart = timeseries_time_to_ind(timeseries, time_window[0])
         istop = timeseries_time_to_ind(timeseries, time_window[1])
-
         yy, units = get_timeseries_in_units(timeseries, istart, istop)
 
-        self.out_fig = go.FigureWidget(data=go.Scatter(
-            x=get_timeseries_tt(timeseries, istart, istop),
-            y=yy))
+        self.out_fig = go.FigureWidget(
+            data=go.Scatter(
+                x=get_timeseries_tt(timeseries, istart, istop),
+                y=list(yy)
+            )
+        )
 
         self.out_fig.update_layout(
             title=timeseries.name,
             xaxis_title="time (s)",
-            yaxis_title=units)
+            yaxis_title=units,
+            yaxis={"range": [min(yy), max(yy)], "autorange": False},
+            xaxis={"range": [min(self.out_fig.data[0].x), max(self.out_fig.data[0].x)], "autorange": False}
+        )
 
         def on_change(change):
             time_window = self.controls['time_window'].value
             istart = timeseries_time_to_ind(timeseries, time_window[0])
             istop = timeseries_time_to_ind(timeseries, time_window[1])
-
             yy, units = get_timeseries_in_units(timeseries, istart, istop)
-
             self.out_fig.data[0].x = get_timeseries_tt(timeseries, istart, istop)
-            self.out_fig.data[0].y = yy
+            self.out_fig.data[0].y = list(yy)
+
+            self.out_fig.update_layout(
+                yaxis={"range": [min(yy), max(yy)], "autorange": False},
+                xaxis={"range": [min(self.out_fig.data[0].x), max(self.out_fig.data[0].x)], "autorange": False}
+            )
 
         self.controls['time_window'].observe(on_change)
 
@@ -242,20 +282,26 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
 
         data, units = get_timeseries_in_units(timeseries, istart, istop)
 
-        self.out_fig = go.FigureWidget(make_subplots(rows=data.shape[1], cols=1))
-
         tt = get_timeseries_tt(timeseries, istart, istop)
 
-        for i, (yy, xyz) in enumerate(zip(data.T, ('x', 'y', 'z'))):
-            self.out_fig.add_trace(
-                go.Scatter(x=tt, y=yy),
-                row=i + 1, col=1)
-            if units:
-                yaxes_label = '{} ({})'.format(xyz, units)
-            else:
-                yaxes_label = xyz
-            self.out_fig.update_yaxes(title_text=yaxes_label, row=i+1, col=1)
-        self.out_fig.update_xaxes(title_text='time (s)', row=i+1, col=1)
+        if len(data.shape) > 1:
+            self.out_fig = go.FigureWidget(make_subplots(rows=data.shape[1], cols=1))
+
+            for i, (yy, xyz) in enumerate(zip(data.T, ('x', 'y', 'z'))):
+                self.out_fig.add_trace(
+                    go.Scatter(x=tt, y=yy),
+                    row=i + 1, col=1)
+                if units:
+                    yaxes_label = '{} ({})'.format(xyz, units)
+                else:
+                    yaxes_label = xyz
+                self.out_fig.update_yaxes(title_text=yaxes_label, row=i + 1, col=1)
+            self.out_fig.update_xaxes(title_text='time (s)', row=i + 1, col=1)
+        else:
+            self.out_fig = go.FigureWidget()
+            self.out_fig.add_trace(go.Scatter(x=tt, y=data))
+            self.out_fig.update_xaxes(title_text='time (s)')
+
         self.out_fig.update_layout(showlegend=False, title=timeseries.name)
 
         def on_change(change):
@@ -266,14 +312,31 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
             tt = get_timeseries_tt(timeseries, istart, istop)
             yy, units = get_timeseries_in_units(timeseries, istart, istop)
 
-            for i, dd in enumerate(yy.T):
-                self.out_fig.data[i].x = tt
-                self.out_fig.data[i].y = dd
+            with self.out_fig.batch_update():
+                if len(yy.shape) == 1:
+                    self.out_fig.data[0].x = tt
+                    self.out_fig.data[0].y = yy
+                else:
+                    for i, dd in enumerate(yy.T):
+                        self.out_fig.data[i].x = tt
+                        self.out_fig.data[i].y = dd
 
         self.controls['time_window'].observe(on_change)
 
 
-def _prep_timeseries(time_series, time_window=None, order=None):
+def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
+    """Pull dataset region from entire dataset. Return tt and offests used for plotting
+
+    Parameters
+    ----------
+    time_series: TimeSeries
+    time_window
+    order
+
+    Returns
+    -------
+
+    """
     if time_window is None:
         t_ind_start = 0
         t_ind_stop = None
@@ -282,28 +345,39 @@ def _prep_timeseries(time_series, time_window=None, order=None):
         t_ind_stop = timeseries_time_to_ind(time_series, time_window[1])
 
     tt = get_timeseries_tt(time_series, t_ind_start, t_ind_stop)
-
     unique_sorted_order, inverse_sort = np.unique(order, return_inverse=True)
-    mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][:, inverse_sort]
 
-    gap = np.median(np.nanstd(mini_data, axis=0)) * 20
-    offsets = np.arange(len(order)) * gap
-
-    mini_data = mini_data + offsets
+    if len(time_series.data.shape) > 1:
+        mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][:, inverse_sort]
+        gap = np.median(np.nanstd(mini_data, axis=0)) * 20
+        offsets = np.arange(len(order)) * gap
+        mini_data = mini_data + offsets
+    else:
+        mini_data = time_series.data[t_ind_start:t_ind_stop]
+        offsets = [0]
 
     return mini_data, tt, offsets
 
 
 def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, ax=None, figsize=(9.7, 7),
-                        group_inds=None, labels=None, colors=color_wheel, show_legend=True, **kwargs):
-
+                        group_inds=None, labels=None, colors=color_wheel, show_legend=True,
+                        dynamic_table_region_name=None, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
     if order is None:
-        order = np.arange(time_series.data.shape[1])
+        if len(time_series.data.shape) > 1:
+            order = np.arange(time_series.data.shape[1])
+        else:
+            order = [0]
 
-    mini_data, tt, offsets = _prep_timeseries(time_series, time_window, order)
+    if dynamic_table_region_name is not None:
+        row_ids = getattr(time_series, dynamic_table_region_name).data[:]
+        channel_inds = [np.argmax(row_ids == x) for x in order]
+    else:
+        channel_inds = order
+
+    mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
 
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
@@ -324,8 +398,8 @@ def plot_grouped_traces(time_series: TimeSeries, time_window=None, order=None, a
     ax.set_xlim((tt[0], tt[-1]))
     ax.set_xlabel('time (s)')
 
-    if len(offsets):
-        ax.set_ylim(-offsets[0], offsets[-1] + offsets[0])
+    if len(offsets) > 1:
+        ax.set_ylim(offsets[0] - (offsets[1] - offsets[0])/2, offsets[-1] + (offsets[-1] - offsets[-2])/2)
     if len(order) <= 30:
         ax.set_yticks(offsets)
         ax.set_yticklabels(order)
@@ -368,11 +442,14 @@ class BaseGroupedTraceWidget(widgets.HBox):
         dynamic_table_region_name: str, optional
         foreign_time_window_controller: StartAndDurationController, optional
         foreign_group_and_sort_controller: GroupAndSortController, optional
+        mpl_plotter: function
+            Choose function to use when creating figures
         kwargs
         """
 
         if dynamic_table_region_name is not None and foreign_group_and_sort_controller is not None:
-            raise TypeError('You cannot supply both `dynamic_table_region_name` and `foreign_group_and_sort_controller`.')
+            raise TypeError(
+                'You cannot supply both `dynamic_table_region_name` and `foreign_group_and_sort_controller`.')
 
         super().__init__()
         self.time_series = time_series
@@ -382,18 +459,18 @@ class BaseGroupedTraceWidget(widgets.HBox):
         else:
             self.tmin = get_timeseries_mint(time_series)
             self.tmax = get_timeseries_maxt(time_series)
-            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
-                                                                     duration=5)
+            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
 
         self.controls = dict(
             time_series=widgets.fixed(self.time_series),
-            time_window=self.time_window_controller
+            time_window=self.time_window_controller,
+            dynamic_table_region_name=widgets.fixed(dynamic_table_region_name)
         )
         if foreign_group_and_sort_controller is None:
             if dynamic_table_region_name is not None:
                 dynamic_table_region = getattr(time_series, dynamic_table_region_name)
                 table = dynamic_table_region.table
-                referenced_rows = dynamic_table_region.data
+                referenced_rows = np.array(dynamic_table_region.data)
                 discard_rows = [x for x in range(len(table)) if x not in referenced_rows]
                 self.gas = GroupAndSortController(dynamic_table=table, start_discard_rows=discard_rows)
                 self.controls.update(gas=self.gas)
@@ -403,6 +480,8 @@ class BaseGroupedTraceWidget(widgets.HBox):
             self.gas = foreign_group_and_sort_controller
             self.controls.update(gas=self.gas)
 
+
+        # Sets up interactive output controller
         out_fig = interactive_output(mpl_plotter, self.controls)
 
         if foreign_time_window_controller:
@@ -447,14 +526,8 @@ class MultiTimeSeriesWidget(widgets.VBox):
         else:
             self.tmin = min(get_timeseries_mint(time_series) for time_series in time_series_list)
             self.tmax = max(get_timeseries_maxt(time_series) for time_series in time_series_list)
-        self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax, start=self.tmin,
-                                                                 duration=5)
+        self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
 
         widgets = [widget_class(time_series, foreign_time_window_controller=self.time_window_controller)
                    for widget_class, time_series in zip(widget_class_list, time_series_list)]
         self.children = [self.time_window_controller] + widgets
-
-
-
-
-

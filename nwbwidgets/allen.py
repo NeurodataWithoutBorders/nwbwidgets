@@ -1,29 +1,28 @@
 from typing import Iterable
 
-import numpy as np
-
-from pynwb.misc import Units
 import ipywidgets as widgets
+import numpy as np
 from hdmf.common import DynamicTable
+from pynwb.misc import Units
 
-from .misc import RasterWidget, PSTHWidget, RasterGridWidget
-from .view import default_neurodata_vis_spec
-from .utils.pynwb import robust_unique
-from .controllers import GroupAndSortController
 from .base import lazy_tabs, render_dataframe
+from .controllers import GroupAndSortController
+from .misc import RasterWidget, PSTHWidget, RasterGridWidget
+from .utils.pynwb import robust_unique
+from .view import default_neurodata_vis_spec
 
 
 class AllenRasterWidget(RasterWidget):
-    def make_group_and_sort(self, group_by=None):
-        return AllenRasterGroupAndSortController(self.units, group_by=group_by)
+    def make_group_and_sort(self, group_by=None, control_order=False):
+        return AllenRasterGroupAndSortController(self.units,
+                                                 group_by=group_by,
+                                                 control_order=control_order)
 
 
 class TimeIntervalsSelector(widgets.VBox):
-
     InnerWidget = None
 
     def __init__(self, units, **kwargs):
-
         super().__init__()
         self.units = units
         self.kwargs = kwargs
@@ -104,5 +103,4 @@ def load_allen_widgets():
     default_neurodata_vis_spec[Units]['Session Raster'] = AllenRasterWidget
     default_neurodata_vis_spec[Units]['Grouped PSTH'] = AllenPSTHWidget
     default_neurodata_vis_spec[Units]['Raster Grid'] = AllenRasterGridWidget
-    default_neurodata_vis_spec[DynamicTable] = allen_show_dynamic_table
-
+    #default_neurodata_vis_spec[DynamicTable] = allen_show_dynamic_table

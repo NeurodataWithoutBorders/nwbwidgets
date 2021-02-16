@@ -1,16 +1,19 @@
-from nwbwidgets import view
-import matplotlib.pyplot as plt
-from ipywidgets import widgets
 from collections.abc import Iterable
-from pynwb import ProcessingModule
-from pynwb.core import NWBDataInterface
-from matplotlib.pyplot import Figure
 from datetime import datetime
 from typing import Union
+
+import h5py
+import ipysheet
+import matplotlib.pyplot as plt
 import pandas as pd
 from IPython import display
-import ipysheet
-import h5py
+from ipywidgets import widgets
+from matplotlib.pyplot import Figure
+from nwbwidgets import view
+from pynwb import ProcessingModule
+from pynwb.core import NWBDataInterface
+
+from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -20,7 +23,7 @@ def show_fields(node, **kwargs) -> widgets.Widget:
                                min_height='30px', min_width='130px')
     info = []
     for key, val in node.fields.items():
-        lbl_key = widgets.Label(key+':', layout=field_lay)
+        lbl_key = widgets.Label(key + ':', layout=field_lay)
         lbl_val = widgets.Label(str(val), layout=field_lay)
         info.append(widgets.HBox(children=[lbl_key, lbl_val]))
     vbox = widgets.VBox(info)
@@ -41,19 +44,19 @@ def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: dict) -> wid
     """
     field_lay = widgets.Layout(max_height='40px', max_width='500px',
                                min_height='30px', min_width='180px')
-    info = []         # string data type, exposed as a Text widget
-    neuro_data = []   # more complex data types, also with children
+    info = []  # string data type, exposed as a Text widget
+    neuro_data = []  # more complex data types, also with children
     labels = []
     for key, value in node.fields.items():
         if isinstance(value, (str, datetime)):
-            lbl_key = widgets.Label(key+':', layout=field_lay)
+            lbl_key = widgets.Label(key + ':', layout=field_lay)
             lbl_val = widgets.Label(str(value), layout=field_lay)
             info.append(widgets.HBox(children=[lbl_key, lbl_val]))
         elif key == 'related_publications':
             pub_list = []
             for pub in value:
-                pub_list.append(widgets.HTML(value="<a href=http://dx.doi.org/"+pub[4:]+">"+pub+"</a>"))
-            lbl_key = widgets.Label(key+':', layout=field_lay)
+                pub_list.append(widgets.HTML(value="<a href=http://dx.doi.org/" + pub[4:] + ">" + pub + "</a>"))
+            lbl_key = widgets.Label(key + ':', layout=field_lay)
             pub_list.insert(0, lbl_key)
             info.append(widgets.HBox(children=pub_list))
         elif key == 'experimenter':
@@ -134,6 +137,7 @@ def lazy_tabs(in_dict: dict, node, style: GroupingWidget = widgets.Tab) -> Group
 
 class LazyTab(widgets.Tab):
     """A lazy tab object where multiple visualizations can be used for a single node and are generated on the fly"""
+
     def __init__(self, func_dict, data):
         """
         Parameters
@@ -157,8 +161,6 @@ class LazyTab(widgets.Tab):
                 change.owner.children = children
 
         self.observe(on_selected_index, names='selected_index')
-
-
 
 
 def lazy_show_over_data(list_, func_, labels=None, style: GroupingWidget = widgets.Tab) -> GroupingWidget:
@@ -192,7 +194,7 @@ def lazy_show_over_data(list_, func_, labels=None, style: GroupingWidget = widge
     return out
 
 
-def nwb2widget(node,  neurodata_vis_spec: dict, **pass_kwargs) -> widgets.Widget:
+def nwb2widget(node, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.Widget:
     for ndtype in type(node).__mro__:
         if ndtype in neurodata_vis_spec:
             spec = neurodata_vis_spec[ndtype]
@@ -224,7 +226,8 @@ def vis2widget(vis) -> widgets.Widget:
 def fig2widget(fig: Figure, **kwargs) -> widgets.Widget:
     out = widgets.Output()
     with out:
-        plt.show(fig)
+        fig.show()
+        show_inline_matplotlib_plots()
     return out
 
 
@@ -274,7 +277,7 @@ def show_dset(dset: h5py.Dataset, **kwargs):
     ])
 
 
-def dataset_to_sheet(dset:h5py.Dataset):
+def dataset_to_sheet(dset: h5py.Dataset):
     if dset.ndim == 1:
         nrows = len(dset)
 
@@ -298,8 +301,24 @@ def show_dict(in_dict) -> widgets.Widget:
                                min_height='30px', min_width='130px')
     info = []
     for key, val in in_dict.items():
-        lbl_key = widgets.Label(key+':', layout=field_lay)
+        lbl_key = widgets.Label(key + ':', layout=field_lay)
         lbl_val = widgets.Label(str(val), layout=field_lay)
         info.append(widgets.HBox(children=[lbl_key, lbl_val]))
     vbox = widgets.VBox(info)
     return vbox
+
+
+def df_to_hover_text(df: pd.DataFrame):
+    return [row_to_hover_text(row) for _, row in df.iterrows()]
+
+
+def row_to_hover_text(row):
+    text_rows = []
+    for key, val in list(row.to_dict().items()):
+        if isinstance(val, (int, float)) and abs(val) > 1e5:
+            text_rows.append('{}: {:.2e}'.format(key, val))
+        elif isinstance(val, (int, str)):
+            text_rows.append('{}: {}'.format(key, val))
+        elif isinstance(val, float):
+            text_rows.append('{}: {:.3f}'.format(key, val))
+    return '<br>'.join(text_rows)
