@@ -90,22 +90,45 @@ def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: dict
         return neurodata_vis_spec[NWBDataInterface](img_seg, neurodata_vis_spec)
 
 
-def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
+def show_plane_segmentation_3d_voxel(plane_seg: PlaneSegmentation):
     import ipyvolume.pylab as p3
 
     nrois = len(plane_seg)
 
-    dims = np.array([max(max(plane_seg['voxel_mask'][i][dim]) for i in range(nrois))
-                     for dim in ['x', 'y', 'z']]).astype('int') + 1
+    voxel_mask = plane_seg['voxel_mask']
+
+    mx, my, mz = 0, 0, 0
+    for voxel in voxel_mask:
+        for x, y, z, _ in voxel:
+            mx = max(mx, x)
+            my = max(my, y)
+            mz = max(mz, z)
+
     fig = p3.figure()
     for icolor, color in enumerate(color_wheel):
-        vol = np.zeros(dims)
+        vol = np.zeros((mx + 1, my + 1, mz + 1))
         sel = np.arange(icolor, nrois, len(color_wheel))
         for isel in sel:
-            dat = plane_seg['voxel_mask'][isel]
-            vol[tuple(dat['x'].astype('int')),
-                tuple(dat['y'].astype('int')),
-                tuple(dat['z'].astype('int'))] = 1
+            dat = voxel_mask[isel]
+            for x, y, z, value in dat:
+                vol[x, y, z] = value
+        p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
+    return fig
+
+
+def show_plane_segmentation_3d_mask(plane_seg: PlaneSegmentation):
+    import ipyvolume.pylab as p3
+
+    nrois = len(plane_seg)
+
+    image_masks = plane_seg['image_mask']
+
+    fig = p3.figure()
+    for icolor, color in enumerate(color_wheel):
+        vol = np.zeros(image_masks.shape[1:])
+        sel = np.arange(icolor, nrois, len(color_wheel))
+        for isel in sel:
+            vol += plane_seg['image_mask'][isel]
         p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
     return fig
 
@@ -263,7 +286,9 @@ class PlaneSegmentation2DWidget(widgets.VBox):
 
 def route_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
     if 'voxel_mask' in plane_seg:
-        return show_plane_segmentation_3d(plane_seg)
+        return show_plane_segmentation_3d_voxel(plane_seg)
+    elif 'image_mask' in plane_seg and len(plane_seg.image_mask.shape) == 4:
+        raise NotImplementedError('3d image mask vis not implemented yet')
     elif 'image_mask' in plane_seg:
         return PlaneSegmentation2DWidget(plane_seg)
 
