@@ -470,7 +470,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
             if dynamic_table_region_name is not None:
                 dynamic_table_region = getattr(time_series, dynamic_table_region_name)
                 table = dynamic_table_region.table
-                referenced_rows = dynamic_table_region.data
+                referenced_rows = np.array(dynamic_table_region.data)
                 discard_rows = [x for x in range(len(table)) if x not in referenced_rows]
                 self.gas = GroupAndSortController(dynamic_table=table, start_discard_rows=discard_rows)
                 self.controls.update(gas=self.gas)

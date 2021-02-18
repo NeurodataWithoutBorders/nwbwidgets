@@ -37,8 +37,15 @@ class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
 
 
 class GroupAndSortController(AbstractGroupAndSortController):
-    def __init__(self, dynamic_table: DynamicTable, group_by=None, window=None, start_discard_rows=None,
-                 control_order=True, control_limit=True):
+    def __init__(
+            self,
+            dynamic_table: DynamicTable,
+            group_by=None,
+            window=None,
+            start_discard_rows=None,
+            control_order=True,
+            control_limit=True
+    ):
         """
 
         Parameters
@@ -55,17 +62,27 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         self.discard_rows = start_discard_rows
 
-        self.limit_bit = widgets.BoundedIntText(value=50, min=0, max=99999, disabled=True,
-                                                layout=Layout(max_width='70px'))
+        self.limit_bit = widgets.BoundedIntText(
+            value=50, min=0, max=99999, disabled=True, layout=Layout(max_width='70px'))
         self.limit_bit.observe(self.limit_bit_observer)
 
         if control_limit:
-            self.limit_cb = widgets.Checkbox(description='limit', style={'description_width': 'initial'}, disabled=True,
-                                             indent=False, layout=Layout(max_width='70px'))
+            self.limit_cb = widgets.Checkbox(
+                description='limit',
+                style={'description_width': 'initial'},
+                disabled=True,
+                indent=False,
+                layout=Layout(max_width='70px')
+            )
             self.limit_cb.observe(self.limit_cb_observer)
 
-        self.order_dd = widgets.Dropdown(options=[None] + list(groups), description='order by',
-                                         layout=Layout(max_width='120px'), style={'description_width': 'initial'})
+        self.order_dd = widgets.Dropdown(
+            options=[None] + list(groups),
+            description='order by',
+            layout=Layout(max_width='120px'),
+            style={'description_width': 'initial'},
+            disabled=not len(groups)
+        )
         self.order_dd.observe(self.order_dd_observer)
 
         self.ascending_dd = widgets.Dropdown(options=['ASC', 'DESC'], disabled=True,
@@ -87,8 +104,13 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.group_sm.observe(self.group_sm_observer)
 
         if group_by is None:
-            self.group_dd = widgets.Dropdown(options=[None] + list(groups), description='group by',
-                                             style={'description_width': 'initial'}, layout=Layout(width='90%'))
+            self.group_dd = widgets.Dropdown(
+                options=[None] + list(groups),
+                description='group by',
+                style={'description_width': 'initial'},
+                layout=Layout(width='90%'),
+                disabled=not len(groups)
+            )
             self.group_dd.observe(self.group_dd_observer)
         else:
             self.group_dd = None
@@ -106,35 +128,22 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         children.append(
             widgets.HBox(
-                children=(
-                    self.group_sm,
-                    self.range_controller)
-            )
+                children=(self.group_sm, self.range_controller))
         )
 
         if self.control_limit:
             children.append(
                 widgets.HBox(
-                    children=(
-                        self.limit_cb,
-                        self.limit_bit
-                    ),
-                    layout=Layout(
-                        max_width='90%'
-                    )
+                    children=(self.limit_cb, self.limit_bit),
+                    layout=Layout(max_width='90%')
                 )
             )
 
         if self.control_order:
             children.append(
                 widgets.HBox(
-                    children=(
-                        self.order_dd,
-                        self.ascending_dd
-                    ),
-                    layout=Layout(
-                        max_width='90%'
-                    )
+                    children=(self.order_dd, self.ascending_dd),
+                    layout=Layout(max_width='90%')
                 )
             )
 
