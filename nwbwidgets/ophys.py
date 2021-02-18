@@ -92,136 +92,46 @@ def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: dict
         return neurodata_vis_spec[NWBDataInterface](img_seg, neurodata_vis_spec)
 
 
-def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
+def show_plane_segmentation_3d_voxel(plane_seg: PlaneSegmentation):
     import ipyvolume.pylab as p3
 
     nrois = len(plane_seg)
 
-    dims = np.array([max(max(plane_seg['voxel_mask'][i][dim]) for i in range(nrois))
-                     for dim in ['x', 'y', 'z']]).astype('int') + 1
+    voxel_mask = plane_seg['voxel_mask']
+
+    mx, my, mz = 0, 0, 0
+    for voxel in voxel_mask:
+        for x, y, z, _ in voxel:
+            mx = max(mx, x)
+            my = max(my, y)
+            mz = max(mz, z)
+
     fig = p3.figure()
     for icolor, color in enumerate(color_wheel):
-        vol = np.zeros(dims)
+        vol = np.zeros((mx + 1, my + 1, mz + 1))
         sel = np.arange(icolor, nrois, len(color_wheel))
         for isel in sel:
-            dat = plane_seg['voxel_mask'][isel]
-            vol[tuple(dat['x'].astype('int')),
-                tuple(dat['y'].astype('int')),
-                tuple(dat['z'].astype('int'))] = 1
+            dat = voxel_mask[isel]
+            for x, y, z, value in dat:
+                vol[x, y, z] = value
         p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
     return fig
 
 
-@lru_cache(1000)
-def compute_outline(image_mask, threshold):
-    x, y = zip(*measure.find_contours(image_mask, threshold)[0])
-    return x, y
+def show_plane_segmentation_3d_mask(plane_seg: PlaneSegmentation):
+    import ipyvolume.pylab as p3
 
+    nrois = len(plane_seg)
 
-compute_outline = MemoizeMutable(compute_outline)
+    image_masks = plane_seg['image_mask']
 
-
-def show_plane_segmentation_2d(
-        plane_seg: PlaneSegmentation,
-        color_wheel: list = color_wheel,
-        color_by: str = None,
-        threshold: float = .01,
-        fig: go.Figure = None,
-        width: int = 600,
-        ref_image=None
-):
-    """
-
-    Parameters
-    ----------
-    plane_seg: PlaneSegmentation
-    color_wheel: list, optional
-    color_by: str, optional
-    threshold: float, optional
-    fig: plotly.graph_objects.Figure, optional
-    width: int, optional
-        width of image in pixels. Height is automatically determined
-        to be proportional
-    ref_image: image, optional
-
-
-    Returns
-    -------
-
-    """
-    layout_kwargs = dict()
-    if color_by:
-        if color_by not in plane_seg:
-            raise ValueError('specified color_by parameter, {}, not in plane_seg object'.format(color_by))
-        cats = np.unique(plane_seg[color_by][:])
-        layout_kwargs.update(title=color_by)
-
-    data = plane_seg['image_mask'].data
-    nUnits = data.shape[0]
-    if fig is None:
-        fig = go.FigureWidget()
-
-    if ref_image is not None:
-        fig.add_trace(
-            go.Heatmap(
-                z=ref_image,
-                hoverinfo='skip',
-                showscale=False,
-                colorscale='gray'
-            )
-        )
-
-    aux_leg = []
-    import pandas as pd
-    plane_seg_hover_dict = {key:plane_seg[key].data for key in plane_seg.colnames
-                                               if key not in ['pixel_mask', 'image_mask']}
-    plane_seg_hover_dict.update(id=plane_seg.id.data)
-    plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
-    all_hover = df_to_hover_text(plane_seg_hover_df)
-    for i in range(nUnits):
-        kwargs = dict(showlegend=False)
-        if color_by is not None:
-            if plane_seg_hover_df[color_by][i] not in aux_leg:
-                kwargs.update(showlegend=True)
-                aux_leg.append(plane_seg_hover_df[color_by][i])
-            c = color_wheel[np.where(cats == plane_seg_hover_df[color_by][i])[0][0]]
-            kwargs.update(line_color=c,
-                          name=str(plane_seg_hover_df[color_by][i]),
-                          legendgroup=str(plane_seg_hover_df[color_by][i]),
-                          )
-
-        # form cell borders
-        x, y = compute_outline(plane_seg['image_mask'][i], threshold)
-
-        fig.add_trace(
-            go.Scatter(
-                x=x, y=y,
-                fill='toself',
-                mode='lines',
-                text=all_hover[i],
-                hovertext='text',
-                line=dict(width=.5),
-                **kwargs
-            )
-        )
-
-    fig.update_layout(
-        width=width,
-        yaxis=dict(
-            mirror=True,
-            scaleanchor="x",
-            scaleratio=1,
-            range=[0, plane_seg['image_mask'].shape[2]],
-            constrain='domain'
-        ),
-        xaxis=dict(
-            mirror=True,
-            range=[0, plane_seg['image_mask'].shape[1]],
-            constrain='domain'
-        ),
-        margin=dict(t=30, b=10),
-        **layout_kwargs
-    )
+    fig = p3.figure()
+    for icolor, color in enumerate(color_wheel):
+        vol = np.zeros(image_masks.shape[1:])
+        sel = np.arange(icolor, nrois, len(color_wheel))
+        for isel in sel:
+            vol += plane_seg['image_mask'][isel]
+        p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
     return fig
 
 
@@ -234,10 +144,10 @@ class PlaneSegmentation2DWidget(widgets.VBox):
 
         if len(self.categorical_columns) == 1:
             self.color_by = list(self.categorical_columns.keys())[0]  # changing local variables to instance variables?
-            self.children = [show_plane_segmentation_2d(plane_seg, color_by=self.color_by, **kwargs)]
+            self.children = [self.show_plane_segmentation_2d(color_by=self.color_by, **kwargs)]
         elif len(self.categorical_columns) > 1:
             self.cat_controller = widgets.Dropdown(options=list(self.categorical_columns), description='color by')
-            self.fig = show_plane_segmentation_2d(plane_seg, color_by=self.cat_controller.value, **kwargs)
+            self.fig = self.show_plane_segmentation_2d(color_by=self.cat_controller.value, **kwargs)
 
             def on_change(change):
                 if change['new'] and isinstance(change['new'], dict):
@@ -249,7 +159,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             self.cat_controller.observe(on_change)
             self.children = [self.cat_controller, self.fig]
         else:
-            self.children = [show_plane_segmentation_2d(self.plane_seg, color_by=None, **kwargs)]
+            self.children = [self.show_plane_segmentation_2d(color_by=None, **kwargs)]
 
     def update_fig(self, color_by):
         cats = np.unique(self.plane_seg[color_by][:])
@@ -267,10 +177,119 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                 else:
                     data.showlegend = False
 
+    def show_plane_segmentation_2d(
+            self,
+            color_wheel: list = color_wheel,
+            color_by: str = None,
+            threshold: float = .01,
+            fig: go.Figure = None,
+            width: int = 600,
+            ref_image=None
+    ):
+        """
+
+        Parameters
+        ----------
+        plane_seg: PlaneSegmentation
+        color_wheel: list, optional
+        color_by: str, optional
+        threshold: float, optional
+        fig: plotly.graph_objects.Figure, optional
+        width: int, optional
+            width of image in pixels. Height is automatically determined
+            to be proportional
+        ref_image: image, optional
+
+
+        Returns
+        -------
+
+        """
+        layout_kwargs = dict()
+        if color_by:
+            if color_by not in self.plane_seg:
+                raise ValueError('specified color_by parameter, {}, not in plane_seg object'.format(color_by))
+            cats = np.unique(self.plane_seg[color_by][:])
+            layout_kwargs.update(title=color_by)
+
+        data = self.plane_seg['image_mask'].data
+        nUnits = len(data)
+        if fig is None:
+            fig = go.FigureWidget()
+
+        if ref_image is not None:
+            fig.add_trace(
+                go.Heatmap(
+                    z=ref_image,
+                    hoverinfo='skip',
+                    showscale=False,
+                    colorscale='gray'
+                )
+            )
+
+        aux_leg = []
+        import pandas as pd
+        plane_seg_hover_dict = {key: self.plane_seg[key].data for key in self.plane_seg.colnames
+                                if key not in ['pixel_mask', 'image_mask']}
+        plane_seg_hover_dict.update(id=self.plane_seg.id.data)
+        plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
+        all_hover = df_to_hover_text(plane_seg_hover_df)
+        for i in range(nUnits):
+            kwargs = dict(showlegend=False)
+            if color_by is not None:
+                if plane_seg_hover_df[color_by][i] not in aux_leg:
+                    kwargs.update(showlegend=True)
+                    aux_leg.append(plane_seg_hover_df[color_by][i])
+                c = color_wheel[np.where(cats == plane_seg_hover_df[color_by][i])[0][0]]
+                kwargs.update(line_color=c,
+                              name=str(plane_seg_hover_df[color_by][i]),
+                              legendgroup=str(plane_seg_hover_df[color_by][i]),
+                              )
+
+            x, y = self.compute_outline(i, threshold)
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x, y=y,
+                    fill='toself',
+                    mode='lines',
+                    text=all_hover[i],
+                    hovertext='text',
+                    line=dict(width=.5),
+                    **kwargs
+                )
+            )
+
+        fig.update_layout(
+            width=width,
+            yaxis=dict(
+                mirror=True,
+                scaleanchor="x",
+                scaleratio=1,
+                range=[0, self.plane_seg['image_mask'].shape[2]],
+                constrain='domain'
+            ),
+            xaxis=dict(
+                mirror=True,
+                range=[0, self.plane_seg['image_mask'].shape[1]],
+                constrain='domain'
+            ),
+            margin=dict(t=30, b=10),
+            **layout_kwargs
+        )
+        return fig
+
+    @lru_cache(1000)
+    def compute_outline(self, i, threshold):
+        x, y = zip(*measure.find_contours(self.plane_seg['image_mask'][i], threshold)[0])
+        return x, y
+
 
 def route_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
     if 'voxel_mask' in plane_seg:
-        return show_plane_segmentation_3d(plane_seg)
+        return show_plane_segmentation_3d_voxel(plane_seg)
+    elif 'image_mask' in plane_seg and len(plane_seg.image_mask.shape) == 4:
+        raise NotImplementedError('3d image mask vis not implemented yet')
     elif 'image_mask' in plane_seg:
         return PlaneSegmentation2DWidget(plane_seg)
 
