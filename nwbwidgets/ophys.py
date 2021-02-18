@@ -196,8 +196,10 @@ def show_plane_segmentation_2d(
 
     aux_leg = []
     import pandas as pd
-    plane_seg_hover_df = pd.DataFrame({key:plane_seg[key].data for key in plane_seg.colnames
-                                               if key not in ['pixel_mask', 'image_mask']})
+    plane_seg_hover_dict = {key:plane_seg[key].data for key in plane_seg.colnames
+                                               if key not in ['pixel_mask', 'image_mask']}
+    plane_seg_hover_dict.update(id=plane_seg.id.data)
+    plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
     all_hover = df_to_hover_text(plane_seg_hover_df)
     for i in range(nUnits):
         kwargs = dict(showlegend=False)
