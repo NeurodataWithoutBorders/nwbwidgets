@@ -135,15 +135,6 @@ def show_plane_segmentation_3d_mask(plane_seg: PlaneSegmentation):
     return fig
 
 
-@lru_cache(1000)
-def compute_outline(image_mask, threshold):
-    x, y = zip(*measure.find_contours(image_mask, threshold)[0])
-    return x, y
-
-
-compute_outline = MemoizeMutable(compute_outline)
-
-
 def show_plane_segmentation_2d(
         plane_seg: PlaneSegmentation,
         color_wheel: list = color_wheel,
@@ -214,7 +205,13 @@ def show_plane_segmentation_2d(
                           )
 
         # form cell borders
-        x, y = compute_outline(plane_seg['image_mask'][i], threshold)
+        # this is declared here to secretly pass in plane_seg since image_mask is not mutable
+        @lru_cache(1000)
+        def compute_outline(i, threshold):
+            x, y = zip(*measure.find_contours(plane_seg['image_mask'][i], threshold)[0])
+            return x, y
+
+        x, y = compute_outline(i, threshold)
 
         fig.add_trace(
             go.Scatter(
