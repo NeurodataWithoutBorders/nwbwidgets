@@ -3,7 +3,6 @@ import numpy as np
 import plotly.graph_objects as go
 import pynwb
 import trimesh
-from plotly.colors import DEFAULT_PLOTLY_COLORS
 
 from .base import df_to_hover_text
 
@@ -66,6 +65,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
     def __init__(self, electrodes: pynwb.base.DynamicTable, **kwargs):
 
         super().__init__()
+        self.electrodes = electrodes
 
         slider_kwargs = dict(value=1., min=0., max=1.,
                              style={'description_width': 'initial'})
@@ -78,18 +78,30 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
             description='right hemi opacity',
             **slider_kwargs)
 
+        color_by_radio_button = widgets.RadioButtons(
+            options=['Grid Location', 'Low Freq Band R2', 'High Freq Band R2'],
+            value='Grid Location', # Defaults to 'pineapple'
+            layout={'width': 'max-content'}, # If the items' names are long
+            description='Color by:',
+            disabled=False,
+        )
+
+        color_by_radio_button.observe(self.color_electrode_by)
         left_opacity_slider.observe(self.observe_left_opacity)
         right_opacity_slider.observe(self.observe_right_opacity)
 
         self.fig = go.FigureWidget()
         self.plot_human_brain()
-        self.show_electrodes(electrodes)
+        self.show_electrodes(electrodes, color_by_radio_button.value)
 
         self.children = [
             self.fig,
             widgets.HBox([
-                left_opacity_slider, right_opacity_slider
+                left_opacity_slider,
+                right_opacity_slider,
+                color_by_radio_button
             ])
+
         ]
 
     @staticmethod
@@ -108,46 +120,74 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
             normals.append(normal)
         return normals
 
-    def show_electrodes(self, electrodes: pynwb.base.DynamicTable):
+    def show_electrodes(self, electrodes: pynwb.base.DynamicTable, color_by):
 
         positions = np.c_[electrodes.x[:], electrodes.y[:], electrodes.z[:]]
         group_names = electrodes.group_name[:]
         ugroups, group_inv = np.unique(group_names, return_inverse=True)
 
+        if color_by == 'Grid Location':
+            mapper_dict = dict(zip(ugroups, np.arange(0, len(ugroups), 1)))
+            def map_color(entry):
+                return mapper_dict[entry] if entry in mapper_dict else entry
+            map_color = np.vectorize(map_color)
+            colors = map_color(group_names)
+        elif color_by == 'Low Freq Band R2':
+            colors = np.ravel(electrodes['low freq R2'][:])
+        else:
+            colors = np.ravel(electrodes['high freq R2'][:])
+
         with self.fig.batch_update():
-            for i, (group, c) in enumerate(zip(ugroups, DEFAULT_PLOTLY_COLORS)):
+            for i, group in enumerate(ugroups):
                 sel_positions = positions[group_inv == i]
+                c = colors[group_inv==i]
+
                 x, y, z = sel_positions.T
 
                 if isinstance(group, bytes):
                     group = group.decode()
 
-                """
-                if 'GRID' in group:
-                    normals = self.find_normals(sel_positions, 5)
-                    with self.fig.batch_update():
-                        [self.fig.add_trace(trace) for trace in make_cylinders(
-                            positions=sel_positions,
-                            directions=normals,
-                            radius=2,
-                            height=.5,
-                            color=c,
-                            name=group
-                    )]
-                else:
+                    """
+                    if 'GRID' in group:
+                        normals = self.find_normals(sel_positions, 5)
+                        with self.fig.batch_update():
+                            [self.fig.add_trace(trace) for trace in make_cylinders(
+                                positions=sel_positions,
+                                directions=normals,
+                                radius=2,
+                                height=.5,
+                                color=c,
+                                name=group
+                        )]
+                    else:
                 
                 
-                """
+                    """
                 self.fig.add_trace(
                     go.Scatter3d(
                         mode='markers',
                         x=x, y=y, z=z,
                         name=group,
-                        marker=dict(color=c),
+                        legendgroup=group,
+                        marker=dict(color=c,
+                                    cmax=np.max(colors),
+                                    cmin=np.min(colors),
+                                    colorscale='Jet',
+                                    colorbar=dict(
+                                        title="Colorbar"
+                                    ),
+                                    ),
                         text=df_to_hover_text(electrodes.to_dataframe()),
                         hoverinfo='text',
+                        )
+                ),
+
+            self.fig.update_layout(
+                    legend=dict(
+                        x=0,
+                        y=1,
                     ),
-                )
+            )
 
     def plot_human_brain(self, left_opacity=1., right_opacity=1.):
 
@@ -197,3 +237,9 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
     def observe_right_opacity(self, change):
         if 'new' in change and isinstance(change['new'], float):
             self.fig.data[1].opacity = change['new']
+
+    def color_electrode_by(self, change):
+        if 'new' in change and isinstance(change['new'], str):
+            self.fig.data = None
+            self.plot_human_brain()
+            self.show_electrodes(self.electrodes, change['new'])
