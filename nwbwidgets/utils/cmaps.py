@@ -7,11 +7,9 @@ import matplotlib.colors
 from ipyvolume import TransferFunction
 
 
-def linear_transfer_function(color,
-                             min_opacity=0,
-                             max_opacity=0.05,
-                             reverse_opacity=False,
-                             n_elements=256):
+def linear_transfer_function(
+    color, min_opacity=0, max_opacity=0.05, reverse_opacity=False, n_elements=256
+):
     """Transfer function of a single color and linear opacity.
     :param color: List-like RGB, or string with hexadecimal or named color.
         RGB values should be within 0-1 range.
@@ -40,20 +38,21 @@ def linear_transfer_function(color,
     opacity = np.linspace(min_opacity, max_opacity, num=n_elements)
     if reverse_opacity:
         opacity = np.flip(opacity, axis=0)
-    rgba = np.transpose(np.stack([[r] * n_elements,
-                                  [g] * n_elements,
-                                  [b] * n_elements,
-                                  opacity]))
+    rgba = np.transpose(
+        np.stack([[r] * n_elements, [g] * n_elements, [b] * n_elements, opacity])
+    )
     transfer_function = TransferFunction(rgba=rgba)
     return transfer_function
 
 
-def matplotlib_transfer_function(colormap_name,
-                                 min_opacity=0,
-                                 max_opacity=0.05,
-                                 reverse_colormap=False,
-                                 reverse_opacity=False,
-                                 n_elements=256):
+def matplotlib_transfer_function(
+    colormap_name,
+    min_opacity=0,
+    max_opacity=0.05,
+    reverse_colormap=False,
+    reverse_opacity=False,
+    n_elements=256,
+):
     """Transfer function from matplotlib colormaps.
     :param colormap_name: name of matplotlib colormap
     :param min_opacity: Minimum opacity, default value is 0.

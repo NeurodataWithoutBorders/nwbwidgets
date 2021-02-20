@@ -1,10 +1,18 @@
+from functools import lru_cache
+
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 from ndx_grayscalevolume import GrayscaleVolume
 from pynwb.base import NWBDataInterface
-from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, TwoPhotonSeries, ImageSegmentation
+from pynwb.ophys import (
+    RoiResponseSeries,
+    DfOverF,
+    PlaneSegmentation,
+    TwoPhotonSeries,
+    ImageSegmentation,
+)
 from skimage import measure
 from tifffile import imread, TiffFile
 
@@ -14,7 +22,7 @@ from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .utils.functional import MemoizeMutable
 
-color_wheel = ['red', 'blue', 'green', 'black', 'magenta', 'yellow']
+color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
 
 
 class TwoPhotonSeriesWidget(widgets.VBox):
@@ -35,42 +43,51 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                 n_y, n_x = page.shape
 
                 def show_image(index=0):
-                    fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
+                    fig, ax = plt.subplots(subplot_kw={"xticks": [], "yticks": []})
                     # Read first frame
                     image = imread(path_ext_file, key=int(index))
-                    ax.imshow(image, cmap='gray')
+                    ax.imshow(image, cmap="gray")
                     output.clear_output(wait=True)
                     with output:
                         fig.show()
 
-                slider = widgets.IntSlider(value=0, min=0,
-                                           max=n_samples - 1,
-                                           orientation='horizontal')
+                slider = widgets.IntSlider(
+                    value=0, min=0, max=n_samples - 1, orientation="horizontal"
+                )
         else:
             if len(indexed_timeseries.data.shape) == 3:
+
                 def show_image(index=0):
-                    fig, ax = plt.subplots(subplot_kw={'xticks': [], 'yticks': []})
-                    ax.imshow(indexed_timeseries.data[index], cmap='gray')
+                    fig, ax = plt.subplots(subplot_kw={"xticks": [], "yticks": []})
+                    ax.imshow(indexed_timeseries.data[index], cmap="gray")
                     output.clear_output(wait=True)
                     with output:
                         fig.show()
+
             elif len(indexed_timeseries.data.shape) == 4:
                 import ipyvolume.pylab as p3
 
                 def show_image(index=0):
                     p3.figure()
-                    p3.volshow(indexed_timeseries.data[index], tf=linear_transfer_function([0, 0, 0], max_opacity=.3))
+                    p3.volshow(
+                        indexed_timeseries.data[index],
+                        tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
+                    )
                     output.clear_output(wait=True)
                     with output:
                         p3.show()
+
             else:
                 raise NotImplementedError
 
-            slider = widgets.IntSlider(value=0, min=0,
-                                       max=indexed_timeseries.data.shape[0] - 1,
-                                       orientation='horizontal')
+            slider = widgets.IntSlider(
+                value=0,
+                min=0,
+                max=indexed_timeseries.data.shape[0] - 1,
+                orientation="horizontal",
+            )
 
-        slider.observe(lambda change: show_image(change.new), names='value')
+        slider.observe(lambda change: show_image(change.new), names="value")
         show_image()
         self.children = [output, slider]
 
@@ -78,143 +95,62 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
     if len(df_over_f.roi_response_series) == 1:
         title, input = list(df_over_f.roi_response_series.items())[0]
-        return neurodata_vis_spec[RoiResponseSeries](input, neurodata_vis_spec, title=title)
+        return neurodata_vis_spec[RoiResponseSeries](
+            input, neurodata_vis_spec, title=title
+        )
     else:
         return neurodata_vis_spec[NWBDataInterface](df_over_f, neurodata_vis_spec)
 
 
 def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: dict):
     if len(img_seg.plane_segmentations) == 1:
-        return route_plane_segmentation(list(img_seg.plane_segmentations.values())[0], neurodata_vis_spec)
+        return route_plane_segmentation(
+            list(img_seg.plane_segmentations.values())[0], neurodata_vis_spec
+        )
     else:
         return neurodata_vis_spec[NWBDataInterface](img_seg, neurodata_vis_spec)
 
 
-def show_plane_segmentation_3d(plane_seg: PlaneSegmentation):
+def show_plane_segmentation_3d_voxel(plane_seg: PlaneSegmentation):
     import ipyvolume.pylab as p3
 
     nrois = len(plane_seg)
 
-    dims = np.array([max(max(plane_seg['voxel_mask'][i][dim]) for i in range(nrois))
-                     for dim in ['x', 'y', 'z']]).astype('int') + 1
+    voxel_mask = plane_seg["voxel_mask"]
+
+    mx, my, mz = 0, 0, 0
+    for voxel in voxel_mask:
+        for x, y, z, _ in voxel:
+            mx = max(mx, x)
+            my = max(my, y)
+            mz = max(mz, z)
+
     fig = p3.figure()
     for icolor, color in enumerate(color_wheel):
-        vol = np.zeros(dims)
+        vol = np.zeros((mx + 1, my + 1, mz + 1))
         sel = np.arange(icolor, nrois, len(color_wheel))
         for isel in sel:
-            dat = plane_seg['voxel_mask'][isel]
-            vol[tuple(dat['x'].astype('int')),
-                tuple(dat['y'].astype('int')),
-                tuple(dat['z'].astype('int'))] = 1
-        p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=.3))
+            dat = voxel_mask[isel]
+            for x, y, z, value in dat:
+                vol[x, y, z] = value
+        p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=0.3))
     return fig
 
 
-def compute_outline(image_mask, threshold):
-    x, y = zip(*measure.find_contours(image_mask, threshold)[0])
-    return x, y
+def show_plane_segmentation_3d_mask(plane_seg: PlaneSegmentation):
+    import ipyvolume.pylab as p3
 
+    nrois = len(plane_seg)
 
-compute_outline = MemoizeMutable(compute_outline)
+    image_masks = plane_seg["image_mask"]
 
-
-def show_plane_segmentation_2d(
-        plane_seg: PlaneSegmentation,
-        color_wheel: list = color_wheel,
-        color_by: str = None,
-        threshold: float = .01,
-        fig: go.Figure = None,
-        width: int = 600,
-        ref_image=None
-):
-    """
-
-    Parameters
-    ----------
-    plane_seg: PlaneSegmentation
-    color_wheel: list, optional
-    color_by: str, optional
-    threshold: float, optional
-    fig: plotly.graph_objects.Figure, optional
-    width: int, optional
-        width of image in pixels. Height is automatically determined
-        to be proportional
-    ref_image: image, optional
-
-
-    Returns
-    -------
-
-    """
-    layout_kwargs = dict()
-    if color_by:
-        if color_by not in plane_seg:
-            raise ValueError('specified color_by parameter, {}, not in plane_seg object'.format(color_by))
-        cats = np.unique(plane_seg[color_by][:])
-        layout_kwargs.update(title=color_by)
-
-    data = plane_seg['image_mask'].data
-    nUnits = data.shape[0]
-    if fig is None:
-        fig = go.FigureWidget()
-
-    if ref_image is not None:
-        fig.add_trace(
-            go.Heatmap(
-                z=ref_image,
-                hoverinfo='skip',
-                showscale=False,
-                colorscale='gray'
-            )
-        )
-
-    aux_leg = []
-    all_hover = df_to_hover_text(plane_seg.to_dataframe())
-
-    for i in range(nUnits):
-        kwargs = dict(showlegend=False)
-        if color_by is not None:
-            if plane_seg[color_by][i] not in aux_leg:
-                kwargs.update(showlegend=True)
-                aux_leg.append(plane_seg[color_by][i])
-            c = color_wheel[np.where(cats == plane_seg[color_by][i])[0][0]]
-            kwargs.update(line_color=c,
-                          name=str(plane_seg[color_by][i]),
-                          legendgroup=str(plane_seg[color_by][i]),
-                          )
-
-        # form cell borders
-        x, y = compute_outline(plane_seg['image_mask'][i], threshold)
-
-        fig.add_trace(
-            go.Scatter(
-                x=x, y=y,
-                fill='toself',
-                mode='lines',
-                text=all_hover[i],
-                hovertext='text',
-                line=dict(width=.5),
-                **kwargs
-            )
-        )
-
-    fig.update_layout(
-        width=width,
-        yaxis=dict(
-            mirror=True,
-            scaleanchor="x",
-            scaleratio=1,
-            range=[0, plane_seg['image_mask'].shape[2]],
-            constrain='domain'
-        ),
-        xaxis=dict(
-            mirror=True,
-            range=[0, plane_seg['image_mask'].shape[1]],
-            constrain='domain'
-        ),
-        margin=dict(t=30, b=10),
-        **layout_kwargs
-    )
+    fig = p3.figure()
+    for icolor, color in enumerate(color_wheel):
+        vol = np.zeros(image_masks.shape[1:])
+        sel = np.arange(icolor, nrois, len(color_wheel))
+        for isel in sel:
+            vol += plane_seg["image_mask"][isel]
+        p3.volshow(vol, tf=linear_transfer_function(color, max_opacity=0.3))
     return fig
 
 
@@ -226,30 +162,40 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         self.color_wheel = color_wheel
 
         if len(self.categorical_columns) == 1:
-            self.color_by = list(self.categorical_columns.keys())[0]  # changing local variables to instance variables?
-            self.children = [show_plane_segmentation_2d(plane_seg, color_by=self.color_by, **kwargs)]
+            self.color_by = list(self.categorical_columns.keys())[
+                0
+            ]  # changing local variables to instance variables?
+            self.children = [
+                self.show_plane_segmentation_2d(color_by=self.color_by, **kwargs)
+            ]
         elif len(self.categorical_columns) > 1:
-            self.cat_controller = widgets.Dropdown(options=list(self.categorical_columns), description='color by')
-            self.fig = show_plane_segmentation_2d(plane_seg, color_by=self.cat_controller.value, **kwargs)
+            self.cat_controller = widgets.Dropdown(
+                options=list(self.categorical_columns), description="color by"
+            )
+            self.fig = self.show_plane_segmentation_2d(
+                color_by=self.cat_controller.value, **kwargs
+            )
 
             def on_change(change):
-                if change['new'] and isinstance(change['new'], dict):
-                    ind = change['new']['index']
+                if change["new"] and isinstance(change["new"], dict):
+                    ind = change["new"]["index"]
                     if isinstance(ind, int):
-                        color_by = change['owner'].options[ind]
+                        color_by = change["owner"].options[ind]
                         self.update_fig(color_by)
 
             self.cat_controller.observe(on_change)
             self.children = [self.cat_controller, self.fig]
         else:
-            self.children = [show_plane_segmentation_2d(self.plane_seg, color_by=None, **kwargs)]
+            self.children = [self.show_plane_segmentation_2d(color_by=None, **kwargs)]
 
     def update_fig(self, color_by):
         cats = np.unique(self.plane_seg[color_by][:])
         legendgroups = []
         with self.fig.batch_update():
             for color_val, data in zip(self.plane_seg[color_by][:], self.fig.data):
-                color = self.color_wheel[np.where(cats == color_val)[0][0]]  # store the color
+                color = self.color_wheel[
+                    np.where(cats == color_val)[0][0]
+                ]  # store the color
                 data.line.color = color  # set the color
                 data.legendgroup = str(color_val)  # set the legend group to the color
                 data.name = str(color_val)
@@ -260,11 +206,129 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                 else:
                     data.showlegend = False
 
+    def show_plane_segmentation_2d(
+        self,
+        color_wheel: list = color_wheel,
+        color_by: str = None,
+        threshold: float = 0.01,
+        fig: go.Figure = None,
+        width: int = 600,
+        ref_image=None,
+    ):
+        """
+
+        Parameters
+        ----------
+        plane_seg: PlaneSegmentation
+        color_wheel: list, optional
+        color_by: str, optional
+        threshold: float, optional
+        fig: plotly.graph_objects.Figure, optional
+        width: int, optional
+            width of image in pixels. Height is automatically determined
+            to be proportional
+        ref_image: image, optional
+
+
+        Returns
+        -------
+
+        """
+        layout_kwargs = dict()
+        if color_by:
+            if color_by not in self.plane_seg:
+                raise ValueError(
+                    "specified color_by parameter, {}, not in plane_seg object".format(
+                        color_by
+                    )
+                )
+            cats = np.unique(self.plane_seg[color_by][:])
+            layout_kwargs.update(title=color_by)
+
+        data = self.plane_seg["image_mask"].data
+        nUnits = len(data)
+        if fig is None:
+            fig = go.FigureWidget()
+
+        if ref_image is not None:
+            fig.add_trace(
+                go.Heatmap(
+                    z=ref_image, hoverinfo="skip", showscale=False, colorscale="gray"
+                )
+            )
+
+        aux_leg = []
+        import pandas as pd
+
+        plane_seg_hover_dict = {
+            key: self.plane_seg[key].data
+            for key in self.plane_seg.colnames
+            if key not in ["pixel_mask", "image_mask"]
+        }
+        plane_seg_hover_dict.update(id=self.plane_seg.id.data)
+        plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
+        all_hover = df_to_hover_text(plane_seg_hover_df)
+        for i in range(nUnits):
+            kwargs = dict(showlegend=False)
+            if color_by is not None:
+                if plane_seg_hover_df[color_by][i] not in aux_leg:
+                    kwargs.update(showlegend=True)
+                    aux_leg.append(plane_seg_hover_df[color_by][i])
+                c = color_wheel[np.where(cats == plane_seg_hover_df[color_by][i])[0][0]]
+                kwargs.update(
+                    line_color=c,
+                    name=str(plane_seg_hover_df[color_by][i]),
+                    legendgroup=str(plane_seg_hover_df[color_by][i]),
+                )
+
+            x, y = self.compute_outline(i, threshold)
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    fill="toself",
+                    mode="lines",
+                    text=all_hover[i],
+                    hovertext="text",
+                    line=dict(width=0.5),
+                    **kwargs
+                )
+            )
+
+        fig.update_layout(
+            width=width,
+            yaxis=dict(
+                mirror=True,
+                scaleanchor="x",
+                scaleratio=1,
+                range=[0, self.plane_seg["image_mask"].shape[2]],
+                constrain="domain",
+            ),
+            xaxis=dict(
+                mirror=True,
+                range=[0, self.plane_seg["image_mask"].shape[1]],
+                constrain="domain",
+            ),
+            margin=dict(t=30, b=10),
+            **layout_kwargs
+        )
+        return fig
+
+    @lru_cache(1000)
+    def compute_outline(self, i, threshold):
+        x, y = zip(
+            *measure.find_contours(self.plane_seg["image_mask"][i], threshold)[0]
+        )
+        return x, y
+
 
 def route_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: dict):
-    if 'voxel_mask' in plane_seg:
-        return show_plane_segmentation_3d(plane_seg)
-    elif 'image_mask' in plane_seg:
+    if "voxel_mask" in plane_seg:
+        return show_plane_segmentation_3d_voxel(plane_seg)
+    elif "image_mask" in plane_seg and len(plane_seg.image_mask.shape) == 4:
+        raise NotImplementedError("3d image mask vis not implemented yet")
+    elif "image_mask" in plane_seg:
         return PlaneSegmentation2DWidget(plane_seg)
 
 
@@ -272,10 +336,12 @@ def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
     import ipyvolume.pylab as p3
 
     fig = p3.figure()
-    p3.volshow(vol.data, tf=linear_transfer_function([0, 0, 0], max_opacity=.1))
+    p3.volshow(vol.data, tf=linear_transfer_function([0, 0, 0], max_opacity=0.1))
     return fig
 
 
 class RoiResponseSeriesWidget(BaseGroupedTraceWidget):
-    def __init__(self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs):
-        super().__init__(roi_response_series, 'rois', **kwargs)
+    def __init__(
+        self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs
+    ):
+        super().__init__(roi_response_series, "rois", **kwargs)

@@ -34,7 +34,10 @@ def get_timeseries_tt(node: TimeSeries, istart=0, istop=None) -> np.ndarray:
         elif istop > 0:
             return np.arange(istart, istop) / node.rate + starting_time
         else:
-            return np.arange(istart, len(node.data) + istop - 1) / node.rate + starting_time
+            return (
+                np.arange(istart, len(node.data) + istop - 1) / node.rate
+                + starting_time
+            )
 
 
 def get_timeseries_maxt(node: TimeSeries) -> float:
@@ -153,8 +156,13 @@ def align_by_times(timeseries: TimeSeries, starts, stops):
     return np.array(out)
 
 
-def align_by_trials(timeseries: TimeSeries, start_label='start_time',
-                    stop_label=None, before=0., after=1.):
+def align_by_trials(
+    timeseries: TimeSeries,
+    start_label="start_time",
+    stop_label=None,
+    before=0.0,
+    after=1.0,
+):
     """
     Args:
         timeseries: TimeSeries
@@ -169,12 +177,20 @@ def align_by_trials(timeseries: TimeSeries, start_label='start_time',
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
-    trials = timeseries.get_ancestor('NWBFile').trials
-    return align_by_time_intervals(timeseries, trials, start_label, stop_label, before, after)
+    trials = timeseries.get_ancestor("NWBFile").trials
+    return align_by_time_intervals(
+        timeseries, trials, start_label, stop_label, before, after
+    )
 
 
-def align_by_time_intervals(timeseries: TimeSeries, intervals, start_label='start_time',
-                            stop_label='stop_time', before=0., after=0.):
+def align_by_time_intervals(
+    timeseries: TimeSeries,
+    intervals,
+    start_label="start_time",
+    stop_label="stop_time",
+    before=0.0,
+    after=0.0,
+):
     """
     Args:
         timeseries: pynwb.TimeSeries
@@ -191,7 +207,7 @@ def align_by_time_intervals(timeseries: TimeSeries, intervals, start_label='star
         np.array(shape=(n_trials, n_time, ...))
     """
     if stop_label is None:
-        stop_label = 'start_time'
+        stop_label = "start_time"
 
     starts = np.array(intervals[start_label][:]) - before
     stops = np.array(intervals[stop_label][:]) + after

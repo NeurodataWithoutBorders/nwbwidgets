@@ -11,26 +11,45 @@ from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
 from .analysis.spikes import compute_smoothed_firing_rate
-from .controllers import make_trial_event_controller, GroupAndSortController, StartAndDurationController, ProgressBar
+from .controllers import (
+    make_trial_event_controller,
+    GroupAndSortController,
+    StartAndDurationController,
+    ProgressBar,
+)
 from .utils.dynamictable import infer_categorical_columns
 from .utils.mpl import create_big_ax
 from .utils.plotly import event_group
-from .utils.units import get_spike_times, get_max_spike_time, get_min_spike_time, align_by_time_intervals, \
-    get_unobserved_intervals
+from .utils.units import (
+    get_spike_times,
+    get_max_spike_time,
+    get_min_spike_time,
+    align_by_time_intervals,
+    get_unobserved_intervals,
+)
 from .utils.widgets import interactive_output
 
-color_wheel = plt.rcParams['axes.prop_cycle'].by_key()['color']
+color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
 
 def show_annotations(annotations: AnnotationSeries, **kwargs):
     fig, ax = plt.subplots()
     ax.eventplot(annotations.timestamps, **kwargs)
-    ax.set_xlabel('time (s)')
+    ax.set_xlabel("time (s)")
     return fig
 
 
-def show_session_raster(units: Units, time_window=None, units_window=None, show_obs_intervals=True,
-                        order=None, group_inds=None, labels=None, show_legend=True, progress_bar=None):
+def show_session_raster(
+    units: Units,
+    time_window=None,
+    units_window=None,
+    show_obs_intervals=True,
+    order=None,
+    group_inds=None,
+    labels=None,
+    show_legend=True,
+    progress_bar=None,
+):
     """
 
     Parameters
@@ -60,10 +79,10 @@ def show_session_raster(units: Units, time_window=None, units_window=None, show_
         units_window = [0, len(units)]
 
     if order is None:
-        order = np.arange(len(units), dtype='int')
+        order = np.arange(len(units), dtype="int")
 
     if progress_bar:
-        this_iter = ProgressBar(order, desc='reading spike data', leave=False)
+        this_iter = ProgressBar(order, desc="reading spike data", leave=False)
         progress_bar = this_iter.container
     else:
         this_iter = order
@@ -76,19 +95,29 @@ def show_session_raster(units: Units, time_window=None, units_window=None, show_
     else:
         unobserved_intervals_list = None
 
-    ax = plot_grouped_events(data, time_window, group_inds=group_inds, labels=labels, show_legend=show_legend,
-                             offset=units_window[0], unobserved_intervals_list=unobserved_intervals_list,
-                             progress_bar=progress_bar)
-    ax.set_ylabel('unit #')
+    ax = plot_grouped_events(
+        data,
+        time_window,
+        group_inds=group_inds,
+        labels=labels,
+        show_legend=show_legend,
+        offset=units_window[0],
+        unobserved_intervals_list=unobserved_intervals_list,
+        progress_bar=progress_bar,
+    )
+    ax.set_ylabel("unit #")
 
     return ax
 
 
 class RasterWidget(widgets.HBox):
-    def __init__(self, units: Units,
-                 foreign_time_window_controller: StartAndDurationController = None,
-                 foreign_group_and_sort_controller: GroupAndSortController = None,
-                 group_by=None):
+    def __init__(
+        self,
+        units: Units,
+        foreign_time_window_controller: StartAndDurationController = None,
+        foreign_group_and_sort_controller: GroupAndSortController = None,
+        group_by=None,
+    ):
         super().__init__()
 
         self.units = units
@@ -96,7 +125,9 @@ class RasterWidget(widgets.HBox):
         if foreign_time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
-            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
+            self.time_window_controller = StartAndDurationController(
+                tmin=self.tmin, tmax=self.tmax
+            )
         else:
             self.time_window_controller = foreign_time_window_controller
 
@@ -107,12 +138,11 @@ class RasterWidget(widgets.HBox):
 
         self.progress_bar = widgets.HBox()
 
-        self.controls = dict(
-            time_window=self.time_window_controller,
-            gas=self.gas
-        )
+        self.controls = dict(time_window=self.time_window_controller, gas=self.gas)
 
-        plot_func = partial(show_session_raster, units=self.units, progress_bar=self.progress_bar)
+        plot_func = partial(
+            show_session_raster, units=self.units, progress_bar=self.progress_bar
+        )
 
         out_fig = interactive_output(plot_func, self.controls)
 
@@ -122,7 +152,7 @@ class RasterWidget(widgets.HBox):
                     self.progress_bar,
                     out_fig,
                 ],
-                layout=Layout(width="100%")
+                layout=Layout(width="100%"),
             )
         else:
             right_panel = widgets.VBox(
@@ -131,27 +161,26 @@ class RasterWidget(widgets.HBox):
                     self.progress_bar,
                     out_fig,
                 ],
-                layout=Layout(width="100%")
+                layout=Layout(width="100%"),
             )
 
         if foreign_group_and_sort_controller:
             self.children = [right_panel]
         else:
-            self.children = [
-                self.gas,
-                right_panel
-            ]
+            self.children = [self.gas, right_panel]
 
         self.layout = Layout(width="100%")
 
     def make_group_and_sort(self, group_by=None, control_order=True):
-        return GroupAndSortController(self.units, group_by=group_by, control_order=control_order)
+        return GroupAndSortController(
+            self.units, group_by=group_by, control_order=control_order
+        )
 
 
 def show_decomposition_series(node, **kwargs):
     # Use Rendering... as a placeholder
     ntabs = 2
-    children = [widgets.HTML('Rendering...') for _ in range(ntabs)]
+    children = [widgets.HTML("Rendering...") for _ in range(ntabs)]
 
     def on_selected_index(change):
         # Click on Traces Tab
@@ -160,20 +189,21 @@ def show_decomposition_series(node, **kwargs):
             children[1] = widget_box
             change.owner.children = children
 
-    field_lay = widgets.Layout(max_height='40px', max_width='500px',
-                               min_height='30px', min_width='130px')
+    field_lay = widgets.Layout(
+        max_height="40px", max_width="500px", min_height="30px", min_width="130px"
+    )
     vbox = []
     for key, val in node.fields.items():
-        lbl_key = widgets.Label(key + ':', layout=field_lay)
+        lbl_key = widgets.Label(key + ":", layout=field_lay)
         lbl_val = widgets.Label(str(val), layout=field_lay)
         vbox.append(widgets.HBox(children=[lbl_key, lbl_val]))
     children[0] = widgets.VBox(vbox)
 
     tab_nest = widgets.Tab()
     tab_nest.children = children
-    tab_nest.set_title(0, 'Fields')
-    tab_nest.set_title(1, 'Traces')
-    tab_nest.observe(on_selected_index, names='selected_index')
+    tab_nest.set_title(0, "Fields")
+    tab_nest.set_title(1, "Traces")
+    tab_nest.observe(on_selected_index, names="selected_index")
     return tab_nest
 
 
@@ -182,7 +212,7 @@ def show_decomposition_traces(node: DecompositionSeries):
     def control_plot(x0, x1, ch0, ch1):
         fig, ax = plt.subplots(nrows=nBands, ncols=1, sharex=True, figsize=(14, 7))
         for bd in range(nBands):
-            data = node.data[x0:x1, ch0:ch1 + 1, bd]
+            data = node.data[x0:x1, ch0 : ch1 + 1, bd]
             xx = np.arange(x0, x1)
             mu_array = np.mean(data, 0)
             sd_array = np.std(data, 0)
@@ -190,11 +220,11 @@ def show_decomposition_traces(node: DecompositionSeries):
             yticks = [i * offset for i in range(ch1 + 1 - ch0)]
             for i in range(ch1 + 1 - ch0):
                 ax[bd].plot(xx, data[:, i] - mu_array[i] + yticks[i])
-            ax[bd].set_ylabel('Ch #', fontsize=20)
+            ax[bd].set_ylabel("Ch #", fontsize=20)
             ax[bd].set_yticks(yticks)
             ax[bd].set_yticklabels([str(i) for i in range(ch0, ch1 + 1)])
-            ax[bd].tick_params(axis='both', which='major', labelsize=16)
-        ax[bd].set_xlabel('Time [ms]', fontsize=20)
+            ax[bd].tick_params(axis="both", which="major", labelsize=16)
+        ax[bd].set_xlabel("Time [ms]", fontsize=20)
         return fig
 
     nSamples = node.data.shape[0]
@@ -203,35 +233,43 @@ def show_decomposition_traces(node: DecompositionSeries):
     fs = node.rate
 
     # Controls
-    field_lay = widgets.Layout(max_height='40px', max_width='100px',
-                               min_height='30px', min_width='70px')
-    x0 = widgets.BoundedIntText(value=0, min=0, max=int(1000 * nSamples / fs - 100),
-                                layout=field_lay)
-    x1 = widgets.BoundedIntText(value=nSamples, min=100, max=int(1000 * nSamples / fs),
-                                layout=field_lay)
-    ch0 = widgets.BoundedIntText(value=0, min=0, max=int(nChannels - 1), layout=field_lay)
-    ch1 = widgets.BoundedIntText(value=10, min=0, max=int(nChannels - 1), layout=field_lay)
+    field_lay = widgets.Layout(
+        max_height="40px", max_width="100px", min_height="30px", min_width="70px"
+    )
+    x0 = widgets.BoundedIntText(
+        value=0, min=0, max=int(1000 * nSamples / fs - 100), layout=field_lay
+    )
+    x1 = widgets.BoundedIntText(
+        value=nSamples, min=100, max=int(1000 * nSamples / fs), layout=field_lay
+    )
+    ch0 = widgets.BoundedIntText(
+        value=0, min=0, max=int(nChannels - 1), layout=field_lay
+    )
+    ch1 = widgets.BoundedIntText(
+        value=10, min=0, max=int(nChannels - 1), layout=field_lay
+    )
 
-    controls = {
-        'x0': x0,
-        'x1': x1,
-        'ch0': ch0,
-        'ch1': ch1
-    }
+    controls = {"x0": x0, "x1": x1, "ch0": ch0, "ch1": ch1}
     out_fig = widgets.interactive_output(control_plot, controls)
 
     # Assemble layout box
-    lbl_x = widgets.Label('Time [ms]:', layout=field_lay)
-    lbl_ch = widgets.Label('Ch #:', layout=field_lay)
-    lbl_blank = widgets.Label('    ', layout=field_lay)
+    lbl_x = widgets.Label("Time [ms]:", layout=field_lay)
+    lbl_ch = widgets.Label("Ch #:", layout=field_lay)
+    lbl_blank = widgets.Label("    ", layout=field_lay)
     hbox0 = widgets.HBox(children=[lbl_x, x0, x1, lbl_blank, lbl_ch, ch0, ch1])
     vbox = widgets.VBox(children=[hbox0, out_fig])
     return vbox
 
 
 class PSTHWidget(widgets.VBox):
-    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0, unit_controller=None,
-                 sigma_in_secs=.05, ntt=1000):
+    def __init__(
+        self,
+        units: Units,
+        trials: pynwb.epoch.TimeIntervals = None,
+        unit_index=0,
+        unit_controller=None,
+        ntt=1000,
+    ):
 
         self.units = units
 
@@ -240,125 +278,262 @@ class PSTHWidget(widgets.VBox):
         if trials is None:
             self.trials = self.get_trials()
             if self.trials is None:
-                self.children = [widgets.HTML('No trials present')]
+                self.children = [widgets.HTML("No trials present")]
                 return
         else:
             self.trials = trials
 
         if unit_controller is None:
-            nunits = len(units['spike_times'].data)
-            unit_controller = widgets.Dropdown(options=[x for x in range(nunits)], value=unit_index,
-                                               description='unit',
-                                               layout=Layout(width='200px'))
+            nunits = len(units["spike_times"].data)
+            self.unit_controller = widgets.Dropdown(
+                options=[x for x in range(nunits)],
+                value=unit_index,
+                description="unit",
+                layout=Layout(width="200px"),
+            )
 
-        trial_event_controller = make_trial_event_controller(self.trials, layout=Layout(width='200px'))
-        before_ft = widgets.FloatText(.5, min=0, description='before (s)', layout=Layout(width='200px'))
-        after_ft = widgets.FloatText(2., min=0, description='after (s)', layout=Layout(width='200px'))
+        self.trial_event_controller = make_trial_event_controller(
+            self.trials, layout=Layout(width="200px")
+        )
+        self.before_ft = widgets.FloatText(
+            0.5, min=0, description="before (s)", layout=Layout(width="200px")
+        )
+        self.after_ft = widgets.FloatText(
+            2.0, min=0, description="after (s)", layout=Layout(width="200px")
+        )
+        self.psth_type_radio = widgets.RadioButtons(
+            options=["histogram", "gaussian"], layout=Layout(width="100px")
+        )
+        self.bins_ft = widgets.IntText(
+            30, min=0, description="# bins", layout=Layout(width="150px")
+        )
+        self.gaussian_sd_ft = widgets.FloatText(
+            0.05,
+            min=0.001,
+            description="sd (s)",
+            layout=Layout(width="150px"),
+            active=False,
+            step=0.01,
+        )
 
         self.gas = self.make_group_and_sort(window=False, control_order=False)
 
         self.controls = dict(
-            units=fixed(units),
-            trials=fixed(self.trials),
-            sigma_in_secs=fixed(sigma_in_secs),
             ntt=fixed(ntt),
-            index=unit_controller,
-            after=after_ft,
-            before=before_ft,
-            start_label=trial_event_controller,
+            index=self.unit_controller,
+            after=self.after_ft,
+            before=self.before_ft,
+            start_label=self.trial_event_controller,
             gas=self.gas,
+            plot_type=self.psth_type_radio,
+            sigma_in_secs=self.gaussian_sd_ft,
+            nbins=self.bins_ft
             # progress_bar=fixed(progress_bar)
         )
 
-        out_fig = interactive_output(trials_psth, self.controls)
+        out_fig = interactive_output(self.update, self.controls)
 
         self.children = [
-            widgets.HBox([
-                self.gas,
-                widgets.VBox([
-                    unit_controller,
-                    trial_event_controller,
-                    before_ft,
-                    after_ft,
-                ])
-            ]),
-            out_fig
+            widgets.HBox(
+                [
+                    widgets.VBox(
+                        [
+                            self.gas,
+                            widgets.HBox(
+                                [
+                                    self.psth_type_radio,
+                                    widgets.VBox([self.gaussian_sd_ft, self.bins_ft]),
+                                ]
+                            ),
+                        ]
+                    ),
+                    widgets.VBox(
+                        [
+                            self.unit_controller,
+                            self.trial_event_controller,
+                            self.before_ft,
+                            self.after_ft,
+                        ]
+                    ),
+                ]
+            ),
+            out_fig,
         ]
 
     def get_trials(self):
-        return self.units.get_ancestor('NWBFile').trials
+        return self.units.get_ancestor("NWBFile").trials
 
     def make_group_and_sort(self, window=None, control_order=False):
-        return GroupAndSortController(self.trials, window=window, control_order=control_order)
+        return GroupAndSortController(
+            self.trials, window=window, control_order=control_order
+        )
+
+    def update(
+        self,
+        index: int,
+        start_label: str = "start_time",
+        before: float = 0.0,
+        after: float = 1.0,
+        order=None,
+        group_inds=None,
+        labels=None,
+        sigma_in_secs=0.05,
+        ntt: int = 1000,
+        progress_bar=None,
+        figsize=(7, 7),
+        nbins=30,
+        plot_type="histogram",
+        align_line_color=(0.7, 0.7, 0.7),
+    ):
+        """
+
+        Parameters
+        ----------
+        index: int
+            Index of unit
+        start_label: str, optional
+            Trial column name to align on
+        before: float
+            Time before that event (should be positive)
+        after: float
+            Time after that event
+        order
+        group_inds
+        labels
+        sigma_in_secs: float, optional
+            standard deviation of gaussian kernel
+        ntt:
+            Number of time points to use for smooth curve
+        progress_bar:
+        figsize: tuple, optional
+
+        Returns
+        -------
+        matplotlib.Figure
+
+        """
+
+        data = align_by_time_intervals(
+            self.units,
+            index,
+            self.trials,
+            start_label,
+            start_label,
+            before,
+            after,
+            order,
+            progress_bar=progress_bar,
+        )
+
+        fig, axs = plt.subplots(2, 1, figsize=figsize)
+
+        show_psth_raster(
+            data,
+            before,
+            after,
+            group_inds,
+            labels,
+            ax=axs[0],
+            progress_bar=progress_bar,
+        )
+
+        axs[0].set_title("PSTH for unit {}".format(index))
+        axs[0].set_xticks([])
+        axs[0].set_xlabel("")
+
+        if plot_type == "gaussian":
+            self.bins_ft.layout.visibility = "hidden"
+            self.bins_ft.layout.height = "0px"
+            self.gaussian_sd_ft.layout.visibility = None
+            self.gaussian_sd_ft.layout.height = None
+            # expanded data so that gaussian smoother uses larger window than is viewed
+            expanded_data = align_by_time_intervals(
+                self.units,
+                index,
+                self.trials,
+                start_label,
+                start_label,
+                before + sigma_in_secs * 4,
+                after + sigma_in_secs * 4,
+                order,
+                progress_bar=progress_bar,
+            )
+            show_psth_smoothed(
+                expanded_data,
+                axs[1],
+                before + sigma_in_secs * 4,
+                after + sigma_in_secs * 4,
+                group_inds,
+                sigma_in_secs=sigma_in_secs,
+                ntt=ntt,
+            )
+        elif plot_type == "histogram":
+            self.gaussian_sd_ft.layout.visibility = "hidden"
+            self.gaussian_sd_ft.layout.height = "0px"
+            self.bins_ft.layout.visibility = None
+            self.bins_ft.layout.height = None
+            show_histogram(data, axs[1], before, after, group_inds, nbins=nbins)
+        else:
+            raise ValueError(
+                "unsupported plot type {}".format(self.psth_type_radio.value)
+            )
+
+        axs[1].set_xlim([-before, after])
+        axs[1].set_ylabel("firing rate (Hz)")
+        axs[1].set_xlabel("time (s)")
+        axs[1].axvline(color=align_line_color)
+
+        return fig
 
 
-def trials_psth(units: pynwb.misc.Units, index, start_label='start_time',
-                before=0., after=1., order=None, group_inds=None, labels=None,
-                sigma_in_secs=0.05, ntt=1000, progress_bar=None, trials=None,
-                figsize=(7, 7)):
-    """
+def show_histogram(
+    data, ax: plt.Axes, before: float, after: float, group_inds=None, nbins: int = 30
+):
+    if not len(data):
+        return
 
-    Parameters
-    ----------
-    units: pynwb.misc.Units
-    index: int
-        Index of unit
-    start_label: str, optional
-        Trial column name to align on
-    before: float
-        Time before that event (should be positive)
-    after: float
-        Time after that event
-    order
-    group_inds
-    labels
-    sigma_in_secs: float, optional
-        standard deviation of gaussian kernel
-    ntt:
-        Number of time points to use for smooth curve
-    progress_bar:
-    trials:
-    figsize: tuple, optional
-
-    Returns
-    -------
-    matplotlib.Figure
-
-    """
-    if trials is None:
-        trials = units.get_ancestor('NWBFile').trials
-
-    data = align_by_time_intervals(units, index, trials, start_label, start_label, before, after, order,
-                                   progress_bar=progress_bar)
-    # expanded data so that gaussian smoother uses larger window than is viewed
-    expanded_data = align_by_time_intervals(units, index, trials, start_label, start_label,
-                                            before + sigma_in_secs * 4,
-                                            after + sigma_in_secs * 4,
-                                            order,
-                                            progress_bar=progress_bar)
-
-    fig, axs = plt.subplots(2, 1, figsize=figsize)
-
-    show_psth_raster(data, before, after, group_inds, labels, ax=axs[0], progress_bar=progress_bar)
-
-    axs[0].set_title('PSTH for unit {}'.format(index))
-    axs[0].set_xticks([])
-    axs[0].set_xlabel('')
-
-    show_psth_smoothed(expanded_data, axs[1], before, after, group_inds,
-                       sigma_in_secs=sigma_in_secs, ntt=ntt)
-    return fig
+    if group_inds is None:
+        height, x = np.histogram(np.hstack(data), bins=nbins, range=(-before, after))
+        width = np.diff(x[:2])
+        height = height / len(data) / width
+        plt.bar(x[:-1], height, edgecolor=(0.3, 0.3, 0.3), width=width, align="edge")
+    else:
+        data = np.asarray(data, dtype="object")
+        # group_inds = np.asarray(group_inds)
+        for group in np.unique(group_inds):
+            this_data = np.hstack(data[group_inds == group])
+            height, x = np.histogram(this_data, bins=nbins, range=(-before, after))
+            width = np.diff(x[:2])
+            height = height / np.sum(group_inds == group) / width
+            ax.bar(
+                x[:-1],
+                height,
+                color=color_wheel[group],
+                edgecolor=(0.3, 0.3, 0.3),
+                width=width,
+                align="edge",
+                alpha=0.6,
+            )
 
 
-def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.05, ntt=1000,
-                       align_line_color=(.7, .7, .7)):
+def show_psth_smoothed(
+    data,
+    ax,
+    before: float,
+    after: float,
+    group_inds=None,
+    sigma_in_secs: float = 0.05,
+    ntt: int = 1000,
+):
     if not len(data):  # TODO: when does this occur?
         return
     all_data = np.hstack(data)
     if not len(all_data):  # no spikes
         return
-    tt = np.linspace(min(all_data), max(all_data), ntt)
-    smoothed = np.array([compute_smoothed_firing_rate(x, tt, sigma_in_secs) for x in data])
+    tt = np.linspace(-before, after, ntt)
+    smoothed = np.array(
+        [compute_smoothed_firing_rate(x, tt, sigma_in_secs) for x in data]
+    )
 
     if group_inds is None:
         group_inds = np.zeros((len(smoothed)), dtype=np.int)
@@ -367,25 +542,32 @@ def show_psth_smoothed(data, ax, before, after, group_inds=None, sigma_in_secs=.
         this_mean = np.mean(smoothed[group_inds == group], axis=0)
         err = scipy.stats.sem(smoothed[group_inds == group], axis=0)
         group_stats.append(
-            dict(mean=this_mean,
-                 lower=this_mean - 2 * err,
-                 upper=this_mean + 2 * err,
-                 group=group)
+            dict(
+                mean=this_mean,
+                lower=this_mean - 2 * err,
+                upper=this_mean + 2 * err,
+                group=group,
+            )
         )
     for stats in group_stats:
-        color = color_wheel[stats['group']]
-        ax.plot(tt, stats['mean'], color=color)
-        ax.fill_between(tt, stats['lower'], stats['upper'], alpha=.2, color=color)
-    ax.set_xlim([-before, after])
-    ax.set_ylabel('firing rate (Hz)')
-    ax.set_xlabel('time (s)')
-
-    ax.axvline(color=align_line_color)
+        color = color_wheel[stats["group"]]
+        ax.plot(tt, stats["mean"], color=color)
+        ax.fill_between(tt, stats["lower"], stats["upper"], alpha=0.2, color=color)
 
 
-def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=None, labels=None,
-                        show_legend=True, offset=0, unobserved_intervals_list=None, progress_bar=None,
-                        figsize=(8, 6)):
+def plot_grouped_events(
+    data,
+    window,
+    group_inds=None,
+    colors=color_wheel,
+    ax=None,
+    labels=None,
+    show_legend=True,
+    offset=0,
+    unobserved_intervals_list=None,
+    progress_bar=None,
+    figsize=(8, 6),
+):
     """
 
     Parameters
@@ -408,11 +590,11 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
 
     """
 
-    data = np.asarray(data, dtype='object')
+    data = np.asarray(data, dtype="object")
     legend_kwargs = dict()
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-        if hasattr(fig, 'canvas'):
+        if hasattr(fig, "canvas"):
             fig.canvas.header_visible = False
         else:
             legend_kwargs.update(bbox_to_anchor=(1.01, 1))
@@ -421,7 +603,12 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
         handles = []
 
         if progress_bar is not None:
-            this_iter = ProgressBar(enumerate(ugroup_inds), desc='plotting spikes', leave=False, total=len(ugroup_inds))
+            this_iter = ProgressBar(
+                enumerate(ugroup_inds),
+                desc="plotting spikes",
+                leave=False,
+                total=len(ugroup_inds),
+            )
             progress_bar = this_iter.container
         else:
             this_iter = enumerate(ugroup_inds)
@@ -429,23 +616,35 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
         for i, ui in this_iter:
             color = colors[ugroup_inds[i] % len(colors)]
             lineoffsets = np.where(group_inds == ui)[0] + offset
-            event_collection = ax.eventplot(data[group_inds == ui],
-                                            orientation='horizontal',
-                                            lineoffsets=lineoffsets,
-                                            color=color)
+            event_collection = ax.eventplot(
+                data[group_inds == ui],
+                orientation="horizontal",
+                lineoffsets=lineoffsets,
+                color=color,
+            )
             handles.append(event_collection[0])
         if show_legend:
-            ax.legend(handles=handles[::-1], labels=list(labels[ugroup_inds][::-1]), loc='upper left',
-                      bbox_to_anchor=(1.01, 1), **legend_kwargs)
+            ax.legend(
+                handles=handles[::-1],
+                labels=list(labels[ugroup_inds][::-1]),
+                loc="upper left",
+                bbox_to_anchor=(1.01, 1),
+                **legend_kwargs
+            )
     else:
-        ax.eventplot(data, orientation='horizontal', color='k', lineoffsets=np.arange(len(data)) + offset)
+        ax.eventplot(
+            data,
+            orientation="horizontal",
+            color="k",
+            lineoffsets=np.arange(len(data)) + offset,
+        )
 
     if unobserved_intervals_list is not None:
         plot_unobserved_intervals(unobserved_intervals_list, ax, offset=offset)
 
     ax.set_xlim(window)
-    ax.set_xlabel('time (s)')
-    ax.set_ylim(np.array([-.5, len(data) - .5]) + offset)
+    ax.set_xlabel("time (s)")
+    ax.set_ylim(np.array([-0.5, len(data) - 0.5]) + offset)
     if len(data) <= 30:
         ax.set_yticks(range(offset, len(data) + offset))
         ax.set_yticklabels(range(offset, len(data) + offset))
@@ -453,17 +652,31 @@ def plot_grouped_events(data, window, group_inds=None, colors=color_wheel, ax=No
     return ax
 
 
-def plot_unobserved_intervals(unobserved_intervals_list, ax, offset=0, color=(0.85, 0.85, 0.85)):
+def plot_unobserved_intervals(
+    unobserved_intervals_list, ax, offset=0, color=(0.85, 0.85, 0.85)
+):
     for irow, unobs_intervals in enumerate(unobserved_intervals_list):
-        rects = [Rectangle((i_interval[0], irow - .5 + offset),
-                           i_interval[1] - i_interval[0], 1)
-                 for i_interval in unobs_intervals]
+        rects = [
+            Rectangle(
+                (i_interval[0], irow - 0.5 + offset), i_interval[1] - i_interval[0], 1
+            )
+            for i_interval in unobs_intervals
+        ]
         pc = PatchCollection(rects, color=color)
         ax.add_collection(pc)
 
 
-def show_psth_raster(data, before=0.5, after=2.0, group_inds=None, labels=None, ax=None, show_legend=True,
-                     align_line_color=(0.7, 0.7, 0.7), progress_bar: FloatProgress = None) -> plt.Axes:
+def show_psth_raster(
+    data,
+    before=0.5,
+    after=2.0,
+    group_inds=None,
+    labels=None,
+    ax=None,
+    show_legend=True,
+    align_line_color=(0.7, 0.7, 0.7),
+    progress_bar: FloatProgress = None,
+) -> plt.Axes:
     """
 
     Parameters
@@ -487,15 +700,32 @@ def show_psth_raster(data, before=0.5, after=2.0, group_inds=None, labels=None, 
     """
     if not len(data):
         return ax
-    ax = plot_grouped_events(data, [-before, after], group_inds, color_wheel, ax, labels,
-                             show_legend=show_legend, progress_bar=progress_bar)
-    ax.set_ylabel('trials')
+    ax = plot_grouped_events(
+        data,
+        [-before, after],
+        group_inds,
+        color_wheel,
+        ax,
+        labels,
+        show_legend=show_legend,
+        progress_bar=progress_bar,
+    )
+    ax.set_ylabel("trials")
     ax.axvline(color=align_line_color)
     return ax
 
 
-def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeIntervals, index, before, after,
-                rows_label=None, cols_label=None, trials_select=None, align_by='start_time') -> plt.Figure:
+def raster_grid(
+    units: pynwb.misc.Units,
+    time_intervals: pynwb.epoch.TimeIntervals,
+    index,
+    before,
+    after,
+    rows_label=None,
+    cols_label=None,
+    trials_select=None,
+    align_by="start_time",
+) -> plt.Figure:
     """
 
     Parameters
@@ -516,10 +746,10 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
 
     """
     if time_intervals is None:
-        raise ValueError('trials must exist (trials cannot be None)')
+        raise ValueError("trials must exist (trials cannot be None)")
 
     if trials_select is None:
-        trials_select = np.ones((len(time_intervals),)).astype('bool')
+        trials_select = np.ones((len(time_intervals),)).astype("bool")
 
     if rows_label is not None:
         row_vals = time_intervals[rows_label][:]
@@ -541,7 +771,9 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
         ucol_vals = [None]
     ncols = len(ucol_vals)
 
-    fig, axs = plt.subplots(nrows, ncols, sharex=True, sharey=True, squeeze=False, figsize=(10, 10))
+    fig, axs = plt.subplots(
+        nrows, ncols, sharex=True, sharey=True, squeeze=False, figsize=(10, 10)
+    )
     big_ax = create_big_ax(fig)
     for i, row in enumerate(urow_vals):
         for j, col in enumerate(ucol_vals):
@@ -553,11 +785,19 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
                 ax_trials_select &= col_vals == col
             ax_trials_select = np.where(ax_trials_select)[0]
             if len(ax_trials_select):
-                data = align_by_time_intervals(units, index, time_intervals, align_by, align_by,
-                                               before, after, ax_trials_select)
+                data = align_by_time_intervals(
+                    units,
+                    index,
+                    time_intervals,
+                    align_by,
+                    align_by,
+                    before,
+                    after,
+                    ax_trials_select,
+                )
                 show_psth_raster(data, before, after, ax=ax)
-                ax.set_xlabel('')
-                ax.set_ylabel('')
+                ax.set_xlabel("")
+                ax.set_ylabel("")
                 if ax.is_first_col():
                     ax.set_ylabel(row)
                 if ax.is_last_row():
@@ -570,8 +810,9 @@ def raster_grid(units: pynwb.misc.Units, time_intervals: pynwb.epoch.TimeInterva
 
 
 class RasterGridWidget(widgets.VBox):
-
-    def __init__(self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0):
+    def __init__(
+        self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0
+    ):
         super().__init__()
 
         self.units = units
@@ -579,32 +820,43 @@ class RasterGridWidget(widgets.VBox):
         if trials is None:
             self.trials = self.get_trials()
             if self.trials is None:
-                self.children = [widgets.HTML('No trials present')]
+                self.children = [widgets.HTML("No trials present")]
                 return
         else:
             self.trials = trials
 
         groups = self.get_groups()
 
-        rows_controller = widgets.Dropdown(options=[None] + list(groups), description='rows')
-        cols_controller = widgets.Dropdown(options=[None] + list(groups), description='cols')
+        rows_controller = widgets.Dropdown(
+            options=[None] + list(groups), description="rows"
+        )
+        cols_controller = widgets.Dropdown(
+            options=[None] + list(groups), description="cols"
+        )
 
         trial_event_controller = make_trial_event_controller(self.trials)
-        unit_controller = widgets.Dropdown(options=range(len(units['spike_times'].data)), value=unit_index,
-                                           description='unit')
+        unit_controller = widgets.Dropdown(
+            options=range(len(units["spike_times"].data)),
+            value=unit_index,
+            description="unit",
+        )
 
-        before_slider = widgets.FloatSlider(.1, min=0, max=5., description='before (s)', continuous_update=False)
-        after_slider = widgets.FloatSlider(1., min=0, max=5., description='after (s)', continuous_update=False)
+        before_slider = widgets.FloatSlider(
+            0.1, min=0, max=5.0, description="before (s)", continuous_update=False
+        )
+        after_slider = widgets.FloatSlider(
+            1.0, min=0, max=5.0, description="after (s)", continuous_update=False
+        )
 
         self.controls = {
-            'units': fixed(units),
-            'time_intervals': fixed(self.trials),
-            'index': unit_controller,
-            'after': after_slider,
-            'before': before_slider,
-            'align_by': trial_event_controller,
-            'rows_label': rows_controller,
-            'cols_label': cols_controller
+            "units": fixed(units),
+            "time_intervals": fixed(self.trials),
+            "index": unit_controller,
+            "after": after_slider,
+            "before": before_slider,
+            "align_by": trial_event_controller,
+            "rows_label": rows_controller,
+            "cols_label": cols_controller,
         }
 
         self.children = [
@@ -632,10 +884,10 @@ class RasterGridWidget(widgets.VBox):
         elif group_by in dynamic_table:
             return dynamic_table[group_by][:][units_select]
         else:
-            raise ValueError('{} not found in trials'.format(group_by))
+            raise ValueError("{} not found in trials".format(group_by))
 
     def get_trials(self):
-        return self.units.get_ancestor('NWBFile').trials
+        return self.units.get_ancestor("NWBFile").trials
 
     def select_trials(self):
         return
@@ -644,8 +896,18 @@ class RasterGridWidget(widgets.VBox):
         return control_states
 
 
-def plot_grouped_events_plotly(data, window=None, group_inds=None, colors=color_wheel, labels=None,
-                               show_legend=True, unobserved_intervals_list=None, progress_bar=None, fig=None, **kwargs):
+def plot_grouped_events_plotly(
+    data,
+    window=None,
+    group_inds=None,
+    colors=color_wheel,
+    labels=None,
+    show_legend=True,
+    unobserved_intervals_list=None,
+    progress_bar=None,
+    fig=None,
+    **kwargs
+):
     data = np.array(data, dtype=object)
 
     if fig is None:
@@ -657,12 +919,14 @@ def plot_grouped_events_plotly(data, window=None, group_inds=None, colors=color_
             ui = ugroup_inds[i]
             color = colors[ugroup_inds[i] % len(colors)]
             this_data = data[group_inds == ui]
-            event_group(this_data,
-                        offset=offset,
-                        label=labels[ui],
-                        color=color,
-                        fig=fig,
-                        **kwargs)
+            event_group(
+                this_data,
+                offset=offset,
+                label=labels[ui],
+                color=color,
+                fig=fig,
+                **kwargs
+            )
             offset += len(this_data)
 
     else:
@@ -674,11 +938,14 @@ def plot_grouped_events_plotly(data, window=None, group_inds=None, colors=color_
 
 
 class RasterWidgetPlotly(widgets.HBox):
-
-    def __init__(self, units: Units,
-                 foreign_time_window_controller: StartAndDurationController = None,
-                 foreign_group_and_sort_controller: GroupAndSortController = None,
-                 group_by=None, fig: go.FigureWidget = None):
+    def __init__(
+        self,
+        units: Units,
+        foreign_time_window_controller: StartAndDurationController = None,
+        foreign_group_and_sort_controller: GroupAndSortController = None,
+        group_by=None,
+        fig: go.FigureWidget = None,
+    ):
         super().__init__()
 
         self.units = units
@@ -686,23 +953,29 @@ class RasterWidgetPlotly(widgets.HBox):
         if foreign_time_window_controller is None:
             self.tmin = get_min_spike_time(units)
             self.tmax = get_max_spike_time(units)
-            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
+            self.time_window_controller = StartAndDurationController(
+                tmin=self.tmin, tmax=self.tmax
+            )
         else:
             self.time_window_controller = foreign_time_window_controller
 
         if foreign_group_and_sort_controller:
             self.gas = foreign_group_and_sort_controller
         else:
-            self.gas = GroupAndSortController(dynamic_table=self.units, group_by=group_by)
+            self.gas = GroupAndSortController(
+                dynamic_table=self.units, group_by=group_by
+            )
 
-        self.show_legend_cb = widgets.Checkbox(value=True, description='show legend')
+        self.show_legend_cb = widgets.Checkbox(value=True, description="show legend")
 
         if fig is None:
             self.fig = go.FigureWidget()
             self.fig.update_layout(margin=dict(l=20, r=20, t=30, b=20))
         else:
             self.fig = fig
-        show_session_raster_plotly(self.units, self.fig, self.time_window_controller.value, **self.gas.value)
+        show_session_raster_plotly(
+            self.units, self.fig, self.time_window_controller.value, **self.gas.value
+        )
 
         # set children
         if foreign_time_window_controller:
@@ -711,31 +984,24 @@ class RasterWidgetPlotly(widgets.HBox):
                     self.progress_bar,
                     self.fig,
                 ],
-                layout=Layout(width="100%")
+                layout=Layout(width="100%"),
             )
         else:
             right_panel = widgets.VBox(
-                children=[
-                    self.time_window_controller,
-                    self.fig,
-                    self.show_legend_cb
-                ],
-                layout=Layout(width="100%")
+                children=[self.time_window_controller, self.fig, self.show_legend_cb],
+                layout=Layout(width="100%"),
             )
 
         if foreign_group_and_sort_controller:
             self.children = [right_panel]
         else:
-            self.children = [
-                self.gas,
-                right_panel
-            ]
+            self.children = [self.gas, right_panel]
 
         self.layout = Layout(width="100%")
 
-        self.time_window_controller.observe(self.update_fig, 'value')
-        self.gas.observe(self.update_fig, 'value')
-        self.show_legend_cb.observe(self.toggle_legend, 'value')
+        self.time_window_controller.observe(self.update_fig, "value")
+        self.gas.observe(self.update_fig, "value")
+        self.show_legend_cb.observe(self.toggle_legend, "value")
 
     def toggle_legend(self, change):
         self.fig.update_layout(showlegend=self.show_legend_cb.value)
@@ -748,7 +1014,9 @@ class RasterWidgetPlotly(widgets.HBox):
             show_session_raster_plotly(self.units, self.fig, time_window, **gas_kwargs)
 
 
-def show_session_raster_plotly(units: Units, fig, time_window=None, order=None, progress_bar=None, **kwargs):
+def show_session_raster_plotly(
+    units: Units, fig, time_window=None, order=None, progress_bar=None, **kwargs
+):
     """
 
     Parameters
@@ -774,10 +1042,10 @@ def show_session_raster_plotly(units: Units, fig, time_window=None, order=None, 
         time_window = [get_min_spike_time(units), get_max_spike_time(units)]
 
     if order is None:
-        order = np.arange(len(units), dtype='int')
+        order = np.arange(len(units), dtype="int")
 
     if progress_bar:
-        this_iter = ProgressBar(order, desc='reading spike data', leave=False)
+        this_iter = ProgressBar(order, desc="reading spike data", leave=False)
         progress_bar = this_iter.container
     else:
         this_iter = order
@@ -792,18 +1060,21 @@ def show_session_raster_plotly(units: Units, fig, time_window=None, order=None, 
 
     fig.update_yaxes(tickvals=[], ticktext=[])
     if len(order) <= 100:
-        kwargs.update(marker='line-ns', line_width=2)
+        kwargs.update(marker="line-ns", line_width=2)
     else:
         kwargs.update(line_width=1)
     fig = plot_grouped_events_plotly(data=data, fig=fig, **kwargs)
     if len(order) <= 40:
-        fig.update_yaxes(tickvals=np.arange(len(order)), ticktext=[str(i) for i in order])
+        fig.update_yaxes(
+            tickvals=np.arange(len(order)), ticktext=[str(i) for i in order]
+        )
 
     fig.update_layout(
-        title='units',
+        title="units",
         xaxis_title="time (s)",
-        legend=dict(x=1., y=0, traceorder='reversed'),
+        legend=dict(x=1.0, y=0, traceorder="reversed"),
         xaxis=dict(range=time_window),
-        yaxis=dict(range=[-.5, len(order) + .5]))
+        yaxis=dict(range=[-0.5, len(order) + 0.5]),
+    )
 
     return fig

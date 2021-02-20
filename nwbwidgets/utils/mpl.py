@@ -8,7 +8,7 @@ def create_big_ax(fig):
     [sp.set_visible(False) for sp in big_ax.spines.values()]
     big_ax.set_xticks([])
     big_ax.set_yticks([])
-    big_ax.patch.set_facecolor('none')
+    big_ax.patch.set_facecolor("none")
 
     return big_ax
 
@@ -32,7 +32,9 @@ def grid_sps(shape, subplot_spec=None, fig=None):
         fig = plt.gcf()
 
     if subplot_spec is not None:
-        gs = gridspec.GridSpecFromSubplotSpec(shape[0], shape[1], subplot_spec=subplot_spec)
+        gs = gridspec.GridSpecFromSubplotSpec(
+            shape[0], shape[1], subplot_spec=subplot_spec
+        )
         big_ax = plt.Subplot(fig, subplot_spec)
     else:
         gs = gridspec.GridSpec(shape[0], shape[1], figure=fig)
@@ -42,7 +44,6 @@ def grid_sps(shape, subplot_spec=None, fig=None):
     [sp.set_visible(False) for sp in big_ax.spines.values()]
     big_ax.set_xticks([])
     big_ax.set_yticks([])
-    big_ax.patch.set_facecolor('none')
+    big_ax.patch.set_facecolor("none")
 
     return fig, big_ax, gs
-
