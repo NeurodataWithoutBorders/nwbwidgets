@@ -71,28 +71,27 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
             description="right hemi opacity", **slider_kwargs
         )
 
-        color_by_radio_button = widgets.RadioButtons(
-            options=['Grid Location', 'Low Freq Band R2', 'High Freq Band R2'],
-            value='Grid Location', # Defaults to 'pineapple'
-            layout={'width': 'max-content'}, # If the items' names are long
-            description='Color by:',
+        color_by_dropdown = widgets.Dropdown(
+           options=list(electrodes.colnames),
+            value='group_name',
+            description='Color By:',
             disabled=False,
         )
 
-        color_by_radio_button.observe(self.color_electrode_by)
+        color_by_dropdown.observe(self.color_electrode_by)
         left_opacity_slider.observe(self.observe_left_opacity)
         right_opacity_slider.observe(self.observe_right_opacity)
 
         self.fig = go.FigureWidget()
         self.plot_human_brain()
-        self.show_electrodes(electrodes, color_by_radio_button.value)
+        self.show_electrodes(electrodes, color_by_dropdown.value)
 
         self.children = [
             self.fig,
             widgets.HBox([
                 left_opacity_slider,
                 right_opacity_slider,
-                color_by_radio_button
+                color_by_dropdown
             ])
         ]
 
@@ -116,21 +115,23 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
     def show_electrodes(self, electrodes: pynwb.base.DynamicTable, color_by):
 
         positions = np.c_[electrodes.x[:], electrodes.y[:], electrodes.z[:]]
-        group_names = electrodes.group_name[:]
-        ugroups, group_inv = np.unique(group_names, return_inverse=True)
 
-        if color_by == 'Grid Location':
+        if isinstance(electrodes[color_by][0], str) or isinstance(electrodes[color_by][0], np.bool_):
+            ugroups, group_inv = np.unique(electrodes[color_by][:], return_inverse=True)
             colors = group_inv
-        elif color_by == 'Low Freq Band R2':
-            colors = np.ravel(electrodes['low freq R2'][:])
+            show=True
+        elif isinstance(electrodes[color_by][0], np.ndarray) or isinstance(electrodes[color_by][0], np.float):
+            colors = np.ravel(electrodes[color_by][:])
+            ugroups, group_inv = [0], np.array([0]*len(colors))
+            show=False
         else:
-            colors = np.ravel(electrodes['high freq R2'][:])
+            print('Not a valid data type')
+            return
 
         with self.fig.batch_update():
             for i, group in enumerate(ugroups):
                 sel_positions = positions[group_inv == i]
                 c = colors[group_inv==i]
-
                 x, y, z = sel_positions.T
 
                 if isinstance(group, bytes):
@@ -158,8 +159,8 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
                         x=x,
                         y=y,
                         z=z,
-                        name=group,
-                        legendgroup=group,
+                        name=str(group),
+                        legendgroup=str(group),
                         marker=dict(color=c,
                                     cmax=np.max(colors),
                                     cmin=np.min(colors),
@@ -170,6 +171,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
                                     ),
                         text=df_to_hover_text(electrodes.to_dataframe()),
                         hoverinfo='text',
+                        showlegend=show
                         )
                 ),
 
