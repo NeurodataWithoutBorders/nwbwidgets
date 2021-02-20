@@ -94,7 +94,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
                 right_opacity_slider,
                 color_by_radio_button
             ])
-
+        ]
 
 
     @staticmethod
@@ -120,11 +120,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
         ugroups, group_inv = np.unique(group_names, return_inverse=True)
 
         if color_by == 'Grid Location':
-            mapper_dict = dict(zip(ugroups, np.arange(0, len(ugroups), 1)))
-            def map_color(entry):
-                return mapper_dict[entry] if entry in mapper_dict else entry
-            map_color = np.vectorize(map_color)
-            colors = map_color(group_names)
+            colors = group_inv
         elif color_by == 'Low Freq Band R2':
             colors = np.ravel(electrodes['low freq R2'][:])
         else:
