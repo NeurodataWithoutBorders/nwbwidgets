@@ -6,7 +6,7 @@ from tqdm.notebook import tqdm as tqdm_notebook
 class ProgressBar(tqdm_notebook):
     def __init__(self, *arg, **kwargs):
         super().__init__(*arg, **kwargs)
-        self.container.children[0].layout = Layout(width="80%")
+        # self.container.children[0].layout = Layout(width="80%")
 
 
 def make_trial_event_controller(trials, layout=None):
