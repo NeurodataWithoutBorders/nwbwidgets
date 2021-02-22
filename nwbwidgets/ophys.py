@@ -162,8 +162,8 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         self.plane_seg = plane_seg
         self.color_wheel = color_wheel
         self.progress_bar = ProgressBar()
-        self.button = widgets.Button(description='display Image Masks')
-        self.children = [self.progress_bar.container, self.button]
+        self.button = widgets.Button(description="Display ROIs")
+        self.children = [widgets.HBox([self.button, self.progress_bar.container])]
         self.button.on_click(self.on_button_click)
         self.kwargs = kwargs
 
@@ -193,7 +193,9 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             self.cat_controller.observe(on_change)
             self.children += (self.cat_controller, self.fig)
         else:
-            self.children += (self.show_plane_segmentation_2d(color_by=None, **self.kwargs),)
+            self.children += (
+                self.show_plane_segmentation_2d(color_by=None, **self.kwargs),
+            )
         self.children = self.children[2:]
 
     def update_fig(self, color_by):
@@ -277,7 +279,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
         all_hover = df_to_hover_text(plane_seg_hover_df)
         self.progress_bar.reset(total=nUnits)
-        self.progress_bar.set_description('Loading Image Masks')
+        self.progress_bar.set_description("Loading Image Masks")
         for i in range(nUnits):
             kwargs = dict(showlegend=False)
             if color_by is not None:
