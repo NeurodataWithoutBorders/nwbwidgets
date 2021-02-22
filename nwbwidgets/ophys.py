@@ -168,7 +168,6 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         self.kwargs = kwargs
 
     def on_button_click(self, b):
-        b.layout.visibility = 'hidden'
         if len(self.categorical_columns) == 1:
             self.color_by = list(self.categorical_columns.keys())[
                 0
@@ -195,6 +194,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             self.children += (self.cat_controller, self.fig)
         else:
             self.children += (self.show_plane_segmentation_2d(color_by=None, **self.kwargs),)
+        self.children = self.children[2:]
 
     def update_fig(self, color_by):
         cats = np.unique(self.plane_seg[color_by][:])
@@ -306,7 +306,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                 )
             )
             self.progress_bar.update()
-        self.progress_bar.close()
+        # self.progress_bar.close()
 
         fig.update_layout(
             width=width,
