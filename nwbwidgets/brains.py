@@ -119,14 +119,20 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
         if isinstance(electrodes[color_by][0], str) or isinstance(electrodes[color_by][0], np.bool_):
             ugroups, group_inv = np.unique(electrodes[color_by][:], return_inverse=True)
             colors = group_inv
-            show=True
+            show_leg = True
+            show_scale = False
         elif isinstance(electrodes[color_by][0], np.ndarray) or isinstance(electrodes[color_by][0], np.float):
             colors = np.ravel(electrodes[color_by][:])
             ugroups, group_inv = [0], np.array([0]*len(colors))
-            show=False
+            show_leg = False
+            show_scale = True
+
         else:
             print('Not a valid data type')
             return
+
+        c_max = np.max(colors)
+        c_min = np.min(colors)
 
         with self.fig.batch_update():
             for i, group in enumerate(ugroups):
@@ -162,16 +168,17 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
                         name=str(group),
                         legendgroup=str(group),
                         marker=dict(color=c,
-                                    cmax=np.max(colors),
-                                    cmin=np.min(colors),
-                                    colorscale='Jet',
+                                    cmax=c_max,
+                                    cmin=c_min,
+                                    colorscale='Viridis',
                                     colorbar=dict(
                                         title="Colorbar"
                                     ),
+                                    showscale=show_scale,
                                     ),
                         text=df_to_hover_text(electrodes.to_dataframe()),
                         hoverinfo='text',
-                        showlegend=show
+                        showlegend=show_leg
                         )
                 ),
 
