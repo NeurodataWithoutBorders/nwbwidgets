@@ -21,6 +21,7 @@ from .timeseries import BaseGroupedTraceWidget
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .utils.functional import MemoizeMutable
+from .controllers import ProgressBar
 
 color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
 
@@ -160,20 +161,27 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         self.categorical_columns = infer_categorical_columns(plane_seg)
         self.plane_seg = plane_seg
         self.color_wheel = color_wheel
+        self.progress_bar = ProgressBar()
+        self.button = widgets.Button(description='display Image Masks')
+        self.children = [self.progress_bar.container, self.button]
+        self.button.on_click(self.on_button_click)
+        self.kwargs = kwargs
 
+    def on_button_click(self, b):
+        b.layout.visibility = 'hidden'
         if len(self.categorical_columns) == 1:
             self.color_by = list(self.categorical_columns.keys())[
                 0
             ]  # changing local variables to instance variables?
-            self.children = [
-                self.show_plane_segmentation_2d(color_by=self.color_by, **kwargs)
-            ]
+            self.children += (
+                self.show_plane_segmentation_2d(color_by=self.color_by, **self.kwargs),
+            )
         elif len(self.categorical_columns) > 1:
             self.cat_controller = widgets.Dropdown(
                 options=list(self.categorical_columns), description="color by"
             )
             self.fig = self.show_plane_segmentation_2d(
-                color_by=self.cat_controller.value, **kwargs
+                color_by=self.cat_controller.value, **self.kwargs
             )
 
             def on_change(change):
@@ -184,9 +192,9 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                         self.update_fig(color_by)
 
             self.cat_controller.observe(on_change)
-            self.children = [self.cat_controller, self.fig]
+            self.children += (self.cat_controller, self.fig)
         else:
-            self.children = [self.show_plane_segmentation_2d(color_by=None, **kwargs)]
+            self.children += (self.show_plane_segmentation_2d(color_by=None, **self.kwargs),)
 
     def update_fig(self, color_by):
         cats = np.unique(self.plane_seg[color_by][:])
@@ -268,6 +276,8 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         plane_seg_hover_dict.update(id=self.plane_seg.id.data)
         plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
         all_hover = df_to_hover_text(plane_seg_hover_df)
+        self.progress_bar.reset(total=nUnits)
+        self.progress_bar.set_description('Loading Image Masks')
         for i in range(nUnits):
             kwargs = dict(showlegend=False)
             if color_by is not None:
@@ -295,6 +305,8 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                     **kwargs
                 )
             )
+            self.progress_bar.update()
+        self.progress_bar.close()
 
         fig.update_layout(
             width=width,
