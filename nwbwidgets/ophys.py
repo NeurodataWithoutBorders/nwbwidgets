@@ -196,7 +196,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             self.children += (
                 self.show_plane_segmentation_2d(color_by=None, **self.kwargs),
             )
-        self.children = self.children[2:]
+        self.children = self.children[1:]
 
     def update_fig(self, color_by):
         cats = np.unique(self.plane_seg[color_by][:])
