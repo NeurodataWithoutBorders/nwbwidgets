@@ -44,13 +44,14 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                 n_y, n_x = page.shape
 
                 def show_image(index=0):
-                    fig, ax = plt.subplots(subplot_kw={"xticks": [], "yticks": []})
                     # Read first frame
                     image = imread(path_ext_file, key=int(index))
-                    ax.imshow(image, cmap="gray")
-                    output.clear_output(wait=True)
-                    with output:
-                        fig.show()
+                    self.figure.data = []
+                    self.figure.add_trace(
+                        go.Heatmap(
+                            z=image, hoverinfo="skip", showscale=False, colorscale="gray"
+                        )
+                    )
 
                 slider = widgets.IntSlider(
                     value=0, min=0, max=n_samples - 1, orientation="horizontal"
@@ -59,11 +60,12 @@ class TwoPhotonSeriesWidget(widgets.VBox):
             if len(indexed_timeseries.data.shape) == 3:
 
                 def show_image(index=0):
-                    fig, ax = plt.subplots(subplot_kw={"xticks": [], "yticks": []})
-                    ax.imshow(indexed_timeseries.data[index], cmap="gray")
-                    output.clear_output(wait=True)
-                    with output:
-                        fig.show()
+                    self.figure.data=[]
+                    self.figure.add_trace(
+                        go.Heatmap(
+                            z=indexed_timeseries.data[index], showscale=False, colorscale="gray"
+                        )
+                    )
 
             elif len(indexed_timeseries.data.shape) == 4:
                 import ipyvolume.pylab as p3
@@ -89,8 +91,8 @@ class TwoPhotonSeriesWidget(widgets.VBox):
             )
 
         slider.observe(lambda change: show_image(change.new), names="value")
-        show_image()
-        self.children = [output, slider]
+        self.figure = go.FigureWidget()
+        self.children = [self.figure, slider]
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
