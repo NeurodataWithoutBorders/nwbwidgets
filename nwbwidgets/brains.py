@@ -134,60 +134,60 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
         c_max = np.max(colors)
         c_min = np.min(colors)
 
-        with self.fig.batch_update():
-            for i, group in enumerate(ugroups):
-                sel_positions = positions[group_inv == i]
-                c = colors[group_inv==i]
-                x, y, z = sel_positions.T
 
-                if isinstance(group, bytes):
-                    group = group.decode()
+        for i, group in enumerate(ugroups):
+            sel_positions = positions[group_inv == i]
+            c = colors[group_inv==i]
+            x, y, z = sel_positions.T
 
-                    """
-                    if 'GRID' in group:
-                        normals = self.find_normals(sel_positions, 5)
-                        with self.fig.batch_update():
-                            [self.fig.add_trace(trace) for trace in make_cylinders(
-                                positions=sel_positions,
-                                directions=normals,
-                                radius=2,
-                                height=.5,
-                                color=c,
-                                name=group
-                        )]
-                    else:
-                
-                
-                    """
-                self.fig.add_trace(
-                    go.Scatter3d(
-                        mode="markers",
-                        x=x,
-                        y=y,
-                        z=z,
-                        name=str(group),
-                        legendgroup=str(group),
-                        marker=dict(color=c,
-                                    cmax=c_max,
-                                    cmin=c_min,
-                                    colorscale='Viridis',
-                                    colorbar=dict(
-                                        title="Colorbar"
-                                    ),
-                                    showscale=show_scale,
-                                    ),
-                        text=df_to_hover_text(electrodes.to_dataframe()),
-                        hoverinfo='text',
-                        showlegend=show_leg
-                        )
+            if isinstance(group, bytes):
+                group = group.decode()
+
+                """
+                if 'GRID' in group:
+                    normals = self.find_normals(sel_positions, 5)
+                    with self.fig.batch_update():
+                        [self.fig.add_trace(trace) for trace in make_cylinders(
+                            positions=sel_positions,
+                            directions=normals,
+                            radius=2,
+                            height=.5,
+                            color=c,
+                            name=group
+                    )]
+                else:
+            
+            
+                """
+            self.fig.add_trace(
+                go.Scatter3d(
+                    mode="markers",
+                    x=x,
+                    y=y,
+                    z=z,
+                    name=str(group),
+                    legendgroup=str(group),
+                    marker=dict(color=c,
+                                cmax=c_max,
+                                cmin=c_min,
+                                colorscale='Viridis',
+                                colorbar=dict(
+                                    title="Colorbar"
+                                ),
+                                showscale=show_scale,
+                                ),
+                    text=df_to_hover_text(electrodes.to_dataframe()),
+                    hoverinfo='text',
+                    showlegend=show_leg
+                    )
+            ),
+
+        self.fig.update_layout(
+                legend=dict(
+                    x=0,
+                    y=1,
                 ),
-
-            self.fig.update_layout(
-                    legend=dict(
-                        x=0,
-                        y=1,
-                    ),
-            )
+        )
 
     def plot_human_brain(self, left_opacity=1.0, right_opacity=1.0):
 
@@ -231,7 +231,8 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
 
     def color_electrode_by(self, change):
         if 'new' in change and isinstance(change['new'], str):
-            self.fig.data = None
-            self.plot_human_brain()
-            self.show_electrodes(self.electrodes, change['new'])
+            with self.fig.batch_update():
+                self.fig.data = None
+                self.plot_human_brain()
+                self.show_electrodes(self.electrodes, change['new'])
 
