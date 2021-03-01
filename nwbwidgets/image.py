@@ -98,7 +98,7 @@ def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
         image = image_series.data[index]
         if mode == "bgr":
             image = image[:, :, ::-1]
-        ax.imshow(image.T, cmap="gray", aspect="auto")
+        ax.imshow(image.transpose([1, 0, 2]), cmap="gray", aspect="auto")
         fig.show()
         return fig2widget(fig)
 
@@ -161,7 +161,7 @@ def show_grayscale_image(grayscale_image: GrayscaleImage, neurodata_vis_spec=Non
 
 def show_rbga_image(rgb_image: RGBImage, neurodata_vis_spec=None):
     fig, ax = plt.subplots()
-    plt.imshow(rgb_image.data[:].T)
+    plt.imshow(rgb_image.data[:].transpose([1,0,2]))
     plt.axis("off")
 
     return fig
