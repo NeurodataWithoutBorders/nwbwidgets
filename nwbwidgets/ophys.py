@@ -62,7 +62,7 @@ class TwoPhotonSeriesWidget(widgets.VBox):
             if len(indexed_timeseries.data.shape) == 3:
 
                 def update_figure(index=0):
-                    img_fig = px.imshow(indexed_timeseries.data[index], binary_string=True)
+                    img_fig = px.imshow(indexed_timeseries.data[index].T, binary_string=True)
                     _add_fig_trace(img_fig, index)
 
             elif len(indexed_timeseries.data.shape) == 4:
@@ -72,7 +72,7 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                 def update_figure(index=0):
                     p3.figure()
                     p3.volshow(
-                        indexed_timeseries.data[index],
+                        indexed_timeseries.data[index].transpose([1,0,2]),
                         tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
                     )
                     output.clear_output(wait=True)
@@ -297,7 +297,6 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                 )
 
             x, y = self.compute_outline(i, threshold)
-
             fig.add_trace(
                 go.Scatter(
                     x=x,
@@ -312,7 +311,6 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             )
             self.progress_bar.update()
         # self.progress_bar.close()
-
         fig.update_layout(
             width=width,
             yaxis=dict(
