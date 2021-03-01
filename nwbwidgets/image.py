@@ -98,7 +98,7 @@ def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
         image = image_series.data[index]
         if mode == "bgr":
             image = image[:, :, ::-1]
-        ax.imshow(image, cmap="gray", aspect="auto")
+        ax.imshow(image.transpose([1, 0, 2]), cmap="gray", aspect="auto")
         fig.show()
         return fig2widget(fig)
 
@@ -123,7 +123,7 @@ def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
 def show_grayscale_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
     def show_image(index=0):
         fig, ax = plt.subplots(subplot_kw={"xticks": [], "yticks": []})
-        ax.imshow(image_series.data[index], cmap="gray", aspect="auto")
+        ax.imshow(image_series.data[index].T, cmap="gray", aspect="auto")
         return fig
 
     slider = widgets.IntSlider(
@@ -153,7 +153,7 @@ def show_index_series(index_series, neurodata_vis_spec: dict):
 
 def show_grayscale_image(grayscale_image: GrayscaleImage, neurodata_vis_spec=None):
     fig, ax = plt.subplots()
-    plt.imshow(grayscale_image.data[:], "gray")
+    plt.imshow(grayscale_image.data[:].T, "gray")
     plt.axis("off")
 
     return fig
@@ -161,7 +161,7 @@ def show_grayscale_image(grayscale_image: GrayscaleImage, neurodata_vis_spec=Non
 
 def show_rbga_image(rgb_image: RGBImage, neurodata_vis_spec=None):
     fig, ax = plt.subplots()
-    plt.imshow(rgb_image.data[:])
+    plt.imshow(rgb_image.data[:].transpose([1,0,2]))
     plt.axis("off")
 
     return fig
