@@ -20,6 +20,7 @@ from nwbwidgets import (
     timeseries,
     file,
     spectrum,
+    placefield
 )
 
 
