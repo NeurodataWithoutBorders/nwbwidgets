@@ -8,19 +8,38 @@ from pynwb.icephys import IntracellularElectrode
 
 
 def test_show_single_sweep_sequence():
-    device = Device(name='Axon Patch-Clamp')
-    electrode = IntracellularElectrode(name='Patch Clamp', device=device,
-                                       description='whole-cell')
+    device = Device(name="Axon Patch-Clamp")
+    electrode = IntracellularElectrode(
+        name="Patch Clamp", device=device, description="whole-cell"
+    )
 
     stimulus_data = np.random.rand(160, 2)
-    stimulus = TimeSeries(name='test_timeseries', data=stimulus_data, unit='m', starting_time=0.0, rate=1.0)
+    stimulus = TimeSeries(
+        name="test_timeseries",
+        data=stimulus_data,
+        unit="m",
+        starting_time=0.0,
+        rate=1.0,
+    )
     response_data = np.random.rand(160, 2)
-    response = TimeSeries(name='test_timeseries', data=response_data, unit='m', starting_time=0.0, rate=1.0)
+    response = TimeSeries(
+        name="test_timeseries",
+        data=response_data,
+        unit="m",
+        starting_time=0.0,
+        rate=1.0,
+    )
 
     icr = IntracellularRecordings()
-    icr.add_recording(electrode=electrode, stimulus_start_index=0, stimulus_index_count=100,
-                      stimulus=stimulus, response_start_index=0, response_index_count=100,
-                      response=response)
+    icr.add_recording(
+        electrode=electrode,
+        stimulus_start_index=0,
+        stimulus_index_count=100,
+        stimulus=stimulus,
+        response_start_index=0,
+        response_index_count=100,
+        response=response,
+    )
 
     sweeps_table = Sweeps(intracellular_recordings_table=icr)
     assert isinstance(show_single_sweep_sequence(sweeps_table), plt.Figure)

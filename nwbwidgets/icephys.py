@@ -11,7 +11,9 @@ from .base import lazy_show_over_data, GroupingWidget
 from .timeseries import show_indexed_timeseries_mpl
 
 
-def show_single_sweep_sequence(sweep_sequence, axs=None, title=None, **kwargs) -> Figure:
+def show_single_sweep_sequence(
+    sweep_sequence, axs=None, title=None, **kwargs
+) -> Figure:
     """
     Show a single rep of a single stimulus sequence
 
@@ -36,12 +38,22 @@ def show_single_sweep_sequence(sweep_sequence, axs=None, title=None, **kwargs) -
     else:
         fig = axs[0].get_figure()
     for i in range(nsweeps):
-        start, stop, ts = sweep_sequence['recordings'].iloc[i]['response'].iloc[0][0]
-        show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[0], zero_start=True, xlabel='', title=title,
-                                    **kwargs)
+        start, stop, ts = sweep_sequence["recordings"].iloc[i]["response"].iloc[0][0]
+        show_indexed_timeseries_mpl(
+            ts,
+            istart=start,
+            istop=stop,
+            ax=axs[0],
+            zero_start=True,
+            xlabel="",
+            title=title,
+            **kwargs
+        )
 
-        start, stop, ts = sweep_sequence['recordings'].iloc[i]['stimulus'].iloc[0][0]
-        show_indexed_timeseries_mpl(ts, istart=start, istop=stop, ax=axs[1], zero_start=True, **kwargs)
+        start, stop, ts = sweep_sequence["recordings"].iloc[i]["stimulus"].iloc[0][0]
+        show_indexed_timeseries_mpl(
+            ts, istart=start, istop=stop, ax=axs[1], zero_start=True, **kwargs
+        )
     return fig
 
 
@@ -60,22 +72,27 @@ def show_sweep_sequence_reps(stim_df: pd.DataFrame, **kwargs) -> Figure:
     matplotlib.pyplot.Figure
 
     """
-    nsweeps = len(stim_df['sweeps'])
+    nsweeps = len(stim_df["sweeps"])
 
-    if 'repetition' in stim_df:
-        stim_df = stim_df.sort_values('repetition')
-    fig, axs = plt.subplots(2, nsweeps, sharex='col', sharey='row', figsize=[6.4 * nsweeps, 4.8])
+    if "repetition" in stim_df:
+        stim_df = stim_df.sort_values("repetition")
+    fig, axs = plt.subplots(
+        2, nsweeps, sharex="col", sharey="row", figsize=[6.4 * nsweeps, 4.8]
+    )
     if nsweeps == 1:
         axs = np.array([axs]).T
-    for i, (sweep, sweep_axs) in enumerate(zip(stim_df['sweeps'], axs.T)):
+    for i, (sweep, sweep_axs) in enumerate(zip(stim_df["sweeps"], axs.T)):
         if i:
-            kwargs.update(ylabel='')
-        show_single_sweep_sequence(sweep, axs=sweep_axs, title='rep {}'.format(i + 1), **kwargs)
+            kwargs.update(ylabel="")
+        show_single_sweep_sequence(
+            sweep, axs=sweep_axs, title="rep {}".format(i + 1), **kwargs
+        )
     return fig
 
 
-def show_sweep_sequences(node: SweepSequences, *args, style: GroupingWidget = widgets.Accordion, **kwargs) -> \
-        GroupingWidget:
+def show_sweep_sequences(
+    node: SweepSequences, *args, style: GroupingWidget = widgets.Accordion, **kwargs
+) -> GroupingWidget:
     """
     Visualize the sweep sequences table with a lazy accordion of sweep sequence repetitions
 
@@ -89,12 +106,16 @@ def show_sweep_sequences(node: SweepSequences, *args, style: GroupingWidget = wi
     widgets.Accordion or widgets.Tabs
 
     """
-    if 'stimulus_type' in node:
-        labels, data = zip(*[(stim_label, stim_df)
-                             for stim_label, stim_df in node.to_dataframe().groupby('stimulus_type')])
+    if "stimulus_type" in node:
+        labels, data = zip(
+            *[
+                (stim_label, stim_df)
+                for stim_label, stim_df in node.to_dataframe().groupby("stimulus_type")
+            ]
+        )
         func_ = show_sweep_sequence_reps
     else:
-        data = node['sweeps']
+        data = node["sweeps"]
         labels = None
         func_ = show_single_sweep_sequence
     func_ = partial(func_, **kwargs)

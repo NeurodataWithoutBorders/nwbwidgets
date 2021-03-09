@@ -5,12 +5,18 @@ from ipywidgets.widgets.widget_description import DescriptionWidget
 
 
 class WindowController(HBox, ValueWidget, DescriptionWidget):
+    def __init__(
+        self,
+        vmin,
+        vmax,
+        start_value=(None, None),
+        description="window (s)",
+        orientation="horizontal",
+        **kwargs
+    ):
 
-    def __init__(self, vmin, vmax, start_value=(None, None), description='window (s)',
-                 orientation='horizontal', **kwargs):
-
-        if orientation not in ('horizontal', 'vertical'):
-            ValueError('Unrecognized orientation: {}'.format(orientation))
+        if orientation not in ("horizontal", "vertical"):
+            ValueError("Unrecognized orientation: {}".format(orientation))
 
         super().__init__()
         self.vmin = vmin
@@ -19,25 +25,41 @@ class WindowController(HBox, ValueWidget, DescriptionWidget):
         self.description = description
         self.orientation = orientation
 
-        if self.orientation == 'horizontal':
-            self.to_start_button = widgets.Button(description='◀◀', layout=Layout(width='65px'))
-            self.backwards_button = widgets.Button(description='◀', layout=Layout(width='40px'))
-            self.forward_button = widgets.Button(description='▶', layout=Layout(width='40px'))
-            self.to_end_button = widgets.Button(description='▶▶', layout=Layout(width='65px'))
+        if self.orientation == "horizontal":
+            self.to_start_button = widgets.Button(
+                description="◀◀", layout=Layout(width="65px")
+            )
+            self.backwards_button = widgets.Button(
+                description="◀", layout=Layout(width="40px")
+            )
+            self.forward_button = widgets.Button(
+                description="▶", layout=Layout(width="40px")
+            )
+            self.to_end_button = widgets.Button(
+                description="▶▶", layout=Layout(width="65px")
+            )
         else:  # vertical
-            self.to_end_button = widgets.Button(description='▲▲', layout=Layout(width='50px'))
-            self.forward_button = widgets.Button(description='▲', layout=Layout(width='50px'))
-            self.backwards_button = widgets.Button(description='▼', layout=Layout(width='50px'))
-            self.to_start_button = widgets.Button(description='▼▼', layout=Layout(width='50px'))
+            self.to_end_button = widgets.Button(
+                description="▲▲", layout=Layout(width="50px")
+            )
+            self.forward_button = widgets.Button(
+                description="▲", layout=Layout(width="50px")
+            )
+            self.backwards_button = widgets.Button(
+                description="▼", layout=Layout(width="50px")
+            )
+            self.to_start_button = widgets.Button(
+                description="▼▼", layout=Layout(width="50px")
+            )
 
         self.to_start_button.on_click(self.move_start)
         self.backwards_button.on_click(self.move_down)
         self.forward_button.on_click(self.move_up)
         self.to_end_button.on_click(self.move_end)
 
-    #@abstractmethod
-    #@property
-    #def value(self):
+    # @abstractmethod
+    # @property
+    # def value(self):
     #    """Must be window in seconds"""
     #    pass
 
@@ -63,16 +85,23 @@ class WindowController(HBox, ValueWidget, DescriptionWidget):
 
 
 class RangeController(WindowController):
-
-    def __init__(self, vmin, vmax, start_value=None, dtype='float', description='time window (s)',
-                 orientation='horizontal', **kwargs):
+    def __init__(
+        self,
+        vmin,
+        vmax,
+        start_value=None,
+        dtype="float",
+        description="time window (s)",
+        orientation="horizontal",
+        **kwargs
+    ):
         super().__init__(vmin, vmax, start_value, description, orientation, **kwargs)
 
         self.dtype = dtype
         self.slider = self.make_range_slider(description=description, **kwargs)
 
-        link((self.slider, 'value'), (self, 'value'))
-        link((self.slider, 'description'), (self, 'description'))
+        link((self.slider, "value"), (self, "value"))
+        link((self.slider, "description"), (self, "description"))
 
         self.children = self.get_children()
 
@@ -94,28 +123,27 @@ class RangeController(WindowController):
             max=self.vmax,
             continuous_update=False,
             readout=True,
-            style={'description_width': 'initial'},
-            orientation=self.orientation
+            style={"description_width": "initial"},
+            orientation=self.orientation,
         )
 
-        if self.dtype == 'float':
+        if self.dtype == "float":
             slider_kwargs.update(
-                readout_format='.1f',
+                readout_format=".1f",
                 step=0.1,
-                description='time window (s)',
-                layout=Layout(width='100%')
+                description="time window (s)",
+                layout=Layout(width="100%"),
             )
             slider_kwargs.update(kwargs)
             return widgets.FloatRangeSlider(**slider_kwargs)
-        elif self.dtype == 'int':
+        elif self.dtype == "int":
             slider_kwargs.update(
-                description='unit window',
-                layout=Layout(height='100%')
+                description="unit window", layout=Layout(height="100%")
             )
             slider_kwargs.update(kwargs)
             return widgets.IntRangeSlider(**slider_kwargs)
         else:
-            raise ValueError('Unrecognized dtype: {}'.format(self.dtype))
+            raise ValueError("Unrecognized dtype: {}".format(self.dtype))
 
     def move_up(self, change):
         value_range = self.value[1] - self.value[0]
@@ -141,36 +169,41 @@ class RangeController(WindowController):
 
     def get_children(self):
 
-        if self.orientation == 'horizontal':
+        if self.orientation == "horizontal":
             return [
                 self.slider,
                 self.to_start_button,
                 self.forward_button,
                 self.backwards_button,
-                self.to_end_button
+                self.to_end_button,
             ]
         else:
-            return [widgets.VBox(
-                [
-                    self.slider,
-                    self.to_end_button,
-                    self.forward_button,
-                    self.backwards_button,
-                    self.to_start_button,
-                ],
-                layout=widgets.Layout(display='flex',
-                                      flex_flow='column',
-                                      align_items='center')
-            )]
+            return [
+                widgets.VBox(
+                    [
+                        self.slider,
+                        self.to_end_button,
+                        self.forward_button,
+                        self.backwards_button,
+                        self.to_start_button,
+                    ],
+                    layout=widgets.Layout(
+                        display="flex", flex_flow="column", align_items="center"
+                    ),
+                )
+            ]
 
 
 class StartAndDurationController(WindowController):
     """
     Can be used in place of the RangeController.
     """
+
     DEFAULT_DURATION = 5
 
-    def __init__(self, tmax, tmin=0, start_value=None, description='start (s)', **kwargs):
+    def __init__(
+        self, tmax, tmin=0, start_value=None, description="start (s)", **kwargs
+    ):
         """
 
         Parameters
@@ -186,7 +219,9 @@ class StartAndDurationController(WindowController):
         """
 
         if tmin > tmax:
-            raise ValueError('tmax and tmin were probably entered in the wrong order. tmax should be first')
+            raise ValueError(
+                "tmax and tmin were probably entered in the wrong order. tmax should be first"
+            )
 
         super().__init__(tmin, tmax, start_value, description, **kwargs)
 
@@ -197,13 +232,14 @@ class StartAndDurationController(WindowController):
             step=0.01,
             description=description,
             continuous_update=False,
-            orientation='horizontal',
+            orientation="horizontal",
             readout=True,
-            readout_format='.2f',
-            style={'description_width': 'initial'},
-            layout=Layout(width='100%', min_width='250px'))
+            readout_format=".2f",
+            style={"description_width": "initial"},
+            layout=Layout(width="100%", min_width="250px"),
+        )
 
-        link((self.slider, 'description'), (self, 'description'))
+        link((self.slider, "description"), (self, "description"))
 
         if start_value is None:
             duration = min(self.DEFAULT_DURATION, tmax - tmin)
@@ -215,9 +251,9 @@ class StartAndDurationController(WindowController):
             min=0,
             max=tmax - tmin,
             step=0.1,
-            description='duration (s):',
-            style={'description_width': 'initial'},
-            layout=Layout(max_width='200px')
+            description="duration (s):",
+            style={"description_width": "initial"},
+            layout=Layout(max_width="200px"),
         )
 
         self.value = (self.slider.value, self.slider.value + self.duration.value)
@@ -228,24 +264,24 @@ class StartAndDurationController(WindowController):
         self.children = self.get_children()
 
     def monitor_slider(self, change):
-        if 'new' in change:
-            if isinstance(change['new'], dict):
-                if 'value' in change['new']:
-                    value = change['new']['value']
+        if "new" in change:
+            if isinstance(change["new"], dict):
+                if "value" in change["new"]:
+                    value = change["new"]["value"]
                 else:
                     return
             else:
-                value = change['new']
+                value = change["new"]
         if self.slider.value + self.duration.value > self.vmax:
             self.slider.value = self.vmax - self.duration.value
         else:
             self.value = (value, value + self.duration.value)
 
     def monitor_duration(self, change):
-        if 'new' in change:
-            if isinstance(change['new'], dict):
-                if 'value' in change['new']:
-                    value = change['new']['value']
+        if "new" in change:
+            if isinstance(change["new"], dict):
+                if "value" in change["new"]:
+                    value = change["new"]["value"]
                     if self.slider.value + value > self.vmax:
                         self.slider.value = self.vmax - value
                     self.value = (self.slider.value, self.slider.value + value)
@@ -270,27 +306,28 @@ class StartAndDurationController(WindowController):
 
     def get_children(self):
 
-        if self.orientation == 'horizontal':
+        if self.orientation == "horizontal":
             return [
                 self.slider,
                 self.duration,
-                #self.to_start_button,
+                # self.to_start_button,
                 self.backwards_button,
                 self.forward_button,
-                #self.to_end_button
+                # self.to_end_button
             ]
         else:
-            return [widgets.VBox(
-                [
-                    self.slider,
-                    self.duration,
-                    #self.to_end_button,
-                    self.forward_button,
-                    self.backwards_button,
-                    #self.to_start_button,
-
-                ],
-                layout=widgets.Layout(display='flex',
-                                      flex_flow='column',
-                                      align_items='center')
-            )]
+            return [
+                widgets.VBox(
+                    [
+                        self.slider,
+                        self.duration,
+                        # self.to_end_button,
+                        self.forward_button,
+                        self.backwards_button,
+                        # self.to_start_button,
+                    ],
+                    layout=widgets.Layout(
+                        display="flex", flex_flow="column", align_items="center"
+                    ),
+                )
+            ]

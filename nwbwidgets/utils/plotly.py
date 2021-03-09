@@ -3,7 +3,7 @@ import numpy as np
 
 
 def multi_trace(x, y, color, label=None, fig=None):
-    """ Create multiple traces that are associated with a single legend label
+    """Create multiple traces that are associated with a single legend label
 
     Parameters
     ----------
@@ -26,13 +26,28 @@ def multi_trace(x, y, color, label=None, fig=None):
         else:
             showlegend = True
 
-        fig.add_scatter(x=x, y=yy, legendgroup=label, name=label, showlegend=showlegend, line={'color': color})
+        fig.add_scatter(
+            x=x,
+            y=yy,
+            legendgroup=label,
+            name=label,
+            showlegend=showlegend,
+            line={"color": color},
+        )
 
     return fig
 
 
-def event_group(times_list, offset=0, color='Black', label=None, fig=None, marker=None, line_width=None):
-    """ Create an event raster that are all associated with a single legend label
+def event_group(
+    times_list,
+    offset=0,
+    color="Black",
+    label=None,
+    fig=None,
+    marker=None,
+    line_width=None,
+):
+    """Create an event raster that are all associated with a single legend label
 
     Parameters
     ----------
@@ -62,14 +77,17 @@ def event_group(times_list, offset=0, color='Black', label=None, fig=None, marke
 
     for i, times in enumerate(times_list):
         if len(times):
-            fig.add_scatter(x=times, y=np.ones_like(times) * (i + offset),
-                            marker=dict(color=color, line_width=line_width, symbol=marker, line_color=color),
-                            legendgroup=str(label),
-                            name=label,
-                            showlegend=showlegend,
-                            mode='markers'
-                            )
+            fig.add_scatter(
+                x=times,
+                y=np.ones_like(times) * (i + offset),
+                marker=dict(
+                    color=color, line_width=line_width, symbol=marker, line_color=color
+                ),
+                legendgroup=str(label),
+                name=label,
+                showlegend=showlegend,
+                mode="markers",
+            )
             showlegend = False
 
     return fig
-
