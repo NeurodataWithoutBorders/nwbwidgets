@@ -4,6 +4,7 @@ import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
+import plotly.express as px
 from ndx_grayscalevolume import GrayscaleVolume
 from pynwb.base import NWBDataInterface
 from pynwb.ophys import (
@@ -21,6 +22,7 @@ from .timeseries import BaseGroupedTraceWidget
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .utils.functional import MemoizeMutable
+from .controllers import ProgressBar
 
 color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
 
@@ -31,7 +33,13 @@ class TwoPhotonSeriesWidget(widgets.VBox):
     def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
         super().__init__()
 
-        output = widgets.Output()
+        def _add_fig_trace(img_fig: go.Figure, index):
+            if self.figure is None:
+                self.figure = go.FigureWidget(img_fig)
+            else:
+                self.figure.for_each_trace(
+                    lambda trace: trace.update(img_fig.data[0]))
+            self.figure.layout.title = f'Frame no: {index}'
 
         if indexed_timeseries.data is None:
             if indexed_timeseries.external_file is not None:
@@ -42,14 +50,10 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                 page = tif.pages[0]
                 n_y, n_x = page.shape
 
-                def show_image(index=0):
-                    fig, ax = plt.subplots(subplot_kw={"xticks": [], "yticks": []})
+                def update_figure(index=0):
                     # Read first frame
-                    image = imread(path_ext_file, key=int(index))
-                    ax.imshow(image, cmap="gray")
-                    output.clear_output(wait=True)
-                    with output:
-                        fig.show()
+                    img_fig = px.imshow(imread(path_ext_file, key=int(index)), binary_string=True)
+                    _add_fig_trace(img_fig, index)
 
                 slider = widgets.IntSlider(
                     value=0, min=0, max=n_samples - 1, orientation="horizontal"
@@ -57,23 +61,22 @@ class TwoPhotonSeriesWidget(widgets.VBox):
         else:
             if len(indexed_timeseries.data.shape) == 3:
 
-                def show_image(index=0):
-                    fig, ax = plt.subplots(subplot_kw={"xticks": [], "yticks": []})
-                    ax.imshow(indexed_timeseries.data[index], cmap="gray")
-                    output.clear_output(wait=True)
-                    with output:
-                        fig.show()
+                def update_figure(index=0):
+                    img_fig = px.imshow(indexed_timeseries.data[index].T, binary_string=True)
+                    _add_fig_trace(img_fig, index)
 
             elif len(indexed_timeseries.data.shape) == 4:
                 import ipyvolume.pylab as p3
+                output = widgets.Output()
 
-                def show_image(index=0):
+                def update_figure(index=0):
                     p3.figure()
                     p3.volshow(
-                        indexed_timeseries.data[index],
+                        indexed_timeseries.data[index].transpose([1,0,2]),
                         tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
                     )
                     output.clear_output(wait=True)
+                    self.figure = output
                     with output:
                         p3.show()
 
@@ -87,9 +90,10 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                 orientation="horizontal",
             )
 
-        slider.observe(lambda change: show_image(change.new), names="value")
-        show_image()
-        self.children = [output, slider]
+        slider.observe(lambda change: update_figure(change.new), names="value")
+        self.figure = None
+        update_figure()
+        self.children = [self.figure, slider]
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
@@ -160,20 +164,26 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         self.categorical_columns = infer_categorical_columns(plane_seg)
         self.plane_seg = plane_seg
         self.color_wheel = color_wheel
+        self.progress_bar = ProgressBar()
+        self.button = widgets.Button(description="Display ROIs")
+        self.children = [widgets.HBox([self.button, self.progress_bar.container])]
+        self.button.on_click(self.on_button_click)
+        self.kwargs = kwargs
 
+    def on_button_click(self, b):
         if len(self.categorical_columns) == 1:
             self.color_by = list(self.categorical_columns.keys())[
                 0
             ]  # changing local variables to instance variables?
-            self.children = [
-                self.show_plane_segmentation_2d(color_by=self.color_by, **kwargs)
-            ]
+            self.children += (
+                self.show_plane_segmentation_2d(color_by=self.color_by, **self.kwargs),
+            )
         elif len(self.categorical_columns) > 1:
             self.cat_controller = widgets.Dropdown(
                 options=list(self.categorical_columns), description="color by"
             )
             self.fig = self.show_plane_segmentation_2d(
-                color_by=self.cat_controller.value, **kwargs
+                color_by=self.cat_controller.value, **self.kwargs
             )
 
             def on_change(change):
@@ -184,9 +194,12 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                         self.update_fig(color_by)
 
             self.cat_controller.observe(on_change)
-            self.children = [self.cat_controller, self.fig]
+            self.children += (self.cat_controller, self.fig)
         else:
-            self.children = [self.show_plane_segmentation_2d(color_by=None, **kwargs)]
+            self.children += (
+                self.show_plane_segmentation_2d(color_by=None, **self.kwargs),
+            )
+        self.children = self.children[1:]
 
     def update_fig(self, color_by):
         cats = np.unique(self.plane_seg[color_by][:])
@@ -268,6 +281,8 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         plane_seg_hover_dict.update(id=self.plane_seg.id.data)
         plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
         all_hover = df_to_hover_text(plane_seg_hover_df)
+        self.progress_bar.reset(total=nUnits)
+        self.progress_bar.set_description("Loading Image Masks")
         for i in range(nUnits):
             kwargs = dict(showlegend=False)
             if color_by is not None:
@@ -282,7 +297,6 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                 )
 
             x, y = self.compute_outline(i, threshold)
-
             fig.add_trace(
                 go.Scatter(
                     x=x,
@@ -295,7 +309,8 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                     **kwargs
                 )
             )
-
+            self.progress_bar.update()
+        # self.progress_bar.close()
         fig.update_layout(
             width=width,
             yaxis=dict(
