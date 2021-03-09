@@ -49,8 +49,7 @@ default_neurodata_vis_spec = {
     pynwb.behavior.SpatialSeries: OrderedDict({
         'over time': timeseries.SeparateTracesPlotlyWidget,
         'trace': behavior.plotly_show_spatial_trace,
-        'rate map': placefield.route_placefield,
-        '1D rate map': placefield.PlaceField1DWidget}),
+        'rate map': placefield.route_placefield}),
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
     pynwb.image.RGBImage: image.show_rbga_image,
     pynwb.image.RGBAImage: image.show_rbga_image,

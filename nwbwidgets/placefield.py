@@ -12,6 +12,7 @@ from .utils.widgets import interactive_output
 from .utils.units import get_spike_times
 from .utils.timeseries import get_timeseries_in_units, get_timeseries_tt
 
+
 def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
     if spatial_series.data.shape[1] == 2:
         return PlaceFieldWidget(spatial_series)
@@ -20,6 +21,7 @@ def route_placefield(spatial_series: pynwb.behavior.SpatialSeries):
     else:
         print('Spatial series exceeds dimensionality for visualization')
         return
+
 
 class PlaceFieldWidget(widgets.HBox):
 
@@ -125,6 +127,7 @@ class PlaceFieldWidget(widgets.HBox):
                                                                                          gaussian_sd_y=gaussian_sd_y,
                                                                                          velocity=self.velocity)
         return occupancy, filtered_firing_rate, [edges_x, edges_y]
+
 
 class PlaceField1DWidget(widgets.HBox):
     def __init__(self, spatial_series: pynwb.behavior.SpatialSeries,
