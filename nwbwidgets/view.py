@@ -9,12 +9,23 @@ from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
 
-from nwbwidgets import behavior, misc, base, ecephys, image, ophys, icephys, timeseries, file, placefield, spectrum
+from nwbwidgets import (
+    behavior,
+    misc,
+    base,
+    ecephys,
+    image,
+    ophys,
+    icephys,
+    timeseries,
+    file,
+    spectrum,
+)
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
 def show_dynamic_table(node, **kwargs) -> widgets.Widget:
-    if node.name == 'electrodes':
+    if node.name == "electrodes":
         return ecephys.show_electrodes(node)
     return base.render_dataframe(node)
 
@@ -24,11 +35,14 @@ default_neurodata_vis_spec = {
     SweepSequences: icephys.show_sweep_sequences,
     pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
     pynwb.ecephys.LFP: ecephys.show_lfp,
-    pynwb.misc.Units: OrderedDict({
-        'Session Raster': misc.RasterWidget,
-        'Grouped PSTH': misc.PSTHWidget,
-        'Raster Grid': misc.RasterGridWidget,
-        'table': show_dynamic_table}),
+    pynwb.misc.Units: OrderedDict(
+        {
+            "Session Raster": misc.RasterWidget,
+            "Grouped PSTH": misc.PSTHWidget,
+            "Raster Grid": misc.RasterGridWidget,
+            "table": show_dynamic_table,
+        }
+    ),
     pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
     pynwb.file.Subject: base.show_fields,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
@@ -38,9 +52,9 @@ default_neurodata_vis_spec = {
     pynwb.ophys.PlaneSegmentation: ophys.route_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     pynwb.ophys.RoiResponseSeries: ophys.RoiResponseSeriesWidget,
-    pynwb.misc.AnnotationSeries: OrderedDict({
-        'text': base.show_text_fields,
-        'times': misc.show_annotations}),
+    pynwb.misc.AnnotationSeries: OrderedDict(
+        {"text": base.show_text_fields, "times": misc.show_annotations}
+    ),
     pynwb.core.LabelledDict: base.dict2accordion,
     pynwb.ProcessingModule: base.processing_module,
     hdmf.common.DynamicTable: show_dynamic_table,
@@ -62,7 +76,7 @@ default_neurodata_vis_spec = {
     h5py.Dataset: base.show_dset,
     zarr.core.Array: base.show_dset,
     Spectrum: spectrum.show_spectrum,
-    pynwb.behavior.CompassDirection: behavior.show_position
+    pynwb.behavior.CompassDirection: behavior.show_position,
 }
 
 

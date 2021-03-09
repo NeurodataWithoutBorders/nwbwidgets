@@ -10,13 +10,18 @@ def infer_categorical_columns(dynamic_table: DynamicTable):
             try:  # TODO: fix this
                 unique_vals = np.unique(dynamic_table[name].data)
                 if 1 < len(unique_vals) <= (len(dynamic_table[name].data) / 2):
+                    unique_vals = [
+                        x.decode() if isinstance(x, bytes) else x for x in unique_vals
+                    ]  # handle h5py 3.0
                     categorical_cols[name] = unique_vals
             except:
                 pass
     return categorical_cols
 
 
-def group_and_sort(group_vals=None, group_select=None, order_vals=None, discard_rows=None, limit=None):
+def group_and_sort(
+    group_vals=None, group_select=None, order_vals=None, discard_rows=None, limit=None
+):
     """
     Logical flow:
     0) Apply discard_rows - throw out any listed rows
@@ -50,7 +55,7 @@ def group_and_sort(group_vals=None, group_select=None, order_vals=None, discard_
         labels, group_inds = None, None
         if order_vals is None:
             # cannot give order because we don't know how many units there are
-            raise ValueError('group_vals and order_vals cannot both be None')
+            raise ValueError("group_vals and order_vals cannot both be None")
         else:
             order = np.argsort(order_vals)
 
@@ -82,6 +87,8 @@ def group_and_sort(group_vals=None, group_select=None, order_vals=None, discard_
             keep = np.isin(labels[group_inds], group_select)
             group_inds = group_inds[keep]
             order = order[keep]
+
+        labels = np.array([x.decode() if isinstance(x, bytes) else x for x in labels])
 
     # apply limit
     inds = list()
