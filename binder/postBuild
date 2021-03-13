@@ -1,9 +1,3 @@
-git clone https://github.com/h5py/h5py.git
-conda create -n stream_nwb -c conda-forge -y python=3.7 hdf5=1.12.0 jupyter pip
-conda activate stream_nwb
-pip install nwbwidgets
-pip install git+https://github.com/NeurodataWithoutBorders/pynwb
-pip install git+https://github.com/hdmf-dev/hdmf
-git clone https://github.com/satra/h5py.git
-cd h5py
-HDF5_DIR=~/home/main/anaconda2/envs/stream_nwb/ pip install --force-reinstall --no-binary=h5py .
+wget -q -O "ophys_example.nwb" "https://girder.dandiarchive.org/api/v1/item/5e73acbc368d3c79a8006930/download"
+wget -q -O "ecephys_example.nwb" "https://girder.dandiarchive.org/api/v1/item/5eda555ce82be273d48e42ce/download"
+wget -q -O "icephys_example.nwb" "https://girder.dandiarchive.org/api/v1/item/5eed137c17a31a38dab09a67/download"
