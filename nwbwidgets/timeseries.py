@@ -430,7 +430,7 @@ def plot_grouped_traces(
     time_window=None,
     order=None,
     ax=None,
-    figsize=(9.7, 7),
+    figsize=(8, 7),
     group_inds=None,
     labels=None,
     colors=color_wheel,
