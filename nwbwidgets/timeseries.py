@@ -5,6 +5,8 @@ import numpy as np
 import plotly.graph_objects as go
 from ipywidgets import widgets, fixed
 from plotly.subplots import make_subplots
+from plotly.colors import DEFAULT_PLOTLY_COLORS
+
 from pynwb import TimeSeries
 
 from .controllers import StartAndDurationController, GroupAndSortController
@@ -351,10 +353,11 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
         tt = get_timeseries_tt(timeseries, istart, istop)
 
         if len(data.shape) > 1:
+            color = DEFAULT_PLOTLY_COLORS[0]
             self.out_fig = go.FigureWidget(make_subplots(rows=data.shape[1], cols=1))
 
             for i, (yy, xyz) in enumerate(zip(data.T, ("x", "y", "z"))):
-                self.out_fig.add_trace(go.Scatter(x=tt, y=yy), row=i + 1, col=1)
+                self.out_fig.add_trace(go.Scatter(x=tt, y=yy, marker_color=color), row=i + 1, col=1)
                 if units:
                     yaxes_label = "{} ({})".format(xyz, units)
                 else:
