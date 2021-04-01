@@ -603,7 +603,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
 
             self.children = [self.gas, right_panel]
 
-        self.layout = widgets.Layout(width="100%")
+        # self.layout = widgets.Layout(width="100%")
 
 
 class MultiTimeSeriesWidget(widgets.VBox):
