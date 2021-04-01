@@ -85,12 +85,13 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
         self.fig = go.FigureWidget()
         self.plot_human_brain()
         self.show_electrodes(electrodes, color_by_dropdown.value)
-
+        sliders = widgets.HBox([left_opacity_slider,
+                                right_opacity_slider]
+                               )
         self.children = [
             self.fig,
-            widgets.HBox([
-                left_opacity_slider,
-                right_opacity_slider,
+            widgets.VBox([
+                sliders,
                 color_by_dropdown
             ])
         ]
