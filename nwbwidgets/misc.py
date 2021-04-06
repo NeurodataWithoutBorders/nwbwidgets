@@ -811,7 +811,10 @@ def raster_grid(
 
 class RasterGridWidget(widgets.VBox):
     def __init__(
-        self, units: Units, trials: pynwb.epoch.TimeIntervals = None, unit_index=0
+        self, 
+        units: Units, 
+        trials: pynwb.epoch.TimeIntervals = None, 
+        unit_index=0
     ):
         super().__init__()
 
@@ -1078,3 +1081,126 @@ def show_session_raster_plotly(
     )
 
     return fig
+
+
+class TunningCurvesWidget(widgets.VBox):
+    def __init__(
+        self,
+        units: Units,
+        trials: pynwb.epoch.TimeIntervals = None,
+        unit_index=0,
+        unit_controller=None
+    ):
+
+        super().__init__()
+
+        self.units = units
+
+        if trials is None:
+            self.trials = self.get_trials()
+            if self.trials is None:
+                self.children = [widgets.HTML("No trials present")]
+                return
+        else:
+            self.trials = trials
+
+        groups = self.get_groups()
+
+        rows_controller = widgets.Dropdown(
+            options=[None] + list(groups), description="rows"
+        )
+        cols_controller = widgets.Dropdown(
+            options=[None] + list(groups), description="cols"
+        )
+
+        unit_controller = widgets.Dropdown(
+            options=range(len(units["spike_times"].data)),
+            value=unit_index,
+            description="unit",
+        )
+
+        after_slider = widgets.FloatSlider(
+            1.0, min=0, max=5.0, description="window (s)", continuous_update=False
+        )
+
+        self.controls = {
+            "index": unit_controller,
+            "start_label": fixed("start_time"),
+            "after": after_slider,
+            "rows_label": rows_controller,
+            "cols_label": cols_controller,
+        }
+
+        self.children = [
+            unit_controller,
+            rows_controller,
+            cols_controller,
+            after_slider,
+        ]
+
+        out_fig = interactive_output(self.draw_tuningcurve, self.controls, self.process_controls)
+
+        self.children = list(self.children) + [out_fig]
+
+    def get_trials(self):
+        return self.units.get_ancestor("NWBFile").trials
+
+    def get_groups(self):
+        return infer_categorical_columns(self.trials)
+
+    def make_group_and_sort(self, window=None, control_order=False):
+        return GroupAndSortController(
+            self.trials, window=window, control_order=control_order
+        )
+    
+    def process_controls(self, control_states):
+        return control_states
+
+    def draw_tuningcurve(
+        self,
+        index: int,
+        start_label: str = "start_time",
+        after: float = 1.0,
+        rows_label=None,
+        cols_label=None,
+    ):
+
+        if rows_label is None:
+            return widgets.HTML("Select at least one variable")
+
+        var1_classes = np.unique(self.trials[rows_label][:]).tolist()
+
+        avg_rates = []
+        for v1 in var1_classes:
+            indexes = np.where(self.trials[rows_label][:]==v1)[0].tolist()
+            data = align_by_time_intervals(
+                units=self.units,
+                index=index,
+                intervals=self.trials,
+                start_label=start_label,
+                stop_label=start_label,
+                before=0.0,
+                after=after,
+                rows_select=indexes
+            )
+            n_trials = len(data)
+            n_spikes = len(np.hstack(data))
+            avg_rates.append(n_spikes / (n_trials * after)) 
+
+
+        x = np.arange(len(var1_classes))  # the label locations
+        width = 0.95  # the width of the bars
+
+        fig, ax = plt.subplots(figsize=(14, 7))
+        rects1 = ax.bar(x, avg_rates, width)
+        lines1 = ax.plot(x, avg_rates, '-o', color='k', lw=2)
+
+        # Labels
+        ax.set_ylabel('Avg rate')
+        ax.set_xlabel(rows_label)
+        ax.set_xticks(x)
+        ax.set_xticklabels(var1_classes, rotation=45)
+
+        fig.tight_layout()
+
+        return fig
