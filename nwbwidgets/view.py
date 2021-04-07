@@ -107,7 +107,7 @@ def nwb2widget(node, neurodata_vis_spec=default_neurodata_vis_spec, include_widg
 
 def include_widget(neurodata_vis_spec, widget, label, pynwb_class):
     if pynwb_class in neurodata_vis_spec:
-        neurodata_vis_spec[pynwb_class].update({
-            label: widget
-        })
+        neurodata_vis_spec[pynwb_class].update({label: widget})
+    else:
+        neurodata_vis_spec[pynwb_class] = {label: widget}
     return neurodata_vis_spec
