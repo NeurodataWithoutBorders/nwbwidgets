@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from collections.abc import Iterable
 
 import h5py
 import hdmf
@@ -82,5 +83,31 @@ default_neurodata_vis_spec = {
 }
 
 
-def nwb2widget(node, neurodata_vis_spec=default_neurodata_vis_spec):
+def nwb2widget(node, neurodata_vis_spec=default_neurodata_vis_spec, include_widgets: list=None):
+    
+    # Include user custom widgets
+    if include_widgets is None:
+        include_widgets = list()
+    for item in include_widgets:
+        widget = item.get('widget', None)
+        label = item.get('label', None)
+        pynwb_class = item.get('pynwb_class', None)
+        if widget and label and pynwb_class:
+            neurodata_vis_spec = include_widget(
+                neurodata_vis_spec=neurodata_vis_spec,
+                widget=widget, 
+                label=label, 
+                pynwb_class=pynwb_class
+            )
+        else:
+            print(f'Failed to include widget {widget} with label {label} to pynwb_class {pynwb_class}')
+
     return base.nwb2widget(node, neurodata_vis_spec)
+
+
+def include_widget(neurodata_vis_spec, widget, label, pynwb_class):
+    if pynwb_class in neurodata_vis_spec:
+        neurodata_vis_spec[pynwb_class].update({
+            label: widget
+        })
+    return neurodata_vis_spec
