@@ -70,7 +70,7 @@ default_neurodata_vis_spec = {
     pynwb.image.RGBImage: image.show_rbga_image,
     pynwb.image.RGBAImage: image.show_rbga_image,
     pynwb.base.Image: image.show_rbga_image,
-    pynwb.image.ImageSeries: image.show_image_series,
+    pynwb.image.ImageSeries: image.ImageSeriesWidget,
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: timeseries.show_timeseries,
     pynwb.core.NWBContainer: base.show_neurodata_base,
