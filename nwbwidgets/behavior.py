@@ -7,6 +7,7 @@ from plotly import graph_objects as go
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 
 from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
+from .timeseries import AlignMultiTraceTimeSeriesByTrials
 
 
 def show_position(node: Position, neurodata_vis_spec: dict):
@@ -143,3 +144,13 @@ def plotly_show_spatial_trace(node):
     )
 
     return fig
+
+
+class TrialAlignedSpatialSeries(AlignMultiTraceTimeSeriesByTrials):
+    def __init__(self, spatial_series, trials=None):
+        options = [("x", 0), ("y", 1), ("z", 2)][: spatial_series.data.shape[1]]
+        super().__init__(
+            time_series=spatial_series,
+            trials=trials,
+            trace_controller_kwargs=dict(options=options),
+        )

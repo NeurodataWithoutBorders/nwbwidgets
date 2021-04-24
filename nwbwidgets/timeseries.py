@@ -3,11 +3,13 @@ from abc import abstractmethod
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
-from ipywidgets import widgets, fixed
+from ipywidgets import widgets, fixed, Layout
 from plotly.subplots import make_subplots
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 
 from pynwb import TimeSeries
+from pynwb.epoch import TimeIntervals
+import scipy
 
 from .controllers import StartAndDurationController, GroupAndSortController
 from .utils.plotly import multi_trace
@@ -19,6 +21,9 @@ from .utils.timeseries import (
     get_timeseries_in_units,
 )
 from .utils.widgets import interactive_output
+from .controllers.misc import make_trial_event_controller
+from .utils.timeseries import align_by_time_intervals
+
 
 color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -78,7 +83,7 @@ def show_timeseries_mpl(
         ylabel=ylabel,
         title=title,
         figsize=figsize,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -293,7 +298,7 @@ class SingleTracePlotlyWidget(SingleTraceWidget):
         super().__init__(
             timeseries=timeseries,
             foreign_time_window_controller=foreign_time_window_controller,
-            **kwargs
+            **kwargs,
         )
 
     def set_out_fig(self):
@@ -654,3 +659,186 @@ class MultiTimeSeriesWidget(widgets.VBox):
             for widget_class, time_series in zip(widget_class_list, time_series_list)
         ]
         self.children = [self.time_window_controller] + widgets
+
+
+class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
+    def __init__(
+        self,
+        time_series: TimeSeries,
+        trials: TimeIntervals = None,
+        trace_index=0,
+        trace_controller=None,
+        trace_controller_kwargs=None,
+    ):
+
+        self.time_series = time_series
+
+        super().__init__()
+
+        if trials is None:
+            self.trials = self.get_trials()
+            if self.trials is None:
+                self.children = [widgets.HTML("No trials present")]
+                return
+        else:
+            self.trials = trials
+
+        if trace_controller is None:
+            ntraces = self.time_series.data.shape[1]
+            input_trace_controller_kwargs = dict(
+                options=[x for x in range(ntraces)],
+                value=trace_index,
+                description="trace",
+                layout=Layout(width="200px"),
+            )
+            if trace_controller_kwargs is not None:
+                input_trace_controller_kwargs.update(trace_controller_kwargs)
+            self.trace_controller = widgets.Dropdown(**input_trace_controller_kwargs)
+        else:
+            self.trace_controller = trace_controller
+
+        self.trial_event_controller = make_trial_event_controller(
+            self.trials, layout=Layout(width="200px")
+        )
+
+        self.before_ft = widgets.FloatText(
+            0.5, min=0, description="before (s)", layout=Layout(width="200px")
+        )
+        self.after_ft = widgets.FloatText(
+            2.0, min=0, description="after (s)", layout=Layout(width="200px")
+        )
+
+        self.gas = self.make_group_and_sort(window=False, control_order=False)
+
+        self.align_to_zero_cb = widgets.Checkbox(description="align to zero")
+        self.sem_cb = widgets.Checkbox(description="show SEM")
+
+        self.controls = dict(
+            index=self.trace_controller,
+            after=self.after_ft,
+            before=self.before_ft,
+            start_label=self.trial_event_controller,
+            gas=self.gas,
+            align_to_zero=self.align_to_zero_cb,
+            sem=self.sem_cb,
+        )
+
+        out_fig = interactive_output(self.update, self.controls)
+
+        self.children = [
+            widgets.HBox(
+                [
+                    widgets.VBox(
+                        [
+                            self.gas,
+                            self.align_to_zero_cb,
+                            self.sem_cb,
+                        ]
+                    ),
+                    widgets.VBox(
+                        [
+                            self.trace_controller,
+                            self.trial_event_controller,
+                            self.before_ft,
+                            self.after_ft,
+                        ]
+                    ),
+                ]
+            ),
+            out_fig,
+        ]
+
+    def get_trials(self):
+        return self.time_series.get_ancestor("NWBFile").trials
+
+    def make_group_and_sort(
+        self, window=None, control_order=False, control_limit=False
+    ):
+        return GroupAndSortController(
+            self.trials,
+            window=window,
+            control_order=control_order,
+            control_limit=control_limit,
+        )
+
+    def update(
+        self,
+        index: int,
+        start_label: str = "start_time",
+        before: float = 0.0,
+        after: float = 1.0,
+        order=None,
+        group_inds=None,
+        labels=None,
+        align_to_zero=False,
+        sem=False,
+        figsize=(7, 7),
+        align_line_color=(0.7, 0.7, 0.7),
+    ):
+        data = align_by_time_intervals(
+            self.time_series,
+            self.trials,
+            start_label,
+            before,
+            after,
+            traces=index,
+        )
+
+        if self.time_series.rate is None:
+            rate = np.median(self.time_series.timestamps)
+        else:
+            rate = self.time_series.rate
+        tt = np.arange(data.shape[1]) / rate - before
+
+        if group_inds is None:
+            group_inds = np.zeros(data.shape[0], dtype=np.int)
+        group_stats = []
+
+        data = data[order]
+
+        if align_to_zero:
+            data = data - data[:, int(before * rate), np.newaxis]
+
+        fig, ax = plt.subplots(figsize=figsize)
+        if sem:
+            for group in np.unique(group_inds):
+                this_mean = np.nanmean(data[group_inds == group, :], axis=0)
+                err = scipy.stats.sem(
+                    data[group_inds == group, :], axis=0, nan_policy="omit"
+                )
+                group_stats.append(
+                    dict(
+                        mean=this_mean,
+                        lower=this_mean - 2 * err,
+                        upper=this_mean + 2 * err,
+                        group=group,
+                    )
+                )
+
+            for stats in group_stats:
+                plot_kwargs = dict()
+                color = color_wheel[stats["group"]]
+                if labels is not None:
+                    plot_kwargs.update(label=labels[stats["group"]])
+                ax.plot(tt, stats["mean"], color=color, **plot_kwargs)
+                ax.fill_between(
+                    tt, stats["lower"], stats["upper"], alpha=0.2, color=color
+                )
+                if labels is not None:
+                    ax.legend()
+        else:
+            for group in np.unique(group_inds):
+                plot_kwargs = dict()
+                if labels is not None:
+                    plot_kwargs.update(label=labels[group])
+                plt.plot(
+                    tt,
+                    data[group_inds == group, :].T,
+                    color=color_wheel[group],
+                    alpha=0.2,
+                    **plot_kwargs,
+                )
+        ax.set_xlim((np.min(tt), np.max(tt)))
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel(self.time_series.name)
+        plt.axvline(color=align_line_color)

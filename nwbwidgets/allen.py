@@ -38,8 +38,8 @@ class TimeIntervalsSelector(widgets.VBox):
     def stimulus_type_dd_callback(self, change):
         self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
         trials = self.intervals_tables[self.stimulus_type_dd.value]
-        psth_widget = self.InnerWidget(self.units, trials, **self.kwargs)
-        self.children = [self.stimulus_type_dd, psth_widget]
+        inner_widget = self.InnerWidget(self.units, trials, **self.kwargs)
+        self.children = [self.stimulus_type_dd, inner_widget]
 
 
 class AllenPSTHWidget(TimeIntervalsSelector):

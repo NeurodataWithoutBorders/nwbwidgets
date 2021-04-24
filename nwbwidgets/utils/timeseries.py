@@ -137,29 +137,38 @@ def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -
         return int(np.ceil((time - starting_time) * node.rate))
 
 
-def align_by_times(timeseries: TimeSeries, starts, stops):
+def align_by_times(timeseries: TimeSeries, starts, duration: float, traces=None):
     """
     Args:
         timeseries: TimeSeries
         starts: array-like
             starts in seconds
-        stops: array-like
-            stops in seconds
+        duration: float
+            duration in seconds
+
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
     out = []
-    for istart, istop in zip(starts, stops):
-        ind_start = timeseries_time_to_ind(timeseries, istart)
-        ind_stop = timeseries_time_to_ind(timeseries, istop, ind_min=ind_start)
-        out.append(timeseries.data[ind_start:ind_stop])
+    for start in starts:
+        if timeseries.rate is not None:
+            idx_start = int((start - timeseries.starting_time) * timeseries.rate)
+            idx_stop = int(idx_start + duration * timeseries.rate)
+        else:
+            idx_start = timeseries_time_to_ind(timeseries, start)
+            idx_stop = timeseries_time_to_ind(
+                timeseries, start + duration, ind_min=idx_start
+            )
+        if len(timeseries.data.shape) > 1 and traces is not None:
+            out.append(timeseries.data[idx_start:idx_stop, traces])
+        else:
+            out.append(timeseries.data[idx_start:idx_stop])
     return np.array(out)
 
 
 def align_by_trials(
     timeseries: TimeSeries,
     start_label="start_time",
-    stop_label=None,
     before=0.0,
     after=1.0,
 ):
@@ -168,8 +177,6 @@ def align_by_trials(
         timeseries: TimeSeries
         start_label: str
             default: 'start_time'
-        stop_label: str
-            default: None (just align to start_time)
         before: float
             time after start_label in secs (positive goes back in time)
         after: float
@@ -178,18 +185,16 @@ def align_by_trials(
         np.array(shape=(n_trials, n_time, ...))
     """
     trials = timeseries.get_ancestor("NWBFile").trials
-    return align_by_time_intervals(
-        timeseries, trials, start_label, stop_label, before, after
-    )
+    return align_by_time_intervals(timeseries, trials, start_label, before, after)
 
 
 def align_by_time_intervals(
     timeseries: TimeSeries,
     intervals,
     start_label="start_time",
-    stop_label="stop_time",
     before=0.0,
     after=0.0,
+    traces=None,
 ):
     """
     Args:
@@ -197,8 +202,6 @@ def align_by_time_intervals(
         intervals: pynwb.epoch.TimeIntervals
         start_label: str
             default: 'start_time'
-        stop_label: str
-            default: 'stop_time'
         before: float
             time after start_label in secs (positive goes back in time)
         after: float
@@ -206,9 +209,6 @@ def align_by_time_intervals(
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
-    if stop_label is None:
-        stop_label = "start_time"
 
     starts = np.array(intervals[start_label][:]) - before
-    stops = np.array(intervals[stop_label][:]) + after
-    return align_by_times(timeseries, starts, stops)
+    return align_by_times(timeseries, starts, duration=after + before, traces=traces)
