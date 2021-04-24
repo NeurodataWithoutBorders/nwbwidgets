@@ -78,7 +78,7 @@ def test_align_by_trials():
         file_create_date=create_date,
     )
 
-    data = list(range(100, 200, 10))
+    data = np.arange(100, 200, 10)
     timestamps = list(range(10))
     ts = TimeSeries(name="test_timeseries", data=data, unit="m", timestamps=timestamps)
     nwbfile.add_acquisition(ts)
@@ -95,7 +95,7 @@ def test_align_by_trials():
 
 class TimeSeriesTimeStampTestCase(unittest.TestCase):
     def setUp(self):
-        data = list(range(100, 200, 10))
+        data = np.arange(100, 200, 10)
         timestamps = list(range(10))
         self.ts = TimeSeries(
             name="test_timeseries", data=data, unit="m", timestamps=timestamps
