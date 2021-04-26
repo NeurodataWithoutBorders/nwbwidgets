@@ -794,7 +794,8 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
                 before,
                 after
             )
-            ts_centered=time_ts_aligned - time_ts_aligned[:,0][:,np.newaxis]
+            zero_index = bisect(time_ts_aligned[0,:],self.trials[start_label][0])
+            ts_centered=time_ts_aligned - time_ts_aligned[:,zero_index][:,np.newaxis]
             tt = np.mean(ts_centered,axis=0)
         else:
             rate = self.time_series.rate
