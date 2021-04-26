@@ -2,6 +2,7 @@ from abc import abstractmethod
 
 import matplotlib.pyplot as plt
 import numpy as np
+from bisect import bisect
 import plotly.graph_objects as go
 from ipywidgets import widgets, fixed, Layout
 from plotly.subplots import make_subplots
@@ -783,12 +784,21 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
             after,
             traces=index,
         )
-
         if self.time_series.rate is None:
-            rate = np.median(self.time_series.timestamps)
+            time_ts = TimeSeries(name='ts',data=self.time_series.timestamps,
+                                 timestamps=self.time_series.timestamps)
+            time_ts_aligned = align_by_time_intervals(
+                time_ts,
+                self.trials,
+                start_label,
+                before,
+                after
+            )
+            ts_centered=time_ts_aligned - time_ts_aligned[:,0][:,np.newaxis]
+            tt = np.mean(ts_centered,axis=0)
         else:
             rate = self.time_series.rate
-        tt = np.arange(data.shape[1]) / rate - before
+            tt = np.arange(data.shape[1]) / rate - before
 
         if group_inds is None:
             group_inds = np.zeros(data.shape[0], dtype=np.int)
@@ -797,7 +807,8 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
         data = data[order]
 
         if align_to_zero:
-            data = data - data[:, int(before * rate), np.newaxis]
+            data_zero_id = bisect(tt,0)
+            data = data - data[:, data_zero_id, np.newaxis]
 
         fig, ax = plt.subplots(figsize=figsize)
         if sem:

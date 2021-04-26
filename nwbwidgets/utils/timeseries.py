@@ -150,6 +150,7 @@ def align_by_times(timeseries: TimeSeries, starts, duration: float, traces=None)
         np.array(shape=(n_trials, n_time, ...))
     """
     out = []
+    id_diff_min = np.inf
     for start in starts:
         if timeseries.rate is not None:
             idx_start = int((start - timeseries.starting_time) * timeseries.rate)
@@ -159,11 +160,14 @@ def align_by_times(timeseries: TimeSeries, starts, duration: float, traces=None)
             idx_stop = timeseries_time_to_ind(
                 timeseries, start + duration, ind_min=idx_start
             )
+        if id_diff_min > (idx_stop-idx_start):
+            id_diff_min = idx_stop-idx_start
         if len(timeseries.data.shape) > 1 and traces is not None:
             out.append(timeseries.data[idx_start:idx_stop, traces])
         else:
             out.append(timeseries.data[idx_start:idx_stop])
-    return np.array(out)
+    out_trimmed = [i[:id_diff_min] for i in out]
+    return np.array(out_trimmed)
 
 
 def align_by_trials(
