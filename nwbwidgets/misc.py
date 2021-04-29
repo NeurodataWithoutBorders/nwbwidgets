@@ -18,7 +18,7 @@ from .controllers import (
     StartAndDurationController,
     ProgressBar,
 )
-from .utils.dynamictable import infer_categorical_columns
+from .utils.dynamictable import infer_categorical_columns, extract_data_from_intervals
 from .utils.mpl import create_big_ax
 from .utils.plotly import event_group
 from .utils.units import (
@@ -1218,9 +1218,7 @@ class TunningCurvesWidget(widgets.VBox):
             return widgets.HTML("Select at least one variable")
 
         time_intervals = self.intervals[intervals_table_name]
-        # solution: https://stackoverflow.com/a/50297200/11483674
-        rows_data = [x if x == x else 'NaN' for x in time_intervals[rows_label][:]]
-        var1_classes = pd.unique(rows_data).tolist()
+        rows_data, var1_classes = extract_data_from_intervals(time_intervals[rows_label])
 
         # 1D histogram
         if cols_label is None:
@@ -1260,8 +1258,7 @@ class TunningCurvesWidget(widgets.VBox):
 
         # 2D Histogram
         else:
-            cols_data = [x if x == x else 'NaN' for x in time_intervals[cols_label][:]]
-            var2_classes = pd.unique(cols_data).tolist()
+            cols_data, var2_classes = extract_data_from_intervals(time_intervals[cols_label])
 
             avg_rates = np.zeros((len(var1_classes), len(var2_classes)))
             for i, v1 in enumerate(var1_classes):
@@ -1286,8 +1283,9 @@ class TunningCurvesWidget(widgets.VBox):
                         avg_rates[i, j] = n_spikes / (n_trials * duration)
             
             fig, ax = plt.subplots(figsize=(14, 7))
-            pos = ax.imshow(avg_rates.T, cmap='Greys')
-            fig.colorbar(pos, ax=ax)
+            pos = ax.imshow(avg_rates.T, origin='lower', cmap='Greys')
+            cbar = fig.colorbar(pos, ax=ax)
+            cbar.set_label('spikes / second')
 
             # Labels
             ax.set_xticks(np.arange(len(var1_classes)))
