@@ -2,6 +2,7 @@ from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 import pynwb
 import scipy
@@ -1087,7 +1088,7 @@ class TunningCurvesWidget(widgets.VBox):
     def __init__(
         self,
         units: Units,
-        trials: pynwb.epoch.TimeIntervals = None,
+        intervals: pynwb.epoch.TimeIntervals = None,
         unit_index=0,
         unit_controller=None
     ):
@@ -1096,96 +1097,149 @@ class TunningCurvesWidget(widgets.VBox):
 
         self.units = units
 
-        if trials is None:
-            self.trials = self.get_trials()
-            if self.trials is None:
-                self.children = [widgets.HTML("No trials present")]
+        # Check if there are interval tables and create controller
+        if intervals is None:
+            self.intervals = self.get_intervals()
+            if self.intervals is None:
+                self.children = [widgets.HTML("No intervals present")]
                 return
         else:
-            self.trials = trials
+            self.intervals = intervals
 
-        groups = self.get_groups()
-
-        rows_controller = widgets.Dropdown(
-            options=[None] + list(groups), description="rows"
+        self.intervals_controller = widgets.Dropdown(
+            options=list(self.intervals.keys()), 
+            description="intervals"
         )
-        cols_controller = widgets.Dropdown(
-            options=[None] + list(groups), description="cols"
+        self.intervals_controller.observe(self.intervals_callback, names='value')
+
+        # Create variables choice dropdowns
+        intervals_table_name = self.intervals_controller.value
+        groups = self.get_groups(self.intervals[intervals_table_name])
+        self.rows_controller = widgets.Dropdown(
+            options=[None] + list(groups), 
+            description="rows"
+        )
+        self.cols_controller = widgets.Dropdown(
+            options=[None] + list(groups), 
+            description="cols"
         )
 
-        unit_controller = widgets.Dropdown(
+        # Unit controller
+        self.unit_controller = widgets.Dropdown(
             options=range(len(units["spike_times"].data)),
             value=unit_index,
             description="unit",
         )
 
-        after_slider = widgets.FloatSlider(
-            1.0, min=0, max=5.0, description="window (s)", continuous_update=False
+        # Trial event controller (align by) 
+        self.trial_event_controller = make_trial_event_controller(self.intervals[intervals_table_name])
+
+        self.window_slider = widgets.FloatRangeSlider(
+            value=[0., 1.],
+            min=-2.,
+            max=2.,
+            step=0.1,
+            description="window (s)",
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True,
+            readout_format='.1f',
         )
 
         self.controls = {
-            "index": unit_controller,
-            "start_label": fixed("start_time"),
-            "after": after_slider,
-            "rows_label": rows_controller,
-            "cols_label": cols_controller,
+            "intervals_table_name": self.intervals_controller,
+            "unit": self.unit_controller,
+            "window": self.window_slider,
+            "align_by": self.trial_event_controller,
+            "rows_label": self.rows_controller,
+            "cols_label": self.cols_controller,
         }
 
+        self.out_fig = interactive_output(self.draw_tuning_curve, self.controls)
+        
         self.children = [
-            unit_controller,
-            rows_controller,
-            cols_controller,
-            after_slider,
+            self.intervals_controller,
+            self.unit_controller,
+            self.rows_controller,
+            self.cols_controller,
+            self.trial_event_controller,
+            self.window_slider,
+            self.out_fig
         ]
 
-        out_fig = interactive_output(self.draw_tuningcurve, self.controls, self.process_controls)
+    def get_intervals(self):
+        return self.units.get_ancestor("NWBFile").intervals
 
-        self.children = list(self.children) + [out_fig]
+    def get_groups(self, intervals):
+        return infer_categorical_columns(dynamic_table=intervals)
 
-    def get_trials(self):
-        return self.units.get_ancestor("NWBFile").trials
-
-    def get_groups(self):
-        return infer_categorical_columns(self.trials)
+    def intervals_callback(self, change):
+        """
+        Gets triggered when self.intervals_controller changes. Updates other dropdown options.
+        """
+        self.children = [self.intervals_controller, widgets.HTML("Rendering...")]
+        intervals_table_name = change['new']
+        # Update variables choice dropdowns
+        groups = [None] + list(self.get_groups(self.intervals[intervals_table_name]))
+        self.rows_controller.value = None
+        self.rows_controller.options = groups
+        self.cols_controller.value = None
+        self.cols_controller.options = groups
+        # Update trial events controller
+        self.trial_event_controller = make_trial_event_controller(self.intervals[intervals_table_name])
+        # Update children
+        self.children = [
+            self.intervals_controller,
+            self.unit_controller,
+            self.rows_controller,
+            self.cols_controller,
+            self.trial_event_controller,
+            self.window_slider,
+            self.out_fig
+        ]
 
     def make_group_and_sort(self, window=None, control_order=False):
         return GroupAndSortController(
-            self.trials, window=window, control_order=control_order
+            self.intervals, window=window, control_order=control_order
         )
-    
-    def process_controls(self, control_states):
-        return control_states
 
-    def draw_tuningcurve(
+    def draw_tuning_curve(
         self,
-        index: int,
-        start_label: str = "start_time",
-        after: float = 1.0,
+        intervals_table_name,
+        unit,
+        window,
         rows_label=None,
         cols_label=None,
+        trials_select=None,
+        align_by="start_time",
     ):
-
+        print('called draw func')
         if rows_label is None:
             return widgets.HTML("Select at least one variable")
 
-        var1_classes = np.unique(self.trials[rows_label][:]).tolist()
+        time_intervals = self.intervals[intervals_table_name]
+        # solution: https://stackoverflow.com/a/50297200/11483674
+        rows_data = [x if x == x else 'NaN' for x in time_intervals[rows_label][:]]
+        var1_classes = pd.unique(rows_data).tolist()
 
         avg_rates = []
         for v1 in var1_classes:
-            indexes = np.where(self.trials[rows_label][:]==v1)[0].tolist()
+            # indexes = np.where(rows_data==v1)[0].tolist()
+            indexes = [i for i, d in enumerate(rows_data) if d==v1]
             data = align_by_time_intervals(
                 units=self.units,
-                index=index,
-                intervals=self.trials,
-                start_label=start_label,
-                stop_label=start_label,
-                before=0.0,
-                after=after,
+                index=unit,
+                intervals=time_intervals,
+                start_label=align_by,
+                stop_label=align_by,
+                before=-window[0],
+                after=window[1],
                 rows_select=indexes
             )
             n_trials = len(data)
             n_spikes = len(np.hstack(data))
-            avg_rates.append(n_spikes / (n_trials * after)) 
+            duration = window[1] - window[0]
+            avg_rates.append(n_spikes / (n_trials * duration)) 
 
 
         x = np.arange(len(var1_classes))  # the label locations
