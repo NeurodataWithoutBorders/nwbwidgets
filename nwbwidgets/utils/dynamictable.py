@@ -9,7 +9,7 @@ def infer_categorical_columns(dynamic_table: DynamicTable):
         if len(dynamic_table[name].shape) == 1:
             try:  # TODO: fix this
                 unique_vals = np.unique(dynamic_table[name].data)
-                if 1 < len(unique_vals) <= (len(dynamic_table[name].data) / 2):
+                if 1 < len(unique_vals) <= (len(dynamic_table[name].data) / 2) and len(unique_vals) < 100:
                     unique_vals = [
                         x.decode() if isinstance(x, bytes) else x for x in unique_vals
                     ]  # handle h5py 3.0
