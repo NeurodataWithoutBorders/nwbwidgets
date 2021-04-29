@@ -1213,7 +1213,6 @@ class TunningCurvesWidget(widgets.VBox):
         trials_select=None,
         align_by="start_time",
     ):
-        print('called draw func')
         if rows_label is None:
             return widgets.HTML("Select at least one variable")
 
