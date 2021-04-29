@@ -1213,6 +1213,7 @@ class TunningCurvesWidget(widgets.VBox):
         trials_select=None,
         align_by="start_time",
     ):
+
         if rows_label is None:
             return widgets.HTML("Select at least one variable")
 
@@ -1221,39 +1222,79 @@ class TunningCurvesWidget(widgets.VBox):
         rows_data = [x if x == x else 'NaN' for x in time_intervals[rows_label][:]]
         var1_classes = pd.unique(rows_data).tolist()
 
-        avg_rates = []
-        for v1 in var1_classes:
-            # indexes = np.where(rows_data==v1)[0].tolist()
-            indexes = [i for i, d in enumerate(rows_data) if d==v1]
-            data = align_by_time_intervals(
-                units=self.units,
-                index=unit,
-                intervals=time_intervals,
-                start_label=align_by,
-                stop_label=align_by,
-                before=-window[0],
-                after=window[1],
-                rows_select=indexes
-            )
-            n_trials = len(data)
-            n_spikes = len(np.hstack(data))
-            duration = window[1] - window[0]
-            avg_rates.append(n_spikes / (n_trials * duration)) 
+        # 1D histogram
+        if cols_label is None:
+            avg_rates = []
+            for v1 in var1_classes:
+                # indexes = np.where(rows_data==v1)[0].tolist()
+                indexes = [i for i, d in enumerate(rows_data) if d==v1]
+                data = align_by_time_intervals(
+                    units=self.units,
+                    index=unit,
+                    intervals=time_intervals,
+                    start_label=align_by,
+                    stop_label=align_by,
+                    before=-window[0],
+                    after=window[1],
+                    rows_select=indexes
+                )
+                n_trials = len(data)
+                n_spikes = len(np.hstack(data))
+                duration = window[1] - window[0]
+                avg_rates.append(n_spikes / (n_trials * duration)) 
 
 
-        x = np.arange(len(var1_classes))  # the label locations
-        width = 0.95  # the width of the bars
+            x = np.arange(len(var1_classes))  # the label locations
+            width = 0.95  # the width of the bars
 
-        fig, ax = plt.subplots(figsize=(14, 7))
-        rects1 = ax.bar(x, avg_rates, width)
-        lines1 = ax.plot(x, avg_rates, '-o', color='k', lw=2)
+            fig, ax = plt.subplots(figsize=(14, 7))
+            rects1 = ax.bar(x, avg_rates, width)
+            lines1 = ax.plot(x, avg_rates, '-o', color='k', lw=2)
 
-        # Labels
-        ax.set_ylabel('Avg rate')
-        ax.set_xlabel(rows_label)
-        ax.set_xticks(x)
-        ax.set_xticklabels(var1_classes, rotation=45)
+            # Labels
+            ax.set_ylabel('Avg rate')
+            ax.set_xlabel(rows_label)
+            ax.set_xticks(x)
+            ax.set_xticklabels(var1_classes, rotation=45)
+            fig.tight_layout()
 
-        fig.tight_layout()
+        # 2D Histogram
+        else:
+            cols_data = [x if x == x else 'NaN' for x in time_intervals[cols_label][:]]
+            var2_classes = pd.unique(cols_data).tolist()
+
+            avg_rates = np.zeros((len(var1_classes), len(var2_classes)))
+            for i, v1 in enumerate(var1_classes):
+                for j, v2 in enumerate(var2_classes):
+                    indexes1 = [ii for ii, d in enumerate(rows_data) if d==v1]
+                    indexes2 = [ii for ii, d in enumerate(cols_data) if d==v2]
+                    intersect = list(set(indexes1) & set(indexes2))
+                    if len(intersect) > 0:
+                        data = align_by_time_intervals(
+                            units=self.units,
+                            index=unit,
+                            intervals=time_intervals,
+                            start_label=align_by,
+                            stop_label=align_by,
+                            before=-window[0],
+                            after=window[1],
+                            rows_select=intersect
+                        )
+                        n_trials = len(data)
+                        n_spikes = len(np.hstack(data))
+                        duration = window[1] - window[0]
+                        avg_rates[i, j] = n_spikes / (n_trials * duration)
+            
+            fig, ax = plt.subplots(figsize=(14, 7))
+            pos = ax.imshow(avg_rates.T, cmap='Greys')
+            fig.colorbar(pos, ax=ax)
+
+            # Labels
+            ax.set_xticks(np.arange(len(var1_classes)))
+            ax.set_yticks(np.arange(len(var2_classes)))
+            ax.set_xlabel(rows_label)
+            ax.set_ylabel(cols_label)
+            ax.set_xticklabels(var1_classes, rotation=45)
+            ax.set_yticklabels(var2_classes, rotation=45)
 
         return fig
