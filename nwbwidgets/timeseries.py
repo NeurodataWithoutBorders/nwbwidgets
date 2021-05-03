@@ -23,7 +23,7 @@ from .utils.timeseries import (
 )
 from .utils.widgets import interactive_output
 from .controllers.misc import make_trial_event_controller
-from .utils.timeseries import align_by_time_intervals
+from .utils.timeseries import align_by_time_intervals, align_timestamps_by_trials
 
 
 color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
@@ -662,7 +662,7 @@ class MultiTimeSeriesWidget(widgets.VBox):
         self.children = [self.time_window_controller] + widgets
 
 
-class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
+class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
     def __init__(
         self,
         time_series: TimeSeries,
@@ -670,6 +670,7 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
         trace_index=0,
         trace_controller=None,
         trace_controller_kwargs=None,
+        sem=True
     ):
 
         self.time_series = time_series
@@ -712,7 +713,6 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
         self.gas = self.make_group_and_sort(window=False, control_order=False)
 
         self.align_to_zero_cb = widgets.Checkbox(description="align to zero")
-        self.sem_cb = widgets.Checkbox(description="show SEM")
 
         self.controls = dict(
             index=self.trace_controller,
@@ -721,33 +721,20 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
             start_label=self.trial_event_controller,
             gas=self.gas,
             align_to_zero=self.align_to_zero_cb,
-            sem=self.sem_cb,
         )
-
+        vbox_cols = [[self.gas, self.align_to_zero_cb],
+                     [self.trace_controller,self.trial_event_controller,self.before_ft,self.after_ft]]
+        if sem:
+            self.sem_cb = widgets.Checkbox(description="show SEM")
+            self.controls.update(sem=self.sem_cb)
+            vbox_cols[0].append(self.sem_cb)
         out_fig = interactive_output(self.update, self.controls)
 
         self.children = [
             widgets.HBox(
-                [
-                    widgets.VBox(
-                        [
-                            self.gas,
-                            self.align_to_zero_cb,
-                            self.sem_cb,
-                        ]
-                    ),
-                    widgets.VBox(
-                        [
-                            self.trace_controller,
-                            self.trial_event_controller,
-                            self.before_ft,
-                            self.after_ft,
-                        ]
-                    ),
-                ]
-            ),
-            out_fig,
-        ]
+                        [widgets.VBox(i) for i in vbox_cols]
+                        ),
+            out_fig]
 
     def get_trials(self):
         return self.time_series.get_ancestor("NWBFile").trials
@@ -761,6 +748,27 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
             control_order=control_order,
             control_limit=control_limit,
         )
+
+
+class AlignMultiTraceTimeSeriesByTrialsConstant(AlignMultiTraceTimeSeriesByTrialsAbstract):
+    def __init__(
+        self,
+        time_series: TimeSeries,
+        trials: TimeIntervals = None,
+        trace_index=0,
+        trace_controller=None,
+        trace_controller_kwargs=None,
+    ):
+
+        self.time_series = time_series
+
+        super().__init__(
+                        time_series=time_series,
+                        trials=trials,
+                        trace_index=trace_index,
+                        trace_controller=trace_controller,
+                        trace_controller_kwargs=trace_controller_kwargs,
+                        sem=True)
 
     def update(
         self,
@@ -783,23 +791,10 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
             before,
             after,
             traces=index,
+            timestamps=False
         )
-        if self.time_series.rate is None:
-            time_ts = TimeSeries(name='ts',data=self.time_series.timestamps,
-                                 timestamps=self.time_series.timestamps)
-            time_ts_aligned = align_by_time_intervals(
-                time_ts,
-                self.trials,
-                start_label,
-                before,
-                after
-            )
-            zero_index = bisect(time_ts_aligned[0,:],self.trials[start_label][0])
-            ts_centered=time_ts_aligned - time_ts_aligned[:,zero_index][:,np.newaxis]
-            tt = np.mean(ts_centered,axis=0)
-        else:
-            rate = self.time_series.rate
-            tt = np.arange(data.shape[1]) / rate - before
+        rate = self.time_series.rate
+        tt = np.arange(data.shape[1]) / rate - before
 
         if group_inds is None:
             group_inds = np.zeros(data.shape[0], dtype=np.int)
@@ -851,6 +846,81 @@ class AlignMultiTraceTimeSeriesByTrials(widgets.VBox):
                     **plot_kwargs,
                 )
         ax.set_xlim((np.min(tt), np.max(tt)))
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel(self.time_series.name)
+        plt.axvline(color=align_line_color)
+
+
+class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrialsAbstract):
+
+    def __init__(
+        self,
+        time_series: TimeSeries,
+        trials: TimeIntervals = None,
+        trace_index=0,
+        trace_controller=None,
+        trace_controller_kwargs=None,
+    ):
+
+        self.time_series = time_series
+
+        super().__init__(
+                        time_series=time_series,
+                        trials=trials,
+                        trace_index=trace_index,
+                        trace_controller=trace_controller,
+                        trace_controller_kwargs=trace_controller_kwargs,
+                        sem=False)
+
+    def update(
+            self,
+            index: int,
+            start_label: str = "start_time",
+            before: float = 0.0,
+            after: float = 1.0,
+            order=None,
+            group_inds=None,
+            labels=None,
+            align_to_zero=False,
+            figsize=(7, 7),
+            align_line_color=(0.7, 0.7, 0.7),
+    ):
+        data = align_by_time_intervals(
+            self.time_series,
+            self.trials,
+            start_label,
+            before,
+            after,
+            traces=index,
+        )
+        starts = np.array(self.trials[start_label][:]) - before
+        time_ts_aligned = align_timestamps_by_trials(self.time_series,starts,duration=before+after)
+        time_ts_aligned = [i-i[0]-before for i in time_ts_aligned]
+
+        if group_inds is None:
+            group_inds = np.zeros(len(data), dtype=np.int)
+
+        data = [data[i] for i in order]
+
+        if align_to_zero:
+            for trial_no in range(len(data)):
+                data_zero_id = bisect(time_ts_aligned[trial_no], 0)
+                data[trial_no] -= data[trial_no][data_zero_id]
+
+        fig, ax = plt.subplots(figsize=figsize)
+        for trial_no in range(group_inds.shape[0]):
+            plot_kwargs = dict()
+            if labels is not None:
+                plot_kwargs.update(label=labels[group_inds[trial_no]])
+            plt.plot(
+                time_ts_aligned[trial_no],
+                data[trial_no],
+                color=color_wheel[group_inds[trial_no]],
+                alpha=0.2,
+                **plot_kwargs,
+            )
+        tt_flat = np.concatenate(time_ts_aligned)
+        ax.set_xlim((np.min(tt_flat), np.max(tt_flat)))
         ax.set_xlabel("time (s)")
         ax.set_ylabel(self.time_series.name)
         plt.axvline(color=align_line_color)
