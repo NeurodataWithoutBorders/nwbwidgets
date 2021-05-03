@@ -137,37 +137,92 @@ def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -
         return int(np.ceil((time - starting_time) * node.rate))
 
 
-def align_by_times(timeseries: TimeSeries, starts, duration: float, traces=None):
+def bisect_array_by_times(data: np.array, timestamps: np.array, starts, duration:float, traces=None):
     """
-    Args:
+    Parameters
+    ----------
+    data: np.array
+        array to bisect
+    timestamps: np.array
+        timestamps corresponding to dim 0 of data
+    starts: iterable
+        time at which to bisect
+    duration: float
+        duration of window after start
+    traces: int
+        index into the second dim of data
+    Returns
+    -------
+    out: list
+        list with bisected arrays from data
+    """
+    out = []
+    for start in starts:
+        idx_start =bisect(timestamps, start)
+        idx_stop = bisect(timestamps, start + duration, lo=idx_start)
+        if len(data.shape) > 1 and traces is not None:
+            out.append(data[idx_start:idx_stop, traces])
+        else:
+            out.append(data[idx_start:idx_stop])
+    return out
+
+
+def align_by_times_with_timestamps(timeseries: TimeSeries, starts, duration: float, traces=None):
+    """
+    Parameters
+    ----------
+    timeseries: TimeSeries
+        timeseries with variable timestamps
+    starts: array-like
+        starts in seconds
+    duration: float
+        duration in seconds
+    Returns
+    -------
+    out: list
+        list: length=(n_trials); list[0]: array, shape=(n_time, ...)
+    """
+    assert timeseries.timestamps is not None, 'supply timeseries with timestamps'
+    return bisect_array_by_times(timeseries.data, timeseries.timestamps, starts, duration, traces)
+
+
+def align_by_times_with_rate(timeseries: TimeSeries, starts, duration: float, traces=None):
+    """
+    Parameters
+    ----------
+    timeseries: TimeSeries
+        timeseries with variable timestamps
+    starts: array-like
+        starts in seconds
+    duration: float
+        duration in seconds
+    Returns
+    -------
+    out: list
+        list: length=(n_trials); list[0]: array, shape=(n_time, ...)
+    """
+    assert timeseries.rate is not None, 'supply timeseries with start_time and rate'
+    ts = np.arange(timeseries.data.shape[0])*1/timeseries.rate + timeseries.starting_time
+    return bisect_array_by_times(timeseries.data, ts, starts, duration, traces)
+
+
+def align_timestamps_by_trials(timeseries: TimeSeries, starts, duration: float):
+    """
+        Parameters
+        ----------
         timeseries: TimeSeries
+            timeseries with variable timestamps
         starts: array-like
             starts in seconds
         duration: float
             duration in seconds
-
-    Returns:
-        np.array(shape=(n_trials, n_time, ...))
-    """
-    out = []
-    id_diff_min = np.inf
-    for start in starts:
-        if timeseries.rate is not None:
-            idx_start = int((start - timeseries.starting_time) * timeseries.rate)
-            idx_stop = int(idx_start + duration * timeseries.rate)
-        else:
-            idx_start = timeseries_time_to_ind(timeseries, start)
-            idx_stop = timeseries_time_to_ind(
-                timeseries, start + duration, ind_min=idx_start
-            )
-        if id_diff_min > (idx_stop-idx_start):
-            id_diff_min = idx_stop-idx_start
-        if len(timeseries.data.shape) > 1 and traces is not None:
-            out.append(timeseries.data[idx_start:idx_stop, traces])
-        else:
-            out.append(timeseries.data[idx_start:idx_stop])
-    out_trimmed = [i[:id_diff_min] for i in out]
-    return np.array(out_trimmed)
+        Returns
+        -------
+        out: list
+            list: length=(n_trials); list[0]: array, shape=(n_time, ...)
+        """
+    assert timeseries.timestamps is not None, 'supply timeseries with timestamps'
+    return bisect_array_by_times(timeseries.timestamps, timeseries.timestamps, starts, duration)
 
 
 def align_by_trials(
@@ -199,6 +254,7 @@ def align_by_time_intervals(
     before=0.0,
     after=0.0,
     traces=None,
+    timestamps=True
 ):
     """
     Args:
@@ -210,9 +266,14 @@ def align_by_time_intervals(
             time after start_label in secs (positive goes back in time)
         after: float
             time after stop_label in secs (positive goes forward in time)
+        timestamps: bool
+            if alignment uses timestamps or constant rate and starting time in TimeSeries
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
 
     starts = np.array(intervals[start_label][:]) - before
-    return align_by_times(timeseries, starts, duration=after + before, traces=traces)
+    if timestamps:
+        return align_by_times_with_timestamps(timeseries, starts, duration=after + before, traces=traces)
+    else:
+        return align_by_times_with_rate(timeseries, starts, duration=after + before, traces=traces)
