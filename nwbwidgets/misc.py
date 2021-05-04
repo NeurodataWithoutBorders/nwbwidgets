@@ -1117,11 +1117,15 @@ class TunningCurvesWidget(widgets.VBox):
         groups = self.get_groups(self.intervals[intervals_table_name])
         self.rows_controller = widgets.Dropdown(
             options=[None] + list(groups), 
-            description="rows"
+            description="rows",
+            value=None
         )
+        self.rows_controller.observe(self.rows_callback, names='value')
+
         self.cols_controller = widgets.Dropdown(
             options=[None] + list(groups), 
-            description="cols"
+            description="cols",
+            disabled=True,
         )
 
         # Unit controller
@@ -1185,6 +1189,7 @@ class TunningCurvesWidget(widgets.VBox):
         self.rows_controller.options = groups
         self.cols_controller.value = None
         self.cols_controller.options = groups
+        self.cols_controller.disabled = True
         # Update trial events controller
         self.trial_event_controller = make_trial_event_controller(self.intervals[intervals_table_name])
         # Update children
@@ -1197,6 +1202,16 @@ class TunningCurvesWidget(widgets.VBox):
             self.window_slider,
             self.out_fig
         ]
+
+    def rows_callback(self, change):
+        """
+        Gets triggered when self.rows_controller changes. Updates other dropdown options.
+        """
+        if change['new'] is None:
+            self.cols_controller.disabled = True
+            self.cols_controller.value = None
+        else:
+            self.cols_controller.disabled = False
 
     def make_group_and_sort(self, window=None, control_order=False):
         return GroupAndSortController(
