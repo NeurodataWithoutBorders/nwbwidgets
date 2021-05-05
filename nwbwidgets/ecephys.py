@@ -3,18 +3,13 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 from ipywidgets import widgets, ValueWidget
-from pynwb.ecephys import LFP, SpikeEventSeries, ElectricalSeries
+from pynwb.ecephys import SpikeEventSeries, ElectricalSeries
 from scipy.signal import stft
 import pynwb
 
-from .base import fig2widget, nwb2widget, lazy_tabs, render_dataframe
+from .base import fig2widget, lazy_tabs, render_dataframe
 from .timeseries import BaseGroupedTraceWidget
 from .brains import HumanElectrodesPlotlyWidget
-
-
-def show_lfp(ndobj: LFP, neurodata_vis_spec: dict):
-    lfp = list(ndobj.electrical_series.values())[0]
-    return nwb2widget(lfp, neurodata_vis_spec)
 
 
 def show_spectrogram(nwbobj: pynwb.TimeSeries, channel=0, **kwargs):

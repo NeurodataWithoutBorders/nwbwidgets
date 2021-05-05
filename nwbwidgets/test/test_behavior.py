@@ -2,11 +2,11 @@ import unittest
 
 import numpy as np
 from nwbwidgets.behavior import (
-    show_position,
     show_behavioral_events,
     show_spatial_series_over_time,
     show_spatial_series,
 )
+from nwbwidgets.base import show_multi_container_interface
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb import TimeSeries
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
@@ -24,7 +24,7 @@ class ShowSpatialSeriesTestCase(unittest.TestCase):
     def test_show_position(self):
         position = Position(spatial_series=self.spatial_series)
 
-        show_position(position, default_neurodata_vis_spec)
+        show_multi_container_interface(position, default_neurodata_vis_spec)
 
     def test_show_spatial_series_over_time(self):
         show_spatial_series_over_time(self.spatial_series)
@@ -68,7 +68,7 @@ class ShowSpatialSeriesThreeDTestCase(unittest.TestCase):
 
 
 def test_show_behavioral_events():
-    data = list(range(100, 200, 10))
+    data = np.arange(100, 200, 10)
     ts = TimeSeries(
         name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0
     )
