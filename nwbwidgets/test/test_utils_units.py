@@ -3,6 +3,7 @@ from datetime import datetime
 
 import numpy as np
 from dateutil.tz import tzlocal
+import ipywidgets as widgets
 from nwbwidgets.utils.units import (
     get_min_spike_time,
     align_by_trials,
@@ -11,8 +12,11 @@ from nwbwidgets.utils.units import (
 from pynwb import NWBFile
 from pynwb.epoch import TimeIntervals
 
+from ..misc import TuningCurveWidget
 
-class ShowPSTHTestCase(unittest.TestCase):
+
+class UnitsTrialsTestCase(unittest.TestCase):
+
     def setUp(self):
         start_time = datetime(2017, 4, 3, 11, tzinfo=tzlocal())
         create_date = datetime(2017, 4, 15, 12, tzinfo=tzlocal())
@@ -58,6 +62,28 @@ class ShowPSTHTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=0.0, stop_time=2.0, stim="person")
         self.nwbfile.add_trial(start_time=3.0, stop_time=5.0, stim="ocean")
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim="desert")
+
+
+class TuningCurveTestCase(UnitsTrialsTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.widget = TuningCurveWidget(
+            units=self.nwbfile.units,
+            trials=self.nwbfile.trials
+        )
+
+    def test_make_widget(self):
+        assert isinstance(self.widget, widgets.Widget)
+
+    def test_widget_children(self):
+        assert len(self.widget.children) == 6
+
+        for i, c in enumerate(self.widget.children):
+            assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
+
+
+class ShowPSTHTestCase(UnitsTrialsTestCase):
 
     def test_get_min_spike_time(self):
         assert get_min_spike_time(self.nwbfile.units) == 1.2
