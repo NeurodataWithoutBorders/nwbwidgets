@@ -206,7 +206,7 @@ def align_by_times_with_rate(timeseries: TimeSeries, starts, duration: float, tr
     return bisect_array_by_times(timeseries.data, ts, starts, duration, traces)
 
 
-def align_timestamps_by_trials(timeseries: TimeSeries, starts, duration: float):
+def align_timestamps_by_trials(timeseries: TimeSeries, starts, before: float, after: float):
     """
         Parameters
         ----------
@@ -222,7 +222,8 @@ def align_timestamps_by_trials(timeseries: TimeSeries, starts, duration: float):
             list: length=(n_trials); list[0]: array, shape=(n_time, ...)
         """
     assert timeseries.timestamps is not None, 'supply timeseries with timestamps'
-    return bisect_array_by_times(timeseries.timestamps, timeseries.timestamps, starts, duration)
+    out = bisect_array_by_times(timeseries.timestamps, timeseries.timestamps, starts, before + after)
+    return [i-i[0]-before for i in out]
 
 
 def align_by_trials(

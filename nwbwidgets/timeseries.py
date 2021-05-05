@@ -894,8 +894,7 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrial
             traces=index,
         )
         starts = np.array(self.trials[start_label][:]) - before
-        time_ts_aligned = align_timestamps_by_trials(self.time_series,starts,duration=before+after)
-        time_ts_aligned = [i-i[0]-before for i in time_ts_aligned]
+        time_ts_aligned = align_timestamps_by_trials(self.time_series, starts, before, after)
 
         if group_inds is None:
             group_inds = np.zeros(len(data), dtype=np.int)
