@@ -205,7 +205,7 @@ def align_by_times_with_rate(timeseries: TimeSeries, starts, duration: float, tr
     out = []
     for times in starts:
         idx_start = int(times - timeseries.starting_time*timeseries.rate)
-        idx_stop = int(times - timeseries.starting_time*timeseries.rate)
+        idx_stop = idx_start + int(duration*timeseries.rate)
         if len(timeseries.data.shape) > 1 and traces is not None:
             out.append(timeseries.data[idx_start:idx_stop, traces])
         else:
