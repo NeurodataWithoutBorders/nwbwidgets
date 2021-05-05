@@ -370,3 +370,28 @@ def row_to_hover_text(row):
         elif isinstance(val, float):
             text_rows.append("{}: {:.3f}".format(key, val))
     return "<br>".join(text_rows)
+
+
+class TimeIntervalsSelector(widgets.VBox):
+    InnerWidget = None
+
+    def __init__(self, units, **kwargs):
+        super().__init__()
+        self.units = units
+        self.kwargs = kwargs
+        self.intervals_tables = units.get_ancestor("NWBFile").intervals
+        self.stimulus_type_dd = widgets.Dropdown(
+            options=list(self.intervals_tables.keys()), 
+            description="stimulus type"
+        )
+        self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
+        
+        trials = list(self.intervals_tables.values())[0]
+        inner_widget = self.InnerWidget(units, trials, **kwargs)
+        self.children = [self.stimulus_type_dd, inner_widget]
+
+    def stimulus_type_dd_callback(self, change):
+        self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
+        trials = self.intervals_tables[self.stimulus_type_dd.value]
+        inner_widget = self.InnerWidget(self.units, trials, **self.kwargs)
+        self.children = [self.stimulus_type_dd, inner_widget]

@@ -30,6 +30,7 @@ from .utils.units import (
 )
 from .utils.widgets import interactive_output
 
+
 color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
 
@@ -1084,11 +1085,11 @@ def show_session_raster_plotly(
     return fig
 
 
-class TunningCurvesWidget(widgets.VBox):
+class TuningCurveWidget(widgets.VBox):
     def __init__(
         self,
         units: Units,
-        intervals: pynwb.epoch.TimeIntervals = None,
+        trials: pynwb.epoch.TimeIntervals = None,
         unit_index=0,
         unit_controller=None
     ):
@@ -1097,24 +1098,17 @@ class TunningCurvesWidget(widgets.VBox):
 
         self.units = units
 
-        # Check if there are interval tables and create controller
-        if intervals is None:
-            self.intervals = self.get_intervals()
-            if self.intervals is None:
-                self.children = [widgets.HTML("No intervals present")]
+        # Check if there is trials table and create controller
+        if trials is None:
+            self.trials = self.get_trials()
+            if self.trials is None:
+                self.children = [widgets.HTML("No trials present")]
                 return
         else:
-            self.intervals = intervals
-
-        self.intervals_controller = widgets.Dropdown(
-            options=list(self.intervals.keys()), 
-            description="intervals"
-        )
-        self.intervals_controller.observe(self.intervals_callback, names='value')
+            self.trials = trials
 
         # Create variables choice dropdowns
-        intervals_table_name = self.intervals_controller.value
-        groups = self.get_groups(self.intervals[intervals_table_name])
+        groups = self.get_groups(trials)
         self.rows_controller = widgets.Dropdown(
             options=[None] + list(groups), 
             description="rows",
@@ -1136,7 +1130,7 @@ class TunningCurvesWidget(widgets.VBox):
         )
 
         # Trial event controller (align by) 
-        self.trial_event_controller = make_trial_event_controller(self.intervals[intervals_table_name])
+        self.trial_event_controller = make_trial_event_controller(self.trials)
 
         self.window_slider = widgets.FloatRangeSlider(
             value=[0., 1.],
@@ -1151,7 +1145,6 @@ class TunningCurvesWidget(widgets.VBox):
         )
 
         self.controls = {
-            "intervals_table_name": self.intervals_controller,
             "unit": self.unit_controller,
             "window": self.window_slider,
             "align_by": self.trial_event_controller,
@@ -1162,7 +1155,6 @@ class TunningCurvesWidget(widgets.VBox):
         self.out_fig = interactive_output(self.draw_tuning_curve, self.controls)
         
         self.children = [
-            self.intervals_controller,
             self.unit_controller,
             self.rows_controller,
             self.cols_controller,
@@ -1171,37 +1163,11 @@ class TunningCurvesWidget(widgets.VBox):
             self.out_fig
         ]
 
-    def get_intervals(self):
-        return self.units.get_ancestor("NWBFile").intervals
+    def get_trials(self):
+        return self.units.get_ancestor("NWBFile").trials
 
-    def get_groups(self, intervals):
-        return infer_categorical_columns(dynamic_table=intervals)
-
-    def intervals_callback(self, change):
-        """
-        Gets triggered when self.intervals_controller changes. Updates other dropdown options.
-        """
-        self.children = [self.intervals_controller, widgets.HTML("Rendering...")]
-        intervals_table_name = change['new']
-        # Update variables choice dropdowns
-        groups = [None] + list(self.get_groups(self.intervals[intervals_table_name]))
-        self.rows_controller.value = None
-        self.rows_controller.options = groups
-        self.cols_controller.value = None
-        self.cols_controller.options = groups
-        self.cols_controller.disabled = True
-        # Update trial events controller
-        self.trial_event_controller = make_trial_event_controller(self.intervals[intervals_table_name])
-        # Update children
-        self.children = [
-            self.intervals_controller,
-            self.unit_controller,
-            self.rows_controller,
-            self.cols_controller,
-            self.trial_event_controller,
-            self.window_slider,
-            self.out_fig
-        ]
+    def get_groups(self, trials):
+        return infer_categorical_columns(dynamic_table=trials)
 
     def rows_callback(self, change):
         """
@@ -1213,14 +1179,9 @@ class TunningCurvesWidget(widgets.VBox):
         else:
             self.cols_controller.disabled = False
 
-    def make_group_and_sort(self, window=None, control_order=False):
-        return GroupAndSortController(
-            self.intervals, window=window, control_order=control_order
-        )
 
     def draw_tuning_curve(
         self,
-        intervals_table_name,
         unit,
         window,
         rows_label=None,
@@ -1232,8 +1193,8 @@ class TunningCurvesWidget(widgets.VBox):
         if rows_label is None:
             return widgets.HTML("Select at least one variable")
 
-        time_intervals = self.intervals[intervals_table_name]
-        rows_data, var1_classes = extract_data_from_intervals(time_intervals[rows_label])
+        trials = self.trials
+        rows_data, var1_classes = extract_data_from_intervals(trials[rows_label])
 
         # 1D histogram
         if cols_label is None:
@@ -1244,7 +1205,7 @@ class TunningCurvesWidget(widgets.VBox):
                 data = align_by_time_intervals(
                     units=self.units,
                     index=unit,
-                    intervals=time_intervals,
+                    intervals=trials,
                     start_label=align_by,
                     stop_label=align_by,
                     before=-window[0],
@@ -1273,7 +1234,7 @@ class TunningCurvesWidget(widgets.VBox):
 
         # 2D Histogram
         else:
-            cols_data, var2_classes = extract_data_from_intervals(time_intervals[cols_label])
+            cols_data, var2_classes = extract_data_from_intervals(trials[cols_label])
 
             avg_rates = np.zeros((len(var1_classes), len(var2_classes)))
             for i, v1 in enumerate(var1_classes):
@@ -1285,7 +1246,7 @@ class TunningCurvesWidget(widgets.VBox):
                         data = align_by_time_intervals(
                             units=self.units,
                             index=unit,
-                            intervals=time_intervals,
+                            intervals=trials,
                             start_label=align_by,
                             stop_label=align_by,
                             before=-window[0],

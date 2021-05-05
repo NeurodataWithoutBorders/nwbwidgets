@@ -40,7 +40,7 @@ default_neurodata_vis_spec = {
             "Session Raster": misc.RasterWidget,
             "Grouped PSTH": misc.PSTHWidget,
             "Raster Grid": misc.RasterGridWidget,
-            "Tuning Curves": misc.TunningCurvesWidget,
+            "Tuning Curves": misc.TuningCurveWidget,
             "table": show_dynamic_table,
         }
     ),
