@@ -1108,7 +1108,7 @@ class TuningCurveWidget(widgets.VBox):
             self.trials = trials
 
         # Create variables choice dropdowns
-        groups = self.get_groups(trials)
+        groups = self.get_groups(self.trials)
         self.rows_controller = widgets.Dropdown(
             options=[None] + list(groups), 
             description="rows",

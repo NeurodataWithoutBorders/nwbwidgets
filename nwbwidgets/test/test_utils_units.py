@@ -12,6 +12,7 @@ from nwbwidgets.utils.units import (
 from pynwb import NWBFile
 from pynwb.epoch import TimeIntervals
 
+from ..base import TimeIntervalsSelector
 from ..misc import TuningCurveWidget
 
 
@@ -62,6 +63,46 @@ class UnitsTrialsTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=0.0, stop_time=2.0, stim="person")
         self.nwbfile.add_trial(start_time=3.0, stop_time=5.0, stim="ocean")
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim="desert")
+
+
+
+class ExtendedTimeIntervalSelector(TimeIntervalsSelector):
+    InnerWidget = TuningCurveWidget
+
+
+class ExtendedTimeIntervalSelectorTestCase(UnitsTrialsTestCase):
+
+    def setUp(self):
+        super().setUp()
+        
+        # add intervals to nwbfile
+        ti1 = TimeIntervals(name='intervals', description='experimental intervals')
+        ti1.add_interval(start_time=0.0, stop_time=2.0)
+        ti1.add_interval(start_time=2.0, stop_time=4.0)
+        ti1.add_interval(start_time=4.0, stop_time=6.0)
+        ti1.add_interval(start_time=6.0, stop_time=8.0)
+        ti1.add_column(name='var1', data=['a', 'b', 'a', 'b'], description='no description')
+        self.nwbfile.add_time_intervals(ti1)
+
+        self.widget = ExtendedTimeIntervalSelector(
+            units=self.nwbfile.units
+        )
+
+    def test_make_widget(self):
+        assert isinstance(self.widget, widgets.Widget)
+
+    def test_widget_children(self):
+        assert len(self.widget.children) == 2
+
+        for i, c in enumerate(self.widget.children):
+            assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
+
+    def test_make_graph(self):
+        # rows controller triggers drawing of graphic
+        self.widget.children[1].children[1].value = 'var1'
+
+        for i, c in enumerate(self.widget.children):
+            assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
 
 
 class TuningCurveTestCase(UnitsTrialsTestCase):

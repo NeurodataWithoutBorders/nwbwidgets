@@ -385,13 +385,21 @@ class TimeIntervalsSelector(widgets.VBox):
             description="stimulus type"
         )
         self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
-        
+
         trials = list(self.intervals_tables.values())[0]
-        inner_widget = self.InnerWidget(units, trials, **kwargs)
+        inner_widget = self.InnerWidget(
+            units=units, 
+            trials=trials, 
+            **kwargs
+        )
         self.children = [self.stimulus_type_dd, inner_widget]
 
     def stimulus_type_dd_callback(self, change):
         self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
         trials = self.intervals_tables[self.stimulus_type_dd.value]
-        inner_widget = self.InnerWidget(self.units, trials, **self.kwargs)
+        inner_widget = self.InnerWidget(
+            units=self.units, 
+            trials=trials, 
+            **self.kwargs
+        )
         self.children = [self.stimulus_type_dd, inner_widget]
