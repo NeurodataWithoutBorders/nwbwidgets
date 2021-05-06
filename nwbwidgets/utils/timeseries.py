@@ -164,10 +164,10 @@ def bisect_timeseries_by_times(data: np.array, timeseries: TimeSeries, starts, d
         else:
             idx_start =bisect(timeseries.timestamps, start)
             idx_stop = bisect(timeseries.timestamps, start + duration, lo=idx_start)
-        if len(data.shape) > 1 and traces is not None:
-            out.append(data[idx_start:idx_stop, traces])
+        if len(timeseries.data.shape) > 1 and traces is not None:
+            out.append(timeseries.data[idx_start:idx_stop, traces])
         else:
-            out.append(data[idx_start:idx_stop])
+            out.append(timeseries.data[idx_start:idx_stop])
     return out
 
 
@@ -206,7 +206,7 @@ def align_by_times_with_rate(timeseries: TimeSeries, starts, duration: float, tr
         list: length=(n_trials); list[0]: array, shape=(n_time, ...)
     """
     assert timeseries.rate is not None, 'supply timeseries with start_time and rate'
-    return np.array(bisect_timeseries_by_times(timeseries.data, timeseries, starts, duration, traces))
+    return np.array(bisect_timeseries_by_times(timeseries, starts, duration, traces))
 
 
 def align_timestamps_by_trials(timeseries: TimeSeries, starts, before: float, after: float):
@@ -262,7 +262,6 @@ def align_by_time_intervals(
     before=0.0,
     after=0.0,
     traces=None,
-    timestamps=True
 ):
     """
     Args:
