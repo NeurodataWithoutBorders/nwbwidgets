@@ -2,23 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ipywidgets import widgets
 from nwbwidgets import base
-from nwbwidgets import view
 from plotly import graph_objects as go
-from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
+from pynwb.behavior import SpatialSeries, BehavioralEvents
 
 from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
 from .timeseries import AlignMultiTraceTimeSeriesByTrialsConstant, \
     AlignMultiTraceTimeSeriesByTrialsVariable
-
-
-def show_position(node: Position, neurodata_vis_spec: dict):
-    if len(node.spatial_series.keys()) == 1:
-        for value in node.spatial_series.values():
-            return view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec)
-    else:
-        return view.nwb2widget(
-            node.spatial_series, neurodata_vis_spec=neurodata_vis_spec
-        )
 
 
 def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dict):
