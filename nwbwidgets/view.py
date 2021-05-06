@@ -34,7 +34,6 @@ default_neurodata_vis_spec = {
     pynwb.NWBFile: file.show_nwbfile,
     SweepSequences: icephys.show_sweep_sequences,
     pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
-    pynwb.ecephys.LFP: ecephys.show_lfp,
     pynwb.misc.Units: OrderedDict(
         {
             "Session Raster": misc.RasterWidget,
@@ -59,7 +58,6 @@ default_neurodata_vis_spec = {
     pynwb.ProcessingModule: base.processing_module,
     hdmf.common.DynamicTable: show_dynamic_table,
     pynwb.ecephys.ElectricalSeries: ecephys.ElectricalSeriesWidget,
-    pynwb.behavior.Position: behavior.show_position,
     pynwb.behavior.SpatialSeries: OrderedDict(
         {
             "over time": timeseries.SeparateTracesPlotlyWidget,
@@ -70,15 +68,15 @@ default_neurodata_vis_spec = {
     pynwb.image.RGBImage: image.show_rbga_image,
     pynwb.image.RGBAImage: image.show_rbga_image,
     pynwb.base.Image: image.show_rbga_image,
-    pynwb.image.ImageSeries: image.show_image_series,
+    pynwb.image.ImageSeries: image.ImageSeriesWidget,
     pynwb.image.IndexSeries: image.show_index_series,
     pynwb.TimeSeries: timeseries.show_timeseries,
+    pynwb.core.MultiContainerInterface: base.show_multi_container_interface,
     pynwb.core.NWBContainer: base.show_neurodata_base,
     pynwb.core.NWBDataInterface: base.show_neurodata_base,
     h5py.Dataset: base.show_dset,
     zarr.core.Array: base.show_dset,
     Spectrum: spectrum.show_spectrum,
-    pynwb.behavior.CompassDirection: behavior.show_position,
 }
 
 

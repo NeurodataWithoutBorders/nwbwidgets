@@ -5,6 +5,8 @@ import numpy as np
 import plotly.graph_objects as go
 from ipywidgets import widgets, fixed
 from plotly.subplots import make_subplots
+from plotly.colors import DEFAULT_PLOTLY_COLORS
+
 from pynwb import TimeSeries
 
 from .controllers import StartAndDurationController, GroupAndSortController, RangeController
@@ -351,10 +353,13 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
         tt = get_timeseries_tt(timeseries, istart, istop)
 
         if len(data.shape) > 1:
+            color = DEFAULT_PLOTLY_COLORS[0]
             self.out_fig = go.FigureWidget(make_subplots(rows=data.shape[1], cols=1))
 
             for i, (yy, xyz) in enumerate(zip(data.T, ("x", "y", "z"))):
-                self.out_fig.add_trace(go.Scatter(x=tt, y=yy), row=i + 1, col=1)
+                self.out_fig.add_trace(
+                    go.Scatter(x=tt, y=yy, marker_color=color), row=i + 1, col=1
+                )
                 if units:
                     yaxes_label = "{} ({})".format(xyz, units)
                 else:
@@ -415,6 +420,8 @@ def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
         mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][
             :, inverse_sort
         ]
+        if np.all(np.isnan(mini_data)):
+            return None, tt, None
         gap = np.median(np.nanstd(mini_data, axis=0)) * 20
         offsets = np.arange(len(order)) * gap
         mini_data = mini_data + offsets
@@ -430,7 +437,7 @@ def plot_grouped_traces(
     time_window=None,
     order=None,
     ax=None,
-    figsize=(9.7, 7),
+    figsize=(8, 7),
     group_inds=None,
     labels=None,
     colors=color_wheel,
@@ -458,6 +465,10 @@ def plot_grouped_traces(
         channel_inds = order
 
     mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
+
+    if mini_data is None:
+        ax.plot(tt, np.ones_like(tt) * np.nan, color="k")
+        return
 
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
@@ -621,7 +632,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
 
             self.children = [self.gas, right_panel]
 
-        self.layout = widgets.Layout(width="100%")
+        # self.layout = widgets.Layout(width="100%")
 
 
 class MultiTimeSeriesWidget(widgets.VBox):
