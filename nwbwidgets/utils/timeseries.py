@@ -137,14 +137,11 @@ def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -
         return int(np.ceil((time - starting_time) * node.rate))
 
 
-def bisect_timeseries_by_times(data: np.array, timeseries: TimeSeries, starts, duration:float, traces=None):
+def bisect_timeseries_by_times(timeseries: TimeSeries, starts, duration:float, traces=None):
     """
     Parameters
     ----------
-    data: np.array
-        array to bisect
-    timestamps: np.array
-        timestamps corresponding to dim 0 of data
+    timeseries: TimeSeries
     starts: iterable
         time at which to bisect
     duration: float
@@ -187,7 +184,7 @@ def align_by_times_with_timestamps(timeseries: TimeSeries, starts, duration: flo
         list: length=(n_trials); list[0]: array, shape=(n_time, ...)
     """
     assert timeseries.timestamps is not None, 'supply timeseries with timestamps'
-    return bisect_timeseries_by_times(timeseries.data, timeseries, starts, duration, traces)
+    return bisect_timeseries_by_times(timeseries, starts, duration, traces)
 
 
 def align_by_times_with_rate(timeseries: TimeSeries, starts, duration: float, traces=None):
@@ -280,7 +277,7 @@ def align_by_time_intervals(
     """
 
     starts = np.array(intervals[start_label][:]) - before
-    if timestamps:
-        return align_by_times_with_timestamps(timeseries, starts, duration=after + before, traces=traces)
-    else:
+    if timeseries.rate is not None:
         return align_by_times_with_rate(timeseries, starts, duration=after + before, traces=traces)
+    else:
+        return align_by_times_with_timestamps(timeseries, starts, duration=after + before, traces=traces)
