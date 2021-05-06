@@ -56,9 +56,9 @@ def get_timeseries_maxt(node: TimeSeries) -> float:
     if node.timestamps is not None:
         return node.timestamps[-1]
     elif np.isnan(node.starting_time):
-        return len(node.data) / node.rate
+        return (len(node.data)-1) / node.rate
     else:
-        return len(node.data) / node.rate + node.starting_time
+        return (len(node.data)-1) / node.rate + node.starting_time
 
 
 def get_timeseries_mint(node: TimeSeries) -> float:
@@ -128,7 +128,7 @@ def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -
             kwargs.update(lo=ind_min)
         if ind_max is not None:
             kwargs.update(hi=ind_max)
-        return bisect(node.timestamps, time, **kwargs)
+        return bisect(node.timestamps, time, **kwargs)-1
     else:
         if np.isnan(node.starting_time):
             starting_time = 0
