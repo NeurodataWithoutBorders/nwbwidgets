@@ -487,7 +487,6 @@ def plot_grouped_traces(
             offsets[-1] + (offsets[-1] - offsets[-2]) / 2,
         )
     if len(order) <= 30:
-        print(offsets, order)
         ax.set_yticks(offsets)
         ax.set_yticklabels(order)
     else:
