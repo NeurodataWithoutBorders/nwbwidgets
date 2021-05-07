@@ -1,21 +1,37 @@
 from pynwb.core import DynamicTable
 import numpy as np
+from typing import Iterable
 
 
-def infer_categorical_columns(dynamic_table: DynamicTable):
+def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = None):
+    """
+    Parameters
+    ----------
+    dynamic_table: DynamicTable
+    region: Iterable
+        row indices to select
 
+    Returns
+    -------
+    categorical_cols: dict()
+        keys: as columns that are categorical, values as the unique values
+    """
     categorical_cols = {}
     for name in dynamic_table.colnames:
         if len(dynamic_table[name].shape) == 1:
-            try:  # TODO: fix this
-                unique_vals = np.unique(dynamic_table[name].data)
-                if 1 < len(unique_vals) <= (len(dynamic_table[name].data) / 2):
+            try:
+                if region is not None:
+                    column_data = [dynamic_table[name].data[i] for i in region]
+                else:
+                    column_data = dynamic_table[name].data
+                unique_vals = np.unique(column_data)
+                if 1 < len(unique_vals) <= (len(column_data) / 2):
                     unique_vals = [
                         x.decode() if isinstance(x, bytes) else x for x in unique_vals
                     ]  # handle h5py 3.0
                     categorical_cols[name] = unique_vals
-            except:
-                pass
+            except Exception as e:
+                print(e)
     return categorical_cols
 
 
