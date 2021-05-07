@@ -1,4 +1,5 @@
 from pynwb.core import DynamicTable
+from hdmf.common.table import VectorData
 import numpy as np
 from typing import Iterable
 
@@ -17,19 +18,22 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
         keys: as columns that are categorical, values as the unique values
     """
     categorical_cols = {}
+    region = region if region is not None else list(range(len(dynamic_table)))
     for name in dynamic_table.colnames:
         if len(dynamic_table[name].shape) == 1:
             try:
-                if region is not None:
+                if isinstance(dynamic_table[name].data[0], (str, int, float)):
                     column_data = [dynamic_table[name].data[i] for i in region]
+                elif hasattr(dynamic_table[name].data[0], 'name'):
+                    column_data = [dynamic_table[name].data[i].name for i in region]
                 else:
-                    column_data = dynamic_table[name].data
+                    column_data = []
                 unique_vals = np.unique(column_data)
                 if 1 < len(unique_vals) <= (len(column_data) / 2):
                     unique_vals = [
                         x.decode() if isinstance(x, bytes) else x for x in unique_vals
                     ]  # handle h5py 3.0
-                    categorical_cols[name] = unique_vals
+                    categorical_cols[name] = np.array(column_data)
             except Exception as e:
                 print(e)
     return categorical_cols
