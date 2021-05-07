@@ -40,7 +40,7 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
 
 
 def group_and_sort(
-    group_vals=None, group_select=None, order_vals=None, discard_rows=None, limit=None
+    group_vals=None, group_select=None, order_vals=None, keep_rows=None, limit=None
 ):
     """
     Logical flow:
@@ -80,11 +80,10 @@ def group_and_sort(
             order = np.argsort(order_vals)
 
     # apply discard rows
-    if discard_rows is not None:
-        keep = np.logical_not(np.isin(order, discard_rows))
-        order = order[keep]
+    if keep_rows is not None:
+        order = order[keep_rows]
         if group_inds is not None:
-            group_inds = group_inds[keep]
+            group_inds = group_inds[keep_rows]
 
     # apply discard NaN categories
     try:

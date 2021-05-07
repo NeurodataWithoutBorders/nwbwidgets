@@ -59,8 +59,8 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         self.control_order = control_order
         self.control_limit = control_limit
-
-        self.discard_rows = start_discard_rows
+        start_discard_rows = [] if start_discard_rows is None else start_discard_rows
+        self.keep_rows = [i for i in range(self.nitems) if i not in start_discard_rows]
         self.groups = self.get_groups() if groups is None else groups
         self.limit_bit = widgets.BoundedIntText(
             value=50, min=0, max=99999, disabled=True, layout=Layout(max_width="70px")
@@ -158,11 +158,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
     def set_group_by(self, group_by):
         self.group_by = group_by
         self.group_vals = self.get_group_vals(by=group_by)
-        group_vals = self.group_vals
-        if self.discard_rows is not None:
-            group_vals = group_vals[
-                ~np.isin(np.arange(len(group_vals), dtype="int"), self.discard_rows)
-            ]
+        group_vals = self.group_vals[self.keep_rows]
         if self.group_vals.dtype == np.float:
             group_vals = group_vals[~np.isnan(group_vals)]
         groups = np.unique(group_vals)
@@ -189,12 +185,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 self.group_sm.rows = 1
 
                 if hasattr(self.range_controller, "slider"):
-                    if self.discard_rows is None:
-                        self.range_controller.slider.max = len(self.dynamic_table)
-                    else:
-                        self.range_controller.slider.max = len(
-                            self.dynamic_table
-                        ) - len(self.discard_rows)
+                    self.range_controller.slider.max = len(self.keep_rows)
             else:
                 self.set_group_by(group_by)
 
@@ -265,11 +256,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.update_value()
 
     def get_groups(self):
-        if self.discard_rows is not None:
-            keep_rows = [i for i in range(len(self.dynamic_table)) if i not in self.discard_rows]
-        else:
-            keep_rows = None
-        return infer_categorical_columns(self.dynamic_table, keep_rows)
+        return infer_categorical_columns(self.dynamic_table, self.keep_rows)
 
     def get_group_vals(self, by, units_select=None):
         """Get the values of the group_by variable
@@ -308,7 +295,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         order, group_inds, labels = group_and_sort(
             group_vals=self.group_vals,
             group_select=self.group_select,
-            discard_rows=self.discard_rows,
+            keep_rows=self.keep_rows,
             order_vals=self.order_vals,
             limit=self.limit,
         )
