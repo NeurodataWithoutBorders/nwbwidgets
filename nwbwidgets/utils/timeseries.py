@@ -1,7 +1,7 @@
 from pynwb import TimeSeries
 
 import numpy as np
-from bisect import bisect
+from bisect import bisect, bisect_left
 
 
 def get_timeseries_tt(node: TimeSeries, istart=0, istop=None) -> np.ndarray:
@@ -128,13 +128,15 @@ def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -
             kwargs.update(lo=ind_min)
         if ind_max is not None:
             kwargs.update(hi=ind_max)
-        return bisect(node.timestamps, time, **kwargs)-1
+        id_found = bisect_left(node.timestamps, time, **kwargs)
+        return id_found if id_found<len(node.data) else len(node.data)-1
     else:
         if np.isnan(node.starting_time):
             starting_time = 0
         else:
             starting_time = node.starting_time
-        return int(np.ceil((time - starting_time) * node.rate))
+        id_found = int(np.ceil((time - starting_time) * node.rate))
+        return id_found if id_found<len(node.data) else len(node.data)-1
 
 
 def bisect_timeseries_by_times(timeseries: TimeSeries, starts, duration:float, traces=None):
