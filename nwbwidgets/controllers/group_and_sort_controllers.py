@@ -45,6 +45,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         start_discard_rows=None,
         control_order=True,
         control_limit=True,
+        groups=None,
     ):
         """
 
@@ -56,7 +57,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         """
         super().__init__(dynamic_table)
 
-        groups = self.get_groups()
+        groups = self.get_groups() if groups is None else groups
         self.control_order = control_order
         self.control_limit = control_limit
 
@@ -265,7 +266,8 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.update_value()
 
     def get_groups(self):
-        return infer_categorical_columns(self.dynamic_table)
+        keep_rows = [i for i in range(len(self.dynamic_table)) if i not in self.discard_rows]
+        return infer_categorical_columns(self.dynamic_table, keep_rows)
 
     def get_group_vals(self, by, units_select=()):
         """Get the values of the group_by variable
