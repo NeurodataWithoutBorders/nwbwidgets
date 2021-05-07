@@ -27,7 +27,7 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
                 elif hasattr(dynamic_table[name].data[0], 'name'):
                     column_data = [dynamic_table[name].data[i].name for i in region]
                 else:
-                    column_data = []
+                    continue
                 unique_vals = np.unique(column_data)
                 if 1 < len(unique_vals) <= (len(column_data) / 2):
                     unique_vals = [
