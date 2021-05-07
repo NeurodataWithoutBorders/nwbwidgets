@@ -12,7 +12,7 @@ from pynwb import TimeSeries
 from pynwb.epoch import TimeIntervals
 import scipy
 
-from .controllers import StartAndDurationController, GroupAndSortController
+from .controllers import StartAndDurationController, GroupAndSortController, RangeController
 from .utils.plotly import multi_trace
 from .utils.timeseries import (
     get_timeseries_tt,
@@ -449,6 +449,7 @@ def plot_grouped_traces(
     colors=color_wheel,
     show_legend=True,
     dynamic_table_region_name=None,
+    window=None,
     **kwargs
 ):
     if ax is None:
@@ -463,6 +464,9 @@ def plot_grouped_traces(
     if dynamic_table_region_name is not None:
         row_ids = getattr(time_series, dynamic_table_region_name).data[:]
         channel_inds = [np.argmax(row_ids == x) for x in order]
+    elif window is not None:
+        order = order[window[0]:window[1]]
+        channel_inds = order
     else:
         channel_inds = order
 
@@ -582,6 +586,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
             time_window=self.time_window_controller,
             dynamic_table_region_name=widgets.fixed(dynamic_table_region_name),
         )
+        self.range_controller = None
         if foreign_group_and_sort_controller is None:
             if dynamic_table_region_name is not None:
                 dynamic_table_region = getattr(time_series, dynamic_table_region_name)
@@ -596,6 +601,16 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 self.controls.update(gas=self.gas)
             else:
                 self.gas = None
+                range_controller_max = min(30, self.time_series.data.shape[1])
+                self.range_controller = RangeController(
+                    0,
+                    self.time_series.data.shape[1],
+                    start_value=(0, range_controller_max),
+                    dtype="int",
+                    description="traces",
+                    orientation="vertical",
+                )
+                self.controls.update(window=self.range_controller)
         else:
             self.gas = foreign_group_and_sort_controller
             self.controls.update(gas=self.gas)
@@ -615,7 +630,10 @@ class BaseGroupedTraceWidget(widgets.HBox):
             )
 
         if foreign_group_and_sort_controller or self.gas is None:
-            self.children = [right_panel]
+            if self.range_controller is None:
+                self.children = [right_panel]
+            else:
+                self.children = [self.range_controller, right_panel]
         else:
 
             self.children = [self.gas, right_panel]
