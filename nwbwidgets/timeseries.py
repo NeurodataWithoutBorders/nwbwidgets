@@ -5,9 +5,11 @@ import numpy as np
 import plotly.graph_objects as go
 from ipywidgets import widgets, fixed
 from plotly.subplots import make_subplots
+from plotly.colors import DEFAULT_PLOTLY_COLORS
+
 from pynwb import TimeSeries
 
-from .controllers import StartAndDurationController, GroupAndSortController
+from .controllers import StartAndDurationController, GroupAndSortController, RangeController
 from .utils.plotly import multi_trace
 from .utils.timeseries import (
     get_timeseries_tt,
@@ -17,6 +19,7 @@ from .utils.timeseries import (
     get_timeseries_in_units,
 )
 from .utils.widgets import interactive_output
+from .utils.dynamictable import infer_categorical_columns
 
 color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -351,10 +354,13 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
         tt = get_timeseries_tt(timeseries, istart, istop)
 
         if len(data.shape) > 1:
+            color = DEFAULT_PLOTLY_COLORS[0]
             self.out_fig = go.FigureWidget(make_subplots(rows=data.shape[1], cols=1))
 
             for i, (yy, xyz) in enumerate(zip(data.T, ("x", "y", "z"))):
-                self.out_fig.add_trace(go.Scatter(x=tt, y=yy), row=i + 1, col=1)
+                self.out_fig.add_trace(
+                    go.Scatter(x=tt, y=yy, marker_color=color), row=i + 1, col=1
+                )
                 if units:
                     yaxes_label = "{} ({})".format(xyz, units)
                 else:
@@ -415,6 +421,8 @@ def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
         mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][
             :, inverse_sort
         ]
+        if np.all(np.isnan(mini_data)):
+            return None, tt, None
         gap = np.median(np.nanstd(mini_data, axis=0)) * 20
         offsets = np.arange(len(order)) * gap
         mini_data = mini_data + offsets
@@ -430,12 +438,13 @@ def plot_grouped_traces(
     time_window=None,
     order=None,
     ax=None,
-    figsize=(9.7, 7),
+    figsize=(8, 7),
     group_inds=None,
     labels=None,
     colors=color_wheel,
     show_legend=True,
     dynamic_table_region_name=None,
+    window=None,
     **kwargs
 ):
     if ax is None:
@@ -447,13 +456,20 @@ def plot_grouped_traces(
         else:
             order = [0]
 
-    if dynamic_table_region_name is not None:
+    if group_inds is not None:
         row_ids = getattr(time_series, dynamic_table_region_name).data[:]
         channel_inds = [np.argmax(row_ids == x) for x in order]
+    elif window is not None:
+        order = order[window[0]:window[1]]
+        channel_inds = order
     else:
         channel_inds = order
 
     mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
+
+    if mini_data is None:
+        ax.plot(tt, np.ones_like(tt) * np.nan, color="k")
+        return
 
     if group_inds is not None:
         ugroup_inds = np.unique(group_inds)
@@ -565,6 +581,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
             time_window=self.time_window_controller,
             dynamic_table_region_name=widgets.fixed(dynamic_table_region_name),
         )
+        set_range_controller = False
         if foreign_group_and_sort_controller is None:
             if dynamic_table_region_name is not None:
                 dynamic_table_region = getattr(time_series, dynamic_table_region_name)
@@ -573,12 +590,28 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 discard_rows = [
                     x for x in range(len(table)) if x not in referenced_rows
                 ]
-                self.gas = GroupAndSortController(
-                    dynamic_table=table, start_discard_rows=discard_rows
-                )
-                self.controls.update(gas=self.gas)
+                categorical_columns = infer_categorical_columns(table, discard_rows)
+                if len(categorical_columns)>0:
+                    self.gas = GroupAndSortController(
+                        dynamic_table=table, start_discard_rows=discard_rows, groups=categorical_columns
+                    )
+                    self.controls.update(gas=self.gas)
+                else:
+                    set_range_controller = True
             else:
+                set_range_controller = True
+            if set_range_controller:
                 self.gas = None
+                range_controller_max = min(30, self.time_series.data.shape[1])
+                self.range_controller = RangeController(
+                    0,
+                    self.time_series.data.shape[1],
+                    start_value=(0, range_controller_max),
+                    dtype="int",
+                    description="traces",
+                    orientation="vertical",
+                )
+                self.controls.update(window=self.range_controller)
         else:
             self.gas = foreign_group_and_sort_controller
             self.controls.update(gas=self.gas)
@@ -598,12 +631,15 @@ class BaseGroupedTraceWidget(widgets.HBox):
             )
 
         if foreign_group_and_sort_controller or self.gas is None:
-            self.children = [right_panel]
+            if self.range_controller is None:
+                self.children = [right_panel]
+            else:
+                self.children = [self.range_controller, right_panel]
         else:
 
             self.children = [self.gas, right_panel]
 
-        self.layout = widgets.Layout(width="100%")
+        # self.layout = widgets.Layout(width="100%")
 
 
 class MultiTimeSeriesWidget(widgets.VBox):

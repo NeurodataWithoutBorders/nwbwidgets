@@ -508,7 +508,7 @@ def show_histogram(
             ax.bar(
                 x[:-1],
                 height,
-                color=color_wheel[group],
+                color=color_wheel[group % len(color_wheel)],
                 edgecolor=(0.3, 0.3, 0.3),
                 width=width,
                 align="edge",

@@ -9,7 +9,11 @@ from tifffile import imread, TiffFile
 
 from .base import fig2widget
 from .controllers import StartAndDurationController
-from .utils.timeseries import get_timeseries_maxt, get_timeseries_mint
+from .utils.timeseries import (
+    get_timeseries_maxt,
+    get_timeseries_mint,
+    timeseries_time_to_ind,
+)
 
 
 class ImageSeriesWidget(widgets.VBox):
@@ -29,7 +33,11 @@ class ImageSeriesWidget(widgets.VBox):
         # Set controller
         if foreign_time_window_controller is None:
             tmin = get_timeseries_mint(imageseries)
-            tmax = get_timeseries_maxt(imageseries)
+            if imageseries.external_file and imageseries.rate:
+                tif = TiffFile(imageseries.external_file[0])
+                tmax = imageseries.starting_time + len(tif.pages) / imageseries.rate
+            else:
+                tmax = get_timeseries_maxt(imageseries)
             self.time_window_controller = StartAndDurationController(tmax, tmin)
         else:
             self.time_window_controller = foreign_time_window_controller
@@ -38,55 +46,49 @@ class ImageSeriesWidget(widgets.VBox):
         # Make widget figure
         self.set_out_fig()
 
+        self.children = [self.out_fig, self.time_window_controller]
+
+    def time_to_index(self, time):
+        if self.imageseries.external_file and self.imageseries.rate:
+            return int((time - self.imageseries.starting_time) * self.imageseries.rate)
+        else:
+            return timeseries_time_to_ind(self.imageseries, time)
+
     def set_controls(self, **kwargs):
         self.controls.update(
             timeseries=fixed(self.imageseries), time_window=self.time_window_controller
         )
         self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
+    def get_frame(self, idx):
+        if self.imageseries.external_file is not None:
+            return imread(self.imageseries.external_file, key=idx)
+        else:
+            return self.image_series.data[idx].T
+
     def set_out_fig(self):
-        imageseries = self.controls["timeseries"].value
-        time_window = self.controls["time_window"].value
-        output = widgets.Output()
 
-        if imageseries.external_file is not None:
-            file_path = imageseries.external_file[0]
-            if "\\" in file_path:
-                win_path = PureWindowsPath(file_path)
-                path_ext_file = Path(win_path)
-            else:
-                path_ext_file = Path(file_path)
-
-            # Get Frames dimensions
-            tif = TiffFile(path_ext_file)
-            n_samples = len(tif.pages)
-            page = tif.pages[0]
-            n_y, n_x = page.shape
-
-            # Read first frame
-            image = imread(path_ext_file, key=0)
-            self.out_fig = go.FigureWidget(
-                data=go.Heatmap(
-                    z=image,
-                    colorscale="gray",
-                    showscale=False,
-                )
+        self.out_fig = go.FigureWidget(
+            data=go.Heatmap(
+                z=self.get_frame(0),
+                colorscale="gray",
+                showscale=False,
             )
-            self.out_fig.update_layout(
-                xaxis=go.layout.XAxis(showticklabels=False, ticks=""),
-                yaxis=go.layout.YAxis(showticklabels=False, ticks=""),
-            )
+        )
+        self.out_fig.update_layout(
+            xaxis=go.layout.XAxis(showticklabels=False, ticks=""),
+            yaxis=go.layout.YAxis(
+                showticklabels=False, ticks="", scaleanchor="x", scaleratio=1
+            ),
+        )
 
-            def on_change(change):
-                # Read frame
-                mid_timestamp = (change["new"][1] + change["new"][0]) / 2
-                frame_number = int(mid_timestamp * imageseries.rate)
-                image = imread(path_ext_file, key=frame_number)
-                self.out_fig.data[0].z = image
+        def on_change(change):
+            # Read frame
+            frame_number = self.time_to_index(change["new"][0])
+            image = self.get_frame(frame_number)
+            self.out_fig.data[0].z = image
 
         self.controls["time_window"].observe(on_change)
-
-        self.children = [self.out_fig]
 
 
 def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
@@ -161,7 +163,7 @@ def show_grayscale_image(grayscale_image: GrayscaleImage, neurodata_vis_spec=Non
 
 def show_rbga_image(rgb_image: RGBImage, neurodata_vis_spec=None):
     fig, ax = plt.subplots()
-    plt.imshow(rgb_image.data[:].transpose([1,0,2]))
+    plt.imshow(rgb_image.data[:].transpose([1, 0, 2]))
     plt.axis("off")
 
     return fig
