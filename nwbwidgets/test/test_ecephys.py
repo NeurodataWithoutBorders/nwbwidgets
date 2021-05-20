@@ -4,11 +4,12 @@ from datetime import datetime
 import ipywidgets as widgets
 import numpy as np
 from dateutil.tz import tzlocal
-from nwbwidgets.ecephys import show_lfp, show_spectrogram, show_spike_event_series
+from nwbwidgets.ecephys import show_spectrogram, show_spike_event_series
 from nwbwidgets.view import default_neurodata_vis_spec
+from nwbwidgets.base import show_multi_container_interface
 from pynwb import NWBFile
 from pynwb import TimeSeries
-from pynwb.ecephys import LFP, ElectricalSeries, SpikeEventSeries
+from pynwb.ecephys import SpikeEventSeries, ElectricalSeries, LFP
 
 
 class ShowActivityTestCase(unittest.TestCase):
@@ -51,7 +52,6 @@ class ShowActivityTestCase(unittest.TestCase):
 
         self.electrodes = electrode_table_region
 
-    """
     # this test wasn't working. Couldn't track down why
     def test_show_lfp(self):
         rate = 10.0
@@ -60,17 +60,18 @@ class ShowActivityTestCase(unittest.TestCase):
         ephys_data = np.random.rand(data_len * 2).reshape((data_len, 2))
         ephys_timestamps = np.arange(data_len) / rate
 
-        ephys_ts = ElectricalSeries('test_ephys_data',
-                                    ephys_data,
-                                    self.electrodes,
-                                    timestamps=ephys_timestamps,
-                                    resolution=0.001,
-                                    description="Random numbers generated with numpy.random.rand")
+        ephys_ts = ElectricalSeries(
+            "test_ephys_data",
+            ephys_data,
+            self.electrodes,
+            timestamps=ephys_timestamps,
+            resolution=0.001,
+            description="Random numbers generated with numpy.random.rand",
+        )
 
-        lfp = LFP(electrical_series=ephys_ts, name='LFP data')
+        lfp = LFP(electrical_series=ephys_ts, name="LFP data")
 
-        show_lfp(lfp, default_neurodata_vis_spec)
-        """
+        show_multi_container_interface(lfp, default_neurodata_vis_spec)
 
     def test_show_spike_event_series(self):
         rate = 10.0

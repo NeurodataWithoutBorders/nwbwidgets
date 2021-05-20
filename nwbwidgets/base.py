@@ -11,7 +11,7 @@ from ipywidgets import widgets
 from matplotlib.pyplot import Figure
 from nwbwidgets import view
 from pynwb import ProcessingModule
-from pynwb.core import NWBDataInterface
+from pynwb.core import NWBDataInterface, MultiContainerInterface
 
 from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
 
@@ -96,9 +96,9 @@ def show_neurodata_base(
     return widgets.VBox(info + [accordion])
 
 
-def dict2accordion(
-    d: dict, neurodata_vis_spec: dict, **pass_kwargs
-) -> widgets.Accordion:
+def dict2accordion(d: dict, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.Widget:
+    if len(d) == 1:
+        return nwb2widget(list(d.values())[0], neurodata_vis_spec=neurodata_vis_spec)
     children = [widgets.HTML("Rendering...") for _ in d]
     accordion = widgets.Accordion(children=children, selected_index=None)
     for i, label in enumerate(d):
@@ -403,3 +403,17 @@ class TimeIntervalsSelector(widgets.VBox):
             **self.kwargs
         )
         self.children = [self.stimulus_type_dd, inner_widget]
+
+
+def show_multi_container_interface(
+    node: MultiContainerInterface, neurodata_vis_spec=None
+):
+    if isinstance(node.__clsconf__, dict):
+        cls_conf = [node.__clsconf__]
+    else:
+        cls_conf = node.__clsconf__
+
+    return dict2accordion(
+        {x["attr"]: getattr(node, x["attr"]) for x in cls_conf},
+        neurodata_vis_spec=neurodata_vis_spec,
+    )
