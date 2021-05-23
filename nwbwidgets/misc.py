@@ -106,7 +106,10 @@ def show_session_raster(
         progress_bar=progress_bar,
     )
     ax.set_ylabel("unit #")
-    ax.set_yticklabels(units.id.data[:])
+    if len(data) <= 30:
+        ax.set_yticklabels([units.id.data[unit_idx] for unit_idx in this_iter])
+    else:
+        ax.axes.yaxis.set_visible(False)
 
     return ax
 
@@ -334,38 +337,6 @@ class PSTHWidget(widgets.VBox):
 
         main_fig = interactive_output(self.update, self.controls)
 
-        electrodes = self.get_electrodes()
-        units_data = units.id.data[:]
-        grid_fig = go.FigureWidget(
-            [
-                go.Scatter(
-                    x=electrodes.rel_x[units_data],
-                    y=electrodes.rel_y[units_data],
-                    mode="markers",
-                    text=[f"Unit ID: {x}" for x in units_data]
-                )
-            ]
-        )
-        scatter = grid_fig.data[0]
-
-        colors = np.array(["#a3a7e4"] * nunits)
-        scatter.marker.color = colors
-        size = np.array([10] * nunits)
-        scatter.marker.size = size
-
-        def update_point(trace, points, selector):
-            n_points = len(scatter.marker.color)
-            c = ["#a3a7e4"] * n_points
-            s = [10] * n_points
-            my_point = points.point_inds[0]
-            c[my_point] = '#bae2be'
-            s[my_point] = 15
-            with grid_fig.batch_update():
-                scatter.marker.color = c
-                scatter.marker.size = s
-        scatter.on_click(update_point)
-        grid_fig.layout.hovermode = "closest"
-
         self.children = [
             widgets.HBox(
                 [
@@ -390,19 +361,11 @@ class PSTHWidget(widgets.VBox):
                     ),
                 ]
             ),
-            widgets.HBox(
-                [
-                    main_fig,
-                    grid_fig
-                ]
-            )
+            main_fig,
         ]
 
     def get_trials(self):
         return self.units.get_ancestor("NWBFile").trials
-
-    def get_electrodes(self):
-        return self.units.get_ancestor("NWBFile").electrodes
 
     def make_group_and_sort(self, window=None, control_order=False):
         return GroupAndSortController(
@@ -478,7 +441,7 @@ class PSTHWidget(widgets.VBox):
             progress_bar=progress_bar,
         )
 
-        axs[0].set_title("PSTH for unit {}".format(index))
+        axs[0].set_title("PSTH for unit {}".format(self.units.id.data[index]))
         axs[0].set_xticks([])
         axs[0].set_xlabel("")
 
