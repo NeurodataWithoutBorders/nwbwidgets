@@ -289,10 +289,10 @@ class PSTHWidget(widgets.VBox):
             self.trials = trials
 
         if unit_controller is None:
-            unit_ids = units.id.data[:]
-            n_units = len(unit_ids)
+            self.unit_ids = units.id.data[:]
+            n_units = len(self.unit_ids)
             self.unit_controller = widgets.Dropdown(
-                options=[(str(unit_ids[x]), x) for x in range(n_units)],
+                options=[(str(self.unit_ids[x]), x) for x in range(n_units)],
                 value=unit_index,
                 description="unit",
                 layout=Layout(width="200px"),
@@ -443,7 +443,7 @@ class PSTHWidget(widgets.VBox):
             progress_bar=progress_bar,
         )
 
-        axs[0].set_title("PSTH for unit {}".format(self.units.id.data[index]))
+        axs[0].set_title(f"PSTH for unit {self.unit_ids[index]}")
         axs[0].set_xticks([])
         axs[0].set_xlabel("")
 
@@ -845,7 +845,7 @@ class RasterGridWidget(widgets.VBox):
         unit_ids = units.id.data[:]
         n_units = len(unit_ids)
         unit_controller = widgets.Dropdown(
-        options=[(str(unit_ids[x]), x) for x in range(n_units)],
+            options=[(str(unit_ids[x]), x) for x in range(n_units)],
             value=unit_index,
             description="unit",
         )
