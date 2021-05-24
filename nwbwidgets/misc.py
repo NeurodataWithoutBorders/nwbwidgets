@@ -106,10 +106,14 @@ def show_session_raster(
         progress_bar=progress_bar,
     )
     ax.set_ylabel("unit #")
+<<<<<<< HEAD
     if len(data) <= 30:
         ax.set_yticklabels([units.id.data[unit_idx] for unit_idx in this_iter])
     else:
         ax.axes.yaxis.set_visible(False)
+=======
+    ax.set_yticklabels(units.id.data[:])
+>>>>>>> master
 
     return ax
 
@@ -288,9 +292,10 @@ class PSTHWidget(widgets.VBox):
             self.trials = trials
 
         if unit_controller is None:
-            nunits = len(units["spike_times"].data)
+            unit_ids = units.id.data[:]
+            n_units = len(unit_ids)
             self.unit_controller = widgets.Dropdown(
-                options=[(str(units.id.data[x]), x) for x in range(nunits)],
+                options=[(str(unit_ids[x]), x) for x in range(n_units)],
                 value=unit_index,
                 description="unit",
                 layout=Layout(width="200px"),
@@ -839,8 +844,15 @@ class RasterGridWidget(widgets.VBox):
         )
 
         trial_event_controller = make_trial_event_controller(self.trials)
+
+        unit_ids = units.id.data[:]
+        n_units = len(unit_ids)
         unit_controller = widgets.Dropdown(
+<<<<<<< HEAD
             options=[(str(units.id.data[x]), x) for x in range(len(units["spike_times"].data))],
+=======
+            options=[(str(unit_ids[x]), x) for x in range(n_units)],
+>>>>>>> master
             value=unit_index,
             description="unit",
         )
