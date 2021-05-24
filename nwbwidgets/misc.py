@@ -106,14 +106,11 @@ def show_session_raster(
         progress_bar=progress_bar,
     )
     ax.set_ylabel("unit #")
-<<<<<<< HEAD
     if len(data) <= 30:
-        ax.set_yticklabels([units.id.data[unit_idx] for unit_idx in this_iter])
+        unit_id_display = np.array(units.id.data[:])[[x for x in this_iter]]
+        ax.set_yticklabels(unit_id_display)
     else:
         ax.axes.yaxis.set_visible(False)
-=======
-    ax.set_yticklabels(units.id.data[:])
->>>>>>> master
 
     return ax
 
@@ -848,11 +845,7 @@ class RasterGridWidget(widgets.VBox):
         unit_ids = units.id.data[:]
         n_units = len(unit_ids)
         unit_controller = widgets.Dropdown(
-<<<<<<< HEAD
-            options=[(str(units.id.data[x]), x) for x in range(len(units["spike_times"].data))],
-=======
-            options=[(str(unit_ids[x]), x) for x in range(n_units)],
->>>>>>> master
+        options=[(str(unit_ids[x]), x) for x in range(n_units)],
             value=unit_index,
             description="unit",
         )
