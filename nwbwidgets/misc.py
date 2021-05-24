@@ -337,7 +337,7 @@ class PSTHWidget(widgets.VBox):
             # progress_bar=fixed(progress_bar)
         )
 
-        main_fig = interactive_output(self.update, self.controls)
+        out_fig = interactive_output(self.update, self.controls)
 
         self.children = [
             widgets.HBox(
@@ -363,7 +363,7 @@ class PSTHWidget(widgets.VBox):
                     ),
                 ]
             ),
-            main_fig,
+            out_fig,
         ]
 
     def get_trials(self):
