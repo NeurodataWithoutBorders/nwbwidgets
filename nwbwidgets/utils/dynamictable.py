@@ -1,26 +1,46 @@
 from pynwb.core import DynamicTable
+import numbers
 import numpy as np
+from typing import Iterable
 
 
-def infer_categorical_columns(dynamic_table: DynamicTable):
+def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = None):
+    """
+    Parameters
+    ----------
+    dynamic_table: DynamicTable
+    region: Iterable
+        row indices to select
 
+    Returns
+    -------
+    categorical_cols: dict()
+        keys: as columns that are categorical, values as the unique values
+    """
     categorical_cols = {}
+    region = region if region is not None else list(range(len(dynamic_table)))
     for name in dynamic_table.colnames:
         if len(dynamic_table[name].shape) == 1:
-            try:  # TODO: fix this
-                unique_vals = np.unique(dynamic_table[name].data)
-                if 1 < len(unique_vals) <= (len(dynamic_table[name].data) / 2):
+            try:
+                if isinstance(dynamic_table[name].data[0], (str, numbers.Number, bytes)):
+                    column_data = [dynamic_table[name].data[i] for i in region]
+                elif hasattr(dynamic_table[name].data[0], 'name'):
+                    column_data = [dynamic_table[name].data[i].name for i in region]
+                else:
+                    continue
+                unique_vals = np.unique(column_data)
+                if 1 < len(unique_vals) <= (len(column_data) / 2):
                     unique_vals = [
                         x.decode() if isinstance(x, bytes) else x for x in unique_vals
                     ]  # handle h5py 3.0
-                    categorical_cols[name] = unique_vals
-            except:
-                pass
+                    categorical_cols[name] = np.array(column_data)
+            except Exception as e:
+                print(e)
     return categorical_cols
 
 
 def group_and_sort(
-    group_vals=None, group_select=None, order_vals=None, discard_rows=None, limit=None
+    group_vals=None, group_select=None, order_vals=None, keep_rows=None, limit=None
 ):
     """
     Logical flow:
@@ -60,11 +80,10 @@ def group_and_sort(
             order = np.argsort(order_vals)
 
     # apply discard rows
-    if discard_rows is not None:
-        keep = np.logical_not(np.isin(order, discard_rows))
-        order = order[keep]
+    if keep_rows is not None:
+        order = order[keep_rows]
         if group_inds is not None:
-            group_inds = group_inds[keep]
+            group_inds = group_inds[keep_rows]
 
     # apply discard NaN categories
     try:

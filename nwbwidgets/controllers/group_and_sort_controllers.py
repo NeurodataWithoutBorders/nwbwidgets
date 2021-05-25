@@ -45,6 +45,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         start_discard_rows=None,
         control_order=True,
         control_limit=True,
+        groups=None,
     ):
         """
 
@@ -56,12 +57,11 @@ class GroupAndSortController(AbstractGroupAndSortController):
         """
         super().__init__(dynamic_table)
 
-        groups = self.get_groups()
         self.control_order = control_order
         self.control_limit = control_limit
-
-        self.discard_rows = start_discard_rows
-
+        start_discard_rows = [] if start_discard_rows is None else start_discard_rows
+        self.keep_rows = [i for i in range(self.nitems) if i not in start_discard_rows]
+        self.groups = self.get_groups() if groups is None else groups
         self.limit_bit = widgets.BoundedIntText(
             value=50, min=0, max=99999, disabled=True, layout=Layout(max_width="70px")
         )
@@ -78,11 +78,11 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.limit_cb.observe(self.limit_cb_observer)
 
         self.order_dd = widgets.Dropdown(
-            options=[None] + list(groups),
+            options=[None] + list(self.groups),
             description="order by",
             layout=Layout(max_width="120px"),
             style={"description_width": "initial"},
-            disabled=not len(groups),
+            disabled=not len(self.groups),
         )
         self.order_dd.observe(self.order_dd_observer)
 
@@ -114,11 +114,11 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         if group_by is None:
             self.group_dd = widgets.Dropdown(
-                options=[None] + list(groups),
+                options=[None] + list(self.groups),
                 description="group by",
                 style={"description_width": "initial"},
                 layout=Layout(width="90%"),
-                disabled=not len(groups),
+                disabled=not len(self.groups),
             )
             self.group_dd.observe(self.group_dd_observer)
         else:
@@ -158,11 +158,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
     def set_group_by(self, group_by):
         self.group_by = group_by
         self.group_vals = self.get_group_vals(by=group_by)
-        group_vals = self.group_vals
-        if self.discard_rows is not None:
-            group_vals = group_vals[
-                ~np.isin(np.arange(len(group_vals), dtype="int"), self.discard_rows)
-            ]
+        group_vals = self.group_vals[self.keep_rows]
         if self.group_vals.dtype == np.float:
             group_vals = group_vals[~np.isnan(group_vals)]
         groups = np.unique(group_vals)
@@ -191,12 +187,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 self.group_sm.rows = 1
 
                 if hasattr(self.range_controller, "slider"):
-                    if self.discard_rows is None:
-                        self.range_controller.slider.max = len(self.dynamic_table)
-                    else:
-                        self.range_controller.slider.max = len(
-                            self.dynamic_table
-                        ) - len(self.discard_rows)
+                    self.range_controller.slider.max = len(self.keep_rows)
             else:
                 self.set_group_by(group_by)
 
@@ -267,9 +258,9 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.update_value()
 
     def get_groups(self):
-        return infer_categorical_columns(self.dynamic_table)
+        return infer_categorical_columns(self.dynamic_table, self.keep_rows)
 
-    def get_group_vals(self, by, units_select=()):
+    def get_group_vals(self, by, units_select=None):
         """Get the values of the group_by variable
 
         Parameters
@@ -283,8 +274,8 @@ class GroupAndSortController(AbstractGroupAndSortController):
         """
         if by is None:
             return None
-        elif by in self.dynamic_table:
-            return self.dynamic_table[by][:][units_select]
+        elif by in self.groups:
+            return self.groups[by] if units_select is None else self.groups[by][units_select]
         else:
             raise ValueError(
                 "column {} not in DynamicTable {}".format(by, self.dynamic_table)
@@ -306,7 +297,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         order, group_inds, labels = group_and_sort(
             group_vals=self.group_vals,
             group_select=self.group_select,
-            discard_rows=self.discard_rows,
+            keep_rows=self.keep_rows,
             order_vals=self.order_vals,
             limit=self.limit,
         )

@@ -25,6 +25,7 @@ from .utils.widgets import interactive_output
 from .controllers.misc import make_trial_event_controller
 from .utils.timeseries import align_by_time_intervals, align_timestamps_by_trials
 
+from .utils.dynamictable import infer_categorical_columns
 
 color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -84,7 +85,7 @@ def show_timeseries_mpl(
         ylabel=ylabel,
         title=title,
         figsize=figsize,
-        **kwargs,
+        **kwargs
     )
 
 
@@ -299,7 +300,7 @@ class SingleTracePlotlyWidget(SingleTraceWidget):
         super().__init__(
             timeseries=timeseries,
             foreign_time_window_controller=foreign_time_window_controller,
-            **kwargs,
+            **kwargs
         )
 
     def set_out_fig(self):
@@ -586,7 +587,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
             time_window=self.time_window_controller,
             dynamic_table_region_name=widgets.fixed(dynamic_table_region_name),
         )
-        self.range_controller = None
+        set_range_controller = False
         if foreign_group_and_sort_controller is None:
             if dynamic_table_region_name is not None:
                 dynamic_table_region = getattr(time_series, dynamic_table_region_name)
@@ -595,11 +596,17 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 discard_rows = [
                     x for x in range(len(table)) if x not in referenced_rows
                 ]
-                self.gas = GroupAndSortController(
-                    dynamic_table=table, start_discard_rows=discard_rows
-                )
-                self.controls.update(gas=self.gas)
+                categorical_columns = infer_categorical_columns(table, discard_rows)
+                if len(categorical_columns)>0:
+                    self.gas = GroupAndSortController(
+                        dynamic_table=table, start_discard_rows=discard_rows, groups=categorical_columns
+                    )
+                    self.controls.update(gas=self.gas)
+                else:
+                    set_range_controller = True
             else:
+                set_range_controller = True
+            if set_range_controller:
                 self.gas = None
                 range_controller_max = min(30, self.time_series.data.shape[1])
                 self.range_controller = RangeController(
