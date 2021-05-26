@@ -462,7 +462,7 @@ def plot_grouped_traces(
         else:
             order = [0]
 
-    if dynamic_table_region_name is not None:
+    if group_inds is not None:
         row_ids = getattr(time_series, dynamic_table_region_name).data[:]
         channel_inds = [np.argmax(row_ids == x) for x in order]
     elif window is not None:
