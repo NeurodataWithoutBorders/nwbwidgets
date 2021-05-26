@@ -20,6 +20,7 @@ from nwbwidgets import (
     timeseries,
     file,
     spectrum,
+    placefield
 )
 
 
@@ -58,12 +59,11 @@ default_neurodata_vis_spec = {
     pynwb.ProcessingModule: base.processing_module,
     hdmf.common.DynamicTable: show_dynamic_table,
     pynwb.ecephys.ElectricalSeries: ecephys.ElectricalSeriesWidget,
-    pynwb.behavior.SpatialSeries: OrderedDict(
-        {
-            "over time": timeseries.SeparateTracesPlotlyWidget,
-            "trace": behavior.plotly_show_spatial_trace,
-        }
-    ),
+    pynwb.behavior.Position: behavior.show_position,
+    pynwb.behavior.SpatialSeries: OrderedDict({
+        'over time': timeseries.SeparateTracesPlotlyWidget,
+        'trace': behavior.plotly_show_spatial_trace,
+        'rate map': placefield.route_placefield}),
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
     pynwb.image.RGBImage: image.show_rbga_image,
     pynwb.image.RGBAImage: image.show_rbga_image,
