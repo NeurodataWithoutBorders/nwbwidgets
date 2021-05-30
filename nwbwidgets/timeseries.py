@@ -596,28 +596,13 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 discard_rows = [
                     x for x in range(len(table)) if x not in referenced_rows
                 ]
-                categorical_columns = infer_categorical_columns(table, discard_rows)
-                if len(categorical_columns)>0:
-                    self.gas = GroupAndSortController(
-                        dynamic_table=table, start_discard_rows=discard_rows, groups=categorical_columns
-                    )
-                    self.controls.update(gas=self.gas)
-                else:
-                    set_range_controller = True
             else:
-                set_range_controller = True
-            if set_range_controller:
-                self.gas = None
-                range_controller_max = min(30, self.time_series.data.shape[1])
-                self.range_controller = RangeController(
-                    0,
-                    self.time_series.data.shape[1],
-                    start_value=(0, range_controller_max),
-                    dtype="int",
-                    description="traces",
-                    orientation="vertical",
-                )
-                self.controls.update(window=self.range_controller)
+                table = None
+                discard_rows = None
+            self.gas = GroupAndSortController(
+                dynamic_table=table, start_discard_rows=discard_rows, nitems=self.time_series.data.shape[1],
+            )
+            self.controls.update(gas=self.gas)
         else:
             self.gas = foreign_group_and_sort_controller
             self.controls.update(gas=self.gas)
