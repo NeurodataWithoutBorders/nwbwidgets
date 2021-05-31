@@ -126,12 +126,13 @@ class GroupAndSortController(AbstractGroupAndSortController):
             dt_desc_map = {'DynamicTable':'traces',
                            'TimeIntervals': 'trials',
                            'Units': 'units'}
+            desc = dt_desc_map[dynamic_table.neurodata_type] if dynamic_table is not None else 'traces'
             self.range_controller = RangeController(
                 0,
                 self.nitems,
                 start_value=(0, range_controller_max),
                 dtype="int",
-                description=dt_desc_map[dynamic_table.neurodata_type],
+                description=desc,
                 orientation="vertical",
             )
             self.range_controller.observe(self.range_controller_observer)
