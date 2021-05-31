@@ -106,7 +106,6 @@ def dict2accordion(d: dict, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.
             accordion.set_title(i, label + ": " + d[label].description)
         else:
             accordion.set_title(i, label)
-        accordion.set_title(i, label)
 
     def on_selected_index(change):
         if change.new is not None and isinstance(
