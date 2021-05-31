@@ -815,8 +815,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(AlignMultiTraceTimeSeriesByTrial
             start_label,
             before,
             after,
-            traces=index,
-            timestamps=False
+            traces=index
         )
         rate = self.time_series.rate
         tt = np.arange(data.shape[1]) / rate - before
