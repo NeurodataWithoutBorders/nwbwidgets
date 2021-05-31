@@ -229,7 +229,8 @@ def align_timestamps_by_trials(timeseries: TimeSeries, starts, before: float, af
         idx_start = bisect(timeseries.timestamps, start)
         idx_stop = bisect(timeseries.timestamps, start + before + after, lo=idx_start)
         out.append(timeseries.timestamps[idx_start:idx_stop])
-    return [i-i[0]-before for i in out]
+    print(out)
+    return [list(np.array(i)-i[0]-before) for i in out]
 
 
 def align_by_trials(
