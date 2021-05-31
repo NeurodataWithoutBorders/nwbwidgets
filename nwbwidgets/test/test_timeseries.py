@@ -91,6 +91,10 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
                 stt = start_time + np.random.rand()
                 spt = stt + 7 - np.random.rand()
                 self.time_intervals.add_interval(start_time=stt, stop_time=spt)
+        self.time_intervals.add_column(
+            name='temp', description='desc', data=np.random.randint(2, size=n_intervals))
+        self.time_intervals.add_column(
+            name='temp2', description='desc', data=np.random.randint(10, size=n_intervals))
 
     def test_align_by_timestamps(self):
         AlignMultiTraceTimeSeriesByTrialsVariable(
