@@ -33,7 +33,7 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
                     unique_vals = [
                         x.decode() if isinstance(x, bytes) else x for x in unique_vals
                     ]  # handle h5py 3.0
-                    categorical_cols[name] = np.array(column_data)
+                    categorical_cols[name] = np.array(dynamic_table[name].data)
             except Exception as e:
                 print(e)
     return categorical_cols
