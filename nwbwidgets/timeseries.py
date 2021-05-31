@@ -921,7 +921,6 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrial
             plot_kwargs = dict()
             if labels is not None:
                 plot_kwargs.update(label=labels[group_inds[trial_no]])
-            print(time_ts_aligned[trial_no],data[trial_no])
             plt.plot(
                 time_ts_aligned[trial_no],
                 data[trial_no],

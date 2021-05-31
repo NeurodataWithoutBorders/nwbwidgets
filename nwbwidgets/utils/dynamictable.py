@@ -18,22 +18,23 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
         keys: as columns that are categorical, values as the unique values
     """
     categorical_cols = {}
-    region = region if region is not None else list(range(len(dynamic_table)))
+    comp_region = list(range(len(dynamic_table)))
+    region = region if region is not None else comp_region
     for name in dynamic_table.colnames:
         if len(dynamic_table[name].shape) == 1:
             try:
                 if isinstance(dynamic_table[name].data[0], (str, numbers.Number, bytes)):
-                    column_data = [dynamic_table[name].data[i] for i in region]
+                    column_data = [dynamic_table[name].data[i] for i in comp_region]
                 elif hasattr(dynamic_table[name].data[0], 'name'):
-                    column_data = [dynamic_table[name].data[i].name for i in region]
+                    column_data = [dynamic_table[name].data[i].name for i in comp_region]
                 else:
                     continue
-                unique_vals = np.unique(column_data)
+                unique_vals = np.unique([column_data[i] for i in region])
                 if 1 < len(unique_vals) <= (len(column_data) / 2):
                     unique_vals = [
                         x.decode() if isinstance(x, bytes) else x for x in unique_vals
                     ]  # handle h5py 3.0
-                    categorical_cols[name] = np.array(dynamic_table[name].data)
+                    categorical_cols[name] = np.array(column_data)
             except Exception as e:
                 print(e)
     return categorical_cols
