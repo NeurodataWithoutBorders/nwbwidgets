@@ -909,6 +909,7 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrial
             group_inds = np.zeros(len(data), dtype=np.int)
 
         data = [data[i] for i in order]
+        time_ts_aligned = [time_ts_aligned[i] for i in order]
 
         if align_to_zero:
             for trial_no in range(len(data)):
@@ -920,6 +921,7 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrial
             plot_kwargs = dict()
             if labels is not None:
                 plot_kwargs.update(label=labels[group_inds[trial_no]])
+            print(time_ts_aligned[trial_no],data[trial_no])
             plt.plot(
                 time_ts_aligned[trial_no],
                 data[trial_no],
