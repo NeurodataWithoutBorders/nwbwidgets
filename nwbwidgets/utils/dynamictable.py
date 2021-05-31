@@ -30,6 +30,8 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
                 else:
                     continue
                 unique_vals = np.unique([column_data[i] for i in region])
+                if not isinstance(unique_vals[0],str) and all(np.isnan(unique_vals)):
+                    continue
                 if 1 < len(unique_vals) <= (len(column_data) / 2):
                     unique_vals = [
                         x.decode() if isinstance(x, bytes) else x for x in unique_vals
