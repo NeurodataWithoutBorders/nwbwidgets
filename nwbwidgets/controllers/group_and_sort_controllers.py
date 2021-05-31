@@ -186,7 +186,9 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.group_sm.options = tuple(groups[::-1])
             self.group_sm.value = self.group_sm.options
             self.group_sm.disabled = False
-            self.limit_cb.disabled = False
+            if self.control_limit:
+                self.limit_bit.disabled = False
+                self.limit_cb.disabled = False
             self.group_and_sort()
 
     def group_dd_observer(self, change):
@@ -197,10 +199,10 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 if self.control_limit:
                     self.limit_bit.disabled = True
                     self.limit_cb.disabled = True
+                    self.limit_cb.value = False
                 self.column_values = None
                 self.group_by = None
                 self.limit = None
-                self.limit_cb.value = False
                 self.group_sm.options = []
                 self.group_sm.visible = False
                 self.group_sm.rows = 1
