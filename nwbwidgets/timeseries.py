@@ -9,7 +9,11 @@ from plotly.colors import DEFAULT_PLOTLY_COLORS
 
 from pynwb import TimeSeries
 
-from .controllers import StartAndDurationController, GroupAndSortController, RangeController
+from .controllers import (
+    StartAndDurationController,
+    GroupAndSortController,
+    RangeController,
+)
 from .utils.plotly import multi_trace
 from .utils.timeseries import (
     get_timeseries_tt,
@@ -460,7 +464,7 @@ def plot_grouped_traces(
         row_ids = getattr(time_series, dynamic_table_region_name).data[:]
         channel_inds = [np.argmax(row_ids == x) for x in order]
     elif window is not None:
-        order = order[window[0]:window[1]]
+        order = order[window[0] : window[1]]
         channel_inds = order
     else:
         channel_inds = order
@@ -591,9 +595,11 @@ class BaseGroupedTraceWidget(widgets.HBox):
                     x for x in range(len(table)) if x not in referenced_rows
                 ]
                 categorical_columns = infer_categorical_columns(table, discard_rows)
-                if len(categorical_columns)>0:
+                if len(categorical_columns) > 0:
                     self.gas = GroupAndSortController(
-                        dynamic_table=table, start_discard_rows=discard_rows, groups=categorical_columns
+                        dynamic_table=table,
+                        start_discard_rows=discard_rows,
+                        groups=categorical_columns,
                     )
                     self.controls.update(gas=self.gas)
                 else:
