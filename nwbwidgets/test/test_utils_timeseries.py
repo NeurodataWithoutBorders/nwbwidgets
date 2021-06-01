@@ -96,12 +96,19 @@ def test_align_by_trials():
 class TimeSeriesTimeStampTestCase(unittest.TestCase):
     def setUp(self):
         data = np.arange(100, 200, 10)
-        timestamps = list(range(1,4)) + list(range(7,10)) + list(range(17,21))
+        timestamps = list(range(1, 4)) + list(range(7, 10)) + list(range(17, 21))
         self.ts_rate = TimeSeries(
-            name="test_timeseries_rate", data=data, unit="m", starting_time=0.0, rate=1.0
+            name="test_timeseries_rate",
+            data=data,
+            unit="m",
+            starting_time=0.0,
+            rate=1.0,
         )
         self.ts_timestamps = TimeSeries(
-            name="test_timeseries_timestamps", data=data, unit="m", timestamps=timestamps
+            name="test_timeseries_timestamps",
+            data=data,
+            unit="m",
+            timestamps=timestamps,
         )
 
     def test_get_timeseries_maxt(self):
@@ -109,7 +116,7 @@ class TimeSeriesTimeStampTestCase(unittest.TestCase):
         assert get_timeseries_maxt(self.ts_timestamps) == 20
 
     def test_get_timeseries_mint(self):
-        assert get_timeseries_mint(self.ts_rate)==0
+        assert get_timeseries_mint(self.ts_rate) == 0
         assert get_timeseries_mint(self.ts_timestamps) == 1
 
     def test_timeseries_time_to_ind(self):
@@ -122,8 +129,8 @@ class TimeSeriesTimeStampTestCase(unittest.TestCase):
     def test_bisect_timeseries_by_times(self):
         assert np.array_equal(
             bisect_timeseries_by_times(self.ts_rate, [0, 1, 2], 4),
-                [[100, 110, 120, 130], [110, 120, 130, 140], [120, 130, 140, 150]]
-            )
+            [[100, 110, 120, 130], [110, 120, 130, 140], [120, 130, 140, 150]],
+        )
         assert isinstance(
             bisect_timeseries_by_times(self.ts_timestamps, [0, 1, 2], 4), list
         )

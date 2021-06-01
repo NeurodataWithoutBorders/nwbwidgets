@@ -5,7 +5,7 @@ from nwbwidgets.behavior import (
     show_behavioral_events,
     show_spatial_series_over_time,
     show_spatial_series,
-    behavior_trial_align
+    trial_align_spatial_series,
 )
 from nwbwidgets.base import show_multi_container_interface
 from nwbwidgets.view import default_neurodata_vis_spec
@@ -68,6 +68,7 @@ class ShowSpatialSeriesThreeDTestCase(unittest.TestCase):
     def test_show_spatial_series_threeD(self):
         show_spatial_series(self.spatial_series)
 
+
 class SpatialSeriesTrialsAlign(unittest.TestCase):
     def setUp(self) -> None:
         data = np.random.rand(100, 3)
@@ -95,15 +96,20 @@ class SpatialSeriesTrialsAlign(unittest.TestCase):
                 spt = stt + 7 - np.random.rand()
                 self.time_intervals.add_interval(start_time=stt, stop_time=spt)
         self.time_intervals.add_column(
-            name='temp', description='desc', data=np.random.randint(2, size=n_intervals))
+            name="temp", description="desc", data=np.random.randint(2, size=n_intervals)
+        )
         self.time_intervals.add_column(
-            name='temp2', description='desc', data=np.random.randint(10, size=n_intervals))
+            name="temp2",
+            description="desc",
+            data=np.random.randint(10, size=n_intervals),
+        )
 
-    def test_behavior_trials_align_rate(self):
-        behavior_trial_align(self.spatial_series_rate,self.time_intervals)
+    def test_spatial_series_trials_align_rate(self):
+        trial_align_spatial_series(self.spatial_series_rate, self.time_intervals)
 
-    def test_behavior_trials_align_ts(self):
-        behavior_trial_align(self.spatial_series_ts,self.time_intervals)
+    def test_spatial_series_trials_align_ts(self):
+        trial_align_spatial_series(self.spatial_series_ts, self.time_intervals)
+
 
 def test_show_behavioral_events():
     data = np.arange(100, 200, 10)

@@ -12,7 +12,11 @@ from pynwb import TimeSeries
 from pynwb.epoch import TimeIntervals
 import scipy
 
-from .controllers import StartAndDurationController, GroupAndSortController, RangeController
+from .controllers import (
+    StartAndDurationController,
+    GroupAndSortController,
+    RangeController,
+)
 from .utils.plotly import multi_trace
 from .utils.timeseries import (
     get_timeseries_tt,
@@ -85,7 +89,7 @@ def show_timeseries_mpl(
         ylabel=ylabel,
         title=title,
         figsize=figsize,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -300,7 +304,7 @@ class SingleTracePlotlyWidget(SingleTraceWidget):
         super().__init__(
             timeseries=timeseries,
             foreign_time_window_controller=foreign_time_window_controller,
-            **kwargs
+            **kwargs,
         )
 
     def set_out_fig(self):
@@ -466,7 +470,7 @@ def plot_grouped_traces(
         row_ids = getattr(time_series, dynamic_table_region_name).data[:]
         channel_inds = [np.argmax(row_ids == x) for x in order]
     elif window is not None:
-        order = order[window[0]:window[1]]
+        order = order[window[0] : window[1]]
         channel_inds = order
     else:
         channel_inds = order
@@ -597,9 +601,11 @@ class BaseGroupedTraceWidget(widgets.HBox):
                     x for x in range(len(table)) if x not in referenced_rows
                 ]
                 categorical_columns = infer_categorical_columns(table, discard_rows)
-                if len(categorical_columns)>0:
+                if len(categorical_columns) > 0:
                     self.gas = GroupAndSortController(
-                        dynamic_table=table, start_discard_rows=discard_rows, groups=categorical_columns
+                        dynamic_table=table,
+                        start_discard_rows=discard_rows,
+                        groups=categorical_columns,
                     )
                     self.controls.update(gas=self.gas)
                 else:
@@ -695,7 +701,7 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
         trace_index=0,
         trace_controller=None,
         trace_controller_kwargs=None,
-        sem=True
+        sem=True,
     ):
 
         self.time_series = time_series
@@ -747,19 +753,22 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
             gas=self.gas,
             align_to_zero=self.align_to_zero_cb,
         )
-        vbox_cols = [[self.gas, self.align_to_zero_cb],
-                     [self.trace_controller,self.trial_event_controller,self.before_ft,self.after_ft]]
+        vbox_cols = [
+            [self.gas, self.align_to_zero_cb],
+            [
+                self.trace_controller,
+                self.trial_event_controller,
+                self.before_ft,
+                self.after_ft,
+            ],
+        ]
         if sem:
             self.sem_cb = widgets.Checkbox(description="show SEM")
             self.controls.update(sem=self.sem_cb)
             vbox_cols[0].append(self.sem_cb)
         out_fig = interactive_output(self.update, self.controls)
 
-        self.children = [
-            widgets.HBox(
-                        [widgets.VBox(i) for i in vbox_cols]
-                        ),
-            out_fig]
+        self.children = [widgets.HBox([widgets.VBox(i) for i in vbox_cols]), out_fig]
 
     def get_trials(self):
         return self.time_series.get_ancestor("NWBFile").trials
@@ -775,7 +784,9 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
         )
 
 
-class AlignMultiTraceTimeSeriesByTrialsConstant(AlignMultiTraceTimeSeriesByTrialsAbstract):
+class AlignMultiTraceTimeSeriesByTrialsConstant(
+    AlignMultiTraceTimeSeriesByTrialsAbstract
+):
     def __init__(
         self,
         time_series: TimeSeries,
@@ -788,12 +799,13 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(AlignMultiTraceTimeSeriesByTrial
         self.time_series = time_series
 
         super().__init__(
-                        time_series=time_series,
-                        trials=trials,
-                        trace_index=trace_index,
-                        trace_controller=trace_controller,
-                        trace_controller_kwargs=trace_controller_kwargs,
-                        sem=True)
+            time_series=time_series,
+            trials=trials,
+            trace_index=trace_index,
+            trace_controller=trace_controller,
+            trace_controller_kwargs=trace_controller_kwargs,
+            sem=True,
+        )
 
     def update(
         self,
@@ -810,12 +822,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(AlignMultiTraceTimeSeriesByTrial
         align_line_color=(0.7, 0.7, 0.7),
     ):
         data = align_by_time_intervals(
-            self.time_series,
-            self.trials,
-            start_label,
-            before,
-            after,
-            traces=index
+            self.time_series, self.trials, start_label, before, after, traces=index
         )
         rate = self.time_series.rate
         tt = np.arange(data.shape[1]) / rate - before
@@ -827,7 +834,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(AlignMultiTraceTimeSeriesByTrial
         data = data[order]
 
         if align_to_zero:
-            data_zero_id = bisect(tt,0)
+            data_zero_id = bisect(tt, 0)
             data = data - data[:, data_zero_id, np.newaxis]
 
         fig, ax = plt.subplots(figsize=figsize)
@@ -875,8 +882,9 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(AlignMultiTraceTimeSeriesByTrial
         plt.axvline(color=align_line_color)
 
 
-class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrialsAbstract):
-
+class AlignMultiTraceTimeSeriesByTrialsVariable(
+    AlignMultiTraceTimeSeriesByTrialsAbstract
+):
     def __init__(
         self,
         time_series: TimeSeries,
@@ -889,25 +897,26 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrial
         self.time_series = time_series
 
         super().__init__(
-                        time_series=time_series,
-                        trials=trials,
-                        trace_index=trace_index,
-                        trace_controller=trace_controller,
-                        trace_controller_kwargs=trace_controller_kwargs,
-                        sem=False)
+            time_series=time_series,
+            trials=trials,
+            trace_index=trace_index,
+            trace_controller=trace_controller,
+            trace_controller_kwargs=trace_controller_kwargs,
+            sem=False,
+        )
 
     def update(
-            self,
-            index: int,
-            start_label: str = "start_time",
-            before: float = 0.0,
-            after: float = 1.0,
-            order=None,
-            group_inds=None,
-            labels=None,
-            align_to_zero=False,
-            figsize=(7, 7),
-            align_line_color=(0.7, 0.7, 0.7),
+        self,
+        index: int,
+        start_label: str = "start_time",
+        before: float = 0.0,
+        after: float = 1.0,
+        order=None,
+        group_inds=None,
+        labels=None,
+        align_to_zero=False,
+        figsize=(7, 7),
+        align_line_color=(0.7, 0.7, 0.7),
     ):
         data = align_by_time_intervals(
             self.time_series,
@@ -918,7 +927,9 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrial
             traces=index,
         )
         starts = np.array(self.trials[start_label][:]) - before
-        time_ts_aligned = align_timestamps_by_trials(self.time_series, starts, before, after)
+        time_ts_aligned = align_timestamps_by_trials(
+            self.time_series, starts, before, after
+        )
 
         if group_inds is None:
             group_inds = np.zeros(len(data), dtype=np.int)
