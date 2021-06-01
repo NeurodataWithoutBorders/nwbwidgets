@@ -273,7 +273,11 @@ class GroupAndSortController(AbstractGroupAndSortController):
         if by is None:
             return None
         elif by in self.groups:
-            return self.groups[by] if units_select is None else self.groups[by][units_select]
+            return (
+                self.groups[by]
+                if units_select is None
+                else self.groups[by][units_select]
+            )
         else:
             raise ValueError(
                 "column {} not in DynamicTable {}".format(by, self.dynamic_table)
