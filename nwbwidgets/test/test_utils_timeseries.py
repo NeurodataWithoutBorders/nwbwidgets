@@ -9,7 +9,7 @@ from nwbwidgets.utils.timeseries import (
     get_timeseries_mint,
     get_timeseries_in_units,
     timeseries_time_to_ind,
-    align_by_times,
+    bisect_timeseries_by_times,
     align_by_trials,
     align_by_time_intervals,
 )
@@ -78,7 +78,7 @@ def test_align_by_trials():
         file_create_date=create_date,
     )
 
-    data = list(range(100, 200, 10))
+    data = np.arange(100, 200, 10)
     timestamps = list(range(10))
     ts = TimeSeries(name="test_timeseries", data=data, unit="m", timestamps=timestamps)
     nwbfile.add_acquisition(ts)
@@ -95,33 +95,48 @@ def test_align_by_trials():
 
 class TimeSeriesTimeStampTestCase(unittest.TestCase):
     def setUp(self):
-        data = list(range(100, 200, 10))
-        timestamps = list(range(10))
-        self.ts = TimeSeries(
-            name="test_timeseries", data=data, unit="m", timestamps=timestamps
+        data = np.arange(100, 200, 10)
+        timestamps = list(range(1, 4)) + list(range(7, 10)) + list(range(17, 21))
+        self.ts_rate = TimeSeries(
+            name="test_timeseries_rate",
+            data=data,
+            unit="m",
+            starting_time=0.0,
+            rate=1.0,
+        )
+        self.ts_timestamps = TimeSeries(
+            name="test_timeseries_timestamps",
+            data=data,
+            unit="m",
+            timestamps=timestamps,
         )
 
     def test_get_timeseries_maxt(self):
-        maxt = get_timeseries_maxt(self.ts)
-        assert maxt == 9
+        assert get_timeseries_maxt(self.ts_rate) == 9
+        assert get_timeseries_maxt(self.ts_timestamps) == 20
 
     def test_get_timeseries_mint(self):
-        mint = get_timeseries_mint(self.ts)
-        assert mint == 0
+        assert get_timeseries_mint(self.ts_rate) == 0
+        assert get_timeseries_mint(self.ts_timestamps) == 1
 
     def test_timeseries_time_to_ind(self):
-        assert timeseries_time_to_ind(self.ts, 3) == 4
+        assert timeseries_time_to_ind(self.ts_rate, 3.3) == 4
+        assert timeseries_time_to_ind(self.ts_rate, 15.5) == 9
+        assert timeseries_time_to_ind(self.ts_timestamps, 6.5) == 3
+        assert timeseries_time_to_ind(self.ts_timestamps, 7.7) == 4
+        assert timeseries_time_to_ind(self.ts_timestamps, 27.7) == 9
 
-    def test_align_by_times(self):
+    def test_bisect_timeseries_by_times(self):
         assert np.array_equal(
-            align_by_times(self.ts, [0, 1, 2], [4, 5, 6]),
-            np.array(
-                [[110, 120, 130, 140], [120, 130, 140, 150], [130, 140, 150, 160]]
-            ),
+            bisect_timeseries_by_times(self.ts_rate, [0, 1, 2], 4),
+            [[100, 110, 120, 130], [110, 120, 130, 140], [120, 130, 140, 150]],
+        )
+        assert isinstance(
+            bisect_timeseries_by_times(self.ts_timestamps, [0, 1, 2], 4), list
         )
 
     def test_get_timeseries_tt_timestamp(self):
-        tt = get_timeseries_tt(self.ts)
+        tt = get_timeseries_tt(self.ts_rate)
         np.testing.assert_array_equal(
             tt, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
         )
@@ -129,8 +144,6 @@ class TimeSeriesTimeStampTestCase(unittest.TestCase):
     def test_align_by_time_intervals(self):
         intervals = TimeIntervals(name="Time Intervals")
         np.testing.assert_array_equal(
-            align_by_time_intervals(
-                timeseries=self.ts, intervals=intervals, stop_label=None
-            ),
+            align_by_time_intervals(timeseries=self.ts_rate, intervals=intervals),
             np.array([]),
         )
