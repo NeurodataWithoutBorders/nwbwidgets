@@ -38,7 +38,7 @@ class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
 class GroupAndSortController(AbstractGroupAndSortController):
     def __init__(
         self,
-        dynamic_table: DynamicTable=None,
+        dynamic_table: DynamicTable,
         group_by=None,
         window=None,
         keep_rows=None,
@@ -54,8 +54,6 @@ class GroupAndSortController(AbstractGroupAndSortController):
         group_by
         window: None or bool,
         """
-        if dynamic_table is None and keep_rows is None:
-            raise ValueError('provide dynamictable or keep rows or both')
         super().__init__(dynamic_table, keep_rows)
 
         self.control_order = control_order
@@ -276,10 +274,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.update_value()
 
     def get_groups(self):
-        if self.dynamic_table is not None:
-            return infer_categorical_columns(self.dynamic_table, self.keep_rows)
-        else:
-            return dict()
+        return infer_categorical_columns(self.dynamic_table, self.keep_rows)
 
     def get_column_values(self, by, units_select=None):
         """Get the values of the group_by variable
