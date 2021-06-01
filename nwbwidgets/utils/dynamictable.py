@@ -18,7 +18,7 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
         keys: as columns that are categorical, values as the unique values
     """
     categorical_cols = {}
-    region = region if region is not None else len(dynamic_table)
+    region = region if region is not None else np.arange(len(dynamic_table))
     for name in dynamic_table.colnames:
         if len(dynamic_table[name].shape) == 1:
             try:
