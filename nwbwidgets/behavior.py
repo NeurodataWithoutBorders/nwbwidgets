@@ -10,7 +10,7 @@ from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
 from .timeseries import (
     AlignMultiTraceTimeSeriesByTrialsConstant,
     AlignMultiTraceTimeSeriesByTrialsVariable,
-
+)
 
 
 def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dict):
