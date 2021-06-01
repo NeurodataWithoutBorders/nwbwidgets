@@ -593,14 +593,11 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 dynamic_table_region = getattr(time_series, dynamic_table_region_name)
                 table = dynamic_table_region.table
                 referenced_rows = np.array(dynamic_table_region.data)
-                discard_rows = [
-                    x for x in range(len(table)) if x not in referenced_rows
-                ]
             else:
                 table = None
-                discard_rows = None
+                referenced_rows = self.time_series.data.shape[1]
             self.gas = GroupAndSortController(
-                dynamic_table=table, start_discard_rows=discard_rows, nitems=self.time_series.data.shape[1],
+                dynamic_table=table, keep_rows=referenced_rows,
             )
             self.controls.update(gas=self.gas)
         else:

@@ -18,18 +18,17 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
         keys: as columns that are categorical, values as the unique values
     """
     categorical_cols = {}
-    comp_region = list(range(len(dynamic_table)))
-    region = region if region is not None else comp_region
+    region = region if region is not None else len(dynamic_table)
     for name in dynamic_table.colnames:
         if len(dynamic_table[name].shape) == 1:
             try:
                 if isinstance(dynamic_table[name].data[0], (str, numbers.Number, bytes)):
-                    column_data = [dynamic_table[name].data[i] for i in comp_region]
+                    column_data = [dynamic_table[name].data[i] for i in region]
                 elif hasattr(dynamic_table[name].data[0], 'name'):
-                    column_data = [dynamic_table[name].data[i].name for i in comp_region]
+                    column_data = [dynamic_table[name].data[i].name for i in region]
                 else:
                     continue
-                unique_vals = np.unique([column_data[i] for i in region])
+                unique_vals = np.unique(column_data)
                 if not isinstance(unique_vals[0],str) and all(np.isnan(unique_vals)):
                     continue
                 if 1 < len(unique_vals) <= (len(column_data) / 2):

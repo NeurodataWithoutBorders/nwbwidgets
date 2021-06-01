@@ -20,17 +20,14 @@ class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
     )
     """
 
-    def __init__(self, dynamic_table: DynamicTable, nitems=None):
+    def __init__(self, dynamic_table: DynamicTable, keep_rows=None):
         super().__init__()
-
+        self.keep_rows = keep_rows if keep_rows is not None else np.arange(len(dynamic_table))
         self.dynamic_table = dynamic_table
-        if self.dynamic_table is not None:
-            self.nitems = len(self.dynamic_table.id)
-        else:
-            self.nitems = nitems
+        self.nitems = len(self.keep_rows)
         self.column_values = None
         self.group_by = None
-        self.group_select = None
+        self.selected_column_values = None
         self.limit = None
         self.desc = False
         self.order_by = None
@@ -44,11 +41,10 @@ class GroupAndSortController(AbstractGroupAndSortController):
         dynamic_table: DynamicTable=None,
         group_by=None,
         window=None,
-        start_discard_rows=None,
+        keep_rows=None,
         control_order=True,
         control_limit=True,
         groups=None,
-        nitems=None,
     ):
         """
 
@@ -58,14 +54,13 @@ class GroupAndSortController(AbstractGroupAndSortController):
         group_by
         window: None or bool,
         """
-        if dynamic_table is None and nitems is None:
-            raise ValueError('provide one of dynamic_table or nitems')
-        super().__init__(dynamic_table, nitems)
+        if dynamic_table is None and keep_rows is None:
+            raise ValueError('provide dynamictable or keep rows or both')
+        super().__init__(dynamic_table, keep_rows)
 
         self.control_order = control_order
         self.control_limit = control_limit
-        start_discard_rows = [] if start_discard_rows is None else start_discard_rows
-        self.keep_rows = [i for i in range(self.nitems) if i not in start_discard_rows]
+        
         self.categorical_columns = self.get_groups() if groups is None else groups
         self.limit_bit = None
         self.limit_cb = None
@@ -265,7 +260,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
     def group_sm_observer(self, change):
         """group SelectMultiple observer"""
         if change["name"] == "value" and not self.group_sm.disabled:
-            self.group_select = change["new"]
+            self.selected_column_values = change["new"]
             value_before = self.window
             self.group_and_sort()
             if (
@@ -322,8 +317,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         order, group_inds, labels = group_and_sort(
             group_vals=self.column_values,
-            group_select=self.group_select,
-            keep_rows=self.keep_rows,
+            group_select=self.selected_column_values,
             order_vals=self.order_vals,
             limit=self.limit,
         )
