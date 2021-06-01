@@ -595,7 +595,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 referenced_rows = np.array(dynamic_table_region.data)
             else:
                 table = None
-                referenced_rows = self.time_series.data.shape[1]
+                referenced_rows = np.arange(self.time_series.data.shape[1])
             self.gas = GroupAndSortController(
                 dynamic_table=table, keep_rows=referenced_rows,
             )
