@@ -10,7 +10,7 @@ from nwbwidgets.timeseries import (
     plot_traces,
     show_indexed_timeseries_mpl,
     AlignMultiTraceTimeSeriesByTrialsConstant,
-    AlignMultiTraceTimeSeriesByTrialsVariable
+    AlignMultiTraceTimeSeriesByTrialsVariable,
 )
 from pynwb import TimeSeries
 from pynwb.epoch import TimeIntervals
@@ -79,10 +79,17 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
         for _ in range(data.shape[0]):
             timestamps.append(timestamps[-1] + 0.75 + 0.25 * np.random.rand())
         self.ts_rate = TimeSeries(
-            name="test_timeseries_rate", data=data, unit="m", starting_time=0.0, rate=1.0
+            name="test_timeseries_rate",
+            data=data,
+            unit="m",
+            starting_time=0.0,
+            rate=1.0,
         )
         self.ts_timestamps = TimeSeries(
-            name="test_timeseries_timestamps", data=data, unit="m", timestamps=timestamps
+            name="test_timeseries_timestamps",
+            data=data,
+            unit="m",
+            timestamps=timestamps,
         )
         self.time_intervals = TimeIntervals(name="Test Time Interval")
         n_intervals = 10
@@ -92,18 +99,20 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
                 spt = stt + 7 - np.random.rand()
                 self.time_intervals.add_interval(start_time=stt, stop_time=spt)
         self.time_intervals.add_column(
-            name='temp', description='desc', data=np.random.randint(2, size=n_intervals))
+            name="temp", description="desc", data=np.random.randint(2, size=n_intervals)
+        )
         self.time_intervals.add_column(
-            name='temp2', description='desc', data=np.random.randint(10, size=n_intervals))
+            name="temp2",
+            description="desc",
+            data=np.random.randint(10, size=n_intervals),
+        )
 
     def test_align_by_timestamps(self):
         AlignMultiTraceTimeSeriesByTrialsVariable(
-            time_series=self.ts_timestamps,
-            trials=self.time_intervals
+            time_series=self.ts_timestamps, trials=self.time_intervals
         )
 
     def test_align_by_rate(self):
         AlignMultiTraceTimeSeriesByTrialsConstant(
-            time_series=self.ts_rate,
-            trials=self.time_intervals
+            time_series=self.ts_rate, trials=self.time_intervals
         )

@@ -597,11 +597,19 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 dynamic_table_region = getattr(time_series, dynamic_table_region_name)
                 table = dynamic_table_region.table
                 referenced_rows = np.array(dynamic_table_region.data)
-                self.gas = GroupAndSortController(
-                    dynamic_table=table,
-                    keep_rows=referenced_rows
-                )
-                self.controls.update(gas=self.gas)
+                discard_rows = [
+                    x for x in range(len(table)) if x not in referenced_rows
+                ]
+                categorical_columns = infer_categorical_columns(table, discard_rows)
+                if len(categorical_columns) > 0:
+                    self.gas = GroupAndSortController(
+                        dynamic_table=table,
+                        start_discard_rows=discard_rows,
+                        groups=categorical_columns,
+                    )
+                    self.controls.update(gas=self.gas)
+                else:
+                    set_range_controller = True
             else:
                 set_range_controller = True
             if set_range_controller:
@@ -775,6 +783,7 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
             control_limit=control_limit,
         )
 
+
 class AlignMultiTraceTimeSeriesByTrialsConstant(
     AlignMultiTraceTimeSeriesByTrialsAbstract
 ):
@@ -825,7 +834,6 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
         data = data[order]
 
         if align_to_zero:
-
             data_zero_id = bisect(tt, 0)
             data = data - data[:, data_zero_id, np.newaxis]
 
@@ -927,8 +935,6 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
             group_inds = np.zeros(len(data), dtype=np.int)
 
         data = [data[i] for i in order]
-        time_ts_aligned = [time_ts_aligned[i] for i in order]
-
 
         if align_to_zero:
             for trial_no in range(len(data)):
@@ -952,4 +958,3 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
         ax.set_xlabel("time (s)")
         ax.set_ylabel(self.time_series.name)
         plt.axvline(color=align_line_color)
-

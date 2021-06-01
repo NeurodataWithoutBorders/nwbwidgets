@@ -22,9 +22,11 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
     for name in dynamic_table.colnames:
         if len(dynamic_table[name].shape) == 1:
             try:
-                if isinstance(dynamic_table[name].data[0], (str, numbers.Number, bytes)):
+                if isinstance(
+                    dynamic_table[name].data[0], (str, numbers.Number, bytes)
+                ):
                     column_data = [dynamic_table[name].data[i] for i in region]
-                elif hasattr(dynamic_table[name].data[0], 'name'):
+                elif hasattr(dynamic_table[name].data[0], "name"):
                     column_data = [dynamic_table[name].data[i].name for i in region]
                 else:
                     continue
