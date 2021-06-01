@@ -106,6 +106,11 @@ def show_session_raster(
         progress_bar=progress_bar,
     )
     ax.set_ylabel("unit #")
+    if len(data) <= 30:
+        unit_id_display = np.array(units.id.data[:])[[x for x in this_iter]]
+        ax.set_yticklabels(unit_id_display)
+    else:
+        ax.axes.yaxis.set_visible(False)
 
     return ax
 
@@ -284,9 +289,10 @@ class PSTHWidget(widgets.VBox):
             self.trials = trials
 
         if unit_controller is None:
-            nunits = len(units["spike_times"].data)
+            self.unit_ids = units.id.data[:]
+            n_units = len(self.unit_ids)
             self.unit_controller = widgets.Dropdown(
-                options=[x for x in range(nunits)],
+                options=[(str(self.unit_ids[x]), x) for x in range(n_units)],
                 value=unit_index,
                 description="unit",
                 layout=Layout(width="200px"),
@@ -437,7 +443,7 @@ class PSTHWidget(widgets.VBox):
             progress_bar=progress_bar,
         )
 
-        axs[0].set_title("PSTH for unit {}".format(index))
+        axs[0].set_title(f"PSTH for unit {self.unit_ids[index]}")
         axs[0].set_xticks([])
         axs[0].set_xlabel("")
 
@@ -835,8 +841,11 @@ class RasterGridWidget(widgets.VBox):
         )
 
         trial_event_controller = make_trial_event_controller(self.trials)
+
+        unit_ids = units.id.data[:]
+        n_units = len(unit_ids)
         unit_controller = widgets.Dropdown(
-            options=range(len(units["spike_times"].data)),
+            options=[(str(unit_ids[x]), x) for x in range(n_units)],
             value=unit_index,
             description="unit",
         )
