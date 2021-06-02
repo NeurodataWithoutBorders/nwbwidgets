@@ -31,7 +31,6 @@ def test_infer_categorical_columns():
         columns=vd,
         colnames=["Data1", "Data2", "ElectrodeGroup"],
     )
-    print(infer_categorical_columns(dynamic_table))
     assert dicts_exact_equal(
         infer_categorical_columns(dynamic_table),
         {"Data1": data1, "Data2": data2, "ElectrodeGroup": [i.name for i in data3]},
