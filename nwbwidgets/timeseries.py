@@ -591,7 +591,6 @@ class BaseGroupedTraceWidget(widgets.HBox):
             time_window=self.time_window_controller,
             dynamic_table_region_name=widgets.fixed(dynamic_table_region_name),
         )
-        set_range_controller = False
         if foreign_group_and_sort_controller is None:
             if dynamic_table_region_name is not None:
                 dynamic_table_region = getattr(time_series, dynamic_table_region_name)
@@ -603,8 +602,6 @@ class BaseGroupedTraceWidget(widgets.HBox):
                 )
                 self.controls.update(gas=self.gas)
             else:
-                set_range_controller = True
-            if set_range_controller:
                 self.gas = None
                 range_controller_max = min(30, self.time_series.data.shape[1])
                 self.range_controller = RangeController(
