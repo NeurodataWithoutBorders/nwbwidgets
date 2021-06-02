@@ -22,7 +22,9 @@ class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
 
     def __init__(self, dynamic_table: DynamicTable, keep_rows=None):
         super().__init__()
-        self.keep_rows = keep_rows if keep_rows is not None else np.arange(len(dynamic_table))
+        self.keep_rows = (
+            keep_rows if keep_rows is not None else np.arange(len(dynamic_table))
+        )
         self.dynamic_table = dynamic_table
         self.nitems = len(self.keep_rows)
         self.column_values = None
@@ -50,15 +52,25 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         Parameters
         ----------
-        dynamic_table
-        group_by
+        dynamic_table: DynamicTable
+            the table wrt which the grouping is performed
+        group_by: str
+            the column name from the dynamic table for which the grouping is performed
         window: None or bool,
+        keep_rows: Iterable
+            rows of dynamic table to consider in the grouping op
+        control_limit: bool
+            whether to control the limit of the displayed rows
+        control_order: bool
+            whether to control the order of the displayed rows based on other column
+        groups: dict
+            dict(column_name=column_values) to work with specific columns only
         """
         super().__init__(dynamic_table, keep_rows)
 
         self.control_order = control_order
         self.control_limit = control_limit
-        
+
         self.categorical_columns = self.get_groups() if groups is None else groups
         self.limit_bit = None
         self.limit_cb = None
@@ -67,7 +79,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         self.group_sm = None
         self.group_dd = None
 
-        if len(self.categorical_columns)>0:
+        if len(self.categorical_columns) > 0:
             if control_limit:
                 self.limit_cb = widgets.Checkbox(
                     description="limit",
@@ -78,7 +90,11 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 )
                 self.limit_cb.observe(self.limit_cb_observer)
                 self.limit_bit = widgets.BoundedIntText(
-                    value=50, min=0, max=99999, disabled=True, layout=Layout(max_width="70px")
+                    value=50,
+                    min=0,
+                    max=99999,
+                    disabled=True,
+                    layout=Layout(max_width="70px"),
                 )
                 self.limit_bit.observe(self.limit_bit_observer)
 
@@ -116,11 +132,17 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         if window is None:
             range_controller_max = min(30, self.nitems)
-            dt_desc_map = {'DynamicTable':'traces',
-                           'TimeIntervals': 'trials',
-                           'Units': 'units',
-                           'PlaneSegmentation': 'image_planes'}
-            desc = dt_desc_map[dynamic_table.neurodata_type] if dynamic_table is not None else 'traces'
+            dt_desc_map = {
+                "DynamicTable": "traces",
+                "TimeIntervals": "trials",
+                "Units": "units",
+                "PlaneSegmentation": "image_planes",
+            }
+            desc = (
+                dt_desc_map[dynamic_table.neurodata_type]
+                if dynamic_table is not None
+                else "traces"
+            )
             self.range_controller = RangeController(
                 0,
                 self.nitems,
@@ -135,8 +157,6 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.window = (0, self.nitems)
             self.range_controller = widgets.HTML("")
 
-
-
         self.children = self.get_children()
         self.layout = Layout(width="290px")
         self.update_value()
@@ -147,10 +167,12 @@ class GroupAndSortController(AbstractGroupAndSortController):
         if self.group_dd:
             children.append(self.group_dd)
         if self.group_sm is not None:
-            children.append(widgets.HBox(children=(self.group_sm, self.range_controller)))
+            children.append(
+                widgets.HBox(children=(self.group_sm, self.range_controller))
+            )
         else:
             children.append(self.range_controller)
-        if len(self.categorical_columns)>0:
+        if len(self.categorical_columns) > 0:
             if self.control_limit:
                 children.append(
                     widgets.HBox(
@@ -171,7 +193,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
     def set_group_by(self, group_by):
         self.group_by = group_by
-        self.column_values = self.get_column_values(by=group_by)
+        self.column_values = self.get_column_values(column_name=group_by)
         if self.column_values is not None:
             keep_column_values = self.column_values[self.keep_rows]
             if self.column_values.dtype == np.float:
@@ -276,7 +298,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
     def get_groups(self):
         return infer_categorical_columns(self.dynamic_table, self.keep_rows)
 
-    def get_column_values(self, by, units_select=None):
+    def get_column_values(self, column_name, rows_select=None):
         """Get the values of the group_by variable
 
         Parameters
@@ -288,13 +310,19 @@ class GroupAndSortController(AbstractGroupAndSortController):
         -------
 
         """
-        if by is None:
+        if column_name is None:
             return None
-        elif by in self.categorical_columns:
-            return self.categorical_columns[by] if units_select is None else self.categorical_columns[by][units_select]
+        elif column_name in self.categorical_columns:
+            return (
+                self.categorical_columns[column_name]
+                if rows_select is None
+                else self.categorical_columns[column_name][rows_select]
+            )
         else:
             raise ValueError(
-                "column {} not in DynamicTable {}".format(by, self.dynamic_table)
+                "column {} not in DynamicTable {}".format(
+                    column_name, self.dynamic_table
+                )
             )
 
     def get_orderable_cols(self):
