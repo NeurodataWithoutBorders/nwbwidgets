@@ -25,7 +25,7 @@ from .utils.timeseries import (
     timeseries_time_to_ind,
     get_timeseries_in_units,
 )
-from .utils.widgets import interactive_output
+from .utils.widgets import interactive_output, set_plotly_callbacks
 from .controllers.misc import make_trial_event_controller
 from .utils.timeseries import align_by_time_intervals, align_timestamps_by_trials
 
@@ -755,7 +755,7 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
             self.sem_cb = widgets.Checkbox(description="show SEM")
             self.controls.update(sem=self.sem_cb)
             vbox_cols[0].append(self.sem_cb)
-        out_fig = interactive_output(self.update, self.controls)
+        out_fig = set_plotly_callbacks(self.update, self.controls)
 
         self.children = [widgets.HBox([widgets.VBox(i) for i in vbox_cols]), out_fig]
 
@@ -826,7 +826,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
             data_zero_id = bisect(tt, 0)
             data = data - data[:, data_zero_id, np.newaxis]
 
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = go.FigureWidget()
         if sem:
             for group in np.unique(group_inds):
                 this_mean = np.nanmean(data[group_inds == group, :], axis=0)
@@ -846,30 +846,24 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
                 plot_kwargs = dict()
                 color = color_wheel[stats["group"]]
                 if labels is not None:
-                    plot_kwargs.update(label=labels[stats["group"]])
-                ax.plot(tt, stats["mean"], color=color, **plot_kwargs)
-                ax.fill_between(
-                    tt, stats["lower"], stats["upper"], alpha=0.2, color=color
-                )
-                if labels is not None:
-                    ax.legend()
+                    plot_kwargs.update(text=labels[stats["group"]])
+                fig.add_scattergl(x=tt, y=stats["lower"], line_color=color)
+                fig.add_scattergl(x=tt, y=stats["upper"], line_color=color, fill='tonexty', opacity=0.2)
+                fig.add_scattergl(x=tt, y=stats["mean"], line_color=color, **plot_kwargs)
+
         else:
             for group in np.unique(group_inds):
                 plot_kwargs = dict()
                 if labels is not None:
-                    plot_kwargs.update(label=labels[group])
-                plt.plot(
-                    tt,
-                    data[group_inds == group, :].T,
-                    color=color_wheel[group],
-                    alpha=0.2,
-                    **plot_kwargs,
-                )
-        ax.set_xlim((np.min(tt), np.max(tt)))
-        ax.set_xlabel("time (s)")
-        ax.set_ylabel(self.time_series.name)
-        plt.axvline(color=align_line_color)
-
+                    plot_kwargs.update(text=labels[group])
+                for dat_id in range(data.shape[1]):
+                    fig.add_scattergl(x=tt, y=data[group_inds == group, dat_id],
+                                      line_color=color_wheel[group], **plot_kwargs)
+        fig.update_layout(xaxis_title='time (s)',
+                          yaxis_title=self.time_series.name,
+                          xaxis_range=(np.min(tt), np.max(tt)))
+        # fig.add_vline(color=align_line_color)
+        return fig
 
 class AlignMultiTraceTimeSeriesByTrialsVariable(
     AlignMultiTraceTimeSeriesByTrialsAbstract
@@ -930,20 +924,21 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
                 data_zero_id = bisect(time_ts_aligned[trial_no], 0)
                 data[trial_no] -= data[trial_no][data_zero_id]
 
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = go.FigureWidget()
         for trial_no in range(group_inds.shape[0]):
+            data_loop = data[trial_no]
             plot_kwargs = dict()
             if labels is not None:
-                plot_kwargs.update(label=labels[group_inds[trial_no]])
-            plt.plot(
-                time_ts_aligned[trial_no],
-                data[trial_no],
-                color=color_wheel[group_inds[trial_no]],
-                alpha=0.2,
-                **plot_kwargs,
-            )
+                plot_kwargs.update(text=str(labels[group_inds[trial_no]]))
+            if len(data_loop.shape)==1:
+                data_loop = data_loop[:,np.newaxis]
+            for dat_id in data_loop.T:
+                fig.add_scattergl(x=time_ts_aligned[trial_no],
+                                  y=dat_id,
+                                  line_color=color_wheel[group_inds[trial_no]],
+                                  **plot_kwargs)
         tt_flat = np.concatenate(time_ts_aligned)
-        ax.set_xlim((np.min(tt_flat), np.max(tt_flat)))
-        ax.set_xlabel("time (s)")
-        ax.set_ylabel(self.time_series.name)
-        plt.axvline(color=align_line_color)
+        fig.update_layout(xaxis_title='time (s)',
+                          yaxis_title=self.time_series.name,
+                          xaxis_range=(np.min(tt_flat), np.max(tt_flat)))
+        return fig
