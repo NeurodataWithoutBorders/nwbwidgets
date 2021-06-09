@@ -66,6 +66,7 @@ default_neurodata_vis_spec = {
         {
             "over time": timeseries.SeparateTracesPlotlyWidget,
             "trace": behavior.plotly_show_spatial_trace,
+            "trial aligned": behavior.trial_align_spatial_series,
         }
     ),
     pynwb.image.GrayscaleImage: image.show_grayscale_image,

@@ -21,7 +21,6 @@ from .base import df_to_hover_text
 from .timeseries import BaseGroupedTraceWidget
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
-from .utils.functional import MemoizeMutable
 from .controllers import ProgressBar
 
 color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]

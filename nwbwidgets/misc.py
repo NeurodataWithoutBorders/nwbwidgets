@@ -637,7 +637,7 @@ def plot_grouped_events(
                 labels=list(labels[ugroup_inds][::-1]),
                 loc="upper left",
                 bbox_to_anchor=(1.01, 1),
-                **legend_kwargs
+                **legend_kwargs,
             )
     else:
         ax.eventplot(
@@ -920,7 +920,7 @@ def plot_grouped_events_plotly(
     unobserved_intervals_list=None,
     progress_bar=None,
     fig=None,
-    **kwargs
+    **kwargs,
 ):
     data = np.array(data, dtype=object)
 
@@ -939,7 +939,7 @@ def plot_grouped_events_plotly(
                 label=labels[ui],
                 color=color,
                 fig=fig,
-                **kwargs
+                **kwargs,
             )
             offset += len(this_data)
 
