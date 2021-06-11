@@ -99,11 +99,11 @@ def route_spatial_series(spatial_series, **kwargs):
 
 class SpatialSeriesTraceWidget(AbstractTraceWidget):
     @abstractmethod
-    def plot_data(self, data, units):
+    def plot_data(self, data, units, tt):
         return
 
     @abstractmethod
-    def update_plot(self, data):
+    def update_plot(self, data, tt):
         return
 
     def __init__(
@@ -126,24 +126,35 @@ class SpatialSeriesTraceWidget(AbstractTraceWidget):
         istop = timeseries_time_to_ind(timeseries, time_window[1])
         data, units = get_timeseries_in_units(timeseries, istart, istop)
 
-        self.plot_data(data, units)
+        tt = get_timeseries_tt(timeseries, istart, istop)
+
+        self.plot_data(data, units, tt)
 
         def on_change(change):
             time_window = self.controls["time_window"].value
             istart = timeseries_time_to_ind(timeseries, time_window[0])
             istop = timeseries_time_to_ind(timeseries, time_window[1])
             data, units = get_timeseries_in_units(timeseries, istart, istop)
-            self.update_plot(data)
+            tt = get_timeseries_tt(timeseries, istart, istop)
+            self.update_plot(data, tt)
 
         self.controls["time_window"].observe(on_change)
 
 
 class SpatialSeriesTraceWidget2D(SpatialSeriesTraceWidget):
-    def plot_data(self, data, units):
+    def plot_data(self, data, units, tt):
         if units is None:
             units = "no units"
         self.out_fig = go.FigureWidget(
-            data=go.Scatter(x=list(data[:, 0]), y=list(data[:, 1]))
+            data=go.Scatter(
+                x=list(data[:, 0]),
+                y=list(data[:, 1]),
+                # mode="lines",
+                marker_color=tt,
+                marker_colorscale="Viridis",
+                marker_colorbar=dict(thickness=20, title="time (s)"),
+                marker_size=5,
+            )
         )
 
         self.out_fig.update_layout(
@@ -152,18 +163,28 @@ class SpatialSeriesTraceWidget2D(SpatialSeriesTraceWidget):
             yaxis_title=f"y ({units})",
         )
 
-    def update_plot(self, data):
+    def update_plot(self, data, tt):
         self.out_fig.data[0].x = list(data[:, 0])
         self.out_fig.data[0].y = list(data[:, 1])
+        self.out_fig.update_traces(marker_color=list(tt))
 
 
 class SpatialSeriesTraceWidget3D(SpatialSeriesTraceWidget):
-    def plot_data(self, data, units):
+    def plot_data(self, data, units, tt):
         if units is None:
             units = "no units"
 
         self.out_fig = go.FigureWidget(
-            data=go.Scatter3d(x=data[:, 0], y=data[:, 1], z=data[:, 2], mode="lines")
+            data=go.Scatter3d(
+                x=data[:, 0],
+                y=data[:, 1],
+                z=data[:, 2],
+                # mode="lines",
+                marker_color=tt,
+                marker_colorscale="Viridis",
+                marker_colorbar=dict(thickness=20, title="time (s)"),
+                marker_size=5,
+            )
         )
 
         self.out_fig.update_layout(
@@ -174,10 +195,11 @@ class SpatialSeriesTraceWidget3D(SpatialSeriesTraceWidget):
             )
         )
 
-    def update_plot(self, data):
+    def update_plot(self, data, tt):
         self.out_fig.data[0].x = list(data[:, 0])
         self.out_fig.data[0].y = list(data[:, 1])
         self.out_fig.data[0].z = list(data[:, 2])
+        self.out_fig.update_traces(marker_color=list(tt))
 
 
 def trial_align_spatial_series(spatial_series, trials=None):
