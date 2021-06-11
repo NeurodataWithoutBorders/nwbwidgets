@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
 from nwbwidgets import base
@@ -73,31 +74,27 @@ def show_spatial_series(node: SpatialSeries, **kwargs):
 
 def route_spatial_series(spatial_series, **kwargs):
     if len(spatial_series.data.shape) == 1:
-        return lazy_tabs(
-            {
-                "over time": SingleTracePlotlyWidget,
-                "trial aligned": trial_align_spatial_series,
-            },
-            spatial_series,
-        )
-    if spatial_series.data.shape[1] == 2:
-        return lazy_tabs(
+        dict_ = {
+            "over time": SingleTracePlotlyWidget,
+            "trial aligned": trial_align_spatial_series,
+        }
+    elif spatial_series.data.shape[1] == 2:
+        dict_ = (
             {
                 "over time": SeparateTracesPlotlyWidget,
                 "trace": SpatialSeriesTraceWidget2D,
                 "trial aligned": trial_align_spatial_series,
             },
-            spatial_series,
         )
     elif spatial_series.data.shape[1] == 3:
-        return lazy_tabs(
-            {
-                "over time": SeparateTracesPlotlyWidget,
-                "trace": SpatialSeriesTraceWidget3D,
-                "trial aligned": trial_align_spatial_series,
-            },
-            spatial_series,
-        )
+        dict_ = {
+            "over time": SeparateTracesPlotlyWidget,
+            "trace": SpatialSeriesTraceWidget3D,
+            "trial aligned": trial_align_spatial_series,
+        }
+    else:
+        return widgets.HTML("Unsupported number of dimensions.")
+    return lazy_tabs(dict_, spatial_series)
 
 
 class SpatialSeriesTraceWidget(AbstractTraceWidget):
