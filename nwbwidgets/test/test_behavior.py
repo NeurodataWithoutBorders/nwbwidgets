@@ -3,11 +3,13 @@ import unittest
 import numpy as np
 from nwbwidgets.behavior import (
     show_behavioral_events,
-    show_spatial_series_over_time,
     show_spatial_series,
     trial_align_spatial_series,
+    SpatialSeriesTraceWidget2D,
+    SpatialSeriesTraceWidget3D,
 )
 from nwbwidgets.base import show_multi_container_interface
+from nwbwidgets.timeseries import SeparateTracesPlotlyWidget
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb import TimeSeries
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
@@ -29,7 +31,7 @@ class ShowSpatialSeriesTestCase(unittest.TestCase):
         show_multi_container_interface(position, default_neurodata_vis_spec)
 
     def test_show_spatial_series_over_time(self):
-        show_spatial_series_over_time(self.spatial_series)
+        SeparateTracesPlotlyWidget(self.spatial_series)
 
     def test_show_spatial_series(self):
         show_spatial_series(self.spatial_series)
@@ -45,10 +47,12 @@ class ShowSpatialSeriesTwoDTestCase(unittest.TestCase):
         )
 
     def test_show_spatial_series_over_time_twoD(self):
-        show_spatial_series_over_time(self.spatial_series)
+        widget = SeparateTracesPlotlyWidget(self.spatial_series)
+        widget.controls["time_window"].value = [2.0 / 50, 10.0 / 50]
 
     def test_show_spatial_series_twoD(self):
-        show_spatial_series(self.spatial_series)
+        widget = SpatialSeriesTraceWidget2D(self.spatial_series)
+        widget.controls["time_window"].value = [2.0 / 50, 10.0 / 50]
 
 
 class ShowSpatialSeriesThreeDTestCase(unittest.TestCase):
@@ -63,10 +67,12 @@ class ShowSpatialSeriesThreeDTestCase(unittest.TestCase):
         )
 
     def test_show_spatial_series_over_time_threeD(self):
-        show_spatial_series_over_time(self.spatial_series)
+        widget = SeparateTracesPlotlyWidget(self.spatial_series)
+        widget.controls["time_window"].value = [2.0 / 50, 10.0 / 50]
 
     def test_show_spatial_series_threeD(self):
-        show_spatial_series(self.spatial_series)
+        widget = SpatialSeriesTraceWidget3D(self.spatial_series)
+        widget.controls["time_window"].value = [2.0 / 50, 10.0 / 50]
 
 
 class SpatialSeriesTrialsAlign(unittest.TestCase):
