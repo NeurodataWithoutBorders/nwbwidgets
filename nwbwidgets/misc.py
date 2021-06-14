@@ -1132,8 +1132,10 @@ class TuningCurveWidget(widgets.VBox):
         )
 
         # Unit controller
+        unit_ids = units.id.data[:]
+        n_units = len(unit_ids)
         self.unit_controller = widgets.Dropdown(
-            options=range(len(units["spike_times"].data)),
+            options=[(str(unit_ids[x]), x) for x in range(n_units)],
             value=unit_index,
             description="unit",
         )
@@ -1141,35 +1143,37 @@ class TuningCurveWidget(widgets.VBox):
         # Trial event controller (align by) 
         self.trial_event_controller = make_trial_event_controller(self.trials)
 
-        self.window_slider = widgets.FloatRangeSlider(
-            value=[0., 1.],
-            min=-2.,
-            max=2.,
-            step=0.1,
-            description="window (s)",
-            continuous_update=False,
-            orientation='horizontal',
-            readout=True,
-            readout_format='.1f',
+        # Before / After controllers
+        before_slider = widgets.FloatSlider(
+            0.1, min=0, max=5.0, description="before (s)", continuous_update=False
+        )
+        after_slider = widgets.FloatSlider(
+            1.0, min=0, max=5.0, description="after (s)", continuous_update=False
         )
 
         self.controls = {
-            "unit": self.unit_controller,
-            "window": self.window_slider,
+            "units": fixed(units),
+            "time_intervals": fixed(self.trials),
+            "index": self.unit_controller,
+            "after": after_slider,
+            "before": before_slider,
             "align_by": self.trial_event_controller,
             "rows_label": self.rows_controller,
             "cols_label": self.cols_controller,
         }
 
-        self.out_fig = interactive_output(self.draw_tuning_curve, self.controls)
+        self.fig_tuning_curve = interactive_output(draw_tuning_curve, self.controls)
+        self.fig_raster_grid = interactive_output(raster_grid, self.controls)
         
         self.children = [
             self.unit_controller,
             self.rows_controller,
             self.cols_controller,
             self.trial_event_controller,
-            self.window_slider,
-            self.out_fig
+            before_slider,
+            after_slider,
+            self.fig_tuning_curve,
+            self.fig_raster_grid
         ]
 
     def get_trials(self):
@@ -1189,95 +1193,95 @@ class TuningCurveWidget(widgets.VBox):
             self.cols_controller.disabled = False
 
 
-    def draw_tuning_curve(
-        self,
-        unit,
-        window,
-        rows_label=None,
-        cols_label=None,
-        trials_select=None,
-        align_by="start_time",
-    ):
+def draw_tuning_curve(
+    units: pynwb.misc.Units,
+    time_intervals: pynwb.epoch.TimeIntervals,
+    index,
+    before,
+    after,
+    rows_label=None,
+    cols_label=None,
+    trials_select=None,
+    align_by="start_time",
+) -> plt.Figure:
+    if rows_label is None:
+        return widgets.HTML("Select at least one variable")
 
-        if rows_label is None:
-            return widgets.HTML("Select at least one variable")
+    # trials = self.trials
+    rows_data, var1_classes = extract_data_from_intervals(time_intervals[rows_label])
 
-        trials = self.trials
-        rows_data, var1_classes = extract_data_from_intervals(trials[rows_label])
-
-        # 1D histogram
-        if cols_label is None:
-            avg_rates = []
-            for v1 in var1_classes:
-                # indexes = np.where(rows_data==v1)[0].tolist()
-                indexes = [i for i, d in enumerate(rows_data) if d==v1]
-                data = align_by_time_intervals(
-                    units=self.units,
-                    index=unit,
-                    intervals=trials,
-                    start_label=align_by,
-                    stop_label=align_by,
-                    before=-window[0],
-                    after=window[1],
-                    rows_select=indexes
-                )
-                n_trials = len(data)
-                n_spikes = len(np.hstack(data))
-                duration = window[1] - window[0]
-                avg_rates.append(n_spikes / (n_trials * duration)) 
+    # 1D histogram
+    if cols_label is None:
+        avg_rates = []
+        for v1 in var1_classes:
+            indexes = [i for i, d in enumerate(rows_data) if d==v1]
+            data = align_by_time_intervals(
+                units=units,
+                index=index,
+                intervals=time_intervals,
+                start_label=align_by,
+                stop_label=align_by,
+                before=before,
+                after=after,
+                rows_select=indexes
+            )
+            n_trials = len(data)
+            n_spikes = len(np.hstack(data))
+            duration = after + before
+            avg_rates.append(n_spikes / (n_trials * duration)) 
 
 
-            x = np.arange(len(var1_classes))  # the label locations
-            width = 0.95  # the width of the bars
+        x = np.arange(len(var1_classes))  # the label locations
+        width = 0.95  # the width of the bars
 
-            fig, ax = plt.subplots(figsize=(14, 7))
-            rects1 = ax.bar(x, avg_rates, width)
-            lines1 = ax.plot(x, avg_rates, '-o', color='k', lw=2)
+        fig, ax = plt.subplots(figsize=(14, 7))
+        rects1 = ax.bar(x, avg_rates, width)
+        lines1 = ax.plot(x, avg_rates, '-o', color='k', lw=2)
 
-            # Labels
-            ax.set_ylabel('Avg rate')
-            ax.set_xlabel(rows_label)
-            ax.set_xticks(x)
-            ax.set_xticklabels(var1_classes, rotation=45)
-            fig.tight_layout()
+        # Labels
+        ax.set_ylabel('Avg rate')
+        ax.set_xlabel(rows_label)
+        ax.set_xticks(x)
+        ax.set_xticklabels(var1_classes, rotation=45)
+        fig.tight_layout()
 
-        # 2D Histogram
-        else:
-            cols_data, var2_classes = extract_data_from_intervals(trials[cols_label])
+    # 2D Histogram
+    else:
+        cols_data, var2_classes = extract_data_from_intervals(time_intervals[cols_label])
 
-            avg_rates = np.zeros((len(var1_classes), len(var2_classes)))
-            for i, v1 in enumerate(var1_classes):
-                for j, v2 in enumerate(var2_classes):
-                    indexes1 = [ii for ii, d in enumerate(rows_data) if d==v1]
-                    indexes2 = [ii for ii, d in enumerate(cols_data) if d==v2]
-                    intersect = list(set(indexes1) & set(indexes2))
-                    if len(intersect) > 0:
-                        data = align_by_time_intervals(
-                            units=self.units,
-                            index=unit,
-                            intervals=trials,
-                            start_label=align_by,
-                            stop_label=align_by,
-                            before=-window[0],
-                            after=window[1],
-                            rows_select=intersect
-                        )
-                        n_trials = len(data)
-                        n_spikes = len(np.hstack(data))
-                        duration = window[1] - window[0]
-                        avg_rates[i, j] = n_spikes / (n_trials * duration)
-            
-            fig, ax = plt.subplots(figsize=(14, 7))
-            pos = ax.imshow(avg_rates.T, origin='lower', cmap='Greys')
-            cbar = fig.colorbar(pos, ax=ax)
-            cbar.set_label('spikes / second')
+        avg_rates = np.zeros((len(var1_classes), len(var2_classes)))
+        for i, v1 in enumerate(var1_classes):
+            for j, v2 in enumerate(var2_classes):
+                indexes1 = [ii for ii, d in enumerate(rows_data) if d==v1]
+                indexes2 = [ii for ii, d in enumerate(cols_data) if d==v2]
+                intersect = list(set(indexes1) & set(indexes2))
+                if len(intersect) > 0:
+                    data = align_by_time_intervals(
+                        units=units,
+                        index=index,
+                        intervals=time_intervals,
+                        start_label=align_by,
+                        stop_label=align_by,
+                        before=before,
+                        after=after,
+                        rows_select=intersect
+                    )
+                    n_trials = len(data)
+                    n_spikes = len(np.hstack(data))
+                    duration = after + before
+                    avg_rates[i, j] = n_spikes / (n_trials * duration)
+        
+        fig, ax = plt.subplots(figsize=(14, 7))
+        pos = ax.imshow(avg_rates.T, origin='lower', cmap='Greys')
+        cbar = fig.colorbar(pos, ax=ax)
+        cbar.set_label('spikes / second')
 
-            # Labels
-            ax.set_xticks(np.arange(len(var1_classes)))
-            ax.set_yticks(np.arange(len(var2_classes)))
-            ax.set_xlabel(rows_label)
-            ax.set_ylabel(cols_label)
-            ax.set_xticklabels(var1_classes, rotation=45)
-            ax.set_yticklabels(var2_classes, rotation=45)
+        # Labels
+        ax.set_xticks(np.arange(len(var1_classes)))
+        ax.set_yticks(np.arange(len(var2_classes)))
+        ax.set_xlabel(rows_label)
+        ax.set_ylabel(cols_label)
+        ax.set_xticklabels(var1_classes, rotation=45)
+        ax.set_yticklabels(var2_classes, rotation=45)
 
-        return fig
+    return fig
