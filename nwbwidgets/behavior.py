@@ -149,7 +149,7 @@ class SpatialSeriesTraceWidget2D(SpatialSeriesTraceWidget):
             data=go.Scatter(
                 x=list(data[:, 0]),
                 y=list(data[:, 1]),
-                # mode="lines",
+                mode="markers+lines",
                 marker_color=tt,
                 marker_colorscale="Viridis",
                 marker_colorbar=dict(thickness=20, title="time (s)"),
