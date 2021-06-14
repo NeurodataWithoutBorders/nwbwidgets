@@ -38,6 +38,12 @@ def interactive_output(f, controls, process_controls=lambda x: x):
     observer(None)
     return out
 
+def set_plotly_callbacks(f, controls, process_controls=lambda x: x):
+    def observer(change):
+        return f(**unpack_controls(controls, process_controls))
+    for k, w in controls.items():
+        w.observe(observer, "value")
+    return observer(None)
 
 class Timer:
     def __init__(self, timeout, callback):
