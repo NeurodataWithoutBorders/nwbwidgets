@@ -853,12 +853,9 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
 
         else:
             for group in np.unique(group_inds):
-                plot_kwargs = dict()
-                if labels is not None:
-                    plot_kwargs.update(text=labels[group])
                 for dat_id in range(data.shape[1]):
-                    fig.add_scattergl(x=tt, y=data[group_inds == group, dat_id],
-                                      line_color=color_wheel[group], **plot_kwargs)
+                    fig=multi_trace(x=tt, y=data[group_inds == group, dat_id],
+                                      color=color_wheel[group], label=labels[group])
         fig.update_layout(xaxis_title='time (s)',
                           yaxis_title=self.time_series.name,
                           xaxis_range=(np.min(tt), np.max(tt)))
@@ -925,18 +922,22 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
                 data[trial_no] -= data[trial_no][data_zero_id]
 
         fig = go.FigureWidget()
-        for trial_no in range(group_inds.shape[0]):
-            data_loop = data[trial_no]
-            plot_kwargs = dict()
-            if labels is not None:
-                plot_kwargs.update(text=str(labels[group_inds[trial_no]]))
-            if len(data_loop.shape)==1:
-                data_loop = data_loop[:,np.newaxis]
-            for dat_id in data_loop.T:
-                fig.add_scattergl(x=time_ts_aligned[trial_no],
-                                  y=dat_id,
-                                  line_color=color_wheel[group_inds[trial_no]],
-                                  **plot_kwargs)
+        # for trial_no in range(group_inds.shape[0]):
+        for group in np.unique(group_inds):
+            for i,trial_no in enumerate(np.where(group_inds==group)[0]):
+                showlegend=True if i==0 else False
+                data_loop = data[trial_no]
+                plot_kwargs = dict()
+                if labels is not None:
+                    plot_kwargs.update(legendgroup=str(labels[group]),
+                                       showlegend=showlegend)
+                if len(data_loop.shape)==1:
+                    data_loop = data_loop[:,np.newaxis]
+                for dat_id in data_loop.T:
+                    fig.add_scattergl(x=time_ts_aligned[trial_no],
+                                      y=dat_id,
+                                      line_color=color_wheel[group],
+                                      **plot_kwargs)
         tt_flat = np.concatenate(time_ts_aligned)
         fig.update_layout(xaxis_title='time (s)',
                           yaxis_title=self.time_series.name,
