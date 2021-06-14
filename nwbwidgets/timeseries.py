@@ -161,9 +161,9 @@ def show_indexed_timeseries_plotly(
         offsets = np.zeros(trace_istop-trace_istart)
     if zero_start:
         tt = tt - tt[0]
-
+    scatter_kwargs = dict() if scatter_kwargs is None else scatter_kwargs
     if fig is None:
-        fig = go.FigureWidget(rows=1,cols=1)
+        fig = go.FigureWidget(make_subplots(rows=1,cols=1))
     row = 1 if row is None else row
     col = 1 if col is None else col
     for i,trace_id in enumerate(range(trace_istart,trace_istop)):
@@ -391,10 +391,14 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
                 if len(yy.shape) == 1:
                     self.out_fig.data[0].x = tt
                     self.out_fig.data[0].y = yy
+                    self.out_fig.update_yaxes(range=[min(yy), max(yy)], row=1, col=1)
+                    self.out_fig.update_xaxes(range=[min(tt), max(tt)], row=1, col=1)
                 else:
                     for i, dd in enumerate(yy.T):
                         self.out_fig.data[i].x = tt
                         self.out_fig.data[i].y = dd
+                        self.out_fig.update_yaxes(range=[min(dd), max(dd)], row=i+1, col=1)
+                        self.out_fig.update_xaxes(range=[min(tt), max(tt)], row=i + 1, col=1)
 
         self.controls["time_window"].observe(on_change)
 
