@@ -254,7 +254,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         if change["name"] == "value":
             self.order_by = self.order_dd.value
 
-            order_vals = self.get_column_values(by=self.order_by)
+            order_vals = self.get_column_values(column_name=self.order_by)
             # convert to ints. This is mainly for handling strings
             _, order_vals = np.unique(order_vals, return_inverse=True)
 
