@@ -806,9 +806,9 @@ def raster_grid(
                 show_psth_raster(data, before, after, ax=ax)
                 ax.set_xlabel("")
                 ax.set_ylabel("")
-                if ax.is_first_col():
+                if ax.get_subplotspec().is_first_col():
                     ax.set_ylabel(row)
-                if ax.is_last_row():
+                if ax.get_subplotspec().is_last_row():
                     ax.set_xlabel(col)
 
     big_ax.set_xlabel(cols_label, labelpad=50)
