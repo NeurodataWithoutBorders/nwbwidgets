@@ -118,7 +118,7 @@ class TuningCurveTestCase(UnitsTrialsTestCase):
         assert isinstance(self.widget, widgets.Widget)
 
     def test_widget_children(self):
-        assert len(self.widget.children) == 6
+        assert len(self.widget.children) == 8
 
         for i, c in enumerate(self.widget.children):
             assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
