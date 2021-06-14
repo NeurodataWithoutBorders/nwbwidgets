@@ -523,9 +523,26 @@ def plot_grouped_traces_plotly(
     labels=None,
     colors=color_wheel,
     fig=None,
+    dynamic_table_region_name=None,
+    window=None,
     **kwargs
 ):
-    mini_data, tt, offsets = _prep_timeseries(time_series, time_window, order)
+    if order is None:
+        if len(time_series.data.shape) > 1:
+            order = np.arange(time_series.data.shape[1])
+        else:
+            order = [0]
+
+    if group_inds is not None:
+        row_ids = getattr(time_series, dynamic_table_region_name).data[:]
+        channel_inds = [np.argmax(row_ids == x) for x in order]
+    elif window is not None:
+        order = order[window[0]: window[1]]
+        channel_inds = order
+    else:
+        channel_inds = order
+
+    mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
 
     if fig is None:
         fig = go.FigureWidget()
@@ -550,7 +567,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
         dynamic_table_region_name=None,
         foreign_time_window_controller: StartAndDurationController = None,
         foreign_group_and_sort_controller: GroupAndSortController = None,
-        mpl_plotter=plot_grouped_traces,
+        mpl_plotter=plot_grouped_traces_plotly,
         **kwargs
     ):
         """
@@ -618,7 +635,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
             self.controls.update(gas=self.gas)
 
         # Sets up interactive output controller
-        out_fig = interactive_output(mpl_plotter, self.controls)
+        out_fig = set_plotly_callbacks(mpl_plotter, self.controls)
 
         if foreign_time_window_controller:
             right_panel = out_fig
