@@ -166,19 +166,21 @@ def show_indexed_timeseries_plotly(
         fig = go.FigureWidget(rows=1,cols=1)
     row = 1 if row is None else row
     col = 1 if col is None else col
-    for trace_id in range(trace_istart,trace_istop):
+    for i,trace_id in enumerate(range(trace_istart,trace_istop)):
         fig.add_trace(
             go.Scattergl(
-                x=tt, y=data[:,trace_id]+offsets[trace_id], mode='lines', **scatter_kwargs
+                x=tt, y=data[:,trace_id]+offsets[i], mode='lines', **scatter_kwargs
             ),
             row=row, col=col)
-    input_figure_kwargs = dict(xaxis_title='time (s)',
-                               xaxis_range=[tt[0], tt[-1]],
-                               yaxis_title=unit if unit is not None else None,
+    input_figure_kwargs = dict(xaxis=dict(title_text='time (s)',
+                                          range=[tt[0], tt[-1]]),
+                               yaxis=dict(title_text=unit if unit is not None else None),
                                title=timeseries.name)
     if figure_kwargs is None:
         figure_kwargs = dict()
     input_figure_kwargs.update(figure_kwargs)
+    fig.update_xaxes(input_figure_kwargs.pop('xaxis'),row=row,col=col)
+    fig.update_yaxes(input_figure_kwargs.pop('yaxis'), row=row, col=col)
     fig.update_layout(**input_figure_kwargs)
     return fig
 
@@ -358,22 +360,20 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
         time_window = self.controls["time_window"].value
 
         if len(timeseries.data.shape) > 1:
-            color = DEFAULT_PLOTLY_COLORS[0]
+            color = DEFAULT_PLOTLY_COLORS
             no_rows=timeseries.data.shape[1]
             self.out_fig = go.FigureWidget(make_subplots(rows=no_rows, cols=1))
 
-            for i, xyz in enumerate(("x", "y", "z")[no_rows]):
-                if timeseries.units:
-                    yaxes_label = "{} ({})".format(xyz, timeseries.units)
-                else:
-                    yaxes_label = xyz
+            for i, xyz in enumerate(("x", "y", "z")[:no_rows]):
                 self.out_fig=show_indexed_timeseries_plotly(
                      timeseries=timeseries,
                      time_window=time_window,
+                     trace_range=[i,i+1],
                      fig=self.out_fig,
                      col=1,
                      row=i+1,
-                     scatter_kwargs=dict(marker_color=color,title=yaxes_label)
+                     scatter_kwargs=dict(marker_color=color[i%len(color)],name=xyz),
+                     figure_kwargs=dict(yaxis=dict(title_text=xyz))
                      )
         else:
             self.out_fig = show_indexed_timeseries_plotly(timeseries=timeseries,
