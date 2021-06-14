@@ -131,38 +131,58 @@ def show_indexed_timeseries_mpl(
 
 def show_indexed_timeseries_plotly(
     timeseries: TimeSeries,
-    istart=None,
-    istop=None,
+    time_window: list=None,
+    trace_range:list=None,
+    offsets=None,
     fig: go.FigureWidget = None,
     col=None,
     row=None,
     zero_start=False,
-    xlabel="time (s)",
-    ylabel=None,
-    title=None,
-    neurodata_vis_spec=None,
-    **kwargs
+    scatter_kwargs:dict=None,
+    figure_kwargs:dict=None
 ):
-    if ylabel is None and timeseries.unit:
-        ylabel = timeseries.unit
-
-    tt = get_timeseries_tt(timeseries, istart=istart, istop=istop)
+    if time_window is not None:
+        t_istart = timeseries_time_to_ind(timeseries, time_window[0])
+        t_istop = timeseries_time_to_ind(timeseries, time_window[1])
+    else:
+        t_istart = 0
+        t_istop = None
+    tt = get_timeseries_tt(timeseries, istart=t_istart, istop=t_istop)
+    data, unit = get_timeseries_in_units(timeseries, istart=t_istart, istop=t_istop)
+    if len(data.shape)==1:
+        data = data[:,np.newaxis]
+    if trace_range is not None:
+        trace_istart = trace_range[0]
+        trace_istop = trace_range[1]
+    else:
+        trace_istart = 0
+        trace_istop = data.shape[1]
+    if offsets is None:
+        offsets = np.zeros(trace_istop-trace_istart)
     if zero_start:
         tt = tt - tt[0]
-    data, unit = get_timeseries_in_units(timeseries, istart=istart, istop=istop)
 
-    trace_kwargs = dict()
-    if col is not None or row is not None:
-        trace_kwargs.update(row=row, col=col)
-    fig.add_trace(x=tt, y=data, **trace_kwargs, **kwargs)
-    layout_kwargs = dict(xaxis_title=xlabel)
-    if ylabel is not None:
-        layout_kwargs.update(yaxis_title=ylabel)
-    if title is not None:
-        layout_kwargs.update(title=title)
-
-    fig.update_layout(**layout_kwargs)
-
+    if fig is None:
+        fig = go.FigureWidget(rows=1,cols=1)
+    row = 1 if row is None else row
+    col = 1 if col is None else col
+    for i,trace_id in enumerate(range(trace_istart,trace_istop)):
+        fig.add_trace(
+            go.Scattergl(
+                x=tt, y=data[:,trace_id]+offsets[i], mode='lines', **scatter_kwargs
+            ),
+            row=row, col=col)
+    input_figure_kwargs = dict(xaxis=dict(title_text='time (s)',
+                                          range=[tt[0], tt[-1]]),
+                               yaxis=dict(title_text=unit if unit is not None else None),
+                               title=timeseries.name)
+    if figure_kwargs is None:
+        figure_kwargs = dict()
+    input_figure_kwargs.update(figure_kwargs)
+    fig.update_xaxes(input_figure_kwargs.pop('xaxis'),row=row,col=col)
+    fig.update_yaxes(input_figure_kwargs.pop('yaxis'), row=row, col=col)
+    fig.update_layout(**input_figure_kwargs)
+    return fig
 
 def plot_traces(
     timeseries: TimeSeries,
@@ -310,25 +330,8 @@ class SingleTracePlotlyWidget(SingleTraceWidget):
     def set_out_fig(self):
         timeseries = self.controls["timeseries"].value
         time_window = self.controls["time_window"].value
-
-        istart = timeseries_time_to_ind(timeseries, time_window[0])
-        istop = timeseries_time_to_ind(timeseries, time_window[1])
-        yy, units = get_timeseries_in_units(timeseries, istart, istop)
-
-        self.out_fig = go.FigureWidget(
-            data=go.Scatter(x=get_timeseries_tt(timeseries, istart, istop), y=list(yy))
-        )
-
-        self.out_fig.update_layout(
-            title=timeseries.name,
-            xaxis_title="time (s)",
-            yaxis_title=units,
-            yaxis={"range": [min(yy), max(yy)], "autorange": False},
-            xaxis={
-                "range": [min(self.out_fig.data[0].x), max(self.out_fig.data[0].x)],
-                "autorange": False,
-            },
-        )
+        self.out_fig = show_indexed_timeseries_plotly(timeseries=timeseries,
+                                                      time_window=time_window)
 
         def on_change(change):
             time_window = self.controls["time_window"].value
@@ -356,33 +359,25 @@ class SeparateTracesPlotlyWidget(SingleTraceWidget):
 
         time_window = self.controls["time_window"].value
 
-        istart = timeseries_time_to_ind(timeseries, time_window[0])
-        istop = timeseries_time_to_ind(timeseries, time_window[1])
+        if len(timeseries.data.shape) > 1:
+            color = DEFAULT_PLOTLY_COLORS
+            no_rows=timeseries.data.shape[1]
+            self.out_fig = go.FigureWidget(make_subplots(rows=no_rows, cols=1))
 
-        data, units = get_timeseries_in_units(timeseries, istart, istop)
-
-        tt = get_timeseries_tt(timeseries, istart, istop)
-
-        if len(data.shape) > 1:
-            color = DEFAULT_PLOTLY_COLORS[0]
-            self.out_fig = go.FigureWidget(make_subplots(rows=data.shape[1], cols=1))
-
-            for i, (yy, xyz) in enumerate(zip(data.T, ("x", "y", "z"))):
-                self.out_fig.add_trace(
-                    go.Scatter(x=tt, y=yy, marker_color=color), row=i + 1, col=1
-                )
-                if units:
-                    yaxes_label = "{} ({})".format(xyz, units)
-                else:
-                    yaxes_label = xyz
-                self.out_fig.update_yaxes(title_text=yaxes_label, row=i + 1, col=1)
-            self.out_fig.update_xaxes(title_text="time (s)", row=i + 1, col=1)
+            for i, xyz in enumerate(("x", "y", "z")[:no_rows]):
+                self.out_fig=show_indexed_timeseries_plotly(
+                     timeseries=timeseries,
+                     time_window=time_window,
+                     trace_range=[i,i+1],
+                     fig=self.out_fig,
+                     col=1,
+                     row=i+1,
+                     scatter_kwargs=dict(marker_color=color[i%len(color)],name=xyz),
+                     figure_kwargs=dict(yaxis=dict(title_text=xyz))
+                     )
         else:
-            self.out_fig = go.FigureWidget()
-            self.out_fig.add_trace(go.Scatter(x=tt, y=data))
-            self.out_fig.update_xaxes(title_text="time (s)")
-
-        self.out_fig.update_layout(showlegend=False, title=timeseries.name)
+            self.out_fig = show_indexed_timeseries_plotly(timeseries=timeseries,
+                                                          time_window=time_window)
 
         def on_change(change):
             time_window = self.controls["time_window"].value
