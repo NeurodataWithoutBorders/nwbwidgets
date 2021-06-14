@@ -146,7 +146,7 @@ class SpatialSeriesTraceWidget2D(SpatialSeriesTraceWidget):
         if units is None:
             units = "no units"
         self.out_fig = go.FigureWidget(
-            data=go.Scatter(
+            data=go.Scattergl(
                 x=list(data[:, 0]),
                 y=list(data[:, 1]),
                 mode="markers+lines",
