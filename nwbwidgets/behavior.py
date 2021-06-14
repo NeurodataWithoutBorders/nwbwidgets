@@ -179,7 +179,7 @@ class SpatialSeriesTraceWidget3D(SpatialSeriesTraceWidget):
                 x=data[:, 0],
                 y=data[:, 1],
                 z=data[:, 2],
-                # mode="lines",
+                mode="markers+lines",
                 marker_color=tt,
                 marker_colorscale="Viridis",
                 marker_colorbar=dict(thickness=20, title="time (s)"),
