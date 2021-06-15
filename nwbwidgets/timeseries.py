@@ -143,7 +143,15 @@ def show_indexed_timeseries_plotly(
     scatter_kwargs:dict=None,
     figure_kwargs:dict=None
 ):
-    if time_window is not None:
+    if istart!=0 or istop is not None:
+        if time_window is not None:
+            raise ValueError('input either time window or istart/stop but not both')
+        if not(0<=istart<timeseries.data.shape[0] and
+               (istop is None or 0<istop<=timeseries.data.shape[0])):
+            raise ValueError('enter correct istart/stop values')
+        t_istart = istart
+        t_istop = istop
+    elif time_window is not None:
         t_istart = timeseries_time_to_ind(timeseries, time_window[0])
         t_istop = timeseries_time_to_ind(timeseries, time_window[1])
     else:
@@ -154,6 +162,8 @@ def show_indexed_timeseries_plotly(
     if len(data.shape)==1:
         data = data[:,np.newaxis]
     if trace_range is not None:
+        if not(0<=trace_range[0]<data.shape[1] and 0<trace_range[1]<=data.shape[1]):
+            raise ValueError('enter correct trace range')
         trace_istart = trace_range[0]
         trace_istop = trace_range[1]
     else:
