@@ -271,14 +271,14 @@ def show_decomposition_traces(node: DecompositionSeries):
 class PSTHWidget(widgets.VBox):
     def __init__(
         self,
-        units: Units,
+        input_data: Units,
         trials: pynwb.epoch.TimeIntervals = None,
         unit_index=0,
         unit_controller=None,
         ntt=1000,
     ):
 
-        self.units = units
+        self.units = input_data
 
         super().__init__()
 
@@ -291,7 +291,7 @@ class PSTHWidget(widgets.VBox):
             self.trials = trials
 
         if unit_controller is None:
-            self.unit_ids = units.id.data[:]
+            self.unit_ids = self.units.id.data[:]
             n_units = len(self.unit_ids)
             self.unit_controller = widgets.Dropdown(
                 options=[(str(self.unit_ids[x]), x) for x in range(n_units)],
@@ -820,13 +820,13 @@ def raster_grid(
 class RasterGridWidget(widgets.VBox):
     def __init__(
         self, 
-        units: Units, 
+        input_data: Units, 
         trials: pynwb.epoch.TimeIntervals = None, 
         unit_index=0
     ):
         super().__init__()
 
-        self.units = units
+        self.units = input_data
 
         if trials is None:
             self.trials = self.get_trials()
@@ -847,7 +847,7 @@ class RasterGridWidget(widgets.VBox):
 
         trial_event_controller = make_trial_event_controller(self.trials)
 
-        unit_ids = units.id.data[:]
+        unit_ids = self.units.id.data[:]
         n_units = len(unit_ids)
         unit_controller = widgets.Dropdown(
             options=[(str(unit_ids[x]), x) for x in range(n_units)],
@@ -863,7 +863,7 @@ class RasterGridWidget(widgets.VBox):
         )
 
         self.controls = {
-            "units": fixed(units),
+            "units": fixed(self.units),
             "time_intervals": fixed(self.trials),
             "index": unit_controller,
             "after": after_slider,
@@ -1097,7 +1097,7 @@ def show_session_raster_plotly(
 class TuningCurveWidget(widgets.VBox):
     def __init__(
         self,
-        units: Units,
+        input_data: Units,
         trials: pynwb.epoch.TimeIntervals = None,
         unit_index=0,
         unit_controller=None
@@ -1105,7 +1105,7 @@ class TuningCurveWidget(widgets.VBox):
 
         super().__init__()
 
-        self.units = units
+        self.units = input_data
 
         # Check if there is trials table and create controller
         if trials is None:
@@ -1132,7 +1132,7 @@ class TuningCurveWidget(widgets.VBox):
         )
 
         # Unit controller
-        unit_ids = units.id.data[:]
+        unit_ids = self.units.id.data[:]
         n_units = len(unit_ids)
         self.unit_controller = widgets.Dropdown(
             options=[(str(unit_ids[x]), x) for x in range(n_units)],
@@ -1152,7 +1152,7 @@ class TuningCurveWidget(widgets.VBox):
         )
 
         self.controls = {
-            "units": fixed(units),
+            "units": fixed(self.units),
             "time_intervals": fixed(self.trials),
             "index": self.unit_controller,
             "after": after_slider,
