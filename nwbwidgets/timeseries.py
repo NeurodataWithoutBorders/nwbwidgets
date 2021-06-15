@@ -306,7 +306,7 @@ class SingleTracePlotlyWidget(AbstractTraceWidget):
         yy, units = get_timeseries_in_units(timeseries, istart, istop)
 
         self.out_fig = go.FigureWidget(
-            data=go.Scatter(x=get_timeseries_tt(timeseries, istart, istop), y=list(yy))
+            data=go.Scattergl(x=get_timeseries_tt(timeseries, istart, istop), y=list(yy))
         )
 
         self.out_fig.update_layout(
@@ -359,7 +359,7 @@ class SeparateTracesPlotlyWidget(AbstractTraceWidget):
 
             for i, (yy, xyz) in enumerate(zip(data.T, ("x", "y", "z"))):
                 self.out_fig.add_trace(
-                    go.Scatter(x=tt, y=yy, marker_color=color), row=i + 1, col=1
+                    go.Scattergl(x=tt, y=yy, marker_color=color), row=i + 1, col=1
                 )
                 if units:
                     yaxes_label = "{} ({})".format(xyz, units)
@@ -369,7 +369,7 @@ class SeparateTracesPlotlyWidget(AbstractTraceWidget):
             self.out_fig.update_xaxes(title_text="time (s)", row=i + 1, col=1)
         else:
             self.out_fig = go.FigureWidget()
-            self.out_fig.add_trace(go.Scatter(x=tt, y=data))
+            self.out_fig.add_trace(go.Scattergl(x=tt, y=data))
             self.out_fig.update_xaxes(title_text="time (s)")
 
         self.out_fig.update_layout(showlegend=False, title=timeseries.name)
