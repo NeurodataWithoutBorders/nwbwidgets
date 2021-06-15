@@ -855,7 +855,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
             for group in np.unique(group_inds):
                 for dat_id in range(data.shape[1]):
                     fig=multi_trace(x=tt, y=data[group_inds == group, dat_id],
-                                      color=color_wheel[group], label=labels[group])
+                                      color=color_wheel[group], label=labels[group], fig=fig)
         fig.update_layout(xaxis_title='time (s)',
                           yaxis_title=self.time_series.name,
                           xaxis_range=(np.min(tt), np.max(tt)))
@@ -930,13 +930,14 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
                 plot_kwargs = dict()
                 if labels is not None:
                     plot_kwargs.update(legendgroup=str(labels[group]),
-                                       showlegend=showlegend)
+                                       showlegend=showlegend,
+                                       name=str(labels[group]))
                 if len(data_loop.shape)==1:
                     data_loop = data_loop[:,np.newaxis]
                 for dat_id in data_loop.T:
                     fig.add_scattergl(x=time_ts_aligned[trial_no],
                                       y=dat_id,
-                                      line_color=color_wheel[group],
+                                      line_color=color_wheel[group%len(color_wheel)],
                                       **plot_kwargs)
         tt_flat = np.concatenate(time_ts_aligned)
         fig.update_layout(xaxis_title='time (s)',
