@@ -131,6 +131,8 @@ def show_indexed_timeseries_mpl(
 
 def show_indexed_timeseries_plotly(
     timeseries: TimeSeries,
+    istart:int=0,
+    istop:int=None,
     time_window: list=None,
     trace_range:list=None,
     offsets=None,
@@ -145,8 +147,8 @@ def show_indexed_timeseries_plotly(
         t_istart = timeseries_time_to_ind(timeseries, time_window[0])
         t_istop = timeseries_time_to_ind(timeseries, time_window[1])
     else:
-        t_istart = 0
-        t_istop = None
+        t_istart = istart
+        t_istop = istop
     tt = get_timeseries_tt(timeseries, istart=t_istart, istop=t_istop)
     data, unit = get_timeseries_in_units(timeseries, istart=t_istart, istop=t_istop)
     if len(data.shape)==1:
