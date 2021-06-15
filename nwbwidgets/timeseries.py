@@ -807,8 +807,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
         labels=None,
         align_to_zero=False,
         sem=False,
-        figsize=(7, 7),
-        align_line_color=(0.7, 0.7, 0.7),
+        fig:go.FigureWidget = None,
     ):
         data = align_by_time_intervals(
             self.time_series, self.trials, start_label, before, after, traces=index
@@ -826,7 +825,9 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
             data_zero_id = bisect(tt, 0)
             data = data - data[:, data_zero_id, np.newaxis]
 
-        fig = go.FigureWidget()
+        fig = go.FigureWidget() if fig is None else fig
+        fig.data = []
+        fig.layout = {}
         if sem:
             for group in np.unique(group_inds):
                 this_mean = np.nanmean(data[group_inds == group, :], axis=0)
@@ -853,13 +854,11 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
 
         else:
             for group in np.unique(group_inds):
-                for dat_id in range(data.shape[1]):
-                    fig=multi_trace(x=tt, y=data[group_inds == group, dat_id],
-                                      color=color_wheel[group], label=labels[group], fig=fig)
+                fig=multi_trace(x=tt, y=data[group_inds == group, :],
+                                  color=color_wheel[group], label=labels[group], fig=fig)
         fig.update_layout(xaxis_title='time (s)',
                           yaxis_title=self.time_series.name,
                           xaxis_range=(np.min(tt), np.max(tt)))
-        # fig.add_vline(color=align_line_color)
         return fig
 
 class AlignMultiTraceTimeSeriesByTrialsVariable(
@@ -895,8 +894,7 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
         group_inds=None,
         labels=None,
         align_to_zero=False,
-        figsize=(7, 7),
-        align_line_color=(0.7, 0.7, 0.7),
+        fig:go.FigureWidget = None,
     ):
         data = align_by_time_intervals(
             self.time_series,
@@ -914,31 +912,25 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
         if group_inds is None:
             group_inds = np.zeros(len(data), dtype=np.int)
 
-        data = [data[i] for i in order]
-        time_ts_aligned = [time_ts_aligned[i] for i in order]
         if align_to_zero:
-            for trial_no in range(len(data)):
+            for trial_no in order:
                 data_zero_id = bisect(time_ts_aligned[trial_no], 0)
                 data[trial_no] -= data[trial_no][data_zero_id]
-
-        fig = go.FigureWidget()
-        # for trial_no in range(group_inds.shape[0]):
+        fig = fig if fig is not None else go.FigureWidget()
+        fig.data = []
+        fig.layout = {}
         for group in np.unique(group_inds):
-            for i,trial_no in enumerate(np.where(group_inds==group)[0]):
+            for i,trim_trial_no in enumerate(np.where(group_inds==group)[0]):
                 showlegend=True if i==0 else False
-                data_loop = data[trial_no]
                 plot_kwargs = dict()
                 if labels is not None:
                     plot_kwargs.update(legendgroup=str(labels[group]),
                                        showlegend=showlegend,
                                        name=str(labels[group]))
-                if len(data_loop.shape)==1:
-                    data_loop = data_loop[:,np.newaxis]
-                for dat_id in data_loop.T:
-                    fig.add_scattergl(x=time_ts_aligned[trial_no],
-                                      y=dat_id,
-                                      line_color=color_wheel[group%len(color_wheel)],
-                                      **plot_kwargs)
+                fig.add_scattergl(x=time_ts_aligned[order[trim_trial_no]],
+                                  y=data[order[trim_trial_no]],
+                                  line_color=color_wheel[group%len(color_wheel)],
+                                  **plot_kwargs)
         tt_flat = np.concatenate(time_ts_aligned)
         fig.update_layout(xaxis_title='time (s)',
                           yaxis_title=self.time_series.name,
