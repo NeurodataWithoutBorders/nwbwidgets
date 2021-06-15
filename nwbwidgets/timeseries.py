@@ -299,11 +299,8 @@ class AbstractTraceWidget(widgets.VBox):
         self.set_out_fig()
         self.set_children()
 
-    def mpl_plotter(self, **kwargs):
-        return
-
     @abstractmethod
-    def set_children(self):
+    def set_out_fig(self):
         return
 
     def set_controls(self, **kwargs):
@@ -312,13 +309,6 @@ class AbstractTraceWidget(widgets.VBox):
         )
         self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
-    def set_out_fig(self):
-        self.out_fig = widgets.interactive_output(self.mpl_plotter, self.controls)
-
-
-class SingleTraceWidget(AbstractTraceWidget):
-    mpl_plotter = show_timeseries
-
     def set_children(self):
         if self.foreign_time_window_controller:
             self.children = [self.out_fig]
@@ -326,7 +316,7 @@ class SingleTraceWidget(AbstractTraceWidget):
             self.children = [self.time_window_controller, self.out_fig]
 
 
-class SingleTracePlotlyWidget(SingleTraceWidget):
+class SingleTracePlotlyWidget(AbstractTraceWidget):
     def __init__(
         self,
         timeseries: TimeSeries,
@@ -364,7 +354,7 @@ class SingleTracePlotlyWidget(SingleTraceWidget):
         self.controls["time_window"].observe(on_change)
 
 
-class SeparateTracesPlotlyWidget(SingleTraceWidget):
+class SeparateTracesPlotlyWidget(AbstractTraceWidget):
     def set_out_fig(self):
 
         timeseries = self.controls["timeseries"].value
