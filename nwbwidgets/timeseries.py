@@ -854,8 +854,9 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
 
         else:
             for group in np.unique(group_inds):
+                labels = labels[group] if labels is not None else str(group)
                 fig=multi_trace(x=tt, y=data[group_inds == group, :],
-                                  color=color_wheel[group], label=labels[group], fig=fig)
+                                  color=color_wheel[group%len(color_wheel)], label=labels, fig=fig)
         fig.update_layout(xaxis_title='time (s)',
                           yaxis_title=self.time_series.name,
                           xaxis_range=(np.min(tt), np.max(tt)))
