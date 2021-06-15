@@ -85,7 +85,7 @@ class ExtendedTimeIntervalSelectorTestCase(UnitsTrialsTestCase):
         self.nwbfile.add_time_intervals(ti1)
 
         self.widget = ExtendedTimeIntervalSelector(
-            units=self.nwbfile.units
+            input_data=self.nwbfile.units
         )
 
     def test_make_widget(self):
@@ -110,7 +110,7 @@ class TuningCurveTestCase(UnitsTrialsTestCase):
     def setUp(self):
         super().setUp()
         self.widget = TuningCurveWidget(
-            units=self.nwbfile.units,
+            input_data=self.nwbfile.units,
             trials=self.nwbfile.trials
         )
 
