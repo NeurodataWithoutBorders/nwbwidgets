@@ -760,7 +760,7 @@ def raster_grid(
         trials_select = np.ones((len(time_intervals),)).astype("bool")
 
     if rows_label is not None:
-        row_vals = time_intervals[rows_label][:]
+        row_vals = np.array(time_intervals[rows_label][:])
         urow_vals = np.unique(row_vals[trials_select])
         if urow_vals.dtype == np.float64:
             urow_vals = urow_vals[~np.isnan(urow_vals)]
@@ -770,7 +770,7 @@ def raster_grid(
     nrows = len(urow_vals)
 
     if cols_label is not None:
-        col_vals = time_intervals[cols_label][:]
+        col_vals = np.array(time_intervals[cols_label][:])
         ucol_vals = np.unique(col_vals[trials_select])
         if ucol_vals.dtype == np.float64:
             ucol_vals = ucol_vals[~np.isnan(ucol_vals)]
@@ -1201,87 +1201,128 @@ def draw_tuning_curve(
     after,
     rows_label=None,
     cols_label=None,
-    trials_select=None,
     align_by="start_time",
 ) -> plt.Figure:
+
     if rows_label is None:
         return widgets.HTML("Select at least one variable")
 
-    # trials = self.trials
-    rows_data, var1_classes = extract_data_from_intervals(time_intervals[rows_label])
-
     # 1D histogram
     if cols_label is None:
-        avg_rates = []
-        for v1 in var1_classes:
-            indexes = [i for i, d in enumerate(rows_data) if d==v1]
-            data = align_by_time_intervals(
-                units=units,
-                index=index,
-                intervals=time_intervals,
-                start_label=align_by,
-                stop_label=align_by,
-                before=before,
-                after=after,
-                rows_select=indexes
-            )
-            n_trials = len(data)
-            n_spikes = len(np.hstack(data))
-            duration = after + before
-            avg_rates.append(n_spikes / (n_trials * duration)) 
+        return draw_tuning_curve_1d(
+            units,
+            time_intervals,
+            index,
+            before,
+            after,
+            rows_label,
+            align_by
+        )
+    
+    return draw_tuning_curve_2d(
+        units,
+        time_intervals,
+        index,
+        before,
+        after,
+        rows_label,
+        cols_label,
+        align_by
+    )
 
 
-        x = np.arange(len(var1_classes))  # the label locations
-        width = 0.95  # the width of the bars
+def draw_tuning_curve_1d(
+    units: pynwb.misc.Units,
+    time_intervals: pynwb.epoch.TimeIntervals,
+    index,
+    before,
+    after,
+    rows_label=None,
+    align_by="start_time",
+) -> plt.Figure:
 
-        fig, ax = plt.subplots(figsize=(14, 7))
-        rects1 = ax.bar(x, avg_rates, width)
-        lines1 = ax.plot(x, avg_rates, '-o', color='k', lw=2)
+    rows_data, var1_classes = extract_data_from_intervals(time_intervals[rows_label])
 
-        # Labels
-        ax.set_ylabel('Avg rate')
-        ax.set_xlabel(rows_label)
-        ax.set_xticks(x)
-        ax.set_xticklabels(var1_classes, rotation=45)
-        fig.tight_layout()
+    avg_rates = []
+    for v1 in var1_classes:
+        indexes = [i for i, d in enumerate(rows_data) if d==v1]
+        data = align_by_time_intervals(
+            units=units,
+            index=index,
+            intervals=time_intervals,
+            start_label=align_by,
+            stop_label=align_by,
+            before=before,
+            after=after,
+            rows_select=indexes
+        )
+        n_trials = len(data)
+        n_spikes = len(np.hstack(data))
+        duration = after + before
+        avg_rates.append(n_spikes / (n_trials * duration)) 
 
-    # 2D Histogram
-    else:
-        cols_data, var2_classes = extract_data_from_intervals(time_intervals[cols_label])
+    x = np.arange(len(var1_classes))  # the label locations
+    width = 0.95  # the width of the bars
 
-        avg_rates = np.zeros((len(var1_classes), len(var2_classes)))
-        for i, v1 in enumerate(var1_classes):
-            for j, v2 in enumerate(var2_classes):
-                indexes1 = [ii for ii, d in enumerate(rows_data) if d==v1]
-                indexes2 = [ii for ii, d in enumerate(cols_data) if d==v2]
-                intersect = list(set(indexes1) & set(indexes2))
-                if len(intersect) > 0:
-                    data = align_by_time_intervals(
-                        units=units,
-                        index=index,
-                        intervals=time_intervals,
-                        start_label=align_by,
-                        stop_label=align_by,
-                        before=before,
-                        after=after,
-                        rows_select=intersect
-                    )
-                    n_trials = len(data)
-                    n_spikes = len(np.hstack(data))
-                    duration = after + before
-                    avg_rates[i, j] = n_spikes / (n_trials * duration)
-        
-        fig, ax = plt.subplots(figsize=(14, 7))
-        pos = ax.imshow(avg_rates.T, origin='lower', cmap='Greys')
-        cbar = fig.colorbar(pos, ax=ax)
-        cbar.set_label('spikes / second')
+    fig, ax = plt.subplots(figsize=(14, 7))
+    rects1 = ax.bar(x, avg_rates, width)
+    lines1 = ax.plot(x, avg_rates, '-o', color='k', lw=2)
 
-        # Labels
-        ax.set_xticks(np.arange(len(var1_classes)))
-        ax.set_yticks(np.arange(len(var2_classes)))
-        ax.set_xlabel(rows_label)
-        ax.set_ylabel(cols_label)
-        ax.set_xticklabels(var1_classes, rotation=45)
-        ax.set_yticklabels(var2_classes, rotation=45)
+    # Labels
+    ax.set_ylabel('Avg rate')
+    ax.set_xlabel(rows_label)
+    ax.set_xticks(x)
+    ax.set_xticklabels(var1_classes, rotation=45)
+    fig.tight_layout()
+
+
+def draw_tuning_curve_2d(
+    units: pynwb.misc.Units,
+    time_intervals: pynwb.epoch.TimeIntervals,
+    index,
+    before,
+    after,
+    rows_label=None,
+    cols_label=None,
+    align_by="start_time",
+) -> plt.Figure:
+
+    rows_data, var1_classes = extract_data_from_intervals(time_intervals[rows_label])
+    cols_data, var2_classes = extract_data_from_intervals(time_intervals[cols_label])
+
+    avg_rates = np.zeros((len(var1_classes), len(var2_classes)))
+    for i, v1 in enumerate(var1_classes):
+        for j, v2 in enumerate(var2_classes):
+            indexes1 = [ii for ii, d in enumerate(rows_data) if d==v1]
+            indexes2 = [ii for ii, d in enumerate(cols_data) if d==v2]
+            intersect = list(set(indexes1) & set(indexes2))
+            if len(intersect) > 0:
+                data = align_by_time_intervals(
+                    units=units,
+                    index=index,
+                    intervals=time_intervals,
+                    start_label=align_by,
+                    stop_label=align_by,
+                    before=before,
+                    after=after,
+                    rows_select=intersect
+                )
+                n_trials = len(data)
+                n_spikes = len(np.hstack(data))
+                duration = after + before
+                avg_rates[i, j] = n_spikes / (n_trials * duration)
+    
+    fig, ax = plt.subplots(figsize=(14, 7))
+    pos = ax.imshow(avg_rates.T, origin='lower', cmap='Greys')
+    cbar = fig.colorbar(pos, ax=ax)
+    cbar.set_label('spikes / second')
+
+    # Labels
+    ax.set_xticks(np.arange(len(var1_classes)))
+    ax.set_yticks(np.arange(len(var2_classes)))
+    ax.set_xlabel(rows_label)
+    ax.set_ylabel(cols_label)
+    ax.set_xticklabels(var1_classes, rotation=45)
+    ax.set_yticklabels(var2_classes, rotation=45)
 
     return fig
