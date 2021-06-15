@@ -15,7 +15,7 @@ def unpack_controls(controls, process_controls=lambda x: x):
     return kwargs
 
 
-def interactive_output(f, controls, process_controls=lambda x: x):
+def interactive_output(f, controls, process_controls=lambda x: x, fixed=None):
     """Connect widget controls to a function.
 
     This function does not generate a user interface for the widgets (unlike `interact`).
@@ -23,13 +23,16 @@ def interactive_output(f, controls, process_controls=lambda x: x):
     The user interface layout must be defined and displayed manually.
     """
 
+    if fixed is None:
+        fixed = dict()
+
     out = Output()
 
     def observer(change):
         show_inline_matplotlib_plots()
         with out:
             clear_output(wait=True)
-            f(**unpack_controls(controls, process_controls))
+            f(**fixed, **unpack_controls(controls, process_controls))
             show_inline_matplotlib_plots()
 
     for k, w in controls.items():

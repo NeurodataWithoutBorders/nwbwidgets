@@ -1151,9 +1151,12 @@ class TuningCurveWidget(widgets.VBox):
             1.0, min=0, max=5.0, description="after (s)", continuous_update=False
         )
 
+        self.fixed = dict(
+            units=self.units,
+            time_intervals=self.trials,
+        )
+
         self.controls = {
-            "units": fixed(self.units),
-            "time_intervals": fixed(self.trials),
             "index": self.unit_controller,
             "after": after_slider,
             "before": before_slider,
@@ -1162,8 +1165,16 @@ class TuningCurveWidget(widgets.VBox):
             "cols_label": self.cols_controller,
         }
 
-        self.fig_tuning_curve = interactive_output(draw_tuning_curve, self.controls)
-        self.fig_raster_grid = interactive_output(raster_grid, self.controls)
+        self.fig_tuning_curve = interactive_output(
+            f=draw_tuning_curve, 
+            controls=self.controls,
+            fixed=self.fixed
+        )
+        self.fig_raster_grid = interactive_output(
+            f=raster_grid, 
+            controls=self.controls,
+            fixed=self.fixed
+        )
         
         self.children = [
             self.unit_controller,
