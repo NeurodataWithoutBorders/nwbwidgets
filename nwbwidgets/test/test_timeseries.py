@@ -11,9 +11,13 @@ from nwbwidgets.timeseries import (
     show_indexed_timeseries_mpl,
     AlignMultiTraceTimeSeriesByTrialsConstant,
     AlignMultiTraceTimeSeriesByTrialsVariable,
+    SingleTracePlotlyWidget,
+    SeparateTracesPlotlyWidget,
+    get_timeseries_tt
 )
 from pynwb import TimeSeries
 from pynwb.epoch import TimeIntervals
+from pynwb.behavior import SpatialSeries
 
 
 def test_timeseries_widget():
@@ -25,6 +29,26 @@ def test_timeseries_widget():
     )
 
     BaseGroupedTraceWidget(ts)
+
+class TestTracesPlotlyWidget(unittest.TestCase):
+    def setUp(self):
+        data = np.random.rand(160, 3)
+        self.ts_multi = SpatialSeries(
+            name="test_timeseries", data=data, reference_frame="lowerleft", starting_time=0.0, rate=1.0
+        )
+        self.ts_single = TimeSeries(
+            name="test_timeseries", data=data[:,0], unit="m", starting_time=0.0, rate=1.0
+        )
+
+    def test_single_trace_widget(self):
+        single_wd = SingleTracePlotlyWidget(timeseries=self.ts_single)
+        tt = get_timeseries_tt(self.ts_single)
+        single_wd.controls["time_window"].value = [tt[int(len(tt)*0.2)],tt[int(len(tt)*0.4)]]
+
+    def test_single_trace_widget(self):
+        single_wd = SeparateTracesPlotlyWidget(timeseries=self.ts_multi)
+        tt = get_timeseries_tt(self.ts_multi)
+        single_wd.controls["time_window"].value = [tt[int(len(tt)*0.2)],tt[int(len(tt)*0.4)]]
 
 
 class ShowTimeSeriesTestCase(unittest.TestCase):

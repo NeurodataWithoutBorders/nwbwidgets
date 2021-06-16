@@ -26,7 +26,7 @@ def multi_trace(x, y, color, label=None, fig=None):
         else:
             showlegend = True
 
-        fig.add_scatter(
+        fig.add_scattergl(
             x=x,
             y=yy,
             legendgroup=label,
@@ -77,7 +77,7 @@ def event_group(
 
     for i, times in enumerate(times_list):
         if len(times):
-            fig.add_scatter(
+            fig.add_scattergl(
                 x=times,
                 y=np.ones_like(times) * (i + offset),
                 marker=dict(
