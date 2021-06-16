@@ -1,58 +1,35 @@
+from abc import abstractmethod
+
+import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
-from ipywidgets import widgets
 from nwbwidgets import base
 from plotly import graph_objects as go
 from pynwb.behavior import SpatialSeries, BehavioralEvents
+from pynwb import TimeSeries
 
-from .utils.timeseries import get_timeseries_tt, get_timeseries_in_units
+from .utils.timeseries import (
+    get_timeseries_tt,
+    get_timeseries_in_units,
+    timeseries_time_to_ind,
+)
 from .timeseries import (
     AlignMultiTraceTimeSeriesByTrialsConstant,
     AlignMultiTraceTimeSeriesByTrialsVariable,
+    AbstractTraceWidget,
+    SingleTracePlotlyWidget,
+    SeparateTracesPlotlyWidget,
 )
+
+from .base import lazy_tabs
+
+from .controllers import StartAndDurationController
 
 
 def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dict):
     return base.dict2accordion(
         beh_events.time_series, neurodata_vis_spec, ls="", marker="|"
     )
-
-
-def show_spatial_series_over_time(node: SpatialSeries, **kwargs):
-    text_widget = base.show_text_fields(
-        node, exclude=("timestamps_unit", "comments", "data", "timestamps", "interval")
-    )
-
-    data, unit = get_timeseries_in_units(node)
-
-    if len(data.shape) == 1:
-        ndims = 1
-    else:
-        ndims = data.shape[1]
-
-    tt = get_timeseries_tt(node)
-
-    if ndims == 1:
-        fig, ax = plt.subplots()
-        ax.plot(tt, data, **kwargs)
-        ax.set_xlabel("t (sec)")
-        if unit:
-            ax.set_ylabel("x ({})".format(unit))
-        else:
-            ax.set_ylabel("x")
-
-    else:
-        fig, axs = plt.subplots(ndims, 1, sharex=True)
-
-        for i, (ax, dim_label) in enumerate(zip(axs, ("x", "y", "z"))):
-            ax.plot(tt, data[:, i], **kwargs)
-            if unit:
-                ax.set_ylabel(dim_label + " ({})".format(unit))
-            else:
-                ax.set_ylabel(dim_label)
-        ax.set_xlabel("t (sec)")
-
-    return widgets.HBox([text_widget, base.fig2widget(fig)])
 
 
 def show_spatial_series(node: SpatialSeries, **kwargs):
@@ -95,47 +72,132 @@ def show_spatial_series(node: SpatialSeries, **kwargs):
     return fig
 
 
-def plotly_show_spatial_trace(node):
-    data, unit = get_timeseries_in_units(node)
-    tt = get_timeseries_tt(node)
+def route_spatial_series(spatial_series, **kwargs):
+    if len(spatial_series.data.shape) == 1:
+        dict_ = {
+            "over time": SingleTracePlotlyWidget,
+            "trial aligned": trial_align_spatial_series,
+        }
+    elif spatial_series.data.shape[1] == 2:
+        dict_ = {
+                "over time": SeparateTracesPlotlyWidget,
+                "trace": SpatialSeriesTraceWidget2D,
+                "trial aligned": trial_align_spatial_series,
+            }
+    elif spatial_series.data.shape[1] == 3:
+        dict_ = {
+            "over time": SeparateTracesPlotlyWidget,
+            "trace": SpatialSeriesTraceWidget3D,
+            "trial aligned": trial_align_spatial_series,
+        }
+    else:
+        return widgets.HTML("Unsupported number of dimensions.")
+    return lazy_tabs(dict_, spatial_series)
 
-    fig = go.FigureWidget()
 
-    if len(data.shape) == 1:
-        fig.add_trace(go.Scatter(x=tt, y=data))
-        fig.update_xaxes(title_text="time (s)")
-        if unit:
-            fig.update_yaxes(title_text="x ({})".format(unit))
-        else:
-            fig.update_yaxes(title_text="x")
+class SpatialSeriesTraceWidget(AbstractTraceWidget):
+    @abstractmethod
+    def plot_data(self, data, units, tt):
+        return
 
-    elif data.shape[1] == 2:
-        fig.add_trace(go.Scatter(x=data[:, 0], y=data[:, 1]))
-        if unit:
-            fig.update_xaxes(title_text="x ({})".format(unit))
-            fig.update_yaxes(title_text="y ({})".format(unit))
-        else:
-            fig.update_xaxes(title_text="x")
-            fig.update_yaxes(title_text="y")
-        fig.update_layout(height=600, width=600)
+    @abstractmethod
+    def update_plot(self, data, tt):
+        return
 
-    elif data.shape[1] == 3:
-        fig.add_trace(go.Scatter3d(x=data[:, 0], y=data[:, 1], z=data[:, 2]))
+    def __init__(
+        self,
+        timeseries: TimeSeries,
+        foreign_time_window_controller: StartAndDurationController = None,
+        **kwargs,
+    ):
+        super().__init__(
+            timeseries=timeseries,
+            foreign_time_window_controller=foreign_time_window_controller,
+            **kwargs,
+        )
 
-        if unit:
-            fig.update_xaxes(title_text="x ({})".format(unit))
-            fig.update_yaxes(title_text="y ({})".format(unit))
-            # fig.update_zaxes(title_text='z ({})'.format(unit))
-        else:
-            fig.update_xaxes(title_text="x")
-            fig.update_yaxes(title_text="y")
-            # fig.update_zaxes(title_text='z')
+    def set_out_fig(self):
+        timeseries = self.controls["timeseries"].value
+        time_window = self.controls["time_window"].value
 
-    fig.update_layout(
-        hovermode=False, margin=dict(t=5), yaxis=dict(scaleanchor="x", scaleratio=1)
-    )
+        istart = timeseries_time_to_ind(timeseries, time_window[0])
+        istop = timeseries_time_to_ind(timeseries, time_window[1])
+        data, units = get_timeseries_in_units(timeseries, istart, istop)
 
-    return fig
+        tt = get_timeseries_tt(timeseries, istart, istop)
+
+        self.plot_data(data, units, tt)
+
+        def on_change(change):
+            time_window = self.controls["time_window"].value
+            istart = timeseries_time_to_ind(timeseries, time_window[0])
+            istop = timeseries_time_to_ind(timeseries, time_window[1])
+            data, units = get_timeseries_in_units(timeseries, istart, istop)
+            tt = get_timeseries_tt(timeseries, istart, istop)
+            self.update_plot(data, tt)
+
+        self.controls["time_window"].observe(on_change)
+
+
+class SpatialSeriesTraceWidget2D(SpatialSeriesTraceWidget):
+    def plot_data(self, data, units, tt):
+        if units is None:
+            units = "no units"
+        self.out_fig = go.FigureWidget(
+            data=go.Scattergl(
+                x=list(data[:, 0]),
+                y=list(data[:, 1]),
+                mode="markers+lines",
+                marker_color=tt,
+                marker_colorscale="Viridis",
+                marker_colorbar=dict(thickness=20, title="time (s)"),
+                marker_size=5,
+            )
+        )
+
+        self.out_fig.update_layout(
+            title=self.timeseries.name,
+            xaxis_title=f"x ({units})",
+            yaxis_title=f"y ({units})",
+        )
+
+    def update_plot(self, data, tt):
+        self.out_fig.data[0].x = list(data[:, 0])
+        self.out_fig.data[0].y = list(data[:, 1])
+        self.out_fig.update_traces(marker_color=list(tt))
+
+
+class SpatialSeriesTraceWidget3D(SpatialSeriesTraceWidget):
+    def plot_data(self, data, units, tt):
+        if units is None:
+            units = "no units"
+
+        self.out_fig = go.FigureWidget(
+            data=go.Scatter3d(
+                x=data[:, 0],
+                y=data[:, 1],
+                z=data[:, 2],
+                mode="markers+lines",
+                marker_color=tt,
+                marker_colorscale="Viridis",
+                marker_colorbar=dict(thickness=20, title="time (s)"),
+                marker_size=5,
+            )
+        )
+
+        self.out_fig.update_layout(
+            scene=dict(
+                xaxis_title=f"x ({units})",
+                yaxis_title=f"y ({units})",
+                zaxis_title=f"x ({units})",
+            )
+        )
+
+    def update_plot(self, data, tt):
+        self.out_fig.data[0].x = list(data[:, 0])
+        self.out_fig.data[0].y = list(data[:, 1])
+        self.out_fig.data[0].z = list(data[:, 2])
+        self.out_fig.update_traces(marker_color=list(tt))
 
 
 def trial_align_spatial_series(spatial_series, trials=None):
