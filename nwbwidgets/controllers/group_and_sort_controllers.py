@@ -203,6 +203,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.group_sm.options = tuple(groups[::-1])
             self.group_sm.value = self.group_sm.options[:1]
             self.group_sm.disabled = False
+            self.selected_column_values = self.group_sm.value
             if self.control_limit:
                 self.limit_bit.disabled = False
                 self.limit_cb.disabled = False
