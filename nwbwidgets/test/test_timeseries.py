@@ -108,11 +108,21 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
         )
 
     def test_align_by_timestamps(self):
-        AlignMultiTraceTimeSeriesByTrialsVariable(
+        amt = AlignMultiTraceTimeSeriesByTrialsVariable(
             time_series=self.ts_timestamps, trials=self.time_intervals
         )
+        gas = amt.controls['gas']
+        gas.group_dd.value = list(gas.categorical_columns.keys())[0]
+        order = gas.value['order']
+        fig = amt.children[-1]
+        assert len(fig.data)==len(order)
 
     def test_align_by_rate(self):
-        AlignMultiTraceTimeSeriesByTrialsConstant(
+        amt = AlignMultiTraceTimeSeriesByTrialsConstant(
             time_series=self.ts_rate, trials=self.time_intervals
         )
+        gas = amt.controls['gas']
+        gas.group_dd.value = list(gas.categorical_columns)[0]
+        order = gas.value['order']
+        fig = amt.children[-1]
+        assert len(fig.data) == len(order)
