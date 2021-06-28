@@ -1273,17 +1273,19 @@ def draw_tuning_curve_1d(
         avg_rates.append(n_spikes / (n_trials * duration)) 
 
     x = np.arange(len(var1_classes))  # the label locations
-    width = 0.95  # the width of the bars
+    si = sort_mixed_type_list(var1_classes)
+    avg_rates_sorted = [avg_rates[i] for i in si]
 
     fig, ax = plt.subplots(figsize=(14, 7))
-    rects1 = ax.bar(x, avg_rates, width)
-    lines1 = ax.plot(x, avg_rates, '-o', color='k', lw=2)
+    width = 0.95  # the width of the bars
+    rects1 = ax.bar(x, avg_rates_sorted, width)
+    lines1 = ax.plot(x, avg_rates_sorted, '-o', color='k', lw=2)
 
     # Labels
     ax.set_ylabel('Avg rate')
     ax.set_xlabel(rows_label)
     ax.set_xticks(x)
-    ax.set_xticklabels(var1_classes, rotation=45)
+    ax.set_xticklabels([var1_classes[i] for i in si], rotation=45)
     fig.tight_layout()
 
 
@@ -1337,3 +1339,22 @@ def draw_tuning_curve_2d(
     ax.set_yticklabels(var2_classes, rotation=45)
 
     return fig
+
+
+def sort_mixed_type_list(x):
+    """Returns the indexes for a sorted list of mixed types"""
+    x_num = list()
+    x_num_i = list()
+    x_oth = list()
+    x_oth_i = list()
+    l = len(x)
+    for i, xx in enumerate(x):
+        try:
+            x_num.append(float(xx)) 
+            x_num_i.append(i)
+        except:
+            x_oth.append(str(xx))
+            x_oth_i.append(i)
+    x_num_si = np.argsort(x_num)
+    x_oth_si = np.argsort(x_oth)
+    return [x_num_i[ii] for ii in x_num_si] + [x_oth_i[ii] for ii in x_oth_si]
