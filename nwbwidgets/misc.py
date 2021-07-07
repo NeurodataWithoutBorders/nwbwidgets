@@ -1094,18 +1094,29 @@ def show_session_raster_plotly(
     return fig
 
 
-class TuningCurveWidget(widgets.VBox):
+class UnitsAndTrialsControllerWidget(widgets.VBox):
+    InnerWidget = None
+
     def __init__(
         self,
-        input_data: Units,
+        units: Units,
         trials: pynwb.epoch.TimeIntervals = None,
         unit_index=0,
-        unit_controller=None
+        **kwargs
     ):
+        """
+        Creates a UnitsAndTrials controller that controls InnerWidget.
 
+        Parameters
+        ----------
+        units: pynwb.misc.Units object
+        trials: pynwb.epoch.TimeIntervals object
+        unit_index: int
+        """
         super().__init__()
 
-        self.units = input_data
+        self.units = units
+        self.kwargs = kwargs
 
         # Check if there is trials table and create controller
         if trials is None:
@@ -1144,10 +1155,10 @@ class TuningCurveWidget(widgets.VBox):
         self.trial_event_controller = make_trial_event_controller(self.trials)
 
         # Before / After controllers
-        before_slider = widgets.FloatSlider(
+        self.before_slider = widgets.FloatSlider(
             0.1, min=0, max=5.0, description="before (s)", continuous_update=False
         )
-        after_slider = widgets.FloatSlider(
+        self.after_slider = widgets.FloatSlider(
             1.0, min=0, max=5.0, description="after (s)", continuous_update=False
         )
 
@@ -1158,33 +1169,20 @@ class TuningCurveWidget(widgets.VBox):
 
         self.controls = {
             "index": self.unit_controller,
-            "after": after_slider,
-            "before": before_slider,
+            "after": self.after_slider,
+            "before": self.before_slider,
             "align_by": self.trial_event_controller,
             "rows_label": self.rows_controller,
             "cols_label": self.cols_controller,
         }
-
-        self.fig_tuning_curve = interactive_output(
-            f=draw_tuning_curve, 
-            controls=self.controls,
-            fixed=self.fixed
-        )
-        self.fig_raster_grid = interactive_output(
-            f=raster_grid, 
-            controls=self.controls,
-            fixed=self.fixed
-        )
         
         self.children = [
             self.unit_controller,
             self.rows_controller,
             self.cols_controller,
             self.trial_event_controller,
-            before_slider,
-            after_slider,
-            self.fig_tuning_curve,
-            self.fig_raster_grid
+            self.before_slider,
+            self.after_slider
         ]
 
     def get_trials(self):
@@ -1202,6 +1200,106 @@ class TuningCurveWidget(widgets.VBox):
             self.cols_controller.value = None
         else:
             self.cols_controller.disabled = False
+
+
+
+class RasterGridWidget(widgets.VBox):
+    def __init__(
+        self,
+        units: Units,
+        trials: pynwb.epoch.TimeIntervals = None,
+        unit_index=0,
+        units_trials_controller=None,
+    ):
+
+        super().__init__()
+
+        # Create Units and Trials controller
+        if not units_trials_controller:
+            units_trials_controller = UnitsAndTrialsControllerWidget(
+                units=units,
+                trials=trials,
+                unit_index=unit_index
+            )
+            self.children = [units_trials_controller]
+
+        self.fig = interactive_output(
+            f=raster_grid, 
+            controls=units_trials_controller.controls,
+            fixed=units_trials_controller.fixed
+        )
+
+        self.children += tuple([self.fig])
+
+
+class TuningCurveWidget(widgets.VBox):
+    def __init__(
+        self,
+        units: Units,
+        trials: pynwb.epoch.TimeIntervals = None,
+        unit_index=0,
+        units_trials_controller=None,
+    ):
+
+        super().__init__()
+        self.children = []
+
+        # Create Units and Trials controller
+        if not units_trials_controller:
+            units_trials_controller = UnitsAndTrialsControllerWidget(
+                units=units,
+                trials=trials,
+                unit_index=unit_index
+            )
+            self.children = [units_trials_controller]
+
+        self.fig = interactive_output(
+            f=draw_tuning_curve, 
+            controls=units_trials_controller.controls,
+            fixed=units_trials_controller.fixed
+        )
+
+        self.children += tuple([self.fig])
+
+
+
+class TuningCurveExtendedWidget(widgets.VBox):
+    def __init__(
+        self,
+        units: Units,
+        trials: pynwb.epoch.TimeIntervals = None,
+        unit_index=0
+    ):
+        super().__init__()
+
+        # Controller
+        self.units_trials_controller = UnitsAndTrialsControllerWidget(
+            units=units,
+            trials=trials,
+            unit_index=unit_index
+        )
+
+        # Tuning curve widget
+        self.tuning_curve = TuningCurveWidget(
+            units=units,
+            trials=trials,
+            unit_index=unit_index,
+            units_trials_controller=self.units_trials_controller,
+        )
+
+        # Raster grid widget
+        self.raster_grid = RasterGridWidget(
+            units=units,
+            trials=trials,
+            unit_index=unit_index,
+            units_trials_controller=self.units_trials_controller,
+        )
+
+        self.children = [
+            self.units_trials_controller,
+            self.tuning_curve,
+            self.raster_grid
+        ]
 
 
 def draw_tuning_curve(
