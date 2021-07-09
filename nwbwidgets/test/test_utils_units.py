@@ -63,6 +63,9 @@ class UnitsTrialsTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=0.0, stop_time=2.0, stim="person")
         self.nwbfile.add_trial(start_time=3.0, stop_time=5.0, stim="ocean")
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim="desert")
+        self.nwbfile.add_trial(start_time=8.0, stop_time=12.0, stim="person")
+        self.nwbfile.add_trial(start_time=13.0, stop_time=15.0, stim="ocean")
+        self.nwbfile.add_trial(start_time=16.0, stop_time=18.0, stim="desert")
 
 
 
@@ -113,6 +116,8 @@ class TuningCurveTestCase(UnitsTrialsTestCase):
             units=self.nwbfile.units,
             trials=self.nwbfile.trials
         )
+        # rows controller triggers drawing of graphic
+        self.widget.children[0].children[1].value = 'stim'
 
     def test_make_widget(self):
         assert isinstance(self.widget, widgets.Widget)
@@ -154,6 +159,9 @@ class ShowPSTHTestCase(UnitsTrialsTestCase):
             np.array([2.2, 3.0, 25.0, 26.0]),
             np.array([-0.8, 0.0, 22.0, 23.0]),
             np.array([-3.8, -3.0, 19.0, 20.0]),
+            np.array([-5.8, -5., 17., 18.]), 
+            np.array([-10.8, -10.,  12.,  13.]), 
+            np.array([-13.8, -13.,   9.,  10.])
         ]
 
         at = align_by_trials(self.nwbfile.units, index=1, before=20.0, after=30.0)

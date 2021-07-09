@@ -74,7 +74,6 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
 
         def selection_fn(trace, points, selector):
             self.value = points.point_inds
-            print(self.value)
 
         self.fig.data[0].on_selection(selection_fn)
 
