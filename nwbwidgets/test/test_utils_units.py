@@ -13,7 +13,7 @@ from pynwb import NWBFile
 from pynwb.epoch import TimeIntervals
 
 from ..base import TimeIntervalsSelector
-from ..misc import TuningCurveWidget
+from ..misc import TuningCurveWidget, TuningCurveExtendedWidget
 
 
 class UnitsTrialsTestCase(unittest.TestCase):
@@ -110,7 +110,7 @@ class TuningCurveTestCase(UnitsTrialsTestCase):
     def setUp(self):
         super().setUp()
         self.widget = TuningCurveWidget(
-            input_data=self.nwbfile.units,
+            units=self.nwbfile.units,
             trials=self.nwbfile.trials
         )
 
@@ -118,10 +118,30 @@ class TuningCurveTestCase(UnitsTrialsTestCase):
         assert isinstance(self.widget, widgets.Widget)
 
     def test_widget_children(self):
-        assert len(self.widget.children) == 8
+        assert len(self.widget.children) == 2
 
         for i, c in enumerate(self.widget.children):
             assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
+
+
+class TuningCurveRasterGridCombinedTestCase(UnitsTrialsTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.widget = TuningCurveExtendedWidget(
+            units=self.nwbfile.units,
+            trials=self.nwbfile.trials
+        )
+
+    def test_make_widget(self):
+        assert isinstance(self.widget, widgets.Widget)
+
+    def test_widget_children(self):
+        assert len(self.widget.children) == 3
+
+        for i, c in enumerate(self.widget.children):
+            assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
+
 
 
 class ShowPSTHTestCase(UnitsTrialsTestCase):
