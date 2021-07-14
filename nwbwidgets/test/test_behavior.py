@@ -91,7 +91,7 @@ class SpatialSeriesTrialsAlign(unittest.TestCase):
         self.spatial_series_ts = SpatialSeries(
             name="position_ts",
             data=data,
-            timestamps=timestamps,
+            timestamps=np.array(timestamps),
             reference_frame="starting gate",
         )
         self.time_intervals = TimeIntervals(name="Test Time Interval")
