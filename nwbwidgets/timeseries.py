@@ -834,7 +834,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
             sem=True,
         )
 
-    @functools.lru_cache
+    @functools.lru_cache()
     def align_data(self, start_label, before, after, index=None):
         starts = np.array(self.trials[start_label][:]) - before
         out_data_aligned = []
@@ -924,7 +924,7 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
             sem=False,
         )
 
-    @functools.lru_cache
+    @functools.lru_cache()
     def align_data(self, start_label, before, after, index=None):
         starts = np.array(self.trials[start_label][:]) - before
         out_data_aligned = []
