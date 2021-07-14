@@ -14,7 +14,7 @@ from nwbwidgets.timeseries import (
     SingleTracePlotlyWidget,
     SeparateTracesPlotlyWidget,
     get_timeseries_tt,
-    show_indexed_timeseries_plotly
+    show_indexed_timeseries_plotly,
 )
 from pynwb import TimeSeries
 from pynwb.epoch import TimeIntervals
@@ -31,25 +31,40 @@ def test_timeseries_widget():
 
     BaseGroupedTraceWidget(ts)
 
+
 class TestTracesPlotlyWidget(unittest.TestCase):
     def setUp(self):
         data = np.random.rand(160, 3)
         self.ts_multi = SpatialSeries(
-            name="test_timeseries", data=data, reference_frame="lowerleft", starting_time=0.0, rate=1.0
+            name="test_timeseries",
+            data=data,
+            reference_frame="lowerleft",
+            starting_time=0.0,
+            rate=1.0,
         )
         self.ts_single = TimeSeries(
-            name="test_timeseries", data=data[:,0], unit="m", starting_time=0.0, rate=1.0
+            name="test_timeseries",
+            data=data[:, 0],
+            unit="m",
+            starting_time=0.0,
+            rate=1.0,
         )
 
     def test_single_trace_widget(self):
         single_wd = SingleTracePlotlyWidget(timeseries=self.ts_single)
         tt = get_timeseries_tt(self.ts_single)
-        single_wd.controls["time_window"].value = [tt[int(len(tt)*0.2)],tt[int(len(tt)*0.4)]]
+        single_wd.controls["time_window"].value = [
+            tt[int(len(tt) * 0.2)],
+            tt[int(len(tt) * 0.4)],
+        ]
 
     def test_single_trace_widget(self):
         single_wd = SeparateTracesPlotlyWidget(timeseries=self.ts_multi)
         tt = get_timeseries_tt(self.ts_multi)
-        single_wd.controls["time_window"].value = [tt[int(len(tt)*0.2)],tt[int(len(tt)*0.4)]]
+        single_wd.controls["time_window"].value = [
+            tt[int(len(tt) * 0.2)],
+            tt[int(len(tt) * 0.4)],
+        ]
 
 
 class TestIndexTimeSeriesPlotly(unittest.TestCase):
@@ -63,7 +78,11 @@ class TestIndexTimeSeriesPlotly(unittest.TestCase):
             rate=100.0,
         )
         self.ts_single = TimeSeries(
-            name="test_timeseries", data=data[:, 0], unit="m", starting_time=0.0, rate=100.0
+            name="test_timeseries",
+            data=data[:, 0],
+            unit="m",
+            starting_time=0.0,
+            rate=100.0,
         )
         self.tt = get_timeseries_tt(self.ts)
 
@@ -81,32 +100,58 @@ class TestIndexTimeSeriesPlotly(unittest.TestCase):
         assert np.allclose(fig_out.data[2].y, self.ts.data[:, 2])
 
     def test_value_errors(self):
-        time_window = [self.tt[int(len(self.tt)*0.2)], self.tt[int(len(self.tt)*0.4)]]
-        self.assertRaises(ValueError, show_indexed_timeseries_plotly,
-                          timeseries=self.ts_single, istart=3, time_window=time_window)
-        self.assertRaises(ValueError, show_indexed_timeseries_plotly,
-                          timeseries=self.ts_single, trace_range=[2, 5])
+        time_window = [
+            self.tt[int(len(self.tt) * 0.2)],
+            self.tt[int(len(self.tt) * 0.4)],
+        ]
+        self.assertRaises(
+            ValueError,
+            show_indexed_timeseries_plotly,
+            timeseries=self.ts_single,
+            istart=3,
+            time_window=time_window,
+        )
+        self.assertRaises(
+            ValueError,
+            show_indexed_timeseries_plotly,
+            timeseries=self.ts_single,
+            trace_range=[2, 5],
+        )
 
 
 class TestTracesPlotlyWidget(unittest.TestCase):
     def setUp(self):
         data = np.random.rand(160, 3)
         self.ts_multi = SpatialSeries(
-            name="test_timeseries", data=data, reference_frame="lowerleft", starting_time=0.0, rate=1.0
+            name="test_timeseries",
+            data=data,
+            reference_frame="lowerleft",
+            starting_time=0.0,
+            rate=1.0,
         )
         self.ts_single = TimeSeries(
-            name="test_timeseries", data=data[:, 0], unit="m", starting_time=0.0, rate=1.0
+            name="test_timeseries",
+            data=data[:, 0],
+            unit="m",
+            starting_time=0.0,
+            rate=1.0,
         )
 
     def test_single_trace_widget(self):
         single_wd = SingleTracePlotlyWidget(timeseries=self.ts_single)
         tt = get_timeseries_tt(self.ts_single)
-        single_wd.controls["time_window"].value = [tt[int(len(tt)*0.2)], tt[int(len(tt)*0.4)]]
+        single_wd.controls["time_window"].value = [
+            tt[int(len(tt) * 0.2)],
+            tt[int(len(tt) * 0.4)],
+        ]
 
     def test_single_trace_widget(self):
         single_wd = SeparateTracesPlotlyWidget(timeseries=self.ts_multi)
         tt = get_timeseries_tt(self.ts_multi)
-        single_wd.controls["time_window"].value = [tt[int(len(tt)*0.2)], tt[int(len(tt)*0.4)]]
+        single_wd.controls["time_window"].value = [
+            tt[int(len(tt) * 0.2)],
+            tt[int(len(tt) * 0.4)],
+        ]
 
 
 class ShowTimeSeriesTestCase(unittest.TestCase):
@@ -159,7 +204,7 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
         data = np.random.rand(100, 10)
         timestamps = [0.0]
         for _ in range(data.shape[0]):
-            timestamps.append(timestamps[-1] + 0.75 + 0.25*np.random.rand())
+            timestamps.append(timestamps[-1] + 0.75 + 0.25 * np.random.rand())
         self.ts_rate = TimeSeries(
             name="test_timeseries_rate",
             data=data,

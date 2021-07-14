@@ -80,10 +80,10 @@ def route_spatial_series(spatial_series, **kwargs):
         }
     elif spatial_series.data.shape[1] == 2:
         dict_ = {
-                "over time": SeparateTracesPlotlyWidget,
-                "trace": SpatialSeriesTraceWidget2D,
-                "trial aligned": trial_align_spatial_series,
-            }
+            "over time": SeparateTracesPlotlyWidget,
+            "trace": SpatialSeriesTraceWidget2D,
+            "trial aligned": trial_align_spatial_series,
+        }
     elif spatial_series.data.shape[1] == 3:
         dict_ = {
             "over time": SeparateTracesPlotlyWidget,
