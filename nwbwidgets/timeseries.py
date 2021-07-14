@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 import functools
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +7,6 @@ import plotly.graph_objects as go
 from ipywidgets import widgets, fixed, Layout
 from plotly.subplots import make_subplots
 from plotly.colors import DEFAULT_PLOTLY_COLORS
-from time import perf_counter
 from pynwb import TimeSeries
 from pynwb.epoch import TimeIntervals
 import scipy
@@ -28,9 +27,7 @@ from .utils.timeseries import (
 )
 from .utils.widgets import interactive_output, set_plotly_callbacks
 from .controllers.misc import make_trial_event_controller
-from .utils.timeseries import align_by_time_intervals, align_timestamps_by_trials
 
-from .utils.dynamictable import infer_categorical_columns
 
 color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -696,7 +693,10 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
     ):
 
         self.time_series = time_series
-
+        self.time_series_data = time_series.data[()]
+        self.time_series_timestamps = None
+        if time_series.rate is None:
+            self.time_series_timestamps = time_series.timestamps[()]
         super().__init__()
 
         if trials is None:
@@ -774,28 +774,28 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
             control_limit=control_limit,
         )
 
-    @functools.lru_cache
-    def align_data(self,start_label, before, after, index):
-        data = align_by_time_intervals(
-            self.time_series,
-            self.trials,
-            start_label,
-            before,
-            after,
-            traces=index,
-        )
-        return data
+    def plot_group(self,group_inds, data_trialized, time_trialized, fig, order):
+        for group in np.unique(group_inds):
+            line_color = color_wheel[group%len(color_wheel)]
+            pb = ProgressBar(np.where(group_inds==group)[0],
+                             desc=f"plotting {group} data", leave=False)
+            group_data = []
+            group_ts = []
+            for i,trim_trial_no in enumerate(pb):
+                trial_idx = order[trim_trial_no]
+                group_data.append(np.append(data_trialized[trial_idx],np.nan))
+                group_ts.append(np.append(time_trialized[trial_idx],np.nan))
+            fig.add_scattergl(x=np.concatenate(group_ts,axis=0),
+                              y=np.concatenate(group_data,axis=0),
+                              line_color=line_color,
+                              showlegend=True,
+                              name=str(group))
+        tt_flat = np.concatenate(time_trialized)
+        fig.update_layout(xaxis_title='time (s)',
+                          yaxis_title=self.time_series.name,
+                          xaxis_range=(np.min(tt_flat), np.max(tt_flat)))
+        return fig
 
-    @functools.lru_cache
-    def align_timestamps(self,start_label, before, after):
-        starts = np.array(self.trials[start_label][:]) - before
-        ts = align_timestamps_by_trials(
-            self.time_series,
-            starts,
-            before,
-            after,
-        )
-        return ts
 
 class AlignMultiTraceTimeSeriesByTrialsConstant(
     AlignMultiTraceTimeSeriesByTrialsAbstract
@@ -820,6 +820,21 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
             sem=True,
         )
 
+    @functools.lru_cache
+    def align_data(self, start_label, before, after, index=None):
+        starts = np.array(self.trials[start_label][:]) - before
+        out_data_aligned = []
+        out_ts_aligned = []
+        for start in starts:
+            idx_start = int((start - self.time_series.starting_time)*self.time_series.rate)
+            idx_stop = int(idx_start + (before+after)*self.time_series.rate)
+            out_ts_aligned.append(np.linspace(-before,after,num=idx_stop-idx_start))
+            if len(self.time_series_data.shape) > 1 and index is not None:
+                out_data_aligned.append(self.time_series_data[idx_start:idx_stop, index])
+            else:
+                out_data_aligned.append(self.time_series_data[idx_start:idx_stop])
+        return out_data_aligned, out_ts_aligned
+
     def update(
         self,
         index: int,
@@ -833,26 +848,18 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
         sem=False,
         fig:go.FigureWidget = None,
     ):
-        data = align_by_time_intervals(
-            self.time_series, self.trials, start_label, before, after, traces=index
-        )
-        rate = self.time_series.rate
-        tt = np.arange(data.shape[1]) / rate - before
-
+        data, time_ts_aligned = self.align_data(start_label, before, after, index)
         if group_inds is None:
-            group_inds = np.zeros(data.shape[0], dtype=np.int)
-        group_stats = []
-
-        data = data[order]
-
+            group_inds = np.zeros(len(self.trials), dtype=np.int)
         if align_to_zero:
-            data_zero_id = bisect(tt, 0)
-            data = data - data[:, data_zero_id, np.newaxis]
-
+            for trial_no in order:
+                data_zero_id = bisect(time_ts_aligned[trial_no], 0)
+                data[trial_no] -= data[trial_no][data_zero_id]
         fig = go.FigureWidget() if fig is None else fig
         fig.data = []
         fig.layout = {}
         if sem:
+            group_stats = []
             for group in np.unique(group_inds):
                 this_mean = np.nanmean(data[group_inds == group, :], axis=0)
                 err = scipy.stats.sem(
@@ -872,18 +879,12 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
                 color = color_wheel[stats["group"]]
                 if labels is not None:
                     plot_kwargs.update(text=labels[stats["group"]])
-                fig.add_scattergl(x=tt, y=stats["lower"], line_color=color)
-                fig.add_scattergl(x=tt, y=stats["upper"], line_color=color, fill='tonexty', opacity=0.2)
-                fig.add_scattergl(x=tt, y=stats["mean"], line_color=color, **plot_kwargs)
+                fig.add_scattergl(x=time_ts_aligned[0], y=stats["lower"], line_color=color)
+                fig.add_scattergl(x=time_ts_aligned[0], y=stats["upper"], line_color=color, fill='tonexty', opacity=0.2)
+                fig.add_scattergl(x=time_ts_aligned[0], y=stats["mean"], line_color=color, **plot_kwargs)
 
         else:
-            for group in np.unique(group_inds):
-                label = labels[group] if labels is not None else str(group)
-                fig=multi_trace(x=tt, y=data[group_inds == group, :],
-                                  color=color_wheel[group%len(color_wheel)], label=str(label), fig=fig)
-        fig.update_layout(xaxis_title='time (s)',
-                          yaxis_title=self.time_series.name,
-                          xaxis_range=(np.min(tt), np.max(tt)))
+            fig = self.plot_group(group_inds,data,time_ts_aligned,fig,order)
         return fig
 
 class AlignMultiTraceTimeSeriesByTrialsVariable(
@@ -909,6 +910,22 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
             sem=False,
         )
 
+    @functools.lru_cache
+    def align_data(self, start_label, before, after, index=None):
+        starts = np.array(self.trials[start_label][:]) - before
+        out_data_aligned = []
+        out_ts_aligned = []
+        for start in starts:
+            idx_start = bisect(self.time_series_timestamps, start-before)
+            idx_stop = bisect(self.time_series_timestamps, start + after, lo=idx_start)
+            out_ts_aligned.append(self.time_series_timestamps[idx_start:idx_stop]-
+                                  self.time_series_timestamps[idx_start]-before)
+            if len(self.time_series_data.shape) > 1 and index is not None:
+                out_data_aligned.append(self.time_series_data[idx_start:idx_stop, index])
+            else:
+                out_data_aligned.append(self.time_series_data[idx_start:idx_stop])
+        return out_data_aligned, out_ts_aligned
+
     def update(
         self,
         index: int,
@@ -922,56 +939,14 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
         fig:go.FigureWidget = None,
     ):
 
-        data_tic = perf_counter()
-        data = self.align_data(start_label,before,after,index)
-        data_toc = perf_counter()
-
-        time_tic = perf_counter()
-        time_ts_aligned = self.align_timestamps(start_label, before, after)
-        time_toc = perf_counter()
-
+        data,time_ts_aligned = self.align_data(start_label,before,after,index)
         if group_inds is None:
-            group_inds = np.zeros(len(data), dtype=np.int)
-
+            group_inds = np.zeros(len(self.trials), dtype=np.int)
         if align_to_zero:
             for trial_no in order:
                 data_zero_id = bisect(time_ts_aligned[trial_no], 0)
                 data[trial_no] -= data[trial_no][data_zero_id]
         fig = fig if fig is not None else go.FigureWidget()
-        with fig.batch_update():
-            for fig_data in fig.data:
-                fig_data.visible=False
-        print('wiped figure')
-        new_fig = True if len(fig.data)==0 else False
-        #
-        plot_tic = perf_counter()
-        with fig.batch_update():
-            for group in np.unique(group_inds):
-                line_color = color_wheel[group%len(color_wheel)]
-                pb = ProgressBar(np.where(group_inds==group)[0],
-                                 desc=f"plotting {group} data", leave=False)
-                for i,trim_trial_no in enumerate(pb):
-                    showlegend=True if i==0 else False
-                    trial_idx = order[trim_trial_no]
-                    if new_fig:
-                        fig.add_scattergl(x=time_ts_aligned[trial_idx],
-                                          y=data[trial_idx],
-                                          line_color=line_color,
-                                          showlegend=False)
-                    else:
-                        if fig.data[trial_idx].y[0]!=data[trial_idx][0]:#if a different index is chosen
-                            fig.data[trial_idx].y = data[trial_idx]
-                        fig.data[trial_idx].visible=True
-                        fig.data[trial_idx].line.color=line_color
-                        fig.data[trial_idx].legendgroup=str(labels[group])
-                        fig.data[trial_idx].showlegend = showlegend
-                        fig.data[trial_idx].name = str(labels[group])
-            plot_toc = perf_counter()
-            tt_flat = np.concatenate(time_ts_aligned)
-            fig.update_layout(xaxis_title='time (s)',
-                              yaxis_title=self.time_series.name,
-                              xaxis_range=(np.min(tt_flat), np.max(tt_flat)))
-        print(f'data: {-data_tic+data_toc:0.4f};'
-              f'timestamps: {-time_tic+time_toc:0.4f};'
-              f'plotting: {-plot_tic+plot_toc:0.4f};')
-        return fig
+        fig.data = []
+        fig.layout = {}
+        return self.plot_group(group_inds,data,time_ts_aligned,fig,order)
