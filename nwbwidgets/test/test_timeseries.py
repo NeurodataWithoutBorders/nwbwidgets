@@ -171,7 +171,7 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
             name="test_timeseries_timestamps",
             data=data,
             unit="m",
-            timestamps=timestamps,
+            timestamps=np.array(timestamps),
         )
         self.time_intervals = TimeIntervals(name="Test Time Interval")
         n_intervals = 10
@@ -196,10 +196,8 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
         gas = amt.controls['gas']
         gas.group_dd.value = list(gas.categorical_columns.keys())[0]
         gas.group_sm.value = (gas.group_sm.options[0],)
-        order = gas.value['order']
         fig = amt.children[-1]
-        print(len(order))
-        assert len(fig.data)==len(order)
+        assert len(fig.data)==len(gas.group_sm.value)
 
     def test_align_by_rate(self):
         amt = AlignMultiTraceTimeSeriesByTrialsConstant(
@@ -208,7 +206,5 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
         gas = amt.controls['gas']
         gas.group_dd.value = list(gas.categorical_columns)[0]
         gas.group_sm.value = (gas.group_sm.options[0],)
-        order = gas.value['order']
         fig = amt.children[-1]
-        print(len(order))
-        assert len(fig.data) == len(order)
+        assert len(fig.data) == len(gas.group_sm.value)
