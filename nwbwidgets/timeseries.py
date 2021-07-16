@@ -797,13 +797,9 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
             group_ts = []
             for i,trim_trial_no in enumerate(pb):
                 trial_idx = order[trim_trial_no]
-                group_data.append(np.append(data_trialized[trial_idx],np.nan))
-                group_ts.append(np.append(time_trialized[trial_idx],np.nan))
-            fig.add_scattergl(x=np.concatenate(group_ts,axis=0),
-                              y=np.concatenate(group_data,axis=0),
-                              line_color=line_color,
-                              showlegend=True,
-                              name=str(group))
+                group_data.append(data_trialized[trial_idx])
+                group_ts.append(time_trialized[trial_idx])
+            fig = multi_trace(group_ts,group_data,fig=fig,color=line_color,label=str(group),insert_nans=True)
         tt_flat = np.concatenate(time_trialized)
         fig.update_layout(xaxis_title='time (s)',
                           yaxis_title=self.time_series.name,
