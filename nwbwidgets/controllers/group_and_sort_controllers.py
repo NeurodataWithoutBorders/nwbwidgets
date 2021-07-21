@@ -201,8 +201,9 @@ class GroupAndSortController(AbstractGroupAndSortController):
             groups = np.unique(keep_column_values)
             self.group_sm.rows = min(len(groups), 20)
             self.group_sm.options = tuple(groups[::-1])
-            self.group_sm.value = self.group_sm.options
+            self.group_sm.value = ()
             self.group_sm.disabled = False
+            self.selected_column_values = self.group_sm.value
             if self.control_limit:
                 self.limit_bit.disabled = False
                 self.limit_cb.disabled = False

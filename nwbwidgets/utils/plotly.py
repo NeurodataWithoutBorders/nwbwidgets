@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 
-def multi_trace(x, y, color, label=None, fig=None):
+def multi_trace(x, y, color, label=None, fig=None, insert_nans=False):
     """Create multiple traces that are associated with a single legend label
 
     Parameters
@@ -20,22 +20,38 @@ def multi_trace(x, y, color, label=None, fig=None):
     if fig is None:
         fig = go.FigureWidget()
 
-    for i, yy in enumerate(y):
-        if label is not None and i:
-            showlegend = False
-        else:
-            showlegend = True
-
+    if insert_nans:
+        y_nans = []
+        x_nans = []
+        for xx,yy in zip(x,y):
+            y_nans.append(np.append(yy,np.nan))
+            x_nans.append(np.append(xx, np.nan))
+        y_plot = np.concatenate(y_nans,axis=0)
+        x_plot = np.concatenate(x_nans, axis=0)
         fig.add_scattergl(
-            x=x,
-            y=yy,
-            legendgroup=label,
+            x=x_plot,
+            y=y_plot,
             name=label,
-            showlegend=showlegend,
             line={"color": color},
         )
+        return fig
+    else:
+        for i, yy in enumerate(y):
+            if label is not None and i:
+                showlegend = False
+            else:
+                showlegend = True
 
-    return fig
+            fig.add_scattergl(
+                x=x,
+                y=yy,
+                legendgroup=label,
+                name=label,
+                showlegend=showlegend,
+                line={"color": color},
+            )
+
+        return fig
 
 
 def event_group(
