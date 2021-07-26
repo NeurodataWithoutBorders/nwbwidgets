@@ -558,7 +558,7 @@ def show_psth_smoothed(
             )
         )
     for stats in group_stats:
-        color = color_wheel[stats["group"]]
+        color = color_wheel[stats["group"] % len(color_wheel)]
         ax.plot(tt, stats["mean"], color=color)
         ax.fill_between(tt, stats["lower"], stats["upper"], alpha=0.2, color=color)
 
