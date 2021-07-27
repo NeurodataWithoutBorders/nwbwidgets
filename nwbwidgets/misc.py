@@ -515,7 +515,7 @@ def show_histogram(
         # group_inds = np.asarray(group_inds)
         for group in np.unique(group_inds):
             this_data = np.hstack(data[group_inds == group])
-            height, x = np.histogram(this_data, bins=nbins, range=(-start, end))
+            height, x = np.histogram(this_data, bins=nbins, range=(start, end))
             width = np.diff(x[:2])
             height = height / np.sum(group_inds == group) / width
             ax.bar(
@@ -1285,7 +1285,7 @@ def draw_tuning_curve_1d(
         )
         n_trials = len(data)
         n_spikes = len(np.hstack(data))
-        duration = -start + end
+        duration = end - start
         avg_rates.append(n_spikes / (n_trials * duration)) 
 
     x = np.arange(len(var1_classes))  # the label locations
@@ -1338,7 +1338,7 @@ def draw_tuning_curve_2d(
                 )
                 n_trials = len(data)
                 n_spikes = len(np.hstack(data))
-                duration = -start + end
+                duration = end - start
                 avg_rates[i, j] = n_spikes / (n_trials * duration)
     
     fig, ax = plt.subplots(figsize=(14, 7))
