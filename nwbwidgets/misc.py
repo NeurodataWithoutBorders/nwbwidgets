@@ -461,22 +461,22 @@ class PSTHWidget(widgets.VBox):
             self.gaussian_sd_ft.layout.height = None
             # expanded data so that gaussian smoother uses larger window than is viewed
             expanded_data = align_by_time_intervals(
-                self.units,
-                index,
-                self.trials,
-                start_label,
-                start_label,
-                start + sigma_in_secs * 4,
-                end + sigma_in_secs * 4,
-                order,
+                units=self.units,
+                index=index,
+                intervals=self.trials,
+                start_label=start_label,
+                stop_label=start_label,
+                start=start - sigma_in_secs * 4,
+                end=end + sigma_in_secs * 4,
+                rows_select=order,
                 progress_bar=progress_bar,
             )
             show_psth_smoothed(
-                expanded_data,
-                axs[1],
-                start + sigma_in_secs * 4,
-                end + sigma_in_secs * 4,
-                group_inds,
+                data=expanded_data,
+                ax=axs[1],
+                start=start - sigma_in_secs * 4,
+                end=end + sigma_in_secs * 4,
+                group_inds=group_inds,
                 sigma_in_secs=sigma_in_secs,
                 ntt=ntt,
             )
