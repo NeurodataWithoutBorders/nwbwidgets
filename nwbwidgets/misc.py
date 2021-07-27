@@ -515,7 +515,7 @@ def show_histogram(
         # group_inds = np.asarray(group_inds)
         for group in np.unique(group_inds):
             this_data = np.hstack(data[group_inds == group])
-            height, x = np.histogram(this_data, bins=nbins, range=(-start, end))
+            height, x = np.histogram(this_data, bins=nbins, range=(start, end))
             width = np.diff(x[:2])
             height = height / np.sum(group_inds == group) / width
             ax.bar(
