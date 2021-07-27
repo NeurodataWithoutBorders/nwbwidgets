@@ -88,8 +88,8 @@ def align_by_trials(
     index,
     start_label="start_time",
     stop_label=None,
-    before=0.0,
-    after=1.0,
+    start=-0.5,
+    end=1.0,
 ):
     """
     Args:
@@ -98,16 +98,16 @@ def align_by_trials(
             default: 'start_time'
         stop_label: str
             default: None (just align to start_time)
-        before: float
-            time after start_label in secs (positive goes back in time)
-        after: float
-            time after stop_label in secs (positive goes forward in time)
+        start: float
+            Start time for calculation before or after (negative or positive) the reference point (aligned to).
+        end: float
+            End time for calculation before or after (negative or positive) the reference point (aligned to).
     Returns:
         np.array(shape=(n_trials, n_time, ...))
     """
     trials = units.get_ancestor("NWBFile").trials
     return align_by_time_intervals(
-        units, index, trials, start_label, stop_label, before, after
+        units, index, trials, start_label, stop_label, start, end
     )
 
 
@@ -117,8 +117,8 @@ def align_by_time_intervals(
     intervals,
     start_label="start_time",
     stop_label="stop_time",
-    before=0.0,
-    after=0.0,
+    start=0.0,
+    end=0.0,
     rows_select=(),
     progress_bar=None,
 ):
@@ -131,10 +131,10 @@ def align_by_time_intervals(
             default: 'start_time'
         stop_label: str
             default: 'stop_time'
-        before: float
-            time after start_label in secs (positive goes back in time)
-        after: float
-            time after stop_label in secs (positive goes forward in time)
+        start: float
+            Start time for calculation before or after (negative or positive) the reference point (aligned to).
+        end: float
+            End time for calculation before or after (negative or positive) the reference point (aligned to).
         rows_select: array_like, optional
             sub-selects specific rows
         progress_bar: FloatProgress, optional
@@ -144,15 +144,15 @@ def align_by_time_intervals(
     """
     if stop_label is None:
         stop_label = start_label
-    starts = np.array(intervals[start_label][:])[rows_select] - before
-    stops = np.array(intervals[stop_label][:])[rows_select] + after
+    starts = np.array(intervals[start_label][:])[rows_select] + start
+    stops = np.array(intervals[stop_label][:])[rows_select] + end
     if progress_bar is not None:
         progress_bar.value = 0
         progress_bar.description = "reading spike data"
 
     out = []
     for i, x in enumerate(align_by_times(units, index, starts, stops)):
-        out.append(x - before)
+        out.append(x + start)
         if progress_bar is not None:
             progress_bar.value = i / len(units)
 
