@@ -164,7 +164,12 @@ class ShowPSTHTestCase(UnitsTrialsTestCase):
             np.array([-13.8, -13.,   9.,  10.])
         ]
 
-        at = align_by_trials(self.nwbfile.units, index=1, before=20.0, after=30.0)
+        at = align_by_trials(
+            self.nwbfile.units, 
+            index=1, 
+            start=-20.0, 
+            end=30.0
+        )
 
         np.testing.assert_allclose(at, compare_to_at, rtol=1e-02)
 
@@ -179,8 +184,8 @@ class ShowPSTHTestCase(UnitsTrialsTestCase):
             index=1,
             intervals=time_intervals,
             stop_label=None,
-            before=20.0,
-            after=30.0,
+            start=-20.0,
+            end=30.0,
         )
 
         compare_to_ati = [
@@ -202,8 +207,8 @@ class ShowPSTHTestCase(UnitsTrialsTestCase):
             index=1,
             intervals=time_intervals,
             stop_label=None,
-            before=20.0,
-            after=30.0,
+            start=-20.0,
+            end=30.0,
             rows_select=[0, 1],
         )
 
