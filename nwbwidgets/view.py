@@ -39,6 +39,8 @@ default_neurodata_vis_spec = {
             "Session Raster": misc.RasterWidget,
             "Grouped PSTH": misc.PSTHWidget,
             "Raster Grid": misc.RasterGridWidget,
+            "Tuning Curves": misc.TuningCurveWidget,
+            "Combined": misc.TuningCurveExtendedWidget,
             "table": show_dynamic_table,
         }
     ),
@@ -52,7 +54,10 @@ default_neurodata_vis_spec = {
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     pynwb.ophys.RoiResponseSeries: ophys.RoiResponseSeriesWidget,
     pynwb.misc.AnnotationSeries: OrderedDict(
-        {"text": base.show_text_fields, "times": misc.show_annotations}
+        {
+            "text": base.show_text_fields, 
+            "times": misc.show_annotations
+        }
     ),
     pynwb.core.LabelledDict: base.dict2accordion,
     pynwb.ProcessingModule: base.processing_module,

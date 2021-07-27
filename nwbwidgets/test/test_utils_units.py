@@ -3,6 +3,7 @@ from datetime import datetime
 
 import numpy as np
 from dateutil.tz import tzlocal
+import ipywidgets as widgets
 from nwbwidgets.utils.units import (
     get_min_spike_time,
     align_by_trials,
@@ -11,8 +12,12 @@ from nwbwidgets.utils.units import (
 from pynwb import NWBFile
 from pynwb.epoch import TimeIntervals
 
+from ..base import TimeIntervalsSelector
+from ..misc import TuningCurveWidget, TuningCurveExtendedWidget
 
-class ShowPSTHTestCase(unittest.TestCase):
+
+class UnitsTrialsTestCase(unittest.TestCase):
+
     def setUp(self):
         start_time = datetime(2017, 4, 3, 11, tzinfo=tzlocal())
         create_date = datetime(2017, 4, 15, 12, tzinfo=tzlocal())
@@ -58,6 +63,93 @@ class ShowPSTHTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=0.0, stop_time=2.0, stim="person")
         self.nwbfile.add_trial(start_time=3.0, stop_time=5.0, stim="ocean")
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim="desert")
+        self.nwbfile.add_trial(start_time=8.0, stop_time=12.0, stim="person")
+        self.nwbfile.add_trial(start_time=13.0, stop_time=15.0, stim="ocean")
+        self.nwbfile.add_trial(start_time=16.0, stop_time=18.0, stim="desert")
+
+
+
+class ExtendedTimeIntervalSelector(TimeIntervalsSelector):
+    InnerWidget = TuningCurveWidget
+
+
+class ExtendedTimeIntervalSelectorTestCase(UnitsTrialsTestCase):
+
+    def setUp(self):
+        super().setUp()
+        
+        # add intervals to nwbfile
+        ti1 = TimeIntervals(name='intervals', description='experimental intervals')
+        ti1.add_interval(start_time=0.0, stop_time=2.0)
+        ti1.add_interval(start_time=2.0, stop_time=4.0)
+        ti1.add_interval(start_time=4.0, stop_time=6.0)
+        ti1.add_interval(start_time=6.0, stop_time=8.0)
+        ti1.add_column(name='var1', data=['a', 'b', 'a', 'b'], description='no description')
+        self.nwbfile.add_time_intervals(ti1)
+
+        self.widget = ExtendedTimeIntervalSelector(
+            input_data=self.nwbfile.units
+        )
+
+    def test_make_widget(self):
+        assert isinstance(self.widget, widgets.Widget)
+
+    def test_widget_children(self):
+        assert len(self.widget.children) == 2
+
+        for i, c in enumerate(self.widget.children):
+            assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
+
+    def test_make_graph(self):
+        # rows controller triggers drawing of graphic
+        self.widget.children[1].children[1].value = 'var1'
+
+        for i, c in enumerate(self.widget.children):
+            assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
+
+
+class TuningCurveTestCase(UnitsTrialsTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.widget = TuningCurveWidget(
+            units=self.nwbfile.units,
+            trials=self.nwbfile.trials
+        )
+        # rows controller triggers drawing of graphic
+        self.widget.children[0].children[1].value = 'stim'
+
+    def test_make_widget(self):
+        assert isinstance(self.widget, widgets.Widget)
+
+    def test_widget_children(self):
+        assert len(self.widget.children) == 2
+
+        for i, c in enumerate(self.widget.children):
+            assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
+
+
+class TuningCurveRasterGridCombinedTestCase(UnitsTrialsTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.widget = TuningCurveExtendedWidget(
+            units=self.nwbfile.units,
+            trials=self.nwbfile.trials
+        )
+
+    def test_make_widget(self):
+        assert isinstance(self.widget, widgets.Widget)
+
+    def test_widget_children(self):
+        assert len(self.widget.children) == 3
+
+        for i, c in enumerate(self.widget.children):
+            assert isinstance(c, widgets.Widget), f'{i}th child of TuningCurve widget is not a widget'
+
+
+
+class ShowPSTHTestCase(UnitsTrialsTestCase):
 
     def test_get_min_spike_time(self):
         assert get_min_spike_time(self.nwbfile.units) == 1.2
@@ -67,9 +159,17 @@ class ShowPSTHTestCase(unittest.TestCase):
             np.array([2.2, 3.0, 25.0, 26.0]),
             np.array([-0.8, 0.0, 22.0, 23.0]),
             np.array([-3.8, -3.0, 19.0, 20.0]),
+            np.array([-5.8, -5., 17., 18.]), 
+            np.array([-10.8, -10.,  12.,  13.]), 
+            np.array([-13.8, -13.,   9.,  10.])
         ]
 
-        at = align_by_trials(self.nwbfile.units, index=1, before=20.0, after=30.0)
+        at = align_by_trials(
+            self.nwbfile.units, 
+            index=1, 
+            start=-20.0, 
+            end=30.0
+        )
 
         np.testing.assert_allclose(at, compare_to_at, rtol=1e-02)
 
@@ -84,8 +184,8 @@ class ShowPSTHTestCase(unittest.TestCase):
             index=1,
             intervals=time_intervals,
             stop_label=None,
-            before=20.0,
-            after=30.0,
+            start=-20.0,
+            end=30.0,
         )
 
         compare_to_ati = [
@@ -107,8 +207,8 @@ class ShowPSTHTestCase(unittest.TestCase):
             index=1,
             intervals=time_intervals,
             stop_label=None,
-            before=20.0,
-            after=30.0,
+            start=-20.0,
+            end=30.0,
             rows_select=[0, 1],
         )
 

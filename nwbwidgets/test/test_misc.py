@@ -22,7 +22,7 @@ from pynwb.misc import DecompositionSeries, AnnotationSeries
 
 def test_show_psth():
     data = np.random.random([6, 50])
-    assert isinstance(show_psth_raster(data=data, before=0, after=1), plt.Subplot)
+    assert isinstance(show_psth_raster(data=data, start=0, end=1), plt.Subplot)
 
 
 def test_show_annotations():
@@ -97,8 +97,8 @@ class ShowPSTHTestCase(unittest.TestCase):
                 self.nwbfile.units,
                 time_intervals=trials,
                 index=0,
-                before=0.5,
-                after=20.0,
+                start=-0.5,
+                end=20.0,
             ),
             plt.Figure,
         )
