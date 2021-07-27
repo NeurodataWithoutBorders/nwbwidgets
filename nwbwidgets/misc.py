@@ -1285,7 +1285,7 @@ def draw_tuning_curve_1d(
         )
         n_trials = len(data)
         n_spikes = len(np.hstack(data))
-        duration = -start + end
+        duration = end - start
         avg_rates.append(n_spikes / (n_trials * duration)) 
 
     x = np.arange(len(var1_classes))  # the label locations
