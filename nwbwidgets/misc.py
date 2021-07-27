@@ -1338,7 +1338,7 @@ def draw_tuning_curve_2d(
                 )
                 n_trials = len(data)
                 n_spikes = len(np.hstack(data))
-                duration = -start + end
+                duration = end - start
                 avg_rates[i, j] = n_spikes / (n_trials * duration)
     
     fig, ax = plt.subplots(figsize=(14, 7))
