@@ -5,9 +5,9 @@ import numpy as np
 from hdmf.common import DynamicTable
 from pynwb.misc import Units
 
-from .base import lazy_tabs, render_dataframe
+from .base import lazy_tabs, render_dataframe, TimeIntervalsSelector
 from .controllers import GroupAndSortController
-from .misc import RasterWidget, PSTHWidget, RasterGridWidget
+from .misc import RasterWidget, PSTHWidget, RasterGridWidget, TuningCurveWidget
 from .utils.pynwb import robust_unique
 from .view import default_neurodata_vis_spec
 
@@ -19,35 +19,16 @@ class AllenRasterWidget(RasterWidget):
         )
 
 
-class TimeIntervalsSelector(widgets.VBox):
-    InnerWidget = None
-
-    def __init__(self, units, **kwargs):
-        super().__init__()
-        self.units = units
-        self.kwargs = kwargs
-        self.intervals_tables = units.get_ancestor("NWBFile").intervals
-        self.stimulus_type_dd = widgets.Dropdown(
-            options=list(self.intervals_tables.keys()), description="stimulus type"
-        )
-        trials = list(self.intervals_tables.values())[0]
-        self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
-        psth_widget = self.InnerWidget(units, trials, **kwargs)
-        self.children = [self.stimulus_type_dd, psth_widget]
-
-    def stimulus_type_dd_callback(self, change):
-        self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
-        trials = self.intervals_tables[self.stimulus_type_dd.value]
-        psth_widget = self.InnerWidget(self.units, trials, **self.kwargs)
-        self.children = [self.stimulus_type_dd, psth_widget]
-
-
 class AllenPSTHWidget(TimeIntervalsSelector):
     InnerWidget = PSTHWidget
 
 
 class AllenRasterGridWidget(TimeIntervalsSelector):
     InnerWidget = RasterGridWidget
+
+
+class AllenTuningCurveWidget(TimeIntervalsSelector):
+    InnerWidget = TuningCurveWidget
 
 
 class AllenRasterGroupAndSortController(GroupAndSortController):
@@ -106,4 +87,5 @@ def load_allen_widgets():
     default_neurodata_vis_spec[Units]["Session Raster"] = AllenRasterWidget
     default_neurodata_vis_spec[Units]["Grouped PSTH"] = AllenPSTHWidget
     default_neurodata_vis_spec[Units]["Raster Grid"] = AllenRasterGridWidget
+    default_neurodata_vis_spec[Units]["Tuning Curves"] = AllenTuningCurveWidget
     # default_neurodata_vis_spec[DynamicTable] = allen_show_dynamic_table

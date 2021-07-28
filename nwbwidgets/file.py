@@ -59,10 +59,7 @@ def show_nwbfile(nwbfile: NWBFile, neurodata_vis_spec: dict) -> widgets.Widget:
             info.append(hbox_exp)
         elif (isinstance(value, Iterable) and len(value)) or value:
             neuro_data.append(value)
-            if (
-                hasattr(nwbfile.fields[key], "description")
-                and nwbfile.fields[key].description
-            ):
+            if getattr(value, "description", None):
                 labels.append(key + ": " + nwbfile.fields[key].description)
             else:
                 labels.append(key)

@@ -1,7 +1,22 @@
 from pynwb.core import DynamicTable
 import numbers
 import numpy as np
+import pandas as pd
 from typing import Iterable
+
+
+def extract_data_from_intervals(dynamic_table: DynamicTable):
+    # solution: https://stackoverflow.com/a/50297200/11483674
+    # data = [x if x == x else 'NaN' for x in dynamic_table[:]]
+    data = [x for x in dynamic_table[:] if x == x]
+    classes = pd.unique(data).tolist()
+    try:
+        data = [float(i) for i in data]
+        classes = [float(i) for i in classes]
+        classes.sort(key=float)
+    except:
+        pass
+    return data, classes
 
 
 def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = None):

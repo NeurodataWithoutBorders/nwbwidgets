@@ -34,7 +34,7 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
         ugroups, group_pos, counts = np.unique(
             group_names, return_inverse=True, return_counts=True
         )
-        elec_pos = np.hstack(np.arange(count) for count in counts)
+        elec_pos = np.hstack(np.arange(count).tolist() for count in counts)
 
         hovertext = []
         df = nwbobj.to_dataframe()
@@ -74,7 +74,6 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
 
         def selection_fn(trace, points, selector):
             self.value = points.point_inds
-            print(self.value)
 
         self.fig.data[0].on_selection(selection_fn)
 

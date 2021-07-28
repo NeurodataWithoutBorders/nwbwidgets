@@ -371,6 +371,48 @@ def row_to_hover_text(row):
     return "<br>".join(text_rows)
 
 
+class TimeIntervalsSelector(widgets.VBox):
+    InnerWidget = None
+
+    def __init__(self, input_data, **kwargs):
+        """
+        Creates a TimeInterval controller that controls InnerWidget.
+
+        Parameters
+        ----------
+        input_data: pynwb object
+            Pynwb object (e.g. pynwb.misc.Units) belonging to a nwbfile 
+            that will be filtered by the TimeIntervalSelector controller. 
+        """
+        super().__init__()
+        self.input_data = input_data
+        self.kwargs = kwargs
+        self.intervals_tables = input_data.get_ancestor("NWBFile").intervals
+        self.stimulus_type_dd = widgets.Dropdown(
+            options=list(self.intervals_tables.keys()), 
+            description="stimulus type"
+        )
+        self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
+
+        trials = list(self.intervals_tables.values())[0]
+        inner_widget = self.InnerWidget(
+            units=self.input_data,
+            trials=trials, 
+            **kwargs
+        )
+        self.children = [self.stimulus_type_dd, inner_widget]
+
+    def stimulus_type_dd_callback(self, change):
+        self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
+        trials = self.intervals_tables[self.stimulus_type_dd.value]
+        inner_widget = self.InnerWidget(
+            input_data=self.input_data, 
+            trials=trials, 
+            **self.kwargs
+        )
+        self.children = [self.stimulus_type_dd, inner_widget]
+
+
 def show_multi_container_interface(
     node: MultiContainerInterface, neurodata_vis_spec=None
 ):
