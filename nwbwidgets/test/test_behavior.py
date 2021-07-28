@@ -2,14 +2,18 @@ import unittest
 
 import numpy as np
 from nwbwidgets.behavior import (
-    show_position,
     show_behavioral_events,
-    show_spatial_series_over_time,
     show_spatial_series,
+    trial_align_spatial_series,
+    SpatialSeriesTraceWidget2D,
+    SpatialSeriesTraceWidget3D,
 )
+from nwbwidgets.base import show_multi_container_interface
+from nwbwidgets.timeseries import SeparateTracesPlotlyWidget
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb import TimeSeries
 from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
+from pynwb.epoch import TimeIntervals
 
 
 class ShowSpatialSeriesTestCase(unittest.TestCase):
@@ -24,10 +28,10 @@ class ShowSpatialSeriesTestCase(unittest.TestCase):
     def test_show_position(self):
         position = Position(spatial_series=self.spatial_series)
 
-        show_position(position, default_neurodata_vis_spec)
+        show_multi_container_interface(position, default_neurodata_vis_spec)
 
     def test_show_spatial_series_over_time(self):
-        show_spatial_series_over_time(self.spatial_series)
+        SeparateTracesPlotlyWidget(self.spatial_series)
 
     def test_show_spatial_series(self):
         show_spatial_series(self.spatial_series)
@@ -43,10 +47,12 @@ class ShowSpatialSeriesTwoDTestCase(unittest.TestCase):
         )
 
     def test_show_spatial_series_over_time_twoD(self):
-        show_spatial_series_over_time(self.spatial_series)
+        widget = SeparateTracesPlotlyWidget(self.spatial_series)
+        widget.controls["time_window"].value = [2.0 / 50, 10.0 / 50]
 
     def test_show_spatial_series_twoD(self):
-        show_spatial_series(self.spatial_series)
+        widget = SpatialSeriesTraceWidget2D(self.spatial_series)
+        widget.controls["time_window"].value = [2.0 / 50, 10.0 / 50]
 
 
 class ShowSpatialSeriesThreeDTestCase(unittest.TestCase):
@@ -61,14 +67,58 @@ class ShowSpatialSeriesThreeDTestCase(unittest.TestCase):
         )
 
     def test_show_spatial_series_over_time_threeD(self):
-        show_spatial_series_over_time(self.spatial_series)
+        widget = SeparateTracesPlotlyWidget(self.spatial_series)
+        widget.controls["time_window"].value = [2.0 / 50, 10.0 / 50]
 
     def test_show_spatial_series_threeD(self):
-        show_spatial_series(self.spatial_series)
+        widget = SpatialSeriesTraceWidget3D(self.spatial_series)
+        widget.controls["time_window"].value = [2.0 / 50, 10.0 / 50]
+
+
+class SpatialSeriesTrialsAlign(unittest.TestCase):
+    def setUp(self) -> None:
+        data = np.random.rand(100, 3)
+        timestamps = [0.0]
+        for _ in range(data.shape[0]):
+            timestamps.append(timestamps[-1] + 0.75 + 0.25 * np.random.rand())
+        self.spatial_series_rate = SpatialSeries(
+            name="position_rate",
+            data=data,
+            starting_time=0.0,
+            rate=1.0,
+            reference_frame="starting gate",
+        )
+        self.spatial_series_ts = SpatialSeries(
+            name="position_ts",
+            data=data,
+            timestamps=np.array(timestamps),
+            reference_frame="starting gate",
+        )
+        self.time_intervals = TimeIntervals(name="Test Time Interval")
+        n_intervals = 10
+        for start_time in np.linspace(0, 75, n_intervals + 1):
+            if start_time < 75:
+                stt = start_time + np.random.rand()
+                spt = stt + 7 - np.random.rand()
+                self.time_intervals.add_interval(start_time=stt, stop_time=spt)
+        self.time_intervals.add_column(
+            name="temp", description="desc", data=np.random.randint(2, size=n_intervals)
+        )
+        self.time_intervals.add_column(
+            name="temp2",
+            description="desc",
+            data=np.random.randint(10, size=n_intervals),
+        )
+
+    def test_spatial_series_trials_align_rate(self):
+        trial_align_spatial_series(self.spatial_series_rate, self.time_intervals)
+
+    def test_spatial_series_trials_align_ts(self):
+        trial_align_spatial_series(self.spatial_series_ts, self.time_intervals)
 
 
 def test_show_behavioral_events():
-    data = list(range(100, 200, 10))
+    data = np.arange(100, 200, 10)
     ts = TimeSeries(
         name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0
     )

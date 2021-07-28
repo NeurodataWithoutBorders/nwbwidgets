@@ -21,7 +21,6 @@ from .base import df_to_hover_text
 from .timeseries import BaseGroupedTraceWidget
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
-from .utils.functional import MemoizeMutable
 from .controllers import ProgressBar
 
 color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
@@ -37,9 +36,8 @@ class TwoPhotonSeriesWidget(widgets.VBox):
             if self.figure is None:
                 self.figure = go.FigureWidget(img_fig)
             else:
-                self.figure.for_each_trace(
-                    lambda trace: trace.update(img_fig.data[0]))
-            self.figure.layout.title = f'Frame no: {index}'
+                self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
+            self.figure.layout.title = f"Frame no: {index}"
 
         if indexed_timeseries.data is None:
             if indexed_timeseries.external_file is not None:
@@ -52,7 +50,9 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 
                 def update_figure(index=0):
                     # Read first frame
-                    img_fig = px.imshow(imread(path_ext_file, key=int(index)), binary_string=True)
+                    img_fig = px.imshow(
+                        imread(path_ext_file, key=int(index)), binary_string=True
+                    )
                     _add_fig_trace(img_fig, index)
 
                 slider = widgets.IntSlider(
@@ -62,17 +62,20 @@ class TwoPhotonSeriesWidget(widgets.VBox):
             if len(indexed_timeseries.data.shape) == 3:
 
                 def update_figure(index=0):
-                    img_fig = px.imshow(indexed_timeseries.data[index].T, binary_string=True)
+                    img_fig = px.imshow(
+                        indexed_timeseries.data[index].T, binary_string=True
+                    )
                     _add_fig_trace(img_fig, index)
 
             elif len(indexed_timeseries.data.shape) == 4:
                 import ipyvolume.pylab as p3
+
                 output = widgets.Output()
 
                 def update_figure(index=0):
                     p3.figure()
                     p3.volshow(
-                        indexed_timeseries.data[index].transpose([1,0,2]),
+                        indexed_timeseries.data[index].transpose([1, 0, 2]),
                         tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
                     )
                     output.clear_output(wait=True)
@@ -306,7 +309,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                     text=all_hover[i],
                     hovertext="text",
                     line=dict(width=0.5),
-                    **kwargs
+                    **kwargs,
                 )
             )
             self.progress_bar.update()
@@ -326,7 +329,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                 constrain="domain",
             ),
             margin=dict(t=30, b=10),
-            **layout_kwargs
+            **layout_kwargs,
         )
         return fig
 

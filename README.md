@@ -1,14 +1,10 @@
-# nwb-jupyter-widgets
+# NWB Widgets
 A library of widgets for visualization NWB data in a Jupyter notebook (or lab). The widgets allow you to navigate through the hierarchical structure of the NWB file and visualize specific data elements. It is designed to work out-of-the-box with NWB 2.0 files and to be easy to extend. 
 
 [![PyPI version](https://badge.fury.io/py/nwbwidgets.svg)](https://badge.fury.io/py/nwbwidgets)
 [![codecov](https://codecov.io/gh/NeurodataWithoutBorders/nwb-jupyter-widgets/branch/master/graph/badge.svg)](https://codecov.io/gh/NeurodataWithoutBorders/nwb-jupyter-widgets)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/NeurodataWithoutBorders/nwb-jupyter-widgets/master?filepath=examples%2FNWBWidgets-modality-demos.ipynb)
-
-
-
-authors: Ben Dichter (ben.dichter@catalystneuro.com) and Matt McCormick (matt.mccormick@kitware.com)
 
 
 ## Installation
