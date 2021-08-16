@@ -411,7 +411,7 @@ class SeparateTracesPlotlyWidget(AbstractTraceWidget):
                             range=[min(dd), max(dd)], row=i + 1, col=1
                         )
                         self.out_fig.update_xaxes(
-                            range=[min(tt), max(tt)], row=i + 1, col=1
+                            range=time_window, row=i + 1, col=1
                         )
 
         self.controls["time_window"].observe(on_change)

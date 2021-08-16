@@ -32,12 +32,14 @@ def test_show_index_series():
         name="Index Series time data",
         data=np.random.rand(800).reshape((8, 10, 10)),
         rate=1.0,
+        unit='na',
     )
     index_series = IndexSeries(
         name="Sample Index Series",
         data=data,
         indexed_timeseries=indexed_timeseries,
         rate=1.0,
+        unit='n.a.',
     )
 
     assert isinstance(
@@ -47,7 +49,7 @@ def test_show_index_series():
 
 def test_show_image_series():
     data = np.random.rand(800).reshape((8, 10, 10))
-    image_series = ImageSeries(name="Image Series", data=data, rate=1.0)
+    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
 
     assert isinstance(
         show_image_series(image_series, default_neurodata_vis_spec), widgets.Widget
