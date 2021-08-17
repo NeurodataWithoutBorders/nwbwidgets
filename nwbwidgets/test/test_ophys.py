@@ -82,16 +82,6 @@ class CalciumImagingTestCase(unittest.TestCase):
         )
         nwbfile.add_acquisition(self.image_series)
 
-        self.image_series2 = TwoPhotonSeries(
-            name="test_iS2",
-            data=np.random.randn(100, 5, 5),
-            imaging_plane=self.imaging_plane,
-            starting_frame=[0],
-            rate=1.0,
-            unit="n.a",
-        )
-        nwbfile.add_acquisition(self.image_series2)
-
         mod = nwbfile.create_processing_module(
             "ophys", "contains optical physiology processed data"
         )
@@ -132,10 +122,26 @@ class CalciumImagingTestCase(unittest.TestCase):
         self.df_over_f = DfOverF(rrs)
 
     def test_show_two_photon_series(self):
-        assert isinstance(
-            TwoPhotonSeriesWidget(self.image_series2, default_neurodata_vis_spec),
-            widgets.Widget,
+        self.image_series2 = TwoPhotonSeries(
+            name="test_iS2",
+            data=np.random.randn(100, 5, 5),
+            imaging_plane=self.imaging_plane,
+            starting_frame=[0],
+            rate=1.0,
+            unit="n.a",
         )
+        TwoPhotonSeriesWidget(self.image_series2, default_neurodata_vis_spec)
+
+    def test_show_3d_two_photon_series(self):
+        self.image_series3 = TwoPhotonSeries(
+            name="test_iS2",
+            data=np.random.randn(100, 5, 5, 5),
+            imaging_plane=self.imaging_plane,
+            starting_frame=[0],
+            rate=1.0,
+            unit="n.a",
+        )
+        TwoPhotonSeriesWidget(self.image_series3, default_neurodata_vis_spec)
 
     def test_show_df_over_f(self):
         assert isinstance(
