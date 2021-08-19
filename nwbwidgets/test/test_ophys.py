@@ -130,7 +130,9 @@ class CalciumImagingTestCase(unittest.TestCase):
             rate=1.0,
             unit="n.a",
         )
-        TwoPhotonSeriesWidget(self.image_series2, default_neurodata_vis_spec)
+        ts_wid = TwoPhotonSeriesWidget(self.image_series2, default_neurodata_vis_spec)
+        slider = slider=[i for i in ts_wid.children if isinstance(i, widgets.IntSlider)][0]
+        slider.value=50
 
     def test_show_3d_two_photon_series(self):
         self.image_series3 = TwoPhotonSeries(
@@ -142,6 +144,8 @@ class CalciumImagingTestCase(unittest.TestCase):
             unit="n.a",
         )
         TwoPhotonSeriesWidget(self.image_series3, default_neurodata_vis_spec)
+        slider = slider = [i for i in ts_wid.children if isinstance(i, widgets.IntSlider)][0]
+        slider.value = 50
 
     def test_show_df_over_f(self):
         assert isinstance(
