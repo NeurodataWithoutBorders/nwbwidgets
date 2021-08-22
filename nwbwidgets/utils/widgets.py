@@ -1,7 +1,8 @@
 from ipywidgets import Output
-from ipywidgets.widgets.interaction import show_inline_matplotlib_plots, clear_output
+from ipywidgets.widgets.interaction import clear_output
 import asyncio
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 
 
 def unpack_controls(controls, process_controls=lambda x: x):
@@ -30,15 +31,13 @@ def interactive_output(f, controls, process_controls=lambda x: x, fixed=None):
     out = Output()
 
     def observer(change):
-        show_inline_matplotlib_plots()
         with out:
             clear_output(wait=True)
-            f(**fixed, **unpack_controls(controls, process_controls))
-            show_inline_matplotlib_plots()
+            plot = f(**fixed, **unpack_controls(controls, process_controls))
+            plt.show()
 
     for k, w in controls.items():
         w.observe(observer, "value")
-    show_inline_matplotlib_plots()
     observer(None)
     return out
 
