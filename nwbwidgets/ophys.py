@@ -95,6 +95,7 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 
         slider.observe(lambda change: update_figure(change.new), names="value")
         self.figure = None
+        self.controls = dict(slider=slider)
         update_figure()
         self.children = [self.figure, slider]
 
