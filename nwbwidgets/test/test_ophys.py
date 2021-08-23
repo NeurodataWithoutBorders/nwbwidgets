@@ -128,12 +128,14 @@ class CalciumImagingTestCase(unittest.TestCase):
         wid.controls['slider'].value = 50
 
     def test_show_df_over_f(self):
-        assert isinstance(
-            show_df_over_f(self.df_over_f, default_neurodata_vis_spec), widgets.Widget
-        )
+        dff = show_df_over_f(self.df_over_f, default_neurodata_vis_spec)
+        assert isinstance(dff, widgets.Widget)
+        dff.controls['gas'].window = [1,2]
 
     def test_plane_segmentation_2d_widget(self):
-        assert isinstance(PlaneSegmentation2DWidget(self.ps2), widgets.Widget)
+        wid = PlaneSegmentation2DWidget(self.ps2)
+        assert isinstance(wid, widgets.Widget)
+        wid.button.click()
 
     def test_show_plane_segmentation_3d_mask(self):
         ps3 = PlaneSegmentation(
@@ -153,7 +155,8 @@ class CalciumImagingTestCase(unittest.TestCase):
         for i in range(3):
             img_mask2[i, i, i] = 1.2
         ps3.add_roi(image_mask=img_mask2)
-        assert isinstance(show_plane_segmentation_3d_mask(ps3), widgets.Widget)
+        wid = show_plane_segmentation_3d_mask(ps3)
+        assert isinstance(wid, widgets.Widget)
 
     def test_show_plane_segmentation_3d_voxel(self):
         ps3v = PlaneSegmentation(
@@ -168,7 +171,8 @@ class CalciumImagingTestCase(unittest.TestCase):
 
         voxel_mask = [(1, 1, i, 1.2) for i in range(3)]
         ps3v.add_roi(voxel_mask=voxel_mask)
-        assert isinstance(show_plane_segmentation_3d_voxel(ps3v), widgets.Widget)
+        wid = show_plane_segmentation_3d_voxel(ps3v)
+        assert isinstance(wid, widgets.Widget)
 
     def test_show_image_segmentation(self):
         assert isinstance(
