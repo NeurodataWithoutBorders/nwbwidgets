@@ -17,9 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'nwbwidgets_rtd'
-copyright = '2021, Saksham Sharda'
-author = 'Saksham Sharda'
+project = 'NWB Widgets'
+copyright = '2021, Ben Dichter Consulting'
+author = 'Saksham Sharda, Ben Dichter'
 
 
 # -- General configuration ---------------------------------------------------
@@ -38,13 +38,23 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-
+nbsphinx_execute_arguments = [
+    "--InlineBackend.figure_formats={'svg', 'pdf'}",
+    "--InlineBackend.rc={'figure.dpi': 96}",
+]
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+try:
+    import sphinx_rtd_theme
+
+    html_theme = "sphinx_rtd_theme"
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+except ImportError:
+    print("RTD theme not installed, using default")
+    html_theme = "alabaster"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

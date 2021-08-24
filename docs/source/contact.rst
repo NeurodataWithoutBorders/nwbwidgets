@@ -5,7 +5,7 @@ If you would like to see some other visualizations to be added to the current su
 
 List of contributors:
 
-* Ben Dichter (ben.dichter@gmail.com)
-* Saksham Sharda (saksham20.sharda@gmail.com)
-* Luiz Tauffer (luiz@taufferconsulting.com)
-* Cody Baker (cody.c.baker.phd@gmail.com)
+* Ben Dichter (ben.dichter@catalystneuro.com)
+* Saksham Sharda (saksham.sharda@catalystneuro.com)
+* Luiz Tauffer (luiz.tauffer@catalystneuro.com)
+* Cody Baker (cody.baker@catalystneuro.com)
