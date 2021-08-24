@@ -1,0 +1,8 @@
+nbsphinx
+jupyter-sphinx
+numpydoc
+matplotlib
+numpy
+notebook
+tifffile
+sphinx-rtd-theme
