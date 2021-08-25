@@ -9,12 +9,11 @@ Welcome to nwbwidgets_rtd's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   :glob:
-   :numbered:
 
    gettingstarted
    licence
    contact
+   widgets_documentation/ecephys
 
 Indices and tables
 ==================
