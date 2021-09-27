@@ -34,7 +34,7 @@ def show_fields(node, **kwargs) -> widgets.Widget:
 def render_dataframe(df):
     out1 = widgets.Output()
     with out1:
-        display.display(df.to_dataframe())
+        display.display(df.to_dataframe(index=True))
     return out1
 
 
