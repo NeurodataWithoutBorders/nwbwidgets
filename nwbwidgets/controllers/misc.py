@@ -23,10 +23,10 @@ def make_trial_event_controller(trials, layout=None):
     if layout is not None:
         kwargs.update(layout=layout)
 
-    trial_event_controller = widgets.Dropdown(
-        options=trial_events, 
-        value="start_time", 
-        description="align to: ", 
-        **kwargs
-    )
+    trial_event_controller = widgets.SelectMultiple(
+        options=trial_events,
+        value=["start_time"],
+        description='align to:',
+        disabled=False,
+        **kwargs)
     return trial_event_controller

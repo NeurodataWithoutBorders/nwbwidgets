@@ -5,6 +5,20 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
 
+def clean_axes(axes):
+    """
+    Removes top and right spines from axes
+
+    Parameters
+    ----------
+    axes: iterable
+
+    """
+    for ax in axes:
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+
 def unpack_controls(controls, process_controls=lambda x: x):
     control_states = {}
     for k, v in controls.items():
