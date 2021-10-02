@@ -312,7 +312,6 @@ class PSTHWidget(widgets.VBox):
             1.0, step=0.1, description="end (s)", layout=Layout(width="200px"),
             description_tooltip = 'End time for calculation before or after (negative or positive) the reference point (aligned to).'
         )
-        
 
         self.psth_type_radio = widgets.RadioButtons(
             options=["histogram", "gaussian"], layout=Layout(width="100px")
