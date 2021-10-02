@@ -393,7 +393,7 @@ class PSTHWidget(widgets.VBox):
             sigma_in_secs=0.05,
             ntt: int = 1000,
             progress_bar=None,
-            figsize=(10, 7),
+            figsize=(12, 7),
             nbins=30,
             plot_type="histogram",
             align_line_color=(0.7, 0.7, 0.7),
@@ -425,9 +425,11 @@ class PSTHWidget(widgets.VBox):
         matplotlib.Figure
 
         """
-        fig, axs = plt.subplots(2, len(start_labels), figsize=figsize)
+        fig, axs = plt.subplots(2, len(start_labels), figsize=figsize,
+                                sharex=True)
         clean_axes(axs.ravel())
 
+        ax1_ylims = []
         for i_s, start_label in enumerate(start_labels):
             if len(start_labels) > 1:
                 ax0 = axs[0, i_s]
@@ -448,19 +450,31 @@ class PSTHWidget(widgets.VBox):
                 progress_bar=progress_bar,
             )
 
+            if i_s == len(start_labels) - 1:
+                show_legend = True
+            else:
+                show_legend = False
+
             show_psth_raster(
                 data,
                 start,
                 end,
                 group_inds,
                 labels,
+                show_legend=show_legend,
                 ax=ax0,
                 progress_bar=progress_bar,
+                fontsize=12,
             )
 
             ax0.set_title(f"{start_label}")
             ax0.set_xticks([])
             ax0.set_xlabel("")
+
+            if i_s > 0:
+                ax0.set_ylabel("")
+                # Raster always show the same number of trials. We can avoid showing tick labels too
+                ax0.set_yticklabels([])
 
             if plot_type == "gaussian":
                 self.bins_ft.layout.visibility = "hidden"
@@ -500,11 +514,24 @@ class PSTHWidget(widgets.VBox):
                 )
 
             ax1.set_xlim([start, end])
-            ax1.set_ylabel("firing rate (Hz)")
-            ax1.set_xlabel("time (s)")
+            if i_s == 0:
+                ax1.set_ylabel("firing rate (Hz)", fontsize=12)
+            ax1.set_xlabel("time (s)", fontsize=12)
             ax1.axvline(color=align_line_color)
+            ax1_ylims.append(ax1.get_ylim())
 
-        fig.suptitle(f"Unit {self.unit_ids[index]}")
+        if len(start_labels) > 1:
+            # Adjust bottom axes y axis
+            min_y = np.min(np.array(ax1_ylims)[:, 0])
+            max_y = np.max(np.array(ax1_ylims)[:, 1])
+            for i_b, ax_btm in enumerate(axs[1, :]):
+                ax_btm.set_ylim(min_y, max_y)
+                if i_b > 0:
+                    ax_btm.set_ylabel("")
+                    # After adjusting ylims we can avoid showing tick labels
+                    ax_btm.set_yticklabels([])
+
+        fig.suptitle(f"Unit {self.unit_ids[index]}", fontsize=15)
         fig.subplots_adjust(wspace=0.3)
         return fig
 
@@ -590,6 +617,7 @@ def plot_grouped_events(
         unobserved_intervals_list=None,
         progress_bar=None,
         figsize=(8, 6),
+        fontsize=12,
 ):
     """
 
@@ -607,6 +635,7 @@ def plot_grouped_events(
     unobserved_intervals_list: array-like, optional
     progress_bar: FloatProgress, optional
     figsize: tuple, optional
+    fontsize: int, optional
 
     Returns
     -------
@@ -666,7 +695,7 @@ def plot_grouped_events(
         plot_unobserved_intervals(unobserved_intervals_list, ax, offset=offset)
 
     ax.set_xlim(window)
-    ax.set_xlabel("time (s)")
+    ax.set_xlabel("time (s)", fontsize=fontsize)
     ax.set_ylim(np.array([-0.5, len(data) - 0.5]) + offset)
     if len(data) <= 30:
         ax.set_yticks(range(offset, len(data) + offset))
@@ -699,6 +728,7 @@ def show_psth_raster(
         show_legend=True,
         align_line_color=(0.7, 0.7, 0.7),
         progress_bar: FloatProgress = None,
+        fontsize=12,
 ) -> plt.Axes:
     """
 
@@ -717,6 +747,7 @@ def show_psth_raster(
         [R, G, B] (0-1)
         Default = [0.7, 0.7, 0.7]
     progress_bar: FloatProgress, optional
+    fontsize: int, optional
 
     Returns
     -------
@@ -734,8 +765,9 @@ def show_psth_raster(
         labels,
         show_legend=show_legend,
         progress_bar=progress_bar,
+        fontsize=fontsize
     )
-    ax.set_ylabel("trials")
+    ax.set_ylabel("trials", fontsize=fontsize)
     ax.axvline(color=align_line_color)
     return ax
 
