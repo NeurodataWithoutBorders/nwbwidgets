@@ -302,8 +302,9 @@ class PSTHWidget(widgets.VBox):
             self.unit_controller = unit_controller
 
         self.trial_event_controller = make_trial_event_controller(
-            self.trials, layout=Layout(width="200px")
+            self.trials, layout=Layout(width="200px"), multiple=True
         )
+        print(self.trial_event_controller)
         self.start_ft = widgets.FloatText(
             -0.5, step=0.1, description="start (s)", layout=Layout(width="200px"),
             description_tooltip='Start time for calculation before or after (negative or positive) the reference point (aligned to)'
@@ -834,6 +835,7 @@ def raster_grid(
         nrows, ncols, sharex=True, sharey=True, squeeze=False, figsize=(10, 10)
     )
     big_ax = create_big_ax(fig)
+    
     for i, row in enumerate(urow_vals):
         for j, col in enumerate(ucol_vals):
             ax = axs[i, j]

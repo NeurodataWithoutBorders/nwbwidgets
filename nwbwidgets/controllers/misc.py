@@ -9,7 +9,7 @@ class ProgressBar(tqdm_notebook):
         # self.container.children[0].layout = Layout(width="80%")
 
 
-def make_trial_event_controller(trials, layout=None):
+def make_trial_event_controller(trials, layout=None, multiple=False):
     """Controller for which reference to use (e.g. start_time) when making time-aligned averages"""
     trial_events = ["start_time"]
     if not np.all(np.isnan(trials["stop_time"].data)):
@@ -23,10 +23,19 @@ def make_trial_event_controller(trials, layout=None):
     if layout is not None:
         kwargs.update(layout=layout)
 
-    trial_event_controller = widgets.SelectMultiple(
-        options=trial_events,
-        value=["start_time"],
-        description='align to:',
-        disabled=False,
-        **kwargs)
+    if multiple:
+        trial_event_controller = widgets.SelectMultiple(
+            options=trial_events,
+            value=["start_time"],
+            description='align to:',
+            disabled=False,
+            **kwargs
+        )
+    else:
+        trial_event_controller = widgets.Dropdown(
+            options=trial_events,
+            value="start_time",
+            description="align to: ",
+            **kwargs
+        )
     return trial_event_controller
