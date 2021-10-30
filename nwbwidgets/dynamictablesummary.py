@@ -29,7 +29,6 @@ class DynamicTableSummary(widgets.VBox):
         num_columns = len(self.dynamic_table.colnames)
         num_categorical = len(self.categorical_cols)
 
-
         self.name_text = widgets.Label(f"Table name: {self.dynamic_table.name}\n", layout=field_lay)
         self.entries_text = widgets.Label(f"Number of entries: {num_entries}\n", layout=field_lay)
         self.col_text = widgets.Label(f"Number of columns: {num_columns} - (categorical: {num_categorical})",
@@ -48,17 +47,7 @@ class DynamicTableSummary(widgets.VBox):
         self.controls = dict(col_name=self.column_dropdown)
 
         out_fig = interactive_output(self.plot_hist_bar, self.controls)
-
-        # self.column_dropdown.observe(self.dropdown_callback, "value")
-
-        # self.fig = go.FigureWidget()
-        # self.fig.update_layout(margin=dict(l=20, r=20, t=30, b=20))
-        # self.output = widgets.Output()
-
         bottom_panel = widgets.HBox([self.column_dropdown, out_fig])
-
-        # with self.output as out:
-        #     self.fig, self.ax = plt.subplots()
 
         self.children = [self.summary_text, bottom_panel]
 
@@ -72,9 +61,9 @@ class DynamicTableSummary(widgets.VBox):
             plt.show()
 
     def plot_hist_bar(self, col_name):
-        fig, ax = plt.subplots(figsize=(10, 7))
-
+        ax = None
         if col_name is not None:
+            fig, ax = plt.subplots(figsize=(10, 7))
             if col_name in self.categorical_cols:
                 ax.bar(self.dynamic_table[col_name])
             else:
