@@ -8,6 +8,8 @@ from .utils.widgets import interactive_output
 
 import plotly.graph_objects as go
 
+import plotly.express as px
+
 import matplotlib.pyplot as plt
 
 
@@ -31,7 +33,8 @@ class DynamicTableSummary(widgets.VBox):
 
         self.name_text = widgets.Label(f"Table name: {self.dynamic_table.name}\n", layout=field_lay)
         self.entries_text = widgets.Label(f"Number of entries: {num_entries}\n", layout=field_lay)
-        self.col_text = widgets.Label(f"Number of columns: {num_columns} - (categorical: {num_categorical})",
+        self.col_text = widgets.Label(f"Number of columns: {num_columns} - real: {num_entries - num_categorical}, "
+                                      f"categorical: {num_categorical} {list(self.categorical_cols.keys())}",
                                       layout=field_lay)
 
         self.summary_text = widgets.VBox([self.name_text, self.entries_text, self.col_text])
@@ -60,12 +63,25 @@ class DynamicTableSummary(widgets.VBox):
             func(self.dynamic_table[value['new']])
             plt.show()
 
-    def plot_hist_bar(self, col_name):
-        ax = None
+    def plot_hist_bar(self, col_name, nbins):
+        fig = None
+        df = self.dynamic_table.to_dataframe()
         if col_name is not None:
-            fig, ax = plt.subplots(figsize=(10, 7))
             if col_name in self.categorical_cols:
-                ax.bar(self.dynamic_table[col_name])
+                fig = px.histogram(df, x=col_name, histfunc='count')
             else:
-                ax.hist(self.dynamic_table[col_name])
-        return ax
+                fig = px.histogram(df, x=col_name, marginal="violin")
+            fig.show()
+
+        return fig
+
+
+def infer_columns_to_plot(dynamic_table):
+    """Infer which columns can be plotted in summary
+
+    Parameters
+    ----------
+    dynamic_table : [type]
+        [description]
+    """
+    pass
