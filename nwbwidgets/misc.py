@@ -28,8 +28,7 @@ from .utils.units import (
     align_by_time_intervals,
     get_unobserved_intervals,
 )
-from .utils.widgets import interactive_output
-
+from .utils.widgets import interactive_output, clean_axes
 
 color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -42,15 +41,15 @@ def show_annotations(annotations: AnnotationSeries, **kwargs):
 
 
 def show_session_raster(
-    units: Units,
-    time_window=None,
-    units_window=None,
-    show_obs_intervals=True,
-    order=None,
-    group_inds=None,
-    labels=None,
-    show_legend=True,
-    progress_bar=None,
+        units: Units,
+        time_window=None,
+        units_window=None,
+        show_obs_intervals=True,
+        order=None,
+        group_inds=None,
+        labels=None,
+        show_legend=True,
+        progress_bar=None,
 ):
     """
 
@@ -119,11 +118,11 @@ def show_session_raster(
 
 class RasterWidget(widgets.HBox):
     def __init__(
-        self,
-        units: Units,
-        foreign_time_window_controller: StartAndDurationController = None,
-        foreign_group_and_sort_controller: GroupAndSortController = None,
-        group_by=None,
+            self,
+            units: Units,
+            foreign_time_window_controller: StartAndDurationController = None,
+            foreign_group_and_sort_controller: GroupAndSortController = None,
+            group_by=None,
     ):
         super().__init__()
 
@@ -219,7 +218,7 @@ def show_decomposition_traces(node: DecompositionSeries):
     def control_plot(x0, x1, ch0, ch1):
         fig, ax = plt.subplots(nrows=nBands, ncols=1, sharex=True, figsize=(14, 7))
         for bd in range(nBands):
-            data = node.data[x0:x1, ch0 : ch1 + 1, bd]
+            data = node.data[x0:x1, ch0: ch1 + 1, bd]
             xx = np.arange(x0, x1)
             mu_array = np.mean(data, 0)
             sd_array = np.std(data, 0)
@@ -270,12 +269,12 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 class PSTHWidget(widgets.VBox):
     def __init__(
-        self,
-        input_data: Units,
-        trials: pynwb.epoch.TimeIntervals = None,
-        unit_index=0,
-        unit_controller=None,
-        ntt=1000,
+            self,
+            input_data: Units,
+            trials: pynwb.epoch.TimeIntervals = None,
+            unit_index=0,
+            unit_controller=None,
+            ntt=1000,
     ):
 
         self.units = input_data
@@ -299,18 +298,21 @@ class PSTHWidget(widgets.VBox):
                 description="unit",
                 layout=Layout(width="200px"),
             )
+        else:
+            self.unit_controller = unit_controller
 
         self.trial_event_controller = make_trial_event_controller(
-            self.trials, layout=Layout(width="200px")
+            self.trials, layout=Layout(width="200px"), multiple=True
         )
+        print(self.trial_event_controller)
         self.start_ft = widgets.FloatText(
             -0.5, step=0.1, description="start (s)", layout=Layout(width="200px"),
-            description_tooltip = 'Start time for calculation before or after (negative or positive) the reference point (aligned to)'
+            description_tooltip='Start time for calculation before or after (negative or positive) the reference point (aligned to)'
         )
-        
+
         self.end_ft = widgets.FloatText(
             1.0, step=0.1, description="end (s)", layout=Layout(width="200px"),
-            description_tooltip = 'End time for calculation before or after (negative or positive) the reference point (aligned to).'
+            description_tooltip='End time for calculation before or after (negative or positive) the reference point (aligned to).'
         )
 
         self.psth_type_radio = widgets.RadioButtons(
@@ -335,7 +337,7 @@ class PSTHWidget(widgets.VBox):
             index=self.unit_controller,
             end=self.end_ft,
             start=self.start_ft,
-            start_label=self.trial_event_controller,
+            start_labels=self.trial_event_controller,
             gas=self.gas,
             plot_type=self.psth_type_radio,
             sigma_in_secs=self.gaussian_sd_ft,
@@ -381,21 +383,21 @@ class PSTHWidget(widgets.VBox):
         )
 
     def update(
-        self,
-        index: int,
-        start_label: str = "start_time",
-        start: float = 0.0,
-        end: float = 1.0,
-        order=None,
-        group_inds=None,
-        labels=None,
-        sigma_in_secs=0.05,
-        ntt: int = 1000,
-        progress_bar=None,
-        figsize=(7, 7),
-        nbins=30,
-        plot_type="histogram",
-        align_line_color=(0.7, 0.7, 0.7),
+            self,
+            index: int,
+            start_labels: tuple = ("start_time",),
+            start: float = 0.0,
+            end: float = 1.0,
+            order=None,
+            group_inds=None,
+            labels=None,
+            sigma_in_secs=0.05,
+            ntt: int = 1000,
+            progress_bar=None,
+            figsize=(12, 7),
+            nbins=30,
+            plot_type="histogram",
+            align_line_color=(0.7, 0.7, 0.7),
     ):
         """
 
@@ -424,82 +426,119 @@ class PSTHWidget(widgets.VBox):
         matplotlib.Figure
 
         """
+        fig, axs = plt.subplots(2, len(start_labels), figsize=figsize,
+                                sharex=True)
+        clean_axes(axs.ravel())
 
-        data = align_by_time_intervals(
-            self.units,
-            index,
-            self.trials,
-            start_label,
-            start_label,
-            start,
-            end,
-            order,
-            progress_bar=progress_bar,
-        )
+        ax1_ylims = []
+        for i_s, start_label in enumerate(start_labels):
+            if len(start_labels) > 1:
+                ax0 = axs[0, i_s]
+                ax1 = axs[1, i_s]
+            else:
+                ax0 = axs[0]
+                ax1 = axs[1]
 
-        fig, axs = plt.subplots(2, 1, figsize=figsize)
-
-        show_psth_raster(
-            data,
-            start,
-            end,
-            group_inds,
-            labels,
-            ax=axs[0],
-            progress_bar=progress_bar,
-        )
-
-        axs[0].set_title(f"PSTH for unit {self.unit_ids[index]}")
-        axs[0].set_xticks([])
-        axs[0].set_xlabel("")
-
-        if plot_type == "gaussian":
-            self.bins_ft.layout.visibility = "hidden"
-            self.bins_ft.layout.height = "0px"
-            self.gaussian_sd_ft.layout.visibility = None
-            self.gaussian_sd_ft.layout.height = None
-            # expanded data so that gaussian smoother uses larger window than is viewed
-            expanded_data = align_by_time_intervals(
-                units=self.units,
-                index=index,
-                intervals=self.trials,
-                start_label=start_label,
-                stop_label=start_label,
-                start=start - sigma_in_secs * 4,
-                end=end + sigma_in_secs * 4,
-                rows_select=order,
+            data = align_by_time_intervals(
+                self.units,
+                index,
+                self.trials,
+                start_label,
+                start_label,
+                start,
+                end,
+                order,
                 progress_bar=progress_bar,
             )
-            show_psth_smoothed(
-                data=expanded_data,
-                ax=axs[1],
-                start=start - sigma_in_secs * 4,
-                end=end + sigma_in_secs * 4,
-                group_inds=group_inds,
-                sigma_in_secs=sigma_in_secs,
-                ntt=ntt,
-            )
-        elif plot_type == "histogram":
-            self.gaussian_sd_ft.layout.visibility = "hidden"
-            self.gaussian_sd_ft.layout.height = "0px"
-            self.bins_ft.layout.visibility = None
-            self.bins_ft.layout.height = None
-            show_histogram(data, axs[1], start, end, group_inds, nbins=nbins)
-        else:
-            raise ValueError(
-                "unsupported plot type {}".format(self.psth_type_radio.value)
+
+            if i_s == len(start_labels) - 1:
+                show_legend = True
+            else:
+                show_legend = False
+
+            show_psth_raster(
+                data,
+                start,
+                end,
+                group_inds,
+                labels,
+                show_legend=show_legend,
+                ax=ax0,
+                progress_bar=progress_bar,
+                fontsize=12,
             )
 
-        axs[1].set_xlim([start, end])
-        axs[1].set_ylabel("firing rate (Hz)")
-        axs[1].set_xlabel("time (s)")
-        axs[1].axvline(color=align_line_color)
+            ax0.set_title(f"{start_label}")
+            ax0.set_xticks([])
+            ax0.set_xlabel("")
 
+            if i_s > 0:
+                ax0.set_ylabel("")
+                # Raster always show the same number of trials. We can avoid showing tick labels too
+                ax0.set_yticklabels([])
+
+            if plot_type == "gaussian":
+                self.bins_ft.layout.visibility = "hidden"
+                self.bins_ft.layout.height = "0px"
+                self.gaussian_sd_ft.layout.visibility = None
+                self.gaussian_sd_ft.layout.height = None
+                # expanded data so that gaussian smoother uses larger window than is viewed
+                expanded_data = align_by_time_intervals(
+                    units=self.units,
+                    index=index,
+                    intervals=self.trials,
+                    start_label=start_label,
+                    stop_label=start_label,
+                    start=start - sigma_in_secs * 4,
+                    end=end + sigma_in_secs * 4,
+                    rows_select=order,
+                    progress_bar=progress_bar,
+                )
+                show_psth_smoothed(
+                    data=expanded_data,
+                    ax=ax1,
+                    start=start - sigma_in_secs * 4,
+                    end=end + sigma_in_secs * 4,
+                    group_inds=group_inds,
+                    sigma_in_secs=sigma_in_secs,
+                    ntt=ntt,
+                )
+            elif plot_type == "histogram":
+                self.gaussian_sd_ft.layout.visibility = "hidden"
+                self.gaussian_sd_ft.layout.height = "0px"
+                self.bins_ft.layout.visibility = None
+                self.bins_ft.layout.height = None
+                show_histogram(data, ax1, start, end, group_inds, nbins=nbins)
+            else:
+                raise ValueError(
+                    "unsupported plot type {}".format(self.psth_type_radio.value)
+                )
+
+            ax1.set_xlim([start, end])
+            if i_s == 0:
+                ax1.set_ylabel("firing rate (Hz)", fontsize=12)
+            ax1.set_xlabel("time (s)", fontsize=12)
+            ax1.axvline(color=align_line_color)
+            ax1_ylims.append(ax1.get_ylim())
+
+        if len(start_labels) > 1:
+            # Adjust bottom axes y axis
+            min_y = np.min(np.array(ax1_ylims)[:, 0])
+            max_y = np.max(np.array(ax1_ylims)[:, 1])
+            for i_b, ax_btm in enumerate(axs[1, :]):
+                ax_btm.set_ylim(min_y, max_y)
+                if i_b > 0:
+                    ax_btm.set_ylabel("")
+                    # After adjusting ylims we can avoid showing tick labels
+                    ax_btm.set_yticklabels([])
+
+        fig.suptitle(f"Unit {self.unit_ids[index]}", fontsize=15)
+        fig.subplots_adjust(wspace=0.3)
         return fig
 
 
 def show_histogram(
-    data, ax: plt.Axes, start: float, end: float, group_inds=None, nbins: int = 30
+        data, ax: plt.Axes, start: float, end: float, group_inds=None, nbins: int = 30
 ):
     if not len(data):
         return
@@ -508,7 +547,7 @@ def show_histogram(
         height, x = np.histogram(np.hstack(data), bins=nbins, range=(start, end))
         width = np.diff(x[:2])
         height = height / len(data) / width
-        plt.bar(x[:-1], height, edgecolor=(0.3, 0.3, 0.3), width=width, align="edge")
+        ax.bar(x[:-1], height, edgecolor=(0.3, 0.3, 0.3), width=width, align="edge")
     else:
         data = np.asarray(data, dtype="object")
         # group_inds = np.asarray(group_inds)
@@ -529,13 +568,13 @@ def show_histogram(
 
 
 def show_psth_smoothed(
-    data,
-    ax,
-    start: float,
-    end: float,
-    group_inds=None,
-    sigma_in_secs: float = 0.05,
-    ntt: int = 1000,
+        data,
+        ax,
+        start: float,
+        end: float,
+        group_inds=None,
+        sigma_in_secs: float = 0.05,
+        ntt: int = 1000,
 ):
     if not len(data):  # TODO: when does this occur?
         return
@@ -568,17 +607,18 @@ def show_psth_smoothed(
 
 
 def plot_grouped_events(
-    data,
-    window,
-    group_inds=None,
-    colors=color_wheel,
-    ax=None,
-    labels=None,
-    show_legend=True,
-    offset=0,
-    unobserved_intervals_list=None,
-    progress_bar=None,
-    figsize=(8, 6),
+        data,
+        window,
+        group_inds=None,
+        colors=color_wheel,
+        ax=None,
+        labels=None,
+        show_legend=True,
+        offset=0,
+        unobserved_intervals_list=None,
+        progress_bar=None,
+        figsize=(8, 6),
+        fontsize=12,
 ):
     """
 
@@ -596,6 +636,7 @@ def plot_grouped_events(
     unobserved_intervals_list: array-like, optional
     progress_bar: FloatProgress, optional
     figsize: tuple, optional
+    fontsize: int, optional
 
     Returns
     -------
@@ -655,7 +696,7 @@ def plot_grouped_events(
         plot_unobserved_intervals(unobserved_intervals_list, ax, offset=offset)
 
     ax.set_xlim(window)
-    ax.set_xlabel("time (s)")
+    ax.set_xlabel("time (s)", fontsize=fontsize)
     ax.set_ylim(np.array([-0.5, len(data) - 0.5]) + offset)
     if len(data) <= 30:
         ax.set_yticks(range(offset, len(data) + offset))
@@ -665,7 +706,7 @@ def plot_grouped_events(
 
 
 def plot_unobserved_intervals(
-    unobserved_intervals_list, ax, offset=0, color=(0.85, 0.85, 0.85)
+        unobserved_intervals_list, ax, offset=0, color=(0.85, 0.85, 0.85)
 ):
     for irow, unobs_intervals in enumerate(unobserved_intervals_list):
         rects = [
@@ -679,15 +720,16 @@ def plot_unobserved_intervals(
 
 
 def show_psth_raster(
-    data,
-    start=-0.5,
-    end=2.0,
-    group_inds=None,
-    labels=None,
-    ax=None,
-    show_legend=True,
-    align_line_color=(0.7, 0.7, 0.7),
-    progress_bar: FloatProgress = None,
+        data,
+        start=-0.5,
+        end=2.0,
+        group_inds=None,
+        labels=None,
+        ax=None,
+        show_legend=True,
+        align_line_color=(0.7, 0.7, 0.7),
+        progress_bar: FloatProgress = None,
+        fontsize=12,
 ) -> plt.Axes:
     """
 
@@ -706,6 +748,7 @@ def show_psth_raster(
         [R, G, B] (0-1)
         Default = [0.7, 0.7, 0.7]
     progress_bar: FloatProgress, optional
+    fontsize: int, optional
 
     Returns
     -------
@@ -723,22 +766,23 @@ def show_psth_raster(
         labels,
         show_legend=show_legend,
         progress_bar=progress_bar,
+        fontsize=fontsize
     )
-    ax.set_ylabel("trials")
+    ax.set_ylabel("trials", fontsize=fontsize)
     ax.axvline(color=align_line_color)
     return ax
 
 
 def raster_grid(
-    units: pynwb.misc.Units,
-    time_intervals: pynwb.epoch.TimeIntervals,
-    index,
-    start,
-    end,
-    rows_label=None,
-    cols_label=None,
-    trials_select=None,
-    align_by="start_time",
+        units: pynwb.misc.Units,
+        time_intervals: pynwb.epoch.TimeIntervals,
+        index,
+        start,
+        end,
+        rows_label=None,
+        cols_label=None,
+        trials_select=None,
+        align_by="start_time",
 ) -> plt.Figure:
     """
 
@@ -791,6 +835,7 @@ def raster_grid(
         nrows, ncols, sharex=True, sharey=True, squeeze=False, figsize=(10, 10)
     )
     big_ax = create_big_ax(fig)
+    
     for i, row in enumerate(urow_vals):
         for j, col in enumerate(ucol_vals):
             ax = axs[i, j]
@@ -826,16 +871,16 @@ def raster_grid(
 
 
 def plot_grouped_events_plotly(
-    data,
-    window=None,
-    group_inds=None,
-    colors=color_wheel,
-    labels=None,
-    show_legend=True,
-    unobserved_intervals_list=None,
-    progress_bar=None,
-    fig=None,
-    **kwargs,
+        data,
+        window=None,
+        group_inds=None,
+        colors=color_wheel,
+        labels=None,
+        show_legend=True,
+        unobserved_intervals_list=None,
+        progress_bar=None,
+        fig=None,
+        **kwargs,
 ):
     data = np.array(data, dtype=object)
 
@@ -868,12 +913,12 @@ def plot_grouped_events_plotly(
 
 class RasterWidgetPlotly(widgets.HBox):
     def __init__(
-        self,
-        units: Units,
-        foreign_time_window_controller: StartAndDurationController = None,
-        foreign_group_and_sort_controller: GroupAndSortController = None,
-        group_by=None,
-        fig: go.FigureWidget = None,
+            self,
+            units: Units,
+            foreign_time_window_controller: StartAndDurationController = None,
+            foreign_group_and_sort_controller: GroupAndSortController = None,
+            group_by=None,
+            fig: go.FigureWidget = None,
     ):
         super().__init__()
 
@@ -944,7 +989,7 @@ class RasterWidgetPlotly(widgets.HBox):
 
 
 def show_session_raster_plotly(
-    units: Units, fig, time_window=None, order=None, progress_bar=None, **kwargs
+        units: Units, fig, time_window=None, order=None, progress_bar=None, **kwargs
 ):
     """
 
@@ -1013,11 +1058,11 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
     InnerWidget = None
 
     def __init__(
-        self,
-        units: Units,
-        trials: pynwb.epoch.TimeIntervals = None,
-        unit_index=0,
-        **kwargs
+            self,
+            units: Units,
+            trials: pynwb.epoch.TimeIntervals = None,
+            unit_index=0,
+            **kwargs
     ):
         """
         Creates a UnitsAndTrials controller that controls InnerWidget.
@@ -1045,14 +1090,14 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
         # Create variables choice dropdowns
         groups = self.get_groups(self.trials)
         self.rows_controller = widgets.Dropdown(
-            options=[None] + list(groups), 
+            options=[None] + list(groups),
             description="rows",
             value=None
         )
         self.rows_controller.observe(self.rows_callback, names='value')
 
         self.cols_controller = widgets.Dropdown(
-            options=[None] + list(groups), 
+            options=[None] + list(groups),
             description="cols",
             disabled=True,
         )
@@ -1072,11 +1117,11 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
         # Start / End controllers
         self.start_ft = widgets.FloatText(
             -0.5, step=0.1, description="start (s)", layout=Layout(width="200px"),
-            description_tooltip = 'Start time for calculation before or after (negative or positive) the reference point (aligned to)'
+            description_tooltip='Start time for calculation before or after (negative or positive) the reference point (aligned to)'
         )
         self.end_ft = widgets.FloatText(
             1.0, step=0.1, description="end (s)", layout=Layout(width="200px"),
-            description_tooltip = 'End time for calculation before or after (negative or positive) the reference point (aligned to).'
+            description_tooltip='End time for calculation before or after (negative or positive) the reference point (aligned to).'
         )
 
         self.fixed = dict(
@@ -1092,7 +1137,7 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
             "rows_label": self.rows_controller,
             "cols_label": self.cols_controller,
         }
-        
+
         self.children = [
             self.unit_controller,
             self.rows_controller,
@@ -1119,16 +1164,14 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
             self.cols_controller.disabled = False
 
 
-
 class RasterGridWidget(widgets.VBox):
     def __init__(
-        self,
-        units: Units,
-        trials: pynwb.epoch.TimeIntervals = None,
-        unit_index=0,
-        units_trials_controller=None,
+            self,
+            units: Units,
+            trials: pynwb.epoch.TimeIntervals = None,
+            unit_index=0,
+            units_trials_controller=None,
     ):
-
         super().__init__()
 
         # Create Units and Trials controller
@@ -1141,7 +1184,7 @@ class RasterGridWidget(widgets.VBox):
             self.children = [units_trials_controller]
 
         self.fig = interactive_output(
-            f=raster_grid, 
+            f=raster_grid,
             controls=units_trials_controller.controls,
             fixed=units_trials_controller.fixed
         )
@@ -1151,13 +1194,12 @@ class RasterGridWidget(widgets.VBox):
 
 class TuningCurveWidget(widgets.VBox):
     def __init__(
-        self,
-        units: Units,
-        trials: pynwb.epoch.TimeIntervals = None,
-        unit_index=0,
-        units_trials_controller=None,
+            self,
+            units: Units,
+            trials: pynwb.epoch.TimeIntervals = None,
+            unit_index=0,
+            units_trials_controller=None,
     ):
-
         super().__init__()
         self.children = []
 
@@ -1171,7 +1213,7 @@ class TuningCurveWidget(widgets.VBox):
             self.children = [units_trials_controller]
 
         self.fig = interactive_output(
-            f=draw_tuning_curve, 
+            f=draw_tuning_curve,
             controls=units_trials_controller.controls,
             fixed=units_trials_controller.fixed
         )
@@ -1179,13 +1221,12 @@ class TuningCurveWidget(widgets.VBox):
         self.children += tuple([self.fig])
 
 
-
 class TuningCurveExtendedWidget(widgets.VBox):
     def __init__(
-        self,
-        units: Units,
-        trials: pynwb.epoch.TimeIntervals = None,
-        unit_index=0
+            self,
+            units: Units,
+            trials: pynwb.epoch.TimeIntervals = None,
+            unit_index=0
     ):
         super().__init__()
 
@@ -1220,16 +1261,15 @@ class TuningCurveExtendedWidget(widgets.VBox):
 
 
 def draw_tuning_curve(
-    units: pynwb.misc.Units,
-    time_intervals: pynwb.epoch.TimeIntervals,
-    index,
-    start,
-    end,
-    rows_label=None,
-    cols_label=None,
-    align_by="start_time",
+        units: pynwb.misc.Units,
+        time_intervals: pynwb.epoch.TimeIntervals,
+        index,
+        start,
+        end,
+        rows_label=None,
+        cols_label=None,
+        align_by="start_time",
 ) -> plt.Figure:
-
     if rows_label is None:
         return widgets.HTML("Select at least one variable")
 
@@ -1244,7 +1284,7 @@ def draw_tuning_curve(
             rows_label,
             align_by
         )
-    
+
     return draw_tuning_curve_2d(
         units,
         time_intervals,
@@ -1258,20 +1298,19 @@ def draw_tuning_curve(
 
 
 def draw_tuning_curve_1d(
-    units: pynwb.misc.Units,
-    time_intervals: pynwb.epoch.TimeIntervals,
-    index,
-    start,
-    end,
-    rows_label=None,
-    align_by="start_time",
+        units: pynwb.misc.Units,
+        time_intervals: pynwb.epoch.TimeIntervals,
+        index,
+        start,
+        end,
+        rows_label=None,
+        align_by="start_time",
 ) -> plt.Figure:
-
     rows_data, var1_classes = extract_data_from_intervals(time_intervals[rows_label])
 
     avg_rates = []
     for v1 in var1_classes:
-        indexes = [i for i, d in enumerate(rows_data) if d==v1]
+        indexes = [i for i, d in enumerate(rows_data) if d == v1]
         data = align_by_time_intervals(
             units=units,
             index=index,
@@ -1285,7 +1324,7 @@ def draw_tuning_curve_1d(
         n_trials = len(data)
         n_spikes = len(np.hstack(data))
         duration = end - start
-        avg_rates.append(n_spikes / (n_trials * duration)) 
+        avg_rates.append(n_spikes / (n_trials * duration))
 
     x = np.arange(len(var1_classes))  # the label locations
     si = sort_mixed_type_list(var1_classes)
@@ -1305,24 +1344,23 @@ def draw_tuning_curve_1d(
 
 
 def draw_tuning_curve_2d(
-    units: pynwb.misc.Units,
-    time_intervals: pynwb.epoch.TimeIntervals,
-    index,
-    start,
-    end,
-    rows_label=None,
-    cols_label=None,
-    align_by="start_time",
+        units: pynwb.misc.Units,
+        time_intervals: pynwb.epoch.TimeIntervals,
+        index,
+        start,
+        end,
+        rows_label=None,
+        cols_label=None,
+        align_by="start_time",
 ) -> plt.Figure:
-
     rows_data, var1_classes = extract_data_from_intervals(time_intervals[rows_label])
     cols_data, var2_classes = extract_data_from_intervals(time_intervals[cols_label])
 
     avg_rates = np.zeros((len(var1_classes), len(var2_classes)))
     for i, v1 in enumerate(var1_classes):
         for j, v2 in enumerate(var2_classes):
-            indexes1 = [ii for ii, d in enumerate(rows_data) if d==v1]
-            indexes2 = [ii for ii, d in enumerate(cols_data) if d==v2]
+            indexes1 = [ii for ii, d in enumerate(rows_data) if d == v1]
+            indexes2 = [ii for ii, d in enumerate(cols_data) if d == v2]
             intersect = list(set(indexes1) & set(indexes2))
             if len(intersect) > 0:
                 data = align_by_time_intervals(
@@ -1339,7 +1377,7 @@ def draw_tuning_curve_2d(
                 n_spikes = len(np.hstack(data))
                 duration = end - start
                 avg_rates[i, j] = n_spikes / (n_trials * duration)
-    
+
     fig, ax = plt.subplots(figsize=(14, 7))
     pos = ax.imshow(avg_rates.T, origin='lower', cmap='Greys')
     cbar = fig.colorbar(pos, ax=ax)
@@ -1365,7 +1403,7 @@ def sort_mixed_type_list(x):
     l = len(x)
     for i, xx in enumerate(x):
         try:
-            x_num.append(float(xx)) 
+            x_num.append(float(xx))
             x_num_i.append(i)
         except:
             x_oth.append(str(xx))

@@ -144,8 +144,8 @@ def align_by_time_intervals(
     """
     if stop_label is None:
         stop_label = start_label
-    starts = np.array(intervals[start_label][:])[rows_select] + start
-    stops = np.array(intervals[stop_label][:])[rows_select] + end
+    starts = np.squeeze(np.array(intervals[start_label][:])[rows_select] + start)
+    stops = np.squeeze(np.array(intervals[stop_label][:])[rows_select] + end)
     if progress_bar is not None:
         progress_bar.value = 0
         progress_bar.description = "reading spike data"

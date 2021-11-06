@@ -80,7 +80,14 @@ class ShowPSTHTestCase(unittest.TestCase):
 
     def test_psth_widget(self):
         assert isinstance(PSTHWidget(self.nwbfile.units), widgets.Widget)
-
+        
+    def test_multipsth_widget(self):
+        psth_widget = PSTHWidget(self.nwbfile.units)
+        assert isinstance(psth_widget, widgets.Widget)
+        start_labels = ('start_time', 'stop_time')
+        fig = psth_widget.update(index=0, start_labels=start_labels)
+        assert len(fig.axes) == 2 * len(start_labels)
+        
     def test_raster_widget(self):
         assert isinstance(RasterWidget(self.nwbfile.units), widgets.Widget)
 
