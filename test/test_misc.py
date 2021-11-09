@@ -88,7 +88,8 @@ class ShowPSTHTestCase(unittest.TestCase):
         widget.psth_type_radio = "gaussian"
         widget.trial_event_controller.value = ("start_time", "stop_time")
         widget.unit_controller.value = 1
-        widget.gas.group_dd = "stim"
+        widget.gas.group_dd.value = "stim"
+        widget.gas.group_dd.value = None
 
     def test_multipsth_widget(self):
         psth_widget = PSTHWidget(self.nwbfile.units)
