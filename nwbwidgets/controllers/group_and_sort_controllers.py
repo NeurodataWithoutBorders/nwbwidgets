@@ -172,9 +172,12 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         if self.group_dd:
             children.append(self.group_dd)
-        children.append(
-            widgets.HBox(children=(self.group_sm, self.range_controller))
-        )
+        if self.group_sm is not None:
+            children.append(
+                widgets.HBox(children=(self.group_sm, self.range_controller))
+            )
+        else:
+            children.append(self.range_controller)
         if len(self.categorical_columns) > 0:
             if self.control_limit:
                 children.append(
