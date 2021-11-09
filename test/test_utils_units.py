@@ -12,8 +12,8 @@ from nwbwidgets.utils.units import (
 from pynwb import NWBFile
 from pynwb.epoch import TimeIntervals
 
-from ..base import TimeIntervalsSelector
-from ..misc import TuningCurveWidget, TuningCurveExtendedWidget
+from nwbwidgets.base import TimeIntervalsSelector
+from nwbwidgets.misc import TuningCurveWidget, TuningCurveExtendedWidget
 
 
 class UnitsTrialsTestCase(unittest.TestCase):
