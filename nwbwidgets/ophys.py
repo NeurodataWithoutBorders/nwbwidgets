@@ -1,7 +1,6 @@
 from functools import lru_cache
 
 import ipywidgets as widgets
-import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px

@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from ndx_icephys_meta.icephys import Sweeps, IntracellularRecordings
-from nwbwidgets.icephys import show_single_sweep_sequence
 from pynwb.base import TimeSeries
 from pynwb.device import Device
 from pynwb.icephys import IntracellularElectrode
+
+from nwbwidgets.icephys import show_single_sweep_sequence
 
 
 def test_show_single_sweep_sequence():

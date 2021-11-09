@@ -74,13 +74,23 @@ class ShowPSTHTestCase(unittest.TestCase):
             name="stim", description="the visual stimuli during the trial"
         )
 
-        self.nwbfile.add_trial(start_time=0.0, stop_time=2.0, stim="person")
-        self.nwbfile.add_trial(start_time=3.0, stop_time=5.0, stim="ocean")
+        self.nwbfile.add_trial(start_time=0.0, stop_time=1.0, stim="person")
+        self.nwbfile.add_trial(start_time=0.1, stop_time=2.0, stim="person")
+        self.nwbfile.add_trial(start_time=3.0, stop_time=4.0, stim="ocean")
+        self.nwbfile.add_trial(start_time=4.0, stop_time=5.0, stim="ocean")
+        self.nwbfile.add_trial(start_time=5.0, stop_time=6.0, stim="desert")
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim="desert")
 
     def test_psth_widget(self):
-        assert isinstance(PSTHWidget(self.nwbfile.units), widgets.Widget)
-        
+        widget = PSTHWidget(self.nwbfile.units)
+        assert isinstance(widget, widgets.Widget)
+
+        widget.psth_type_radio = "gaussian"
+        widget.trial_event_controller.value = ("start_time", "stop_time")
+        widget.unit_controller.value = 1
+        widget.gas.group_dd.value = "stim"
+        widget.gas.group_dd.value = None
+
     def test_multipsth_widget(self):
         psth_widget = PSTHWidget(self.nwbfile.units)
         assert isinstance(psth_widget, widgets.Widget)
