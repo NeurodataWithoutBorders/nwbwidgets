@@ -110,11 +110,16 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.ascending_dd = widgets.Dropdown(
                 options=["ASC", "DESC"], disabled=True, layout=Layout(max_width="70px")
             )
+            self.ascending_dd.layout.height = "0px"
+            self.ascending_dd.layout.visibility = "hidden"
             self.ascending_dd.observe(self.ascending_dd_observer)
 
             self.group_sm = widgets.SelectMultiple(
-                layout=Layout(max_width="100px"), disabled=True, rows=1
+                layout=Layout(width="0px"),
+                disabled=True,
+                rows=1
             )
+            self.group_sm.layout.visibility = "hidden"
             self.group_sm.observe(self.group_sm_observer)
 
             if group_by is None and len(self.categorical_columns) > 0:
@@ -151,6 +156,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 description=desc,
                 orientation="vertical",
             )
+            self.range_controller.layout = Layout(min_width="75px")
             self.range_controller.observe(self.range_controller_observer)
             self.window = self.range_controller.value
         elif window is False:
@@ -158,7 +164,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.range_controller = widgets.HTML("")
 
         self.children = self.get_children()
-        self.layout = Layout(width="290px")
+        #self.layout = Layout(overflow_x='auto')
         self.update_value()
 
     def get_children(self):
@@ -166,16 +172,13 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
         if self.group_dd:
             children.append(self.group_dd)
-        if self.group_sm is not None:
-            children.append(
-                widgets.HBox(children=(self.group_sm, self.range_controller))
-            )
-        else:
-            children.append(self.range_controller)
+        children.append(
+            widgets.HBox(children=(self.group_sm, self.range_controller))
+        )
         if len(self.categorical_columns) > 0:
             if self.control_limit:
                 children.append(
-                    widgets.HBox(
+                    widgets.VBox(
                         children=(self.limit_cb, self.limit_bit),
                         layout=Layout(max_width="90%"),
                     )
@@ -183,9 +186,9 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
             if self.control_order:
                 children.append(
-                    widgets.HBox(
+                    widgets.VBox(
                         children=(self.order_dd, self.ascending_dd),
-                        layout=Layout(max_width="90%"),
+                        #layout=Layout(max_width="90%"),
                     )
                 )
 
@@ -194,14 +197,17 @@ class GroupAndSortController(AbstractGroupAndSortController):
     def set_group_by(self, group_by):
         self.group_by = group_by
         self.column_values = self.get_column_values(column_name=group_by)
+
         if self.column_values is not None:
+            self.group_sm.layout.visibility = "visible"
+            self.group_sm.layout.width = "100px"
             keep_column_values = self.column_values[self.keep_rows]
             if self.column_values.dtype == np.float:
                 keep_column_values = keep_column_values[~np.isnan(keep_column_values)]
             groups = np.unique(keep_column_values)
             self.group_sm.rows = min(len(groups), 20)
             self.group_sm.options = tuple(groups[::-1])
-            self.group_sm.value = ()
+            self.group_sm.value = self.group_sm.options
             self.group_sm.disabled = False
             self.selected_column_values = self.group_sm.value
             if self.control_limit:
@@ -224,6 +230,8 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 self.group_sm.options = []
                 self.group_sm.visible = False
                 self.group_sm.rows = 1
+                self.group_sm.layout.visibility = "hidden"
+                self.group_sm.layout.width = "0px"
 
                 if hasattr(self.range_controller, "slider"):
                     self.range_controller.slider.max = len(self.keep_rows)
@@ -241,30 +249,39 @@ class GroupAndSortController(AbstractGroupAndSortController):
 
     def limit_cb_observer(self, change):
         """limit checkbox observer"""
-        if change["name"] == "value":
-            if self.limit_cb.value and self.group_by is not None:
-                self.limit_bit.disabled = False
-                self.limit = self.limit_bit.value
-            else:
-                self.limit_bit.disabled = True
-                self.limit = None
-            self.update_value()
+        if not change["name"] == "value":
+            return
+        if self.limit_cb.value and self.group_by is not None:
+            self.limit_bit.disabled = False
+            self.limit = self.limit_bit.value
+        else:
+            self.limit_bit.disabled = True
+            self.limit = None
+        self.update_value()
 
     def order_dd_observer(self, change):
         """order dropdown observer"""
         if change["name"] == "value":
             self.order_by = self.order_dd.value
 
-            order_vals = self.get_column_values(column_name=self.order_by)
-            # convert to ints. This is mainly for handling strings
-            _, order_vals = np.unique(order_vals, return_inverse=True)
+            if self.order_by is None:
+                self.order_vals = range(len(self.dynamic_table))
+                self.ascending_dd.disabled = True
+                self.ascending_dd.layout.visibility = "hidden"
+                self.ascending_dd.layout.height = "0px"
+            else:
+                order_vals = self.get_column_values(column_name=self.order_by)
+                # convert to ints. This is mainly for handling strings
+                _, order_vals = np.unique(order_vals, return_inverse=True)
 
-            if self.desc:  # if descend is on, invert order.
-                order_vals *= -1
+                if self.desc:  # if descend is on, invert order.
+                    order_vals *= -1
 
-            self.order_vals = order_vals
+                self.order_vals = order_vals
 
-            self.ascending_dd.disabled = self.order_dd.value is None
+                self.ascending_dd.disabled = False
+                self.ascending_dd.layout.visibility = "visible"
+                self.ascending_dd.layout.height = "25px"
             self.update_value()
 
     def ascending_dd_observer(self, change):
