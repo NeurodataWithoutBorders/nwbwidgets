@@ -79,13 +79,16 @@ class ShowPSTHTestCase(unittest.TestCase):
         self.nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim="desert")
 
     def test_psth_widget(self):
-        assert isinstance(PSTHWidget(self.nwbfile.units), widgets.Widget)
+        widget = PSTHWidget(self.nwbfile.units)
+        assert isinstance(widget, widgets.Widget)
 
     def test_raster_widget(self):
-        assert isinstance(RasterWidget(self.nwbfile.units), widgets.Widget)
+        widget = RasterWidget(self.nwbfile.units)
+        assert isinstance(widget, widgets.Widget)
 
     def test_show_session_raster(self):
-        assert isinstance(show_session_raster(self.nwbfile.units), plt.Axes)
+        session_raster = show_session_raster(self.nwbfile.units)
+        assert isinstance(session_raster, plt.Axes)
 
     def test_raster_grid_widget(self):
         assert isinstance(RasterGridWidget(self.nwbfile.units), widgets.Widget)

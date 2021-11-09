@@ -271,14 +271,14 @@ def show_decomposition_traces(node: DecompositionSeries):
 class PSTHWidget(widgets.VBox):
     def __init__(
         self,
-        input_data: Units,
+        units: Units,
         trials: pynwb.epoch.TimeIntervals = None,
         unit_index=0,
         unit_controller=None,
         ntt=1000,
     ):
 
-        self.units = input_data
+        self.units = units
 
         super().__init__()
 
@@ -304,15 +304,20 @@ class PSTHWidget(widgets.VBox):
             self.trials, layout=Layout(width="200px")
         )
         self.start_ft = widgets.FloatText(
-            -0.5, step=0.1, description="start (s)", layout=Layout(width="200px"),
-            description_tooltip = 'Start time for calculation before or after (negative or positive) the reference point (aligned to)'
+            -0.5,
+            step=0.1,
+            description="start (s)",
+            layout=Layout(width="200px"),
+            description_tooltip='Start time for calculation before or after (negative or positive) the reference point (aligned to)'
         )
         
         self.end_ft = widgets.FloatText(
-            1.0, step=0.1, description="end (s)", layout=Layout(width="200px"),
-            description_tooltip = 'End time for calculation before or after (negative or positive) the reference point (aligned to).'
+            1.0,
+            step=0.1,
+            description="end (s)",
+            layout=Layout(width="200px"),
+            description_tooltip='End time for calculation before or after (negative or positive) the reference point (aligned to).'
         )
-        
 
         self.psth_type_radio = widgets.RadioButtons(
             options=["histogram", "gaussian"], layout=Layout(width="100px")

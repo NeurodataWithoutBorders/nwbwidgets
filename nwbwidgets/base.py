@@ -396,7 +396,7 @@ class TimeIntervalsSelector(widgets.VBox):
 
         trials = list(self.intervals_tables.values())[0]
         inner_widget = self.InnerWidget(
-            units=self.input_data,
+            self.input_data,
             trials=trials, 
             **kwargs
         )
@@ -406,7 +406,7 @@ class TimeIntervalsSelector(widgets.VBox):
         self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
         trials = self.intervals_tables[self.stimulus_type_dd.value]
         inner_widget = self.InnerWidget(
-            input_data=self.input_data, 
+            self.input_data,
             trials=trials, 
             **self.kwargs
         )
