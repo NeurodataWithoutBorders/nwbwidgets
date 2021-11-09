@@ -304,7 +304,6 @@ class PSTHWidget(widgets.VBox):
         self.trial_event_controller = make_trial_event_controller(
             self.trials, layout=Layout(width="200px"), multiple=True
         )
-        print(self.trial_event_controller)
         self.start_ft = widgets.FloatText(
             -0.5, step=0.1, description="start (s)", layout=Layout(width="200px"),
             description_tooltip='Start time for calculation before or after (negative or positive) the reference point (aligned to)'

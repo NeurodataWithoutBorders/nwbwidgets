@@ -62,6 +62,37 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
     return categorical_cols
 
 
+def infer_columns_to_plot(dynamic_table: DynamicTable):
+    """Infer which columns can be plotted in summary widgets
+
+    Parameters
+    ----------
+    dynamic_table : DynamicTable
+
+    Returns
+    -------
+    column_names_to_plot: list
+        Columns that can be plotted with the dynamic table summary
+    """
+    categorical_cols = infer_categorical_columns(dynamic_table)
+    
+    column_names_to_plot = []
+    
+    df = dynamic_table.to_dataframe()
+    
+    for name in dynamic_table.colnames:
+        if name not in categorical_cols.keys():  # categorical columns can always be plotted
+            value = df[name].values[0]
+            
+            # this should exclude Electrode Regions and multi-dimensional arrays            
+            if isinstance(value, (int, float, np.integer)):
+                column_names_to_plot.append(name)
+        else:
+            column_names_to_plot.append(name)
+        
+    return column_names_to_plot
+
+
 def group_and_sort(
     group_vals=None, group_select=None, order_vals=None, keep_rows=None, limit=None
 ):
