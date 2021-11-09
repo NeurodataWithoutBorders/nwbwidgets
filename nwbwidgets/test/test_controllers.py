@@ -62,3 +62,12 @@ class TestGroupAndSortController(unittest.TestCase):
     def test_keep_rows(self):
         keep_rows = np.arange(len(self.dynamic_table) // 2)
         GroupAndSortController(dynamic_table=self.dynamic_table, keep_rows=keep_rows)
+
+    def test_control(self):
+        gas = GroupAndSortController(dynamic_table=self.dynamic_table)
+
+        gas.group_dd.value = "Data1"
+        gas.group_dd.value = None
+
+        gas.order_dd.value = "Data1"
+        gas.order_dd.value = None
