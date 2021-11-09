@@ -139,6 +139,7 @@ class CalciumImagingTestCase(unittest.TestCase):
         assert isinstance(wid, widgets.Widget)
         wid.button.click()
         wid.cat_controller.value = "type"
+        wid.cat_controller.value = "type2"
 
     def test_show_plane_segmentation_3d_mask(self):
         ps3 = PlaneSegmentation(
