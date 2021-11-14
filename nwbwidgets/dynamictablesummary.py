@@ -13,7 +13,7 @@ field_lay = widgets.Layout(
     )
 
 
-class DynamicTableSummary(widgets.VBox):
+class DynamicTableSummaryWidget(widgets.VBox):
     def __init__(self, table: DynamicTable):
         super().__init__()
 
@@ -51,6 +51,7 @@ class DynamicTableSummary(widgets.VBox):
                 layout=Layout(max_width="400px"),
                 style={"description_width": "initial"},
                 disabled=False,
+                tooltip="Select columns to inspect. You can select at most 1 categorical and 3 real columns."
             )
         self.column_dropdown.observe(self.max_selection)
         
@@ -72,9 +73,10 @@ class DynamicTableSummary(widgets.VBox):
         
     def max_selection(self, change):
         if change['type'] == 'change' and change['name'] == 'value':
-            if len(self.column_dropdown.value) > 3:
-                print("Maximum number of selected items reached!")
-                self.column_dropdown.value = tuple(self.column_dropdown.value[:3])
+            if len(self.column_dropdown.value) > 4:
+                print("Maximum number of selected items reached! "
+                      "You can select at most 4 items (1 categorical and 3 real)")
+                self.column_dropdown.value = ()
 
     def plot_hist_bar(self, col_names_display, nbins):
         fig = None
@@ -128,12 +130,29 @@ class DynamicTableSummary(widgets.VBox):
                     self.nbins.layout.visibility = "hidden"
                     col_real_0 = col_name = self.col_names_display[real_cols[0]]
                     col_real_1 = col_name = self.col_names_display[real_cols[1]]
-                    col_cat_name = [
-                        c for c in col_names_display if c not in real_cols][0]
+                    col_cat_name = [c for c in col_names_display if c not in real_cols][0]
                     col_cat = self.col_names_display[col_cat_name]
+                    df[col_cat] = df[col_cat].astype("str")
                     fig = px.scatter(df, x=col_real_0,
                                      y=col_real_1, color=col_cat)
                     fig.show()
                 else:
                     print("Select at most one categorical variable")
+            elif len(col_names_display) == 4:
+                real_cols = [r for r in col_names_display if "(r)" in r]
+                num_real = len(real_cols)
+                
+                if num_real == 3:
+                    self.nbins.layout.visibility = "hidden"
+                    col_name_0 = col_name = self.col_names_display[real_cols[0]]
+                    col_name_1 = col_name = self.col_names_display[real_cols[1]]
+                    col_name_2 = col_name = self.col_names_display[real_cols[2]]
+                    col_cat_name = [c for c in col_names_display if c not in real_cols][0]
+                    col_cat = self.col_names_display[col_cat_name]
+                    df[col_cat] = df[col_cat].astype("str")
+                    fig = px.scatter_3d(df, x=col_name_0, 
+                                        y=col_name_1, z=col_name_2, color=col_cat)
+                    fig.show()
+                else:
+                    print("Select 3 real and one categorical variables")
         return fig
