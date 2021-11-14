@@ -1,16 +1,11 @@
 from ipywidgets import widgets, fixed, FloatProgress, Layout
-
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries, DynamicTable
 
 from .utils.dynamictable import infer_categorical_columns, infer_columns_to_plot, infer_columns_to_plot
-
 from .utils.widgets import interactive_output
-
-import plotly.graph_objects as go
-
-import plotly.express as px
-
-import matplotlib.pyplot as plt
 
 
 field_lay = widgets.Layout(
