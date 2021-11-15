@@ -79,3 +79,10 @@ class TestStartAndDurationController(unittest.TestCase):
 
     def test_set_duration(self):
         self.start_and_duration_controller.duration.value = 2
+
+    def test_set_start(self):
+        self.start_and_duration_controller.slider.value = 4
+
+    def test_set_start_against_max(self):
+        self.start_and_duration_controller.slider.value = 9
+        assert self.start_and_duration_controller.slider.value == 5
