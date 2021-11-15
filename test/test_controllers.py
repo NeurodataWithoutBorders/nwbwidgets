@@ -73,7 +73,6 @@ class TestGroupAndSortController(unittest.TestCase):
         gas.order_dd.value = "Data1"
         gas.order_dd.value = None
 
-
 class TestStartAndDurationController(unittest.TestCase):
     def setUp(self) -> None:
         self.start_and_duration_controller = StartAndDurationController(10)
