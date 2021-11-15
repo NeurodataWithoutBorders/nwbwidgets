@@ -79,18 +79,18 @@ def infer_columns_to_plot(dynamic_table: DynamicTable):
     column_names_to_plot = []
     
     df = dynamic_table.to_dataframe()
-    
+    categorical_columns = []
     for name in dynamic_table.colnames:
-        if name not in categorical_cols.keys():  # categorical columns can always be plotted
-            value = df[name].values[0]
-            
-            # this should exclude Electrode Regions and multi-dimensional arrays            
-            if isinstance(value, (int, float, np.integer)):
-                column_names_to_plot.append(name)
-        else:
-            column_names_to_plot.append(name)
+        # if name not in categorical_cols.keys():  # categorical columns can always be plotted
+        value = df[name].values[0]
         
-    return column_names_to_plot
+        if isinstance(value, (int, float, np.integer)):
+            column_names_to_plot.append(name)
+        elif isinstance(value, (str, bool, bytes)):
+            column_names_to_plot.append(name)
+            categorical_columns.append(name)
+        
+    return column_names_to_plot, categorical_columns
 
 
 def group_and_sort(
