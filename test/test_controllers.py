@@ -86,3 +86,9 @@ class TestStartAndDurationController(unittest.TestCase):
     def test_set_start_against_max(self):
         self.start_and_duration_controller.slider.value = 9
         assert self.start_and_duration_controller.slider.value == 5
+
+    def test_buttons(self):
+        self.start_and_duration_controller.to_end_button.click()
+        self.start_and_duration_controller.to_start_button.click()
+        self.start_and_duration_controller.forward_button.click()
+        self.start_and_duration_controller.backwards_button.click()
