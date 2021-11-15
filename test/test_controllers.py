@@ -3,7 +3,7 @@ import numpy as np
 from hdmf.common import DynamicTable, VectorData
 from pynwb.ecephys import ElectrodeGroup, Device
 
-from nwbwidgets.controllers import RangeController, GroupAndSortController
+from nwbwidgets.controllers import RangeController, GroupAndSortController, StartAndDurationController
 
 
 class FloatRangeControllerTestCase(unittest.TestCase):
@@ -72,3 +72,11 @@ class TestGroupAndSortController(unittest.TestCase):
 
         gas.order_dd.value = "Data1"
         gas.order_dd.value = None
+
+
+class TestStartAndDurationController(unittest.TestCase):
+    def setUp(self) -> None:
+        self.start_and_duration_controller = StartAndDurationController(10)
+
+    def test_set_duration(self):
+        self.start_and_duration_controller.duration.value = 2
