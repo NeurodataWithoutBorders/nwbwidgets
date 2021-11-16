@@ -8,7 +8,7 @@ from pynwb import NWBFile
 from pynwb import TimeSeries
 from pynwb.ecephys import SpikeEventSeries, ElectricalSeries, LFP
 
-from nwbwidgets.ecephys import show_spectrogram, show_spike_event_series
+from nwbwidgets.ecephys import show_spectrogram, show_spike_event_series, show_ccf
 from nwbwidgets.view import default_neurodata_vis_spec
 from nwbwidgets.base import show_multi_container_interface
 from nwbwidgets import nwb2widget
@@ -105,3 +105,7 @@ def test_show_spectrogram():
 
     channel = 3
     show_spectrogram(ts, channel=channel)
+
+
+def test_show_ccf():
+    show_ccf()
