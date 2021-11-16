@@ -1,3 +1,5 @@
+import unittest
+
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
@@ -5,7 +7,7 @@ from nwbwidgets.image import (
     show_rbga_image,
     show_grayscale_image,
     show_index_series,
-    show_image_series,
+    ImageSeriesWidget
 )
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.base import TimeSeries
@@ -47,10 +49,14 @@ def test_show_index_series():
     )
 
 
-def test_show_image_series():
-    data = np.random.rand(800).reshape((8, 10, 10))
-    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
+class TestImageSeriesWidget(unittest.TestCase):
 
-    assert isinstance(
-        show_image_series(image_series, default_neurodata_vis_spec), widgets.Widget
-    )
+    def test_grascale(self):
+        data = np.random.rand(800).reshape((8, 10, 10))
+        image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
+        widget = ImageSeriesWidget(image_series)
+
+    def test_rgb(self):
+        data = np.random.rand(800 * 3).reshape((8, 10, 10,3))
+        image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
+        widget = ImageSeriesWidget(image_series)
