@@ -73,10 +73,22 @@ class TestGroupAndSortController(unittest.TestCase):
         gas.order_dd.value = "Data1"
         gas.order_dd.value = None
 
-
 class TestStartAndDurationController(unittest.TestCase):
     def setUp(self) -> None:
         self.start_and_duration_controller = StartAndDurationController(10)
 
     def test_set_duration(self):
         self.start_and_duration_controller.duration.value = 2
+
+    def test_set_start(self):
+        self.start_and_duration_controller.slider.value = 4
+
+    def test_set_start_against_max(self):
+        self.start_and_duration_controller.slider.value = 9
+        assert self.start_and_duration_controller.slider.value == 5
+
+    def test_buttons(self):
+        self.start_and_duration_controller.to_end_button.click()
+        self.start_and_duration_controller.to_start_button.click()
+        self.start_and_duration_controller.forward_button.click()
+        self.start_and_duration_controller.backwards_button.click()
