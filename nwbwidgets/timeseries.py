@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import abstractmethod
 import functools
 import matplotlib.pyplot as plt
 import numpy as np
@@ -411,7 +411,7 @@ class SeparateTracesPlotlyWidget(AbstractTraceWidget):
                             range=[min(dd), max(dd)], row=i + 1, col=1
                         )
                         self.out_fig.update_xaxes(
-                            range=[min(tt), max(tt)], row=i + 1, col=1
+                            range=time_window, row=i + 1, col=1
                         )
 
         self.controls["time_window"].observe(on_change)
@@ -488,7 +488,11 @@ def plot_grouped_traces(
     else:
         channel_inds = order
 
-    mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
+    if len(channel_inds):
+        mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
+    else:
+        mini_data = None
+        tt = time_window
 
     if mini_data is None:
         ax.plot(tt, np.ones_like(tt) * np.nan, color="k")

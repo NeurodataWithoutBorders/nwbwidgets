@@ -7,6 +7,13 @@ import pandas as pd
 import pytest
 from dateutil.tz import tzlocal
 from ipywidgets import widgets
+from pynwb import NWBFile
+from pynwb import ProcessingModule
+from pynwb import TimeSeries
+from pynwb.behavior import Position, SpatialSeries
+from pynwb.core import DynamicTable
+from pynwb.file import Subject
+
 from nwbwidgets.base import (
     show_neurodata_base,
     processing_module,
@@ -20,12 +27,6 @@ from nwbwidgets.base import (
 )
 from nwbwidgets.view import default_neurodata_vis_spec
 from nwbwidgets.view import show_dynamic_table
-from pynwb import NWBFile
-from pynwb import ProcessingModule
-from pynwb import TimeSeries
-from pynwb.behavior import Position, SpatialSeries
-from pynwb.core import DynamicTable
-from pynwb.file import Subject
 
 
 def test_show_neurodata_base():

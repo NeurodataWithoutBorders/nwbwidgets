@@ -6,7 +6,6 @@ import ipywidgets as widgets
 import numpy as np
 from dateutil.tz import tzlocal
 from ndx_grayscalevolume import GrayscaleVolume
-from pynwb import NWBFile
 from pynwb.device import Device
 from pynwb.ophys import (
     TwoPhotonSeries,
@@ -14,6 +13,8 @@ from pynwb.ophys import (
     ImageSegmentation,
     Fluorescence,
     DfOverF,
+    ImagingPlane,
+    PlaneSegmentation
 )
 
 from nwbwidgets.ophys import TwoPhotonSeriesWidget
@@ -36,25 +37,12 @@ def test_show_grayscale_volume():
 
 
 class CalciumImagingTestCase(unittest.TestCase):
-    def setUp(self):
-        nwbfile = NWBFile(
-            "my first synthetic recording",
-            "EXAMPLE_ID",
-            datetime.now(tzlocal()),
-            experimenter="Dr. Bilbo Baggins",
-            lab="Bag End Laboratory",
-            institution="University of Middle Earth at the Shire",
-            experiment_description=(
-                "I went on an adventure with thirteen "
-                "dwarves to reclaim vast treasures."
-            ),
-            session_id="LONELYMTN",
-        )
 
+    @classmethod
+    def setUpClass(self):
         device = Device("imaging_device_1")
-        nwbfile.add_device(device)
         optical_channel = OpticalChannel("my_optchan", "description", 500.0)
-        self.imaging_plane = nwbfile.create_imaging_plane(
+        self.imaging_plane = ImagingPlane(
             name="imgpln1",
             optical_channel=optical_channel,
             description="a fake ImagingPlane",
@@ -71,23 +59,14 @@ class CalciumImagingTestCase(unittest.TestCase):
         )
 
         self.image_series = TwoPhotonSeries(
-            name="test_iS",
-            dimension=[2],
-            data=np.random.rand(10, 5, 5, 3),
-            external_file=["images.tiff"],
+            name="test_image_series",
+            data=np.random.randn(100, 5, 5),
             imaging_plane=self.imaging_plane,
             starting_frame=[0],
-            format="tiff",
-            starting_time=0.0,
             rate=1.0,
-        )
-        nwbfile.add_acquisition(self.image_series)
-
-        mod = nwbfile.create_processing_module(
-            "ophys", "contains optical physiology processed data"
+            unit="n.a",
         )
         self.img_seg = ImageSegmentation()
-        mod.add(self.img_seg)
         self.ps2 = self.img_seg.create_plane_segmentation(
             "output from segmenting my favorite imaging plane",
             self.imaging_plane,
@@ -107,37 +86,59 @@ class CalciumImagingTestCase(unittest.TestCase):
         img_mask2[1, 1] = 2.2
         self.ps2.add_roi(image_mask=img_mask2)
 
-        fl = Fluorescence()
-        mod.add(fl)
+        img_mask2 = np.zeros((w, h))
+        img_mask2[0, 0] = 9.1
+        img_mask2[1, 1] = 10.2
+        self.ps2.add_roi(image_mask=img_mask2)
 
+        img_mask2 = np.zeros((w, h))
+        img_mask2[0, 0] = 3.5
+        img_mask2[1, 1] = 5.6
+        self.ps2.add_roi(image_mask=img_mask2)
+
+        fl = Fluorescence()
         rt_region = self.ps2.create_roi_table_region(
-            "the first of two ROIs", region=[0]
+            "the first of two ROIs", region=[0, 1, 2, 3]
         )
 
-        data = np.random.randn(10, 5)
+        rois_shape = 5
+        data = np.arange(10*rois_shape).reshape([10, -1], order='F')
         timestamps = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
         rrs = fl.create_roi_response_series(
-            "my_rrs", data, rt_region, unit="lumens", timestamps=timestamps
+            name="my_rrs", data=data, rois=rt_region, unit="lumens", timestamps=timestamps
         )
-
         self.df_over_f = DfOverF(rrs)
 
     def test_show_two_photon_series(self):
-        assert isinstance(
-            TwoPhotonSeriesWidget(self.image_series, default_neurodata_vis_spec),
-            widgets.Widget,
+        wid = TwoPhotonSeriesWidget(self.image_series, default_neurodata_vis_spec)
+        assert isinstance(wid, widgets.Widget)
+        wid.controls['slider'].value = 50
+
+    def test_show_3d_two_photon_series(self):
+        image_series3 = TwoPhotonSeries(
+            name="test_3d_images",
+            data=np.random.randn(100, 5, 5, 5),
+            imaging_plane=self.imaging_plane,
+            starting_frame=[0],
+            rate=1.0,
+            unit="n.a",
         )
+        wid = TwoPhotonSeriesWidget(image_series3, default_neurodata_vis_spec)
+        assert isinstance(wid, widgets.Widget)
+        wid.controls['slider'].value = 50
 
     def test_show_df_over_f(self):
-        assert isinstance(
-            show_df_over_f(self.df_over_f, default_neurodata_vis_spec), widgets.Widget
-        )
+        dff = show_df_over_f(self.df_over_f, default_neurodata_vis_spec)
+        assert isinstance(dff, widgets.Widget)
+        dff.controls['gas'].window = [1,2]
 
     def test_plane_segmentation_2d_widget(self):
-        assert isinstance(PlaneSegmentation2DWidget(self.ps2), widgets.Widget)
+        wid = PlaneSegmentation2DWidget(self.ps2)
+        assert isinstance(wid, widgets.Widget)
+        wid.button.click()
 
     def test_show_plane_segmentation_3d_mask(self):
-        ps3 = self.img_seg.create_plane_segmentation(
+        ps3 = PlaneSegmentation(
             "output from segmenting my favorite imaging plane",
             self.imaging_plane,
             "3d_plane_seg",
@@ -154,23 +155,24 @@ class CalciumImagingTestCase(unittest.TestCase):
         for i in range(3):
             img_mask2[i, i, i] = 1.2
         ps3.add_roi(image_mask=img_mask2)
-        assert isinstance(show_plane_segmentation_3d_mask(ps3), widgets.Widget)
+        wid = show_plane_segmentation_3d_mask(ps3)
+        assert isinstance(wid, widgets.Widget)
 
     def test_show_plane_segmentation_3d_voxel(self):
-
-        ps3 = self.img_seg.create_plane_segmentation(
+        ps3v = PlaneSegmentation(
             "output from segmenting my favorite imaging plane",
             self.imaging_plane,
-            "3d_plane_seg",
+            "3d_voxel",
             self.image_series,
         )
 
         voxel_mask = [(i, i, i, 1.0) for i in range(3)]
-        ps3.add_roi(voxel_mask=voxel_mask)
+        ps3v.add_roi(voxel_mask=voxel_mask)
 
         voxel_mask = [(1, 1, i, 1.2) for i in range(3)]
-        ps3.add_roi(voxel_mask=voxel_mask)
-        assert isinstance(show_plane_segmentation_3d_voxel(ps3), widgets.Widget)
+        ps3v.add_roi(voxel_mask=voxel_mask)
+        wid = show_plane_segmentation_3d_voxel(ps3v)
+        assert isinstance(wid, widgets.Widget)
 
     def test_show_image_segmentation(self):
         assert isinstance(

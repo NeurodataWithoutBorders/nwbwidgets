@@ -9,6 +9,7 @@ import zarr
 from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
+from .dynamictablesummary import DynamicTableSummaryWidget
 
 from nwbwidgets import (
     behavior,
@@ -37,6 +38,7 @@ default_neurodata_vis_spec = {
     pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
     pynwb.misc.Units: OrderedDict(
         {
+            "Summary": DynamicTableSummaryWidget,
             "Session Raster": misc.RasterWidget,
             "Grouped PSTH": misc.PSTHWidget,
             "Raster Grid": misc.RasterGridWidget,
@@ -62,7 +64,11 @@ default_neurodata_vis_spec = {
     ),
     pynwb.core.LabelledDict: base.dict2accordion,
     pynwb.ProcessingModule: base.processing_module,
-    hdmf.common.DynamicTable: show_dynamic_table,
+    hdmf.common.DynamicTable:
+        {
+        "Summary": DynamicTableSummaryWidget,
+        "table": show_dynamic_table,
+        },
     pynwb.ecephys.ElectricalSeries: ecephys.ElectricalSeriesWidget,
     pynwb.behavior.SpatialSeries: behavior.route_spatial_series,
     pynwb.image.GrayscaleImage: image.show_grayscale_image,

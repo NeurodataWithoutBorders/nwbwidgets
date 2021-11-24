@@ -27,6 +27,7 @@ def test_timeseries_widget():
         description="no description",
         data=np.array([[1.0, 2.0, 3.0, 4.0], [11.0, 12.0, 13.0, 14.0]]),
         rate=100.0,
+        unit="m",
     )
 
     BaseGroupedTraceWidget(ts)
@@ -76,6 +77,7 @@ class TestIndexTimeSeriesPlotly(unittest.TestCase):
             data=data,
             starting_time=0.0,
             rate=100.0,
+            unit="m",
         )
         self.ts_single = TimeSeries(
             name="test_timeseries",

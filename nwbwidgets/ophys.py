@@ -1,7 +1,6 @@
 from functools import lru_cache
 
 import ipywidgets as widgets
-import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
@@ -95,6 +94,7 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 
         slider.observe(lambda change: update_figure(change.new), names="value")
         self.figure = None
+        self.controls = dict(slider=slider)
         update_figure()
         self.children = [self.figure, slider]
 
