@@ -37,26 +37,24 @@ class TwoPhotonSeriesWidget(widgets.VBox):
             else:
                 self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
             self.figure.layout.title = f"Frame no: {index}"
+        if indexed_timeseries.external_file is not None:
+            path_ext_file = indexed_timeseries.external_file[0]
+            # Get Frames dimensions
+            tif = TiffFile(path_ext_file)
+            n_samples = len(tif.pages)
+            page = tif.pages[0]
+            n_y, n_x = page.shape
 
-        if indexed_timeseries.data is None:
-            if indexed_timeseries.external_file is not None:
-                path_ext_file = indexed_timeseries.external_file[0]
-                # Get Frames dimensions
-                tif = TiffFile(path_ext_file)
-                n_samples = len(tif.pages)
-                page = tif.pages[0]
-                n_y, n_x = page.shape
-
-                def update_figure(index=0):
-                    # Read first frame
-                    img_fig = px.imshow(
-                        imread(path_ext_file, key=int(index)), binary_string=True
-                    )
-                    _add_fig_trace(img_fig, index)
-
-                slider = widgets.IntSlider(
-                    value=0, min=0, max=n_samples - 1, orientation="horizontal"
+            def update_figure(index=0):
+                # Read first frame
+                img_fig = px.imshow(
+                    imread(path_ext_file, key=int(index)), binary_string=True
                 )
+                _add_fig_trace(img_fig, index)
+
+            slider = widgets.IntSlider(
+                value=0, min=0, max=n_samples - 1, orientation="horizontal"
+            )
         else:
             if len(indexed_timeseries.data.shape) == 3:
 
