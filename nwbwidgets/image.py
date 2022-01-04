@@ -2,10 +2,10 @@ from pathlib import Path, PureWindowsPath
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+import plotly.express as px
 import pynwb
 from ipywidgets import widgets, fixed, Layout
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
-from tifffile import imread, TiffFile
 
 from .base import fig2widget
 from .controllers import StartAndDurationController
@@ -14,6 +14,22 @@ from .utils.timeseries import (
     get_timeseries_mint,
     timeseries_time_to_ind,
 )
+from .utils.cmaps import linear_transfer_function
+from typing import Union
+
+try:
+    import cv2
+    HAVE_OPENCV = True
+except ImportError:
+    HAVE_OPENCV = False
+
+try:
+    from tifffile import imread, TiffFile
+    HAVE_TIF = True
+except ImportError:
+    HAVE_TIF = False
+
+PathType = Union[str, Path]
 
 
 class ImageSeriesWidget(widgets.VBox):
@@ -28,25 +44,77 @@ class ImageSeriesWidget(widgets.VBox):
         super().__init__()
         self.imageseries = imageseries
         self.controls = {}
-        self.out_fig = None
 
-        # Set controller
-        if foreign_time_window_controller is None:
-            tmin = get_timeseries_mint(imageseries)
-            if imageseries.external_file and imageseries.rate:
-                tif = TiffFile(imageseries.external_file[0])
-                tmax = imageseries.starting_time + len(tif.pages) / imageseries.rate
+        tmin = get_timeseries_mint(imageseries)
+
+        # Make widget figure --------
+        def _add_fig_trace(img_fig: go.Figure, index):
+            if self.figure is None:
+                self.figure = go.FigureWidget(img_fig)
             else:
-                tmax = get_timeseries_maxt(imageseries)
-            self.time_window_controller = StartAndDurationController(tmax, tmin)
+                self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
+            self.figure.layout.title = f"Frame no: {index}"
+
+        if imageseries.external_file is not None:
+            file_selector = widgets.Dropdown(options=imageseries.external_file)
+            path_ext_file = file_selector.value
+            tmax = imageseries.starting_time + get_frame_count(path_ext_file)/imageseries.rate
+            # Get Frames dimensions
+            def update_figure(index=0):
+                # Read first frame
+                img_fig = px.imshow(get_frame(path_ext_file, index), binary_string=True)
+                _add_fig_trace(img_fig, index)
+
+            n_samples = get_frame_count(path_ext_file)
+            if foreign_time_window_controller is None:
+                self.time_window_controller = StartAndDurationController(tmax, tmin)
+            else:
+                self.time_window_controller = foreign_time_window_controller
+            self.set_children(file_selector)
         else:
-            self.time_window_controller = foreign_time_window_controller
+            if len(imageseries.data.shape) == 3:
+
+                def update_figure(index=0):
+                    img_fig = px.imshow(
+                        imageseries.data[index].T, binary_string=True
+                    )
+                    _add_fig_trace(img_fig, index)
+
+            elif len(imageseries.data.shape) == 4:
+                import ipyvolume.pylab as p3
+
+                output = widgets.Output()
+
+                def update_figure(index=0):
+                    p3.figure()
+                    p3.volshow(
+                        imageseries.data[index].transpose([1, 0, 2]),
+                        tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
+                    )
+                    output.clear_output(wait=True)
+                    self.figure = output
+                    with output:
+                        p3.show()
+
+            else:
+                raise NotImplementedError
+            tmax = get_timeseries_maxt(imageseries)
+            if foreign_time_window_controller is None:
+                self.time_window_controller = StartAndDurationController(tmax, tmin)
+            else:
+                self.time_window_controller = foreign_time_window_controller
+            self.set_children()
+
         self.set_controls(**kwargs)
+        self.figure = None
 
-        # Make widget figure
-        self.set_out_fig()
+        def on_change(change):
+            # Read frame
+            frame_number = self.time_to_index(change["new"][0])
+            update_figure(frame_number)
 
-        self.children = [self.out_fig, self.time_window_controller]
+        update_figure()
+        self.controls["time_window"].observe(on_change)
 
     def time_to_index(self, time):
         if self.imageseries.external_file and self.imageseries.rate:
@@ -60,35 +128,16 @@ class ImageSeriesWidget(widgets.VBox):
         )
         self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
+    def set_children(self, *args):
+        self.children = [self.out_fig,
+                         self.time_window_controller,
+                         *args]
+
     def get_frame(self, idx):
         if self.imageseries.external_file is not None:
-            return imread(self.imageseries.external_file, key=idx)
+            return get_frame(self.imageseries.external_file[0])
         else:
-            return self.image_series.data[idx].T
-
-    def set_out_fig(self):
-
-        self.out_fig = go.FigureWidget(
-            data=go.Heatmap(
-                z=self.get_frame(0),
-                colorscale="gray",
-                showscale=False,
-            )
-        )
-        self.out_fig.update_layout(
-            xaxis=go.layout.XAxis(showticklabels=False, ticks=""),
-            yaxis=go.layout.YAxis(
-                showticklabels=False, ticks="", scaleanchor="x", scaleratio=1
-            ),
-        )
-
-        def on_change(change):
-            # Read frame
-            frame_number = self.time_to_index(change["new"][0])
-            image = self.get_frame(frame_number)
-            self.out_fig.data[0].z = image
-
-        self.controls["time_window"].observe(on_change)
+            return self.imageseries.data[idx].T
 
 
 def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
@@ -167,3 +216,51 @@ def show_rbga_image(rgb_image: RGBImage, neurodata_vis_spec=None):
     plt.axis("off")
 
     return fig
+
+def get_frame_shape(external_path_file: PathType):
+    external_path_file = Path(external_path_file)
+    if external_path_file.suffix in ['tif','tiff']:
+        assert HAVE_TIF, 'pip install tifffile'
+        tif = TiffFile(external_path_file)
+        page = tif.pages[0]
+        return page.shape
+    else:
+        assert HAVE_OPENCV, 'pip install opencv-python'
+        cap = cv2.VideoCapture(str(external_path_file))
+        success, frame = cap.read()
+        cap.release()
+        return frame.shape
+
+def get_frame_count(external_path_file: PathType):
+    external_path_file = Path(external_path_file)
+    if external_path_file.suffix in ['tif', 'tiff']:
+        assert HAVE_TIF, 'pip install tifffile'
+        tif = TiffFile(external_path_file)
+        return len(tif.pages)
+    else:
+        assert HAVE_OPENCV, 'pip install opencv-python'
+        cap = cv2.VideoCapture(str(external_path_file))
+        if int(cv2.__version__.split(".")[0]) < 3:
+            frame_count_arg = cv2.cv.CV_CAP_PROP_FRAME_COUNT
+        else:
+            frame_count_arg = cv2.CAP_PROP_FRAME_COUNT
+        frame_count = cap.get(frame_count_arg)
+        cap.release()
+        return frame_count
+
+def get_frame(external_path_file: PathType, index):
+    external_path_file = Path(external_path_file)
+    if external_path_file.suffix in ['tif','tiff']:
+        assert HAVE_TIF, 'pip install tifffile'
+        return imread(str(external_path_file), key=int(index))
+    else:
+        assert HAVE_OPENCV, 'pip install opencv-python'
+        cap = cv2.VideoCapture(str(external_path_file))
+        if int(cv2.__version__.split(".")[0]) < 3:
+            set_arg = cv2.cv.CV_CAP_PROP_POS_FRAMES
+        else:
+            set_arg = cv2.CAP_PROP_POS_FRAMES
+        set_value = cap.set(set_arg, index)
+        success, frame = cap.read()
+        cap.release()
+        return frame
