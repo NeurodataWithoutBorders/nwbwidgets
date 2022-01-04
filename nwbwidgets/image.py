@@ -65,7 +65,6 @@ class ImageSeriesWidget(widgets.VBox):
                 img_fig = px.imshow(get_frame(path_ext_file, index), binary_string=True)
                 _add_fig_trace(img_fig, index)
 
-            n_samples = get_frame_count(path_ext_file)
             if foreign_time_window_controller is None:
                 self.time_window_controller = StartAndDurationController(tmax, tmin)
             else:
