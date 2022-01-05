@@ -3,7 +3,6 @@ from functools import lru_cache
 import ipywidgets as widgets
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
 from ndx_grayscalevolume import GrayscaleVolume
 from pynwb.base import NWBDataInterface
 from pynwb.ophys import (
@@ -14,14 +13,13 @@ from pynwb.ophys import (
     ImageSegmentation,
 )
 from skimage import measure
-from tifffile import imread, TiffFile
 
 from .base import df_to_hover_text
+from .controllers import ProgressBar
+from .image import ImageSeriesWidget
 from .timeseries import BaseGroupedTraceWidget
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
-from .controllers import ProgressBar
-from .image import ImageSeriesWidget
 
 color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
 
@@ -157,13 +155,13 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                     data.showlegend = False
 
     def show_plane_segmentation_2d(
-        self,
-        color_wheel: list = color_wheel,
-        color_by: str = None,
-        threshold: float = 0.01,
-        fig: go.Figure = None,
-        width: int = 600,
-        ref_image=None,
+            self,
+            color_wheel: list = color_wheel,
+            color_by: str = None,
+            threshold: float = 0.01,
+            fig: go.Figure = None,
+            width: int = 600,
+            ref_image=None,
     ):
         """
 
@@ -294,6 +292,6 @@ def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
 
 class RoiResponseSeriesWidget(BaseGroupedTraceWidget):
     def __init__(
-        self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs
+            self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs
     ):
         super().__init__(roi_response_series, "rois", **kwargs)
