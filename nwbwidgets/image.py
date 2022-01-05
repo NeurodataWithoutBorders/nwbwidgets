@@ -1,30 +1,31 @@
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
+from typing import Union
 
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
 import pynwb
-from ipywidgets import widgets, fixed, Layout
+from ipywidgets import widgets, Layout
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
 
 from .base import fig2widget
-from .controllers import StartAndDurationController
+from .utils.cmaps import linear_transfer_function
 from .utils.timeseries import (
     get_timeseries_maxt,
     get_timeseries_mint,
     timeseries_time_to_ind,
 )
-from .utils.cmaps import linear_transfer_function
-from typing import Union
 
 try:
     import cv2
+
     HAVE_OPENCV = True
 except ImportError:
     HAVE_OPENCV = False
 
 try:
     from tifffile import imread, TiffFile
+
     HAVE_TIF = True
 except ImportError:
     HAVE_TIF = False
@@ -36,16 +37,15 @@ class ImageSeriesWidget(widgets.VBox):
     """Widget showing ImageSeries."""
 
     def __init__(
-        self,
-        imageseries: ImageSeries,
-        foreign_time_window_controller: StartAndDurationController = None,
-        **kwargs
+            self,
+            imageseries: ImageSeries,
     ):
         super().__init__()
         self.imageseries = imageseries
         self.figure = None
-        self.time_window_controller = foreign_time_window_controller
+        self.time_slider = None
         tmin = get_timeseries_mint(imageseries)
+
         # Make widget figure --------
         def _add_fig_trace(img_fig: go.Figure, index):
             if self.figure is None:
@@ -54,44 +54,48 @@ class ImageSeriesWidget(widgets.VBox):
                 self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
             self.figure.layout.title = f"Frame no: {index}"
 
-        def _add_time_window_controller(min, max):
-            if self.time_window_controller is None:
-                self.time_window_controller = StartAndDurationController(max, min)
+        def _add_time_slider_controller(min, max):
+            if self.time_slider is None:
+                self.time_slider = widgets.FloatSlider(value=0,
+                                                       min=min,
+                                                       max=max,
+                                                       orientation="horizontal",
+                                                       description="time(s)")
             else:
-                self.time_window_controller.slider.max = max
-                self.time_window_controller.slider.min = min
-                self.time_window_controller.duration.max = max-min
-
+                self.time_slider.max = max
+                self.time_slider.min = min
+                self.time_slider.value = min
 
         if imageseries.external_file is not None:
             file_selector = widgets.Dropdown(options=imageseries.external_file)
-            # Get Frames dimensions
-            def set_figure(index, ext_file_path):
-                frame_number = self.time_to_index(index)
-                img_fig = px.imshow(get_frame(ext_file_path, frame_number), binary_string=True)
-                _add_fig_trace(img_fig, index)
 
+            # Get Frames dimensions
+            def set_figure(time, ext_file_path):
+                frame_number = self.time_to_index(time)
+                img_fig = px.imshow(get_frame(ext_file_path, frame_number), binary_string=True)
+                _add_fig_trace(img_fig, frame_number)
 
             def update_figure(value):
-                path_ext_file = value["new"][0]
+                path_ext_file = value["new"]
                 # Read first frame
                 tmax = imageseries.starting_time + get_frame_count(path_ext_file)/imageseries.rate
-                _add_time_window_controller(0, tmax)
-
+                _add_time_slider_controller(0, tmax)
                 def change_fig(change):
-                    time = change["new"][0]
+                    time = change["new"]
                     set_figure(time, path_ext_file)
 
-                self.time_window_controller.observe(change_fig, names='value')
+                self.time_slider.observe(change_fig, names='value')
 
             file_selector.observe(update_figure, names='value')
             # set default figure:
-            set_figure(0, imageseries.external_file[0])
+            set_figure(self.imageseries.starting_time,
+                       imageseries.external_file[0])
             # set default time window contorller
             tmax = imageseries.starting_time + \
                    get_frame_count(imageseries.external_file[0])/imageseries.rate
-            print(get_frame_count(imageseries.external_file[0]))
-            _add_time_window_controller(0, tmax)
+            _add_time_slider_controller(0, tmax)
+            self.time_slider.observe(lambda x: set_figure(x["new"],imageseries.external_file[0]),
+                                     names='value')
             self.set_children(file_selector)
         else:
             if len(imageseries.data.shape) == 3:
@@ -100,11 +104,13 @@ class ImageSeriesWidget(widgets.VBox):
                         imageseries.data[frame_number].T, binary_string=True
                     )
                     _add_fig_trace(img_fig, frame_number)
+
                 set_figure(0)
             elif len(imageseries.data.shape) == 4:
                 import ipyvolume.pylab as p3
 
                 output = widgets.Output()
+
                 def set_figure(frame_number):
                     p3.figure()
                     p3.volshow(
@@ -115,31 +121,31 @@ class ImageSeriesWidget(widgets.VBox):
                     self.figure = output
                     with output:
                         p3.show()
+
                 set_figure(0)
             else:
                 raise NotImplementedError
 
             # create callback:
             def update_figure(change):
-                frame_number = self.time_to_index(change["new"][0])
+                frame_number = self.time_to_index(change["new"])
                 set_figure(frame_number)
 
             # creat time window controller:
             tmax = get_timeseries_maxt(imageseries)
-            _add_time_window_controller(tmin, tmax)
-            self.time_window_controller.observe(update_figure, names='value')
+            _add_time_slider_controller(tmin, tmax)
+            self.time_slider.observe(update_figure, names='value')
             self.set_children()
-
 
     def time_to_index(self, time):
         if self.imageseries.external_file and self.imageseries.rate:
-            return int((time - self.imageseries.starting_time) * self.imageseries.rate)
+            return int((time - self.imageseries.starting_time)*self.imageseries.rate)
         else:
             return timeseries_time_to_ind(self.imageseries, time)
 
     def set_children(self, *args):
         self.children = [self.figure,
-                         self.time_window_controller,
+                         self.time_slider,
                          *args]
 
     def get_frame(self, idx):
@@ -226,9 +232,10 @@ def show_rbga_image(rgb_image: RGBImage, neurodata_vis_spec=None):
 
     return fig
 
+
 def get_frame_shape(external_path_file: PathType):
     external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['.tif','.tiff']:
+    if external_path_file.suffix in ['.tif', '.tiff']:
         assert HAVE_TIF, 'pip install tifffile'
         tif = TiffFile(external_path_file)
         page = tif.pages[0]
@@ -240,13 +247,12 @@ def get_frame_shape(external_path_file: PathType):
         cap.release()
         return frame.shape
 
+
 def get_frame_count(external_path_file: PathType):
     external_path_file = Path(external_path_file)
-    print(external_path_file.suffix)
     if external_path_file.suffix in ['.tif', '.tiff']:
         assert HAVE_TIF, 'pip install tifffile'
         tif = TiffFile(external_path_file)
-        print('tif opened')
         return len(tif.pages)
     else:
         assert HAVE_OPENCV, 'pip install opencv-python'
@@ -259,9 +265,10 @@ def get_frame_count(external_path_file: PathType):
         cap.release()
         return frame_count
 
+
 def get_frame(external_path_file: PathType, index):
     external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['.tif','.tiff']:
+    if external_path_file.suffix in ['.tif', '.tiff']:
         assert HAVE_TIF, 'pip install tifffile'
         return imread(str(external_path_file), key=int(index))
     else:
