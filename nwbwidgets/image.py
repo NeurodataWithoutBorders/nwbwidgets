@@ -43,10 +43,9 @@ class ImageSeriesWidget(widgets.VBox):
     ):
         super().__init__()
         self.imageseries = imageseries
-        self.controls = {}
-
+        self.figure = None
+        self.time_window_controller = foreign_time_window_controller
         tmin = get_timeseries_mint(imageseries)
-
         # Make widget figure --------
         def _add_fig_trace(img_fig: go.Figure, index):
             if self.figure is None:
@@ -55,65 +54,82 @@ class ImageSeriesWidget(widgets.VBox):
                 self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
             self.figure.layout.title = f"Frame no: {index}"
 
+        def _add_time_window_controller(min, max):
+            if self.time_window_controller is None:
+                self.time_window_controller = StartAndDurationController(max, min)
+            else:
+                self.time_window_controller.slider.max = max
+                self.time_window_controller.slider.min = min
+                self.time_window_controller.duration.max = max-min
+
+
         if imageseries.external_file is not None:
             file_selector = widgets.Dropdown(options=imageseries.external_file)
-            path_ext_file = file_selector.value
-            tmax = imageseries.starting_time + get_frame_count(path_ext_file)/imageseries.rate
             # Get Frames dimensions
-            def update_figure(index=0):
-                # Read first frame
-                img_fig = px.imshow(get_frame(path_ext_file, index), binary_string=True)
+            def set_figure(index, ext_file_path):
+                frame_number = self.time_to_index(index)
+                img_fig = px.imshow(get_frame(ext_file_path, frame_number), binary_string=True)
                 _add_fig_trace(img_fig, index)
 
-            if foreign_time_window_controller is None:
-                self.time_window_controller = StartAndDurationController(tmax, tmin)
-            else:
-                self.time_window_controller = foreign_time_window_controller
+
+            def update_figure(value):
+                path_ext_file = value["new"][0]
+                # Read first frame
+                tmax = imageseries.starting_time + get_frame_count(path_ext_file)/imageseries.rate
+                _add_time_window_controller(0, tmax)
+
+                def change_fig(change):
+                    time = change["new"][0]
+                    set_figure(time, path_ext_file)
+
+                self.time_window_controller.observe(change_fig, names='value')
+
+            file_selector.observe(update_figure, names='value')
+            # set default figure:
+            set_figure(0, imageseries.external_file[0])
+            # set default time window contorller
+            tmax = imageseries.starting_time + \
+                   get_frame_count(imageseries.external_file[0])/imageseries.rate
+            print(get_frame_count(imageseries.external_file[0]))
+            _add_time_window_controller(0, tmax)
             self.set_children(file_selector)
         else:
             if len(imageseries.data.shape) == 3:
-
-                def update_figure(index=0):
+                def set_figure(frame_number):
                     img_fig = px.imshow(
-                        imageseries.data[index].T, binary_string=True
+                        imageseries.data[frame_number].T, binary_string=True
                     )
-                    _add_fig_trace(img_fig, index)
-
+                    _add_fig_trace(img_fig, frame_number)
+                set_figure(0)
             elif len(imageseries.data.shape) == 4:
                 import ipyvolume.pylab as p3
 
                 output = widgets.Output()
-
-                def update_figure(index=0):
+                def set_figure(frame_number):
                     p3.figure()
                     p3.volshow(
-                        imageseries.data[index].transpose([1, 0, 2]),
+                        imageseries.data[frame_number].transpose([1, 0, 2]),
                         tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
                     )
                     output.clear_output(wait=True)
                     self.figure = output
                     with output:
                         p3.show()
-
+                set_figure(0)
             else:
                 raise NotImplementedError
+
+            # create callback:
+            def update_figure(change):
+                frame_number = self.time_to_index(change["new"][0])
+                set_figure(frame_number)
+
+            # creat time window controller:
             tmax = get_timeseries_maxt(imageseries)
-            if foreign_time_window_controller is None:
-                self.time_window_controller = StartAndDurationController(tmax, tmin)
-            else:
-                self.time_window_controller = foreign_time_window_controller
+            _add_time_window_controller(tmin, tmax)
+            self.time_window_controller.observe(update_figure, names='value')
             self.set_children()
 
-        self.set_controls(**kwargs)
-        self.figure = None
-
-        def on_change(change):
-            # Read frame
-            frame_number = self.time_to_index(change["new"][0])
-            update_figure(frame_number)
-
-        update_figure()
-        self.controls["time_window"].observe(on_change)
 
     def time_to_index(self, time):
         if self.imageseries.external_file and self.imageseries.rate:
@@ -121,14 +137,8 @@ class ImageSeriesWidget(widgets.VBox):
         else:
             return timeseries_time_to_ind(self.imageseries, time)
 
-    def set_controls(self, **kwargs):
-        self.controls.update(
-            timeseries=fixed(self.imageseries), time_window=self.time_window_controller
-        )
-        self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
-
     def set_children(self, *args):
-        self.children = [self.out_fig,
+        self.children = [self.figure,
                          self.time_window_controller,
                          *args]
 
@@ -218,7 +228,7 @@ def show_rbga_image(rgb_image: RGBImage, neurodata_vis_spec=None):
 
 def get_frame_shape(external_path_file: PathType):
     external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['tif','tiff']:
+    if external_path_file.suffix in ['.tif','.tiff']:
         assert HAVE_TIF, 'pip install tifffile'
         tif = TiffFile(external_path_file)
         page = tif.pages[0]
@@ -232,9 +242,11 @@ def get_frame_shape(external_path_file: PathType):
 
 def get_frame_count(external_path_file: PathType):
     external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['tif', 'tiff']:
+    print(external_path_file.suffix)
+    if external_path_file.suffix in ['.tif', '.tiff']:
         assert HAVE_TIF, 'pip install tifffile'
         tif = TiffFile(external_path_file)
+        print('tif opened')
         return len(tif.pages)
     else:
         assert HAVE_OPENCV, 'pip install opencv-python'
@@ -249,7 +261,7 @@ def get_frame_count(external_path_file: PathType):
 
 def get_frame(external_path_file: PathType, index):
     external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['tif','tiff']:
+    if external_path_file.suffix in ['.tif','.tiff']:
         assert HAVE_TIF, 'pip install tifffile'
         return imread(str(external_path_file), key=int(index))
     else:
