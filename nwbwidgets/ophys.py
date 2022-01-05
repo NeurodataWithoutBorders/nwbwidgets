@@ -27,7 +27,7 @@ color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
 class TwoPhotonSeriesWidget(ImageSeriesWidget):
     """Widget showing Image stack recorded over time from 2-photon microscope."""
 
-    def __init__(self, indexed_timeseries: TwoPhotonSeries):
+    def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
         super(TwoPhotonSeriesWidget, self).__init__(indexed_timeseries)
 
 

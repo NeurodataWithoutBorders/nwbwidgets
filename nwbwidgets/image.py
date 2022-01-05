@@ -39,6 +39,7 @@ class ImageSeriesWidget(widgets.VBox):
     def __init__(
             self,
             imageseries: ImageSeries,
+            neurodata_vis_spec: dict
     ):
         super().__init__()
         self.imageseries = imageseries
