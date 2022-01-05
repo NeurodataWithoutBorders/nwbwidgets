@@ -28,7 +28,8 @@ class TwoPhotonSeriesWidget(ImageSeriesWidget):
     """Widget showing Image stack recorded over time from 2-photon microscope."""
 
     def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
-        super(TwoPhotonSeriesWidget, self).__init__(indexed_timeseries)
+        super(TwoPhotonSeriesWidget, self).__init__(indexed_timeseries,
+                                                    neurodata_vis_spec)
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
