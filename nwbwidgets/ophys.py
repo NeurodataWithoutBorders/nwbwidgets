@@ -21,80 +21,16 @@ from .timeseries import BaseGroupedTraceWidget
 from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .controllers import ProgressBar
+from .image import ImageSeriesWidget
 
 color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
 
 
-class TwoPhotonSeriesWidget(widgets.VBox):
+class TwoPhotonSeriesWidget(ImageSeriesWidget):
     """Widget showing Image stack recorded over time from 2-photon microscope."""
 
-    def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
-        super().__init__()
-
-        def _add_fig_trace(img_fig: go.Figure, index):
-            if self.figure is None:
-                self.figure = go.FigureWidget(img_fig)
-            else:
-                self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
-            self.figure.layout.title = f"Frame no: {index}"
-        if indexed_timeseries.external_file is not None:
-            path_ext_file = indexed_timeseries.external_file[0]
-            # Get Frames dimensions
-            tif = TiffFile(path_ext_file)
-            n_samples = len(tif.pages)
-            page = tif.pages[0]
-            n_y, n_x = page.shape
-
-            def update_figure(index=0):
-                # Read first frame
-                img_fig = px.imshow(
-                    imread(path_ext_file, key=int(index)), binary_string=True
-                )
-                _add_fig_trace(img_fig, index)
-
-            slider = widgets.IntSlider(
-                value=0, min=0, max=n_samples - 1, orientation="horizontal"
-            )
-        else:
-            if len(indexed_timeseries.data.shape) == 3:
-
-                def update_figure(index=0):
-                    img_fig = px.imshow(
-                        indexed_timeseries.data[index].T, binary_string=True
-                    )
-                    _add_fig_trace(img_fig, index)
-
-            elif len(indexed_timeseries.data.shape) == 4:
-                import ipyvolume.pylab as p3
-
-                output = widgets.Output()
-
-                def update_figure(index=0):
-                    p3.figure()
-                    p3.volshow(
-                        indexed_timeseries.data[index].transpose([1, 0, 2]),
-                        tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
-                    )
-                    output.clear_output(wait=True)
-                    self.figure = output
-                    with output:
-                        p3.show()
-
-            else:
-                raise NotImplementedError
-
-            slider = widgets.IntSlider(
-                value=0,
-                min=0,
-                max=indexed_timeseries.data.shape[0] - 1,
-                orientation="horizontal",
-            )
-
-        slider.observe(lambda change: update_figure(change.new), names="value")
-        self.figure = None
-        self.controls = dict(slider=slider)
-        update_figure()
-        self.children = [self.figure, slider]
+    def __init__(self, indexed_timeseries: TwoPhotonSeries):
+        super(TwoPhotonSeriesWidget, self).__init__(indexed_timeseries)
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
