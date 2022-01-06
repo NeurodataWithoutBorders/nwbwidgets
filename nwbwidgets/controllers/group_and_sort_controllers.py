@@ -204,7 +204,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         if self.column_values is not None:
             self.group_sm.layout.visibility = "visible"
             self.group_sm.layout.width = "100px"
-            keep_column_values = self.column_values[self.keep_rows]
+            keep_column_values = self.column_values
             if self.column_values.dtype == np.float:
                 keep_column_values = keep_column_values[~np.isnan(keep_column_values)]
             groups = np.unique(keep_column_values)
@@ -319,13 +319,13 @@ class GroupAndSortController(AbstractGroupAndSortController):
     def get_groups(self):
         return infer_categorical_columns(self.dynamic_table, self.keep_rows)
 
-    def get_column_values(self, column_name, rows_select=None):
+    def get_column_values(self, column_name: str, rows_select=None):
         """Get the values of the group_by variable
 
         Parameters
         ----------
-        by
-        units_select
+        column_name: str
+        rows_select
 
         Returns
         -------
