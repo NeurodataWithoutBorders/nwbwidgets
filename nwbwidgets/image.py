@@ -44,110 +44,122 @@ class ImageSeriesWidget(widgets.VBox):
         super().__init__()
         self.imageseries = imageseries
         self.figure = None
-        self.time_slider = None
-        tmin = get_timeseries_mint(imageseries)
-
-        # Make widget figure --------
-        def _add_fig_trace(img_fig: go.Figure, index):
-            if self.figure is None:
-                self.figure = go.FigureWidget(img_fig)
-            else:
-                self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
-            self.figure.layout.title = f"Frame no: {index}"
-
-        def _add_time_slider_controller(min, max):
-            if self.time_slider is None:
-                self.time_slider = widgets.FloatSlider(value=0,
-                                                       min=min,
-                                                       max=max,
-                                                       orientation="horizontal",
-                                                       description="time(s)")
-            else:
-                self.time_slider.max = max
-                self.time_slider.min = min
-                self.time_slider.value = min
 
         if imageseries.external_file is not None:
-            file_selector = widgets.Dropdown(options=imageseries.external_file)
 
-            # Get Frames dimensions
-            def set_figure(time, ext_file_path):
-                frame_number = self.time_to_index(time)
-                img_fig = px.imshow(get_frame(ext_file_path, frame_number), binary_string=True)
-                _add_fig_trace(img_fig, frame_number)
+            # set time slider:
+            tmax = imageseries.starting_time + get_frame_count(imageseries.external_file[0])/imageseries.rate
+            self.time_slider = widgets.FloatSlider(min=imageseries.starting_time,
+                                                   max=tmax,
+                                                   orientation="horizontal",
+                                                   description="time(s)")
+            external_file = imageseries.external_file[0]
+            self.file_selector = None
+            # set file selector:
+            if len(imageseries.external_file) > 1:
+                self.file_selector = widgets.Dropdown(options=imageseries.external_file)
+                external_file = self.file_selector.value
 
-            def update_figure(value):
-                path_ext_file = value["new"]
-                # Read first frame
-                tmax = imageseries.starting_time + get_frame_count(path_ext_file)/imageseries.rate
-                _add_time_slider_controller(0, tmax)
-                def change_fig(change):
-                    time = change["new"]
-                    set_figure(time, path_ext_file)
+                def update_time_slider(value):
+                    path_ext_file = value["new"]
+                    # Read first frame
+                    nonlocal external_file
+                    external_file = path_ext_file
+                    tmax = imageseries.starting_time + get_frame_count(path_ext_file)/imageseries.rate
+                    tmin = 0
+                    self.time_slider.max = tmax
+                    self.time_slider.min = tmin
+                    # self.time_slider.value = tmin
+                    self._set_figure_external(tmin, external_file, tmin)
+                    print('update time slider callback', self.time_slider.value)
 
-                self.time_slider.observe(change_fig, names='value')
+                self.file_selector.observe(update_time_slider, names='value')
 
-            file_selector.observe(update_figure, names='value')
-            # set default figure:
-            set_figure(self.imageseries.starting_time,
-                       imageseries.external_file[0])
-            # set default time window contorller
-            tmax = imageseries.starting_time + \
-                   get_frame_count(imageseries.external_file[0])/imageseries.rate
-            _add_time_slider_controller(0, tmax)
-            self.time_slider.observe(lambda x: set_figure(x["new"],imageseries.external_file[0]),
-                                     names='value')
-            self.set_children(file_selector)
+            # set time slider callbacks:
+            def change_fig(change):
+                time = change["new"]
+                starting_time = change["owner"].min
+                print('time slider callback', time, starting_time)
+                self._set_figure_external(time, external_file, starting_time)
+
+            self.time_slider.observe(change_fig, names='value')
+            self._set_figure_external(imageseries.starting_time,
+                                      external_file,
+                                      imageseries.starting_time)
+
+            # set children:
+            self.set_children(self.file_selector)
+
+
         else:
             if len(imageseries.data.shape) == 3:
-                def set_figure(frame_number):
-                    img_fig = px.imshow(
-                        imageseries.data[frame_number].T, binary_string=True
-                    )
-                    _add_fig_trace(img_fig, frame_number)
-
-                set_figure(0)
+                self._set_figure_2d(0)
+                def time_slider_callback(change):
+                    frame_number = self.time_to_index(change["new"])
+                    self._set_figure_2d(frame_number)
             elif len(imageseries.data.shape) == 4:
-                import ipyvolume.pylab as p3
-
-                output = widgets.Output()
-
-                def set_figure(frame_number):
-                    p3.figure()
-                    p3.volshow(
-                        imageseries.data[frame_number].transpose([1, 0, 2]),
-                        tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
-                    )
-                    output.clear_output(wait=True)
-                    self.figure = output
-                    with output:
-                        p3.show()
-
-                set_figure(0)
+                self._set_figure_3d(0)
+                def time_slider_callback(change):
+                    frame_number = self.time_to_index(change["new"])
+                    self._set_figure_3d(frame_number)
             else:
                 raise NotImplementedError
 
-            # create callback:
-            def update_figure(change):
-                frame_number = self.time_to_index(change["new"])
-                set_figure(frame_number)
-
             # creat time window controller:
+            tmin = get_timeseries_mint(imageseries)
             tmax = get_timeseries_maxt(imageseries)
-            _add_time_slider_controller(tmin, tmax)
-            self.time_slider.observe(update_figure, names='value')
+            self.time_slider = widgets.FloatSlider(value=tmin,
+                                                   min=tmin,
+                                                   max=tmax,
+                                                   orientation="horizontal",
+                                                   description="time(s)")
+            self.time_slider.observe(time_slider_callback, names='value')
             self.set_children()
 
-    def time_to_index(self, time):
+    def _set_figure_3d(self, frame_number):
+        import ipyvolume.pylab as p3
+        output = widgets.Output()
+        p3.figure()
+        p3.volshow(
+            self.imageseries.data[frame_number].transpose([1, 0, 2]),
+            tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
+        )
+        output.clear_output(wait=True)
+        self.figure = output
+        with output:
+            p3.show()
+        
+    def _set_figure_2d(self, frame_number):
+        img_fig = px.imshow(
+            self.imageseries.data[frame_number].T, binary_string=True
+        )
+        self._add_fig_trace(img_fig, frame_number)
+    
+    def _set_figure_external(self, time, ext_file_path, starting_time):
+        frame_number = self.time_to_index(time, starting_time)
+        img_fig = px.imshow(get_frame(ext_file_path, frame_number), binary_string=True)  # TODO: use go.image
+        self._add_fig_trace(img_fig, frame_number)  # TODO: create figure at this level.
+
+    def _add_fig_trace(self, img_fig: go.Figure, index):
+        if self.figure is None:
+            self.figure = go.FigureWidget(img_fig) # TODO: remove this, make scatter from go directly
+        else:
+            self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
+        self.figure.layout.title = f"Frame no: {index}"
+            
+    def time_to_index(self, time, starting_time=None):
+        starting_time = starting_time if starting_time is not None \
+            else self.imageseries.starting_time
         if self.imageseries.external_file and self.imageseries.rate:
-            return int((time - self.imageseries.starting_time)*self.imageseries.rate)
+            return int((time - starting_time)*self.imageseries.rate)
         else:
             return timeseries_time_to_ind(self.imageseries, time)
 
-    def set_children(self, *args):
+    def set_children(self, *widgets):
+        set_widgets = [wid for wid in widgets if wid is not None]
         self.children = [self.figure,
                          self.time_slider,
-                         *args]
+                         *set_widgets]
 
     def get_frame(self, idx):
         if self.imageseries.external_file is not None:
@@ -267,9 +279,9 @@ def get_frame_count(external_path_file: PathType):
         return frame_count
 
 
-def get_frame(external_path_file: PathType, index):
+def get_frame(external_path_file: PathType, index):# TODO: make this as a routing method
     external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['.tif', '.tiff']:
+    if external_path_file.suffix in ['.tif', '.tiff']: # TODO: keep separate and support jpeg
         assert HAVE_TIF, 'pip install tifffile'
         return imread(str(external_path_file), key=int(index))
     else:
