@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Union
-
+import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
@@ -69,9 +69,7 @@ class ImageSeriesWidget(widgets.VBox):
                     tmin = 0
                     self.time_slider.max = tmax
                     self.time_slider.min = tmin
-                    # self.time_slider.value = tmin
                     self._set_figure_external(tmin, external_file, tmin)
-                    print('update time slider callback', self.time_slider.value)
 
                 self.file_selector.observe(update_time_slider, names='value')
 
@@ -79,7 +77,6 @@ class ImageSeriesWidget(widgets.VBox):
             def change_fig(change):
                 time = change["new"]
                 starting_time = change["owner"].min
-                print('time slider callback', time, starting_time)
                 self._set_figure_external(time, external_file, starting_time)
 
             self.time_slider.observe(change_fig, names='value')
@@ -130,21 +127,17 @@ class ImageSeriesWidget(widgets.VBox):
             p3.show()
         
     def _set_figure_2d(self, frame_number):
-        img_fig = px.imshow(
-            self.imageseries.data[frame_number].T, binary_string=True
-        )
-        self._add_fig_trace(img_fig, frame_number)
+        self._add_fig_trace(self.imageseries.data[frame_number].T, frame_number)
     
     def _set_figure_external(self, time, ext_file_path, starting_time):
         frame_number = self.time_to_index(time, starting_time)
-        img_fig = px.imshow(get_frame(ext_file_path, frame_number), binary_string=True)  # TODO: use go.image
-        self._add_fig_trace(img_fig, frame_number)  # TODO: create figure at this level.
+        self._add_fig_trace(get_frame(ext_file_path, frame_number), frame_number)
 
-    def _add_fig_trace(self, img_fig: go.Figure, index):
+    def _add_fig_trace(self, img_data: np.ndarray, index):
         if self.figure is None:
-            self.figure = go.FigureWidget(img_fig) # TODO: remove this, make scatter from go directly
+            self.figure = go.FigureWidget(data=dict(type='image', z=img_data))
         else:
-            self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
+            self.figure.data[0]["z"] = img_data
         self.figure.layout.title = f"Frame no: {index}"
             
     def time_to_index(self, time, starting_time=None):
