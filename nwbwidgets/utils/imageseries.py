@@ -20,15 +20,18 @@ PathType = Union[str, Path]
 VIDEO_EXTENSIONS = [".mp4", ".avi", ".wmv", ".mov", ".flv"]
 
 
-class VideoCaptureContext(cv2.VideoCapture):
+class VideoCaptureContext:
     """
     Context manager for opening videos using opencv
     """
+    def __init__(self, video_path):
+        self.vc = cv2.VideoCapture(video_path)
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        self.release()
+        self.vc.release()
 
 
 def get_frame_shape(external_path_file: PathType):
@@ -121,9 +124,8 @@ def get_frame_video(external_path_file: PathType, index):
     else:
         set_arg = cv2.CAP_PROP_POS_FRAMES
     with VideoCaptureContext(str(external_path_file)) as cap:
-        cap = VideoCaptureContext(str(external_path_file))
-        set_value = cap.set(set_arg, index)
-        success, frame = cap.read()
+        set_value = cap.vc.set(set_arg, index)
+        success, frame = cap.vc.read()
     if success:
         return frame
     else:
@@ -141,8 +143,7 @@ def get_frame_count_video(external_path_file: PathType):
     else:
         frame_count_arg = cv2.CAP_PROP_FRAME_COUNT
     with VideoCaptureContext(str(external_path_file)) as cap:
-        cap = VideoCaptureContext(str(external_path_file))
-        frame_count = cap.get(frame_count_arg)
+        frame_count = cap.vc.get(frame_count_arg)
     return frame_count
 
 
@@ -153,8 +154,7 @@ def get_frame_shape_video(external_path_file: PathType):
     ), f"supply any of {VIDEO_EXTENSIONS} files"
     assert HAVE_OPENCV, "pip install opencv-python"
     with VideoCaptureContext(str(external_path_file)) as cap:
-        cap = VideoCaptureContext(str(external_path_file))
-        success, frame = cap.read()
+        success, frame = cap.vc.read()
     if success:
         return frame.shape
     else:
