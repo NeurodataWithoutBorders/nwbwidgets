@@ -77,7 +77,6 @@ class ImageSeriesWidget(widgets.VBox):
                 starting_time = change["owner"].min
                 self._set_figure_external(time, external_file, starting_time)
 
-            print(self.time_slider)
             self.time_slider.observe(change_fig, names="value")
             self._set_figure_external(
                 imageseries.starting_time, external_file, imageseries.starting_time
