@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Union
-import numpy as np
+
 import matplotlib.pyplot as plt
-import plotly.express as px
+import numpy as np
 import plotly.graph_objects as go
 import pynwb
 from ipywidgets import widgets, Layout
@@ -10,25 +10,12 @@ from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
 
 from .base import fig2widget
 from .utils.cmaps import linear_transfer_function
+from .utils.imageseries import get_frame_count, get_frame
 from .utils.timeseries import (
     get_timeseries_maxt,
     get_timeseries_mint,
     timeseries_time_to_ind,
 )
-
-try:
-    import cv2
-
-    HAVE_OPENCV = True
-except ImportError:
-    HAVE_OPENCV = False
-
-try:
-    from tifffile import imread, TiffFile
-
-    HAVE_TIF = True
-except ImportError:
-    HAVE_TIF = False
 
 PathType = Union[str, Path]
 
@@ -37,22 +24,30 @@ class ImageSeriesWidget(widgets.VBox):
     """Widget showing ImageSeries."""
 
     def __init__(
-            self,
-            imageseries: ImageSeries,
-            neurodata_vis_spec: dict
+        self,
+        imageseries: ImageSeries,
+        foreign_time_slider: widgets.FloatSlider = None,
+        neurodata_vis_spec: dict = None,
     ):
         super().__init__()
         self.imageseries = imageseries
         self.figure = None
+        self.time_slider = foreign_time_slider
 
         if imageseries.external_file is not None:
 
             # set time slider:
-            tmax = imageseries.starting_time + get_frame_count(imageseries.external_file[0])/imageseries.rate
-            self.time_slider = widgets.FloatSlider(min=imageseries.starting_time,
-                                                   max=tmax,
-                                                   orientation="horizontal",
-                                                   description="time(s)")
+            tmax = (
+                imageseries.starting_time
+                + get_frame_count(imageseries.external_file[0]) / imageseries.rate
+            )
+            if self.time_slider is None:
+                self.time_slider = widgets.FloatSlider(
+                    min=imageseries.starting_time,
+                    max=tmax,
+                    orientation="horizontal",
+                    description="time(s)",
+                )
             external_file = imageseries.external_file[0]
             self.file_selector = None
             # set file selector:
@@ -65,13 +60,16 @@ class ImageSeriesWidget(widgets.VBox):
                     # Read first frame
                     nonlocal external_file
                     external_file = path_ext_file
-                    tmax = imageseries.starting_time + get_frame_count(path_ext_file)/imageseries.rate
+                    tmax = (
+                        imageseries.starting_time
+                        + get_frame_count(path_ext_file) / imageseries.rate
+                    )
                     tmin = 0
                     self.time_slider.max = tmax
                     self.time_slider.min = tmin
                     self._set_figure_external(tmin, external_file, tmin)
 
-                self.file_selector.observe(update_time_slider, names='value')
+                self.file_selector.observe(update_time_slider, names="value")
 
             # set time slider callbacks:
             def change_fig(change):
@@ -79,42 +77,48 @@ class ImageSeriesWidget(widgets.VBox):
                 starting_time = change["owner"].min
                 self._set_figure_external(time, external_file, starting_time)
 
-            self.time_slider.observe(change_fig, names='value')
-            self._set_figure_external(imageseries.starting_time,
-                                      external_file,
-                                      imageseries.starting_time)
-
+            print(self.time_slider)
+            self.time_slider.observe(change_fig, names="value")
+            self._set_figure_external(
+                imageseries.starting_time, external_file, imageseries.starting_time
+            )
             # set children:
-            self.set_children(self.file_selector)
-
-
+            self.children = self.get_children(self.file_selector)
         else:
             if len(imageseries.data.shape) == 3:
                 self._set_figure_2d(0)
+
                 def time_slider_callback(change):
                     frame_number = self.time_to_index(change["new"])
                     self._set_figure_2d(frame_number)
+
             elif len(imageseries.data.shape) == 4:
                 self._set_figure_3d(0)
+
                 def time_slider_callback(change):
                     frame_number = self.time_to_index(change["new"])
                     self._set_figure_3d(frame_number)
+
             else:
                 raise NotImplementedError
 
             # creat time window controller:
             tmin = get_timeseries_mint(imageseries)
             tmax = get_timeseries_maxt(imageseries)
-            self.time_slider = widgets.FloatSlider(value=tmin,
-                                                   min=tmin,
-                                                   max=tmax,
-                                                   orientation="horizontal",
-                                                   description="time(s)")
-            self.time_slider.observe(time_slider_callback, names='value')
-            self.set_children()
+            if self.time_slider is None:
+                self.time_slider = widgets.FloatSlider(
+                    value=tmin,
+                    min=tmin,
+                    max=tmax,
+                    orientation="horizontal",
+                    description="time(s)",
+                )
+            self.time_slider.observe(time_slider_callback, names="value")
+            self.children = self.get_children()
 
     def _set_figure_3d(self, frame_number):
         import ipyvolume.pylab as p3
+
         output = widgets.Output()
         p3.figure()
         p3.volshow(
@@ -125,34 +129,40 @@ class ImageSeriesWidget(widgets.VBox):
         self.figure = output
         with output:
             p3.show()
-        
+
     def _set_figure_2d(self, frame_number):
-        self._add_fig_trace(self.imageseries.data[frame_number].T, frame_number)
-    
+        data = self.imageseries.data[frame_number].T
+        if self.figure is None:
+            self.figure = go.FigureWidget(data=dict(type="image", z=data))
+        else:
+            self._add_fig_trace(data, frame_number)
+
     def _set_figure_external(self, time, ext_file_path, starting_time):
         frame_number = self.time_to_index(time, starting_time)
-        self._add_fig_trace(get_frame(ext_file_path, frame_number), frame_number)
+        data = get_frame(ext_file_path, frame_number)
+        if self.figure is None:
+            self.figure = go.FigureWidget(data=dict(type="image", z=data))
+        else:
+            self._add_fig_trace(data, frame_number)
 
     def _add_fig_trace(self, img_data: np.ndarray, index):
-        if self.figure is None:
-            self.figure = go.FigureWidget(data=dict(type='image', z=img_data))
-        else:
-            self.figure.data[0]["z"] = img_data
+        self.figure.data[0]["z"] = img_data
         self.figure.layout.title = f"Frame no: {index}"
-            
+
     def time_to_index(self, time, starting_time=None):
-        starting_time = starting_time if starting_time is not None \
+        starting_time = (
+            starting_time
+            if starting_time is not None
             else self.imageseries.starting_time
+        )
         if self.imageseries.external_file and self.imageseries.rate:
-            return int((time - starting_time)*self.imageseries.rate)
+            return int((time - starting_time) * self.imageseries.rate)
         else:
             return timeseries_time_to_ind(self.imageseries, time)
 
-    def set_children(self, *widgets):
+    def get_children(self, *widgets):
         set_widgets = [wid for wid in widgets if wid is not None]
-        self.children = [self.figure,
-                         self.time_slider,
-                         *set_widgets]
+        return [self.figure, self.time_slider, *set_widgets]
 
     def get_frame(self, idx):
         if self.imageseries.external_file is not None:
@@ -237,54 +247,3 @@ def show_rbga_image(rgb_image: RGBImage, neurodata_vis_spec=None):
     plt.axis("off")
 
     return fig
-
-
-def get_frame_shape(external_path_file: PathType):
-    external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['.tif', '.tiff']:
-        assert HAVE_TIF, 'pip install tifffile'
-        tif = TiffFile(external_path_file)
-        page = tif.pages[0]
-        return page.shape
-    else:
-        assert HAVE_OPENCV, 'pip install opencv-python'
-        cap = cv2.VideoCapture(str(external_path_file))
-        success, frame = cap.read()
-        cap.release()
-        return frame.shape
-
-
-def get_frame_count(external_path_file: PathType):
-    external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['.tif', '.tiff']:
-        assert HAVE_TIF, 'pip install tifffile'
-        tif = TiffFile(external_path_file)
-        return len(tif.pages)
-    else:
-        assert HAVE_OPENCV, 'pip install opencv-python'
-        cap = cv2.VideoCapture(str(external_path_file))
-        if int(cv2.__version__.split(".")[0]) < 3:
-            frame_count_arg = cv2.cv.CV_CAP_PROP_FRAME_COUNT
-        else:
-            frame_count_arg = cv2.CAP_PROP_FRAME_COUNT
-        frame_count = cap.get(frame_count_arg)
-        cap.release()
-        return frame_count
-
-
-def get_frame(external_path_file: PathType, index):# TODO: make this as a routing method
-    external_path_file = Path(external_path_file)
-    if external_path_file.suffix in ['.tif', '.tiff']: # TODO: keep separate and support jpeg
-        assert HAVE_TIF, 'pip install tifffile'
-        return imread(str(external_path_file), key=int(index))
-    else:
-        assert HAVE_OPENCV, 'pip install opencv-python'
-        cap = cv2.VideoCapture(str(external_path_file))
-        if int(cv2.__version__.split(".")[0]) < 3:
-            set_arg = cv2.cv.CV_CAP_PROP_POS_FRAMES
-        else:
-            set_arg = cv2.CAP_PROP_POS_FRAMES
-        set_value = cap.set(set_arg, index)
-        success, frame = cap.read()
-        cap.release()
-        return frame
