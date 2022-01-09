@@ -1,4 +1,5 @@
 from nwbwidgets.utils.imageseries import get_frame_count, get_frame, get_frame_shape
+from .fixtures import create_movie_files, movie_shape, movie_no_frames, create_tif_files
 
 def test_movie_frame(create_movie_files, movie_shape):
     frame = get_frame(create_movie_files[0], 0)
