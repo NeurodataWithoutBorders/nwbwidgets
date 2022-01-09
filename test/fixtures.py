@@ -11,18 +11,18 @@ def movie_fps():
 
 @pytest.fixture(scope="session")
 def movie_shape():
-    return (300, 400, 3)
+    return (30, 40, 3)
 
 
 @pytest.fixture(scope="session")
 def movie_no_frames():
-    return 30
+    return 10, 15
 
 
 @pytest.fixture(scope="session")
 def create_frames(movie_no_frames, movie_shape):
-    mov_ar1 = np.random.randint(0, 255, size=[*movie_shape, movie_no_frames], dtype="uint8")
-    mov_ar2 = np.random.randint(0, 255, size=[*movie_shape, movie_no_frames], dtype="uint8")
+    mov_ar1 = np.random.randint(0, 255, size=[*movie_shape, movie_no_frames[0]], dtype="uint8")
+    mov_ar2 = np.random.randint(0, 255, size=[*movie_shape, movie_no_frames[1]], dtype="uint8")
     return mov_ar1, mov_ar2
 
 
