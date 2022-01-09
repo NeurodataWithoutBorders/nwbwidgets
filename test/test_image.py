@@ -6,10 +6,12 @@ from nwbwidgets.image import (
     show_grayscale_image,
     show_index_series,
     show_image_series,
+    ImageSeriesWidget
 )
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.base import TimeSeries
 from pynwb.image import RGBImage, GrayscaleImage, IndexSeries, ImageSeries
+import plotly.graph_objects as go
 
 
 def test_show_rbg_image():
@@ -54,3 +56,56 @@ def test_show_image_series():
     assert isinstance(
         show_image_series(image_series, default_neurodata_vis_spec), widgets.Widget
     )
+
+
+def test_image_series_widget_data_2d():
+    data = np.random.randint(0,255,size=[10,30,40])
+    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
+    wd = ImageSeriesWidget(image_series)
+    assert isinstance(wd.figure, go.FigureWidget)
+    assert wd.time_slider.min == 0.0
+    assert wd.time_slider.max == 9.0
+
+
+def test_image_series_widget_data_3d():
+    data = np.random.randint(0,255,size=[10,30,40,5])
+    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
+    wd = ImageSeriesWidget(image_series)
+    assert isinstance(wd.figure, widgets.Output)
+    assert wd.time_slider.min == 0.0
+    assert wd.time_slider.max == 9.0
+
+
+def test_image_series_widget_external_file_tif(create_tif_files, movie_no_frames):
+    image_series = ImageSeries(name="Image Series", external_file=create_tif_files,
+                               rate=1.0, unit='n.a.')
+    wd = ImageSeriesWidget(image_series)
+    assert isinstance(wd.figure, go.FigureWidget)
+    assert wd.time_slider.max == movie_no_frames[0]
+    assert wd.time_slider.min == 0.0
+    assert wd.file_selector.value == create_tif_files[0]
+    wd.file_selector.value = create_tif_files[1]
+    assert wd.time_slider.min == 0.0
+    assert wd.time_slider.max == movie_no_frames[1]
+
+def test_image_series_widget_external_file_single(create_tif_files, movie_no_frames):
+    image_series = ImageSeries(name="Image Series", external_file=create_tif_files[:1],
+                               rate=1.0, unit='n.a.')
+    wd = ImageSeriesWidget(image_series)
+    assert isinstance(wd.figure, go.FigureWidget)
+    assert wd.time_slider.max == movie_no_frames[0]
+    assert wd.time_slider.min == 0.0
+    assert wd.file_selector is None
+
+
+def test_image_series_widget_external_file_video(create_movie_files, movie_no_frames):
+    image_series = ImageSeries(name="Image Series", external_file=create_movie_files,
+                               rate=1.0, unit='n.a.')
+    wd = ImageSeriesWidget(image_series)
+    assert isinstance(wd.figure, go.FigureWidget)
+    assert wd.time_slider.max == movie_no_frames[0]
+    assert wd.time_slider.min == 0.0
+    assert wd.file_selector.value == create_movie_files[0]
+    wd.file_selector.value = create_movie_files[1]
+    assert wd.time_slider.min == 0.0
+    assert wd.time_slider.max == movie_no_frames[1]
