@@ -73,28 +73,30 @@ class CalciumImagingTestCase(unittest.TestCase):
             "2d_plane_seg",
             self.image_series,
         )
+        self.ps2.add_column("type", "desc")
+        self.ps2.add_column("type2", "desc")
 
         w, h = 3, 3
         img_mask1 = np.zeros((w, h))
         img_mask1[0, 0] = 1.1
         img_mask1[1, 1] = 1.2
         img_mask1[2, 2] = 1.3
-        self.ps2.add_roi(image_mask=img_mask1)
+        self.ps2.add_roi(image_mask=img_mask1, type=1, type2=0)
 
         img_mask2 = np.zeros((w, h))
         img_mask2[0, 0] = 2.1
         img_mask2[1, 1] = 2.2
-        self.ps2.add_roi(image_mask=img_mask2)
+        self.ps2.add_roi(image_mask=img_mask2, type=1, type2=1)
 
         img_mask2 = np.zeros((w, h))
         img_mask2[0, 0] = 9.1
         img_mask2[1, 1] = 10.2
-        self.ps2.add_roi(image_mask=img_mask2)
+        self.ps2.add_roi(image_mask=img_mask2, type=2, type2=0)
 
         img_mask2 = np.zeros((w, h))
         img_mask2[0, 0] = 3.5
         img_mask2[1, 1] = 5.6
-        self.ps2.add_roi(image_mask=img_mask2)
+        self.ps2.add_roi(image_mask=img_mask2, type=2, type2=1)
 
         fl = Fluorescence()
         rt_region = self.ps2.create_roi_table_region(
@@ -130,12 +132,14 @@ class CalciumImagingTestCase(unittest.TestCase):
     def test_show_df_over_f(self):
         dff = show_df_over_f(self.df_over_f, default_neurodata_vis_spec)
         assert isinstance(dff, widgets.Widget)
-        dff.controls['gas'].window = [1,2]
+        dff.controls['gas'].window = [1, 2]
 
     def test_plane_segmentation_2d_widget(self):
         wid = PlaneSegmentation2DWidget(self.ps2)
         assert isinstance(wid, widgets.Widget)
         wid.button.click()
+        wid.cat_controller.value = "type"
+        wid.cat_controller.value = "type2"
 
     def test_show_plane_segmentation_3d_mask(self):
         ps3 = PlaneSegmentation(
