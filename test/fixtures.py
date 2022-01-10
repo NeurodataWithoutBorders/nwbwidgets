@@ -33,23 +33,23 @@ def create_movie_files(tmp_path_factory, create_frames, movie_fps):
     mov_ar1_path = base_path/'movie1.avi'
     mov_ar2_path = base_path/'movie.avi'
     mov_array1, mov_array2 = create_frames
-    movie_shape = mov_array1.shape[:2]
+    movie_shape = mov_array1.shape[1::-1]
     no_frames = mov_array1.shape[-1]
     cap_mp4 = cv2.VideoWriter(filename=str(mov_ar1_path),
                               apiPreference=None,
-                              fourcc=cv2.VideoWriter_fourcc(*'mp4v'),
+                              fourcc=cv2.VideoWriter_fourcc("M", "J", "P", "G"),
                               fps=movie_fps,
                               frameSize=movie_shape,
                               params=None)
     cap_avi = cv2.VideoWriter(filename=str(mov_ar2_path),
                               apiPreference=None,
-                              fourcc=cv2.VideoWriter_fourcc(*'DIVX'),
+                              fourcc=cv2.VideoWriter_fourcc("M", "J", "P", "G"),
                               fps=movie_fps,
                               frameSize=movie_shape,
                               params=None)
     for frame_no in range(no_frames):
-        cap_mp4.write(mov_array1[:,:,:,frame_no])
-        cap_avi.write(mov_array2[:,:,:,frame_no])
+        cap_mp4.write(mov_array1[:,:,:,frame_no].squeeze())
+        cap_avi.write(mov_array2[:,:,:,frame_no].squeeze())
 
     cap_mp4.release()
     cap_avi.release()
@@ -60,8 +60,8 @@ def create_movie_files(tmp_path_factory, create_frames, movie_fps):
 def create_tif_files(tmp_path_factory, create_frames):
     base_path = tmp_path_factory.mktemp('tiffiles')
     print(base_path)
-    frame1 = create_frames[0][:, :, :, 0]
-    frame2 = create_frames[1][:, :, :, 0]
+    frame1 = create_frames[0].transpose([3,0,1,2])
+    frame2 = create_frames[1].transpose([3,0,1,2])
     tif_path1 = base_path/'tif_image1.tif'
     tif_path2 = base_path/'tif_image2.tif'
     imwrite(str(tif_path1), frame1, photometric='rgb')
