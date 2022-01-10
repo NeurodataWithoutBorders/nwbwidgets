@@ -35,12 +35,18 @@ def create_movie_files(tmp_path_factory, create_frames, movie_fps):
     mov_array1, mov_array2 = create_frames
     movie_shape = mov_array1.shape[:2]
     no_frames = mov_array1.shape[-1]
-    cap_mp4 = cv2.VideoWriter(str(mov_ar1_path),
-                              cv2.VideoWriter_fourcc(*'mp4v'),
-                              movie_fps, movie_shape)
-    cap_avi = cv2.VideoWriter(str(mov_ar2_path),
-                              cv2.VideoWriter_fourcc(*'DIVX'),
-                              movie_fps, movie_shape)
+    cap_mp4 = cv2.VideoWriter(filename=str(mov_ar1_path),
+                              apiPreference=None,
+                              fourcc=cv2.VideoWriter_fourcc(*'mp4v'),
+                              fps=movie_fps,
+                              frameSize=movie_shape,
+                              params=None)
+    cap_avi = cv2.VideoWriter(filename=str(mov_ar2_path),
+                              apiPreference=None,
+                              fourcc=cv2.VideoWriter_fourcc(*'DIVX'),
+                              fps=movie_fps,
+                              frameSize=movie_shape,
+                              params=None)
     for frame_no in range(no_frames):
         cap_mp4.write(mov_array1[:,:,:,frame_no])
         cap_avi.write(mov_array2[:,:,:,frame_no])
