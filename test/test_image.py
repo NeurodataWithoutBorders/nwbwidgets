@@ -12,7 +12,7 @@ from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.base import TimeSeries
 from pynwb.image import RGBImage, GrayscaleImage, IndexSeries, ImageSeries
 import plotly.graph_objects as go
-from .fixtures import create_movie_files, create_tif_files, movie_no_frames
+from .fixtures import *
 
 
 def test_show_rbg_image():

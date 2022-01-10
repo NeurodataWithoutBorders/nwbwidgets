@@ -34,7 +34,6 @@ def create_movie_files(tmp_path_factory, create_frames, movie_fps):
     mov_ar2_path = base_path/'movie.avi'
     mov_array1, mov_array2 = create_frames
     movie_shape = mov_array1.shape[1::-1]
-    no_frames = mov_array1.shape[-1]
     cap_mp4 = cv2.VideoWriter(filename=str(mov_ar1_path),
                               apiPreference=None,
                               fourcc=cv2.VideoWriter_fourcc("M", "J", "P", "G"),
@@ -47,13 +46,14 @@ def create_movie_files(tmp_path_factory, create_frames, movie_fps):
                               fps=movie_fps,
                               frameSize=movie_shape,
                               params=None)
-    for frame_no in range(no_frames):
-        cap_mp4.write(mov_array1[:,:,:,frame_no].squeeze())
-        cap_avi.write(mov_array2[:,:,:,frame_no].squeeze())
+    for frame_no in range(mov_array1.shape[-1]):
+        cap_mp4.write(mov_array1[:,:,:,frame_no])
+    for frame_no in range(mov_array2.shape[-1]):
+        cap_avi.write(mov_array2[:,:,:,frame_no])
 
     cap_mp4.release()
     cap_avi.release()
-    return mov_ar2_path, mov_ar2_path
+    return mov_ar1_path, mov_ar2_path
 
 
 @pytest.fixture(scope="session")
