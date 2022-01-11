@@ -33,10 +33,10 @@ class ImageSeriesWidget(widgets.VBox):
         self.imageseries = imageseries
         self.figure = None
         self.time_slider = foreign_time_slider
+        self.external_file = None
+        self.file_selector = None
 
         if imageseries.external_file is not None:
-
-            # set time slider:
             tmax = (
                 imageseries.starting_time
                 + get_frame_count(imageseries.external_file[0]) / imageseries.rate
@@ -48,60 +48,20 @@ class ImageSeriesWidget(widgets.VBox):
                     orientation="horizontal",
                     description="time(s)",
                 )
-            external_file = imageseries.external_file[0]
-            self.file_selector = None
+            self.external_file = imageseries.external_file[0]
             # set file selector:
             if len(imageseries.external_file) > 1:
                 self.file_selector = widgets.Dropdown(options=imageseries.external_file)
-                external_file = self.file_selector.value
+                self.external_file = self.file_selector.value
+                self.file_selector.observe(self._update_time_slider, names="value")
 
-                def update_time_slider(value):
-                    path_ext_file = value["new"]
-                    # Read first frame
-                    nonlocal external_file
-                    external_file = path_ext_file
-                    tmax = (
-                        imageseries.starting_time
-                        + get_frame_count(path_ext_file) / imageseries.rate
-                    )
-                    tmin = 0
-                    self.time_slider.max = tmax
-                    self.time_slider.min = tmin
-                    self._set_figure_external(tmin, external_file, tmin)
-
-                self.file_selector.observe(update_time_slider, names="value")
-
-            # set time slider callbacks:
-            def change_fig(change):
-                time = change["new"]
-                starting_time = change["owner"].min
-                self._set_figure_external(time, external_file, starting_time)
-
-            self.time_slider.observe(change_fig, names="value")
+            self.time_slider.observe(self._time_slider_callback_external, names="value")
             self._set_figure_external(
-                imageseries.starting_time, external_file, imageseries.starting_time
+                imageseries.starting_time, self.external_file, imageseries.starting_time
             )
             # set children:
             self.children = self.get_children(self.file_selector)
         else:
-            if len(imageseries.data.shape) == 3:
-                self._set_figure_2d(0)
-
-                def time_slider_callback(change):
-                    frame_number = self.time_to_index(change["new"])
-                    self._set_figure_2d(frame_number)
-
-            elif len(imageseries.data.shape) == 4:
-                self._set_figure_3d(0)
-
-                def time_slider_callback(change):
-                    frame_number = self.time_to_index(change["new"])
-                    self._set_figure_3d(frame_number)
-
-            else:
-                raise NotImplementedError
-
-            # creat time window controller:
             tmin = get_timeseries_mint(imageseries)
             tmax = get_timeseries_maxt(imageseries)
             if self.time_slider is None:
@@ -112,8 +72,42 @@ class ImageSeriesWidget(widgets.VBox):
                     orientation="horizontal",
                     description="time(s)",
                 )
-            self.time_slider.observe(time_slider_callback, names="value")
+            if len(imageseries.data.shape) == 3:
+                self._set_figure_2d(0)
+                self.time_slider.observe(self.time_slider_callback_2d, names="value")
+
+            elif len(imageseries.data.shape) == 4:
+                self._set_figure_3d(0)
+                self.time_slider.observe(self._time_slider_callback_3d, names="value")
+            else:
+                raise NotImplementedError
             self.children = self.get_children()
+
+    def _time_slider_callback_2d(self, change):
+        frame_number = self.time_to_index(change["new"])
+        self._set_figure_2d(frame_number)
+
+    def _time_slider_callback_3d(self, change):
+        frame_number = self.time_to_index(change["new"])
+        self._set_figure_3d(frame_number)
+
+    def _time_slider_callback_external(self, change):
+        time = change["new"]
+        starting_time = change["owner"].min
+        self._set_figure_external(time, self.external_file, starting_time)
+
+    def _update_time_slider(self, value):
+        path_ext_file = value["new"]
+        # Read first frame
+        self.external_file = path_ext_file
+        tmax = (
+                self.imageseries.starting_time
+                + get_frame_count(path_ext_file)/self.imageseries.rate
+        )
+        tmin = 0
+        self.time_slider.max = tmax
+        self.time_slider.min = tmin
+        self._set_figure_external(tmin, self.external_file, tmin)
 
     def _set_figure_3d(self, frame_number):
         import ipyvolume.pylab as p3
