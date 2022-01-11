@@ -74,7 +74,7 @@ class ImageSeriesWidget(widgets.VBox):
                 )
             if len(imageseries.data.shape) == 3:
                 self._set_figure_2d(0)
-                self.time_slider.observe(self.time_slider_callback_2d, names="value")
+                self.time_slider.observe(self._time_slider_callback_2d, names="value")
 
             elif len(imageseries.data.shape) == 4:
                 self._set_figure_3d(0)
@@ -119,7 +119,7 @@ class ImageSeriesWidget(widgets.VBox):
             self.time_slider.observe(
                 lambda change: self._set_figure_from_frame(change["new"], path_ext_file),
                 names="value")
-        self._set_figure_from_frame(max_frame_count, self.external_file)
+        self._set_figure_from_frame(0, self.external_file)
 
     def _set_figure_3d(self, frame_number):
         import ipyvolume.pylab as p3
