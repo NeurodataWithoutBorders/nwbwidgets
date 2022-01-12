@@ -6,7 +6,7 @@ from nwbwidgets.image import (
     show_grayscale_image,
     show_index_series,
     show_image_series,
-    ImageSeriesWidget
+    ImageSeriesWidget,
 )
 from nwbwidgets.view import default_neurodata_vis_spec
 from pynwb.base import TimeSeries
@@ -35,14 +35,14 @@ def test_show_index_series():
         name="Index Series time data",
         data=np.random.rand(800).reshape((8, 10, 10)),
         rate=1.0,
-        unit='na',
+        unit="na",
     )
     index_series = IndexSeries(
         name="Sample Index Series",
         data=data,
         indexed_timeseries=indexed_timeseries,
         rate=1.0,
-        unit='n.a.',
+        unit="n.a.",
     )
 
     assert isinstance(
@@ -52,7 +52,7 @@ def test_show_index_series():
 
 def test_show_image_series():
     data = np.random.rand(800).reshape((8, 10, 10))
-    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
+    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit="n.a.")
 
     assert isinstance(
         show_image_series(image_series, default_neurodata_vis_spec), widgets.Widget
@@ -60,8 +60,8 @@ def test_show_image_series():
 
 
 def test_image_series_widget_data_2d():
-    data = np.random.randint(0,255,size=[10,30,40])
-    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
+    data = np.random.randint(0, 255, size=[10, 30, 40])
+    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit="n.a.")
     wd = ImageSeriesWidget(image_series)
     assert isinstance(wd.figure, go.FigureWidget)
     assert wd.time_slider.min == 0.0
@@ -69,8 +69,8 @@ def test_image_series_widget_data_2d():
 
 
 def test_image_series_widget_data_3d():
-    data = np.random.randint(0,255,size=[10,30,40,5])
-    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit='n.a.')
+    data = np.random.randint(0, 255, size=[10, 30, 40, 5])
+    image_series = ImageSeries(name="Image Series", data=data, rate=1.0, unit="n.a.")
     wd = ImageSeriesWidget(image_series)
     assert isinstance(wd.figure, widgets.Output)
     assert wd.time_slider.min == 0.0
@@ -78,8 +78,9 @@ def test_image_series_widget_data_3d():
 
 
 def test_image_series_widget_external_file_tif(create_tif_files, movie_no_frames):
-    image_series = ImageSeries(name="Image Series", external_file=create_tif_files,
-                               rate=1.0, unit='n.a.')
+    image_series = ImageSeries(
+        name="Image Series", external_file=create_tif_files, rate=1.0, unit="n.a."
+    )
     wd = ImageSeriesWidget(image_series)
     assert isinstance(wd.figure, go.FigureWidget)
     assert wd.time_slider.max == movie_no_frames[0]
@@ -89,9 +90,11 @@ def test_image_series_widget_external_file_tif(create_tif_files, movie_no_frames
     assert wd.time_slider.min == 0.0
     assert wd.time_slider.max == movie_no_frames[1]
 
+
 def test_image_series_widget_external_file_single(create_tif_files, movie_no_frames):
-    image_series = ImageSeries(name="Image Series", external_file=create_tif_files[:1],
-                               rate=1.0, unit='n.a.')
+    image_series = ImageSeries(
+        name="Image Series", external_file=create_tif_files[:1], rate=1.0, unit="n.a."
+    )
     wd = ImageSeriesWidget(image_series)
     assert isinstance(wd.figure, go.FigureWidget)
     assert wd.time_slider.max == movie_no_frames[0]
@@ -100,8 +103,9 @@ def test_image_series_widget_external_file_single(create_tif_files, movie_no_fra
 
 
 def test_image_series_widget_external_file_video(create_movie_files, movie_no_frames):
-    image_series = ImageSeries(name="Image Series", external_file=create_movie_files,
-                               rate=1.0, unit='n.a.')
+    image_series = ImageSeries(
+        name="Image Series", external_file=create_movie_files, rate=1.0, unit="n.a."
+    )
     wd = ImageSeriesWidget(image_series)
     assert isinstance(wd.figure, go.FigureWidget)
     assert wd.time_slider.max == movie_no_frames[0]

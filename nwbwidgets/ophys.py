@@ -27,8 +27,10 @@ color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
 class TwoPhotonSeriesWidget(ImageSeriesWidget):
     """Widget showing Image stack recorded over time from 2-photon microscope."""
 
-    def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict = None):
-        super().__init__(indexed_timeseries,neurodata_vis_spec)
+    def __init__(
+        self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict = None
+    ):
+        super().__init__(indexed_timeseries, neurodata_vis_spec)
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
@@ -155,13 +157,13 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                     data.showlegend = False
 
     def show_plane_segmentation_2d(
-            self,
-            color_wheel: list = color_wheel,
-            color_by: str = None,
-            threshold: float = 0.01,
-            fig: go.Figure = None,
-            width: int = 600,
-            ref_image=None,
+        self,
+        color_wheel: list = color_wheel,
+        color_by: str = None,
+        threshold: float = 0.01,
+        fig: go.Figure = None,
+        width: int = 600,
+        ref_image=None,
     ):
         """
 
@@ -292,6 +294,6 @@ def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
 
 class RoiResponseSeriesWidget(BaseGroupedTraceWidget):
     def __init__(
-            self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs
+        self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs
     ):
         super().__init__(roi_response_series, "rois", **kwargs)
