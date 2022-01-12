@@ -32,7 +32,7 @@ class ImageSeriesWidget(widgets.VBox):
         super().__init__()
         self.imageseries = imageseries
         self.figure = None
-        self.time_slider = foreign_time_slider
+        self.foreign_time_slider = foreign_time_slider
         self.external_file = None
         self.file_selector = None
 
@@ -41,13 +41,13 @@ class ImageSeriesWidget(widgets.VBox):
                     imageseries.starting_time
                     + get_frame_count(imageseries.external_file[0])/imageseries.rate
             )
-            if self.time_slider is None:
-                self.time_slider = widgets.FloatSlider(
-                    min=imageseries.starting_time,
-                    max=tmax,
-                    orientation="horizontal",
-                    description="time(s)",
-                )
+            self.time_slider = widgets.FloatSlider(
+                min=imageseries.starting_time,
+                max=tmax,
+                orientation="horizontal",
+                description="time(s)",
+                continuous_update=False,
+            )
             self.external_file = imageseries.external_file[0]
             # set file selector:
             if len(imageseries.external_file) > 1:
@@ -64,14 +64,14 @@ class ImageSeriesWidget(widgets.VBox):
         else:
             tmin = get_timeseries_mint(imageseries)
             tmax = get_timeseries_maxt(imageseries)
-            if self.time_slider is None:
-                self.time_slider = widgets.FloatSlider(
-                    value=tmin,
-                    min=tmin,
-                    max=tmax,
-                    orientation="horizontal",
-                    description="time(s)",
-                )
+            self.time_slider = widgets.FloatSlider(
+                value=tmin,
+                min=tmin,
+                max=tmax,
+                orientation="horizontal",
+                description="time(s)",
+                continuous_update=False,
+            )
             if len(imageseries.data.shape) == 3:
                 self._set_figure_2d(0)
                 self.time_slider.observe(self._time_slider_callback_2d, names="value")
@@ -82,6 +82,9 @@ class ImageSeriesWidget(widgets.VBox):
             else:
                 raise NotImplementedError
             self.children = self.get_children()
+        if self.foreign_time_slider is not None:
+            _ = widgets.jslink((self.foreign_time_slider, "value"),
+                               (self.time_slider, "value"))
 
     def _time_slider_callback_2d(self, change):
         frame_number = self.time_to_index(change["new"])
