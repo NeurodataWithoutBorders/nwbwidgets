@@ -4,6 +4,7 @@ from typing import Union
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
+import plotly.express as px
 import pynwb
 from ipywidgets import widgets, Layout
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
@@ -152,12 +153,14 @@ class ImageSeriesWidget(widgets.VBox):
     def _set_figure_from_frame(self, frame_number, ext_file_path):
         data = get_frame(ext_file_path, frame_number)
         if self.figure is None:
-            self.figure = go.FigureWidget(data=dict(type="image", z=data))
+            img = px.imshow(data, binary_string=True)
+            self.figure = go.FigureWidget(img)
         else:
             self._add_fig_trace(data, frame_number)
 
     def _add_fig_trace(self, img_data: np.ndarray, index):
-        self.figure.data[0]["z"] = img_data
+        img = px.imshow(img_data, binary_string=True)
+        self.figure.for_each_trace(lambda trace: trace.update(img.data[0]))
         self.figure.layout.title = f"Frame no: {index}"
 
     def time_to_index(self, time, starting_time=None):
