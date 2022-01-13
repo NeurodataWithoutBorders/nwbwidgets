@@ -37,7 +37,7 @@ class ImageSeriesWidget(widgets.VBox):
         self.external_file = imageseries.external_file
         self.file_selector = None
         self.video_start_times = []
-        self.fps = None
+        self.fps = self.get_fps()
 
         if imageseries.external_file is not None:
             self.video_start_times = self._get_video_start_times()
@@ -49,7 +49,6 @@ class ImageSeriesWidget(widgets.VBox):
                 continuous_update=False,
             )
             self.external_file = imageseries.external_file[0]
-            self.fps = get_fps(self.external_file)
             # set file selector:
             if len(imageseries.external_file) > 1:
                 self.file_selector = widgets.Dropdown(options=imageseries.external_file)
@@ -63,10 +62,6 @@ class ImageSeriesWidget(widgets.VBox):
         else:
             tmin = get_timeseries_mint(imageseries)
             tmax = get_timeseries_maxt(imageseries)
-            if imageseries.rate is not None:
-                self.fps = imageseries.rate
-            else:
-                self.fps = imageseries.timestamps[1]-imageseries.timestamps[0]
             self.time_slider = widgets.FloatSlider(
                 value=tmin,
                 min=tmin,
@@ -76,7 +71,7 @@ class ImageSeriesWidget(widgets.VBox):
                 continuous_update=False,
             )
             if len(imageseries.data.shape) == 3:
-                self._set_figure_2d(0)
+                self._set_figure_from_frame(0)
                 self.time_slider.observe(self._time_slider_callback_2d, names="value")
 
             elif len(imageseries.data.shape) == 4:
@@ -101,9 +96,7 @@ class ImageSeriesWidget(widgets.VBox):
             start_times=[self.imageseries.starting_time]
             for file in tqdm(self.imageseries.external_file,
                              desc="retrieving video start times"):
-                fps = get_fps(file)
-                fps = fps if fps is not None else self.imageseries.rate
-                file_time_duration = get_frame_count(file) / fps
+                file_time_duration = get_frame_count(file) / self.fps
                 start_times.append(file_time_duration)
             return np.cumsum(start_times)
 
@@ -122,7 +115,6 @@ class ImageSeriesWidget(widgets.VBox):
     def _update_time_slider(self, value):
         path_ext_file = value["new"]
         self.external_file = path_ext_file
-        self.fps = get_fps(self.external_file)
         idx = self.imageseries.external_file.index(self.external_file)
         tmin = self.video_start_times[idx]
         tmax = self.video_start_times[idx+1]
@@ -157,6 +149,13 @@ class ImageSeriesWidget(widgets.VBox):
             img = px.imshow(data, binary_string=True)
             self.figure.for_each_trace(lambda trace: trace.update(img.data[0]))
             self.figure.layout.title = f"Frame no: {frame_number}"
+
+    def get_fps(self):
+        if self.imageseries.rate is None:
+            fps = self.imageseries.timestamps[1]-self.imageseries.timestamps[0]
+        else:
+            fps = self.imageseries.rate
+        return fps
 
     def time_to_index(self, time, starting_time=None):
         starting_time = (
