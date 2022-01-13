@@ -89,8 +89,7 @@ class ImageSeriesWidget(widgets.VBox):
             )
 
     def _time_slider_callback_2d(self, change):
-        frame_number = self.time_to_index(change["new"])
-        self._set_figure_2d(frame_number)
+        self._set_figure_from_time(change["new"][0])
 
     def _time_slider_callback_3d(self, change):
         frame_number = self.time_to_index(change["new"])
@@ -99,7 +98,7 @@ class ImageSeriesWidget(widgets.VBox):
     def _time_slider_callback_external(self, change):
         time = change["new"]
         starting_time = change["owner"].min
-        self._set_figure_external(time, self.external_file, starting_time)
+        self._set_figure_from_time(time, starting_time, self.external_file)
 
     def _update_time_slider(self, value):
         path_ext_file = value["new"]
@@ -143,29 +142,19 @@ class ImageSeriesWidget(widgets.VBox):
         with output:
             p3.show()
 
-    def _set_figure_2d(self, frame_number):
-        data = self.imageseries.data[frame_number].T
-        if self.figure is None:
-            self.figure = go.FigureWidget(data=dict(type="image", z=data))
-        else:
-            self._add_fig_trace(data, frame_number)
-
-    def _set_figure_external(self, time, ext_file_path, starting_time):
+    def _set_figure_from_time(self, time, starting_time, ext_file_path=None):
         frame_number = self.time_to_index(time, starting_time)
         self._set_figure_from_frame(frame_number, ext_file_path)
 
-    def _set_figure_from_frame(self, frame_number, ext_file_path):
-        data = get_frame(ext_file_path, frame_number)
+    def _set_figure_from_frame(self, frame_number, ext_file_path=None):
+        data = self.get_frame(frame_number, ext_file_path)
         if self.figure is None:
             img = px.imshow(data, binary_string=True)
             self.figure = go.FigureWidget(img)
         else:
-            self._add_fig_trace(data, frame_number)
-
-    def _add_fig_trace(self, img_data: np.ndarray, index):
-        img = px.imshow(img_data, binary_string=True)
-        self.figure.for_each_trace(lambda trace: trace.update(img.data[0]))
-        self.figure.layout.title = f"Frame no: {index}"
+            img = px.imshow(data, binary_string=True)
+            self.figure.for_each_trace(lambda trace: trace.update(img.data[0]))
+            self.figure.layout.title = f"Frame no: {frame_number}"
 
     def time_to_index(self, time, starting_time=None):
         starting_time = (
@@ -182,9 +171,9 @@ class ImageSeriesWidget(widgets.VBox):
         set_widgets = [wid for wid in widgets if wid is not None]
         return [self.figure, self.time_slider, *set_widgets]
 
-    def get_frame(self, idx):
-        if self.imageseries.external_file is not None:
-            return get_frame(self.imageseries.external_file[0])
+    def get_frame(self, idx, ext_file_path=None):
+        if ext_file_path is not None:
+            return get_frame(ext_file_path)
         else:
             return self.imageseries.data[idx].T
 
