@@ -38,12 +38,14 @@ class ImageSeriesWidget(widgets.VBox):
         self.file_selector = None
         self.video_start_times = []
         self.fps = self.get_fps()
+        self.external_files = []
 
         if imageseries.external_file is not None:
+            self.external_files = [i for i in self.imageseries.external_file]
             self.video_start_times = self._get_video_start_times()
             self.time_slider = widgets.FloatSlider(
                 min=self.video_start_times[0],
-                max=self.video_start_times[1],
+                max=self.video_start_times[1]-1/self.fps,
                 orientation="horizontal",
                 description="time(s)",
                 continuous_update=False,
@@ -115,11 +117,17 @@ class ImageSeriesWidget(widgets.VBox):
     def _update_time_slider(self, value):
         path_ext_file = value["new"]
         self.external_file = path_ext_file
-        idx = self.imageseries.external_file.index(self.external_file)
+        idx = self.external_files.index(self.external_file)
         tmin = self.video_start_times[idx]
         tmax = self.video_start_times[idx+1]
-        self.time_slider.min = tmin
-        self.time_slider.max = tmax
+        tmax_ = tmax - 1/self.fps
+        tmax = tmax_ if tmax_>tmin else tmax
+        if tmax < self.time_slider.min: # order of setting min/max depends
+            self.time_slider.min = tmin
+            self.time_slider.max = tmax
+        else:
+            self.time_slider.max = tmax
+            self.time_slider.min = tmin
         self._set_figure_from_frame(0, self.external_file)
 
     def _set_figure_3d(self, frame_number):
