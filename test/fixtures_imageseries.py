@@ -6,7 +6,7 @@ from tifffile import imwrite
 
 @pytest.fixture(scope="session")
 def movie_fps():
-    return 10
+    return 10.0
 
 
 @pytest.fixture(scope="session")

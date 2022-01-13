@@ -91,7 +91,7 @@ def test_image_series_widget_external_file_tif(create_tif_files, movie_no_frames
     assert wd.time_slider.max == movie_no_frames[1]
 
 
-def test_image_series_widget_external_file_single(create_tif_files, movie_no_frames):
+def test_image_series_widget_external_file_single(create_tif_files, movie_no_frames, movie_fps):
     image_series = ImageSeries(
         name="Image Series", external_file=create_tif_files[:1], rate=1.0, unit="n.a."
     )
@@ -102,15 +102,15 @@ def test_image_series_widget_external_file_single(create_tif_files, movie_no_fra
     assert wd.file_selector is None
 
 
-def test_image_series_widget_external_file_video(create_movie_files, movie_no_frames):
+def test_image_series_widget_external_file_video(create_movie_files, movie_no_frames, movie_fps):
     image_series = ImageSeries(
-        name="Image Series", external_file=create_movie_files, rate=1.0, unit="n.a."
+        name="Image Series", external_file=create_movie_files, unit="n.a.", rate=movie_fps
     )
     wd = ImageSeriesWidget(image_series)
     assert isinstance(wd.figure, go.FigureWidget)
-    assert wd.time_slider.max == movie_no_frames[0]
+    assert wd.time_slider.max == movie_no_frames[0]/movie_fps
     assert wd.time_slider.min == 0.0
     assert wd.file_selector.value == create_movie_files[0]
     wd.file_selector.value = create_movie_files[1]
-    assert wd.time_slider.min == 0.0
-    assert wd.time_slider.max == movie_no_frames[1]
+    assert wd.time_slider.min == movie_no_frames[0]/movie_fps
+    assert wd.time_slider.max == sum([movie_no_frames[i]/movie_fps for i in range(len(movie_no_frames))])
