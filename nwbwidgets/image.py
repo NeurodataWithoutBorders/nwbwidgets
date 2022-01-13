@@ -34,9 +34,10 @@ class ImageSeriesWidget(widgets.VBox):
         self.imageseries = imageseries
         self.figure = None
         self.time_slider = None
-        self.external_file = None
+        self.external_file = imageseries.external_file
         self.file_selector = None
         self.video_start_times = []
+        self.fps = None
 
         if imageseries.external_file is not None:
             self.video_start_times = self._get_video_start_times()
@@ -48,6 +49,7 @@ class ImageSeriesWidget(widgets.VBox):
                 continuous_update=False,
             )
             self.external_file = imageseries.external_file[0]
+            self.fps = get_fps(self.external_file)
             # set file selector:
             if len(imageseries.external_file) > 1:
                 self.file_selector = widgets.Dropdown(options=imageseries.external_file)
@@ -61,6 +63,10 @@ class ImageSeriesWidget(widgets.VBox):
         else:
             tmin = get_timeseries_mint(imageseries)
             tmax = get_timeseries_maxt(imageseries)
+            if imageseries.rate is not None:
+                self.fps = imageseries.rate
+            else:
+                self.fps = imageseries.timestamps[1]-imageseries.timestamps[0]
             self.time_slider = widgets.FloatSlider(
                 value=tmin,
                 min=tmin,
@@ -116,6 +122,7 @@ class ImageSeriesWidget(widgets.VBox):
     def _update_time_slider(self, value):
         path_ext_file = value["new"]
         self.external_file = path_ext_file
+        self.fps = get_fps(self.external_file)
         idx = self.imageseries.external_file.index(self.external_file)
         tmin = self.video_start_times[idx]
         tmax = self.video_start_times[idx+1]
@@ -157,8 +164,8 @@ class ImageSeriesWidget(widgets.VBox):
             if starting_time is not None
             else self.imageseries.starting_time
         )
-        if self.imageseries.external_file and self.imageseries.rate:
-            return int((time - starting_time) * self.imageseries.rate)
+        if self.imageseries.external_file:
+            return int((time - starting_time) * self.fps)
         else:
             return timeseries_time_to_ind(self.imageseries, time)
 
@@ -168,7 +175,7 @@ class ImageSeriesWidget(widgets.VBox):
 
     def get_frame(self, idx, ext_file_path=None):
         if ext_file_path is not None:
-            return get_frame(ext_file_path)
+            return get_frame(ext_file_path, idx)
         else:
             return self.imageseries.data[idx].T
 
