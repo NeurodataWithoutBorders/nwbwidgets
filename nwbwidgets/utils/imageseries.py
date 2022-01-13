@@ -87,6 +87,15 @@ def get_frame(external_path_file: PathType, index):
         raise NotImplementedError
 
 
+def get_fps(external_path_file: PathType):
+    external_path_file = Path(external_path_file)
+    if external_path_file.suffix in [".tif", ".tiff"]:
+        return get_fps_tif(external_path_file)
+    elif external_path_file.suffix in VIDEO_EXTENSIONS:
+        return get_fps_video(external_path_file)
+    else:
+        raise NotImplementedError
+
 def get_frame_tif(external_path_file: PathType, index):
     external_path_file = Path(external_path_file)
     assert external_path_file.suffix in [".tif", ".tiff"], f"supply a tif file"
@@ -109,6 +118,10 @@ def get_frame_count_tif(external_path_file: PathType):
     assert HAVE_TIF, "pip install tifffile"
     tif = TiffFile(external_path_file)
     return len(tif.pages)
+
+
+def get_fps_tif(external_path_file: PathType):
+    return
 
 
 def get_frame_video(external_path_file: PathType, index):
@@ -159,3 +172,18 @@ def get_frame_shape_video(external_path_file: PathType):
         return frame.shape
     else:
         raise Exception("could not open video file")
+
+
+def get_fps_video(external_path_file: PathType):
+    external_path_file = Path(external_path_file)
+    assert (
+            external_path_file.suffix in VIDEO_EXTENSIONS
+    ), f"supply any of {VIDEO_EXTENSIONS} files"
+    assert HAVE_OPENCV, "pip install opencv-python"
+    if int(cv2.__version__.split(".")[0]) < 3:
+        fps_arg = cv2.cv.CV_CAP_PROP_FPS
+    else:
+        fps_arg = cv2.CAP_PROP_FPS
+    with VideoCaptureContext(str(external_path_file)) as cap:
+        fps = cap.vc.get(fps_arg)
+    return fps

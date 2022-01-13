@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Union
-
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
@@ -11,13 +11,13 @@ from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
 
 from .base import fig2widget
 from .utils.cmaps import linear_transfer_function
-from .utils.imageseries import get_frame_count, get_frame
+from .utils.imageseries import get_frame_count, get_frame, get_fps
 from .utils.timeseries import (
     get_timeseries_maxt,
     get_timeseries_mint,
     timeseries_time_to_ind,
 )
-
+from .controllers.time_window_controllers import StartAndDurationController
 PathType = Union[str, Path]
 
 
@@ -27,24 +27,22 @@ class ImageSeriesWidget(widgets.VBox):
     def __init__(
         self,
         imageseries: ImageSeries,
-        foreign_time_slider: widgets.FloatSlider = None,
+        foreign_start_duration_controller: StartAndDurationController = None,
         neurodata_vis_spec: dict = None,
     ):
         super().__init__()
         self.imageseries = imageseries
         self.figure = None
-        self.foreign_time_slider = foreign_time_slider
+        self.time_slider = None
         self.external_file = None
         self.file_selector = None
+        self.video_start_times = []
 
         if imageseries.external_file is not None:
-            tmax = (
-                imageseries.starting_time
-                + get_frame_count(imageseries.external_file[0]) / imageseries.rate
-            )
+            self.video_start_times = self._get_video_start_times()
             self.time_slider = widgets.FloatSlider(
-                min=imageseries.starting_time,
-                max=tmax,
+                min=self.video_start_times[0],
+                max=self.video_start_times[1],
                 orientation="horizontal",
                 description="time(s)",
                 continuous_update=False,
@@ -57,11 +55,9 @@ class ImageSeriesWidget(widgets.VBox):
                 self.file_selector.observe(self._update_time_slider, names="value")
 
             self.time_slider.observe(self._time_slider_callback_external, names="value")
-            self._set_figure_external(
-                imageseries.starting_time, self.external_file, imageseries.starting_time
+            self._set_figure_from_time(
+                imageseries.starting_time, imageseries.starting_time, self.external_file,
             )
-            # set children:
-            self.children = self.get_children(self.file_selector)
         else:
             tmin = get_timeseries_mint(imageseries)
             tmax = get_timeseries_maxt(imageseries)
@@ -82,17 +78,34 @@ class ImageSeriesWidget(widgets.VBox):
                 self.time_slider.observe(self._time_slider_callback_3d, names="value")
             else:
                 raise NotImplementedError
-            self.children = self.get_children()
-        if self.foreign_time_slider is not None:
-            _ = widgets.jslink(
-                (self.foreign_time_slider, "value"), (self.time_slider, "value")
-            )
+
+        # set visible time slider:
+        if foreign_start_duration_controller is None:
+            self.visible_time_slider = self.time_slider
+        else:
+            self.visible_time_slider = foreign_start_duration_controller
+            # link the value[0] to time_slider value
+            def _link_time_slider(change):
+                self.time_slider.value = change["new"][0]
+            self.visible_time_slider.observe(_link_time_slider, names="value")
+        self.children = self.get_children(self.file_selector)
+
+    def _get_video_start_times(self):
+        if self.external_file is not None:
+            start_times=[self.imageseries.starting_time]
+            for file in tqdm(self.imageseries.external_file,
+                             desc="retrieving video start times"):
+                fps = get_fps(file)
+                fps = fps if fps is not None else self.imageseries.rate
+                file_time_duration = get_frame_count(file) / fps
+                start_times.append(file_time_duration)
+            return np.cumsum(start_times)
 
     def _time_slider_callback_2d(self, change):
         self._set_figure_from_time(change["new"][0])
 
     def _time_slider_callback_3d(self, change):
-        frame_number = self.time_to_index(change["new"])
+        frame_number = self.time_to_index(change["new"][0])
         self._set_figure_3d(frame_number)
 
     def _time_slider_callback_external(self, change):
@@ -102,30 +115,12 @@ class ImageSeriesWidget(widgets.VBox):
 
     def _update_time_slider(self, value):
         path_ext_file = value["new"]
-        # Read first frame
         self.external_file = path_ext_file
-        max_frame_count = get_frame_count(path_ext_file)
-        # if first video file selected, keep time slider else make frame slider out of time slider:
-        if self.file_selector.options.index(path_ext_file) == 0:
-            tmax = (
-                self.imageseries.starting_time
-                + get_frame_count(path_ext_file) / self.imageseries.rate
-            )
-            self.time_slider.max = tmax
-            self.time_slider.min = self.imageseries.starting_time
-            self.time_slider.description = "time (s)"
-            self.time_slider.observe(self._time_slider_callback_external, names="value")
-        else:
-            # set time slider to span the frames instead of time:
-            self.time_slider.max = max_frame_count
-            self.time_slider.min = 0
-            self.time_slider.description = "frame no"
-            self.time_slider.observe(
-                lambda change: self._set_figure_from_frame(
-                    change["new"], path_ext_file
-                ),
-                names="value",
-            )
+        idx = self.imageseries.external_file.index(self.external_file)
+        tmin = self.video_start_times[idx]
+        tmax = self.video_start_times[idx+1]
+        self.time_slider.min = tmin
+        self.time_slider.max = tmax
         self._set_figure_from_frame(0, self.external_file)
 
     def _set_figure_3d(self, frame_number):
@@ -169,7 +164,7 @@ class ImageSeriesWidget(widgets.VBox):
 
     def get_children(self, *widgets):
         set_widgets = [wid for wid in widgets if wid is not None]
-        return [self.figure, self.time_slider, *set_widgets]
+        return [self.figure, self.visible_time_slider, *set_widgets]
 
     def get_frame(self, idx, ext_file_path=None):
         if ext_file_path is not None:
