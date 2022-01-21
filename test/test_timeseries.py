@@ -15,6 +15,7 @@ from nwbwidgets.timeseries import (
     SeparateTracesPlotlyWidget,
     get_timeseries_tt,
     show_indexed_timeseries_plotly,
+    show_timeseries_mpl,
 )
 from pynwb import TimeSeries
 from pynwb.epoch import TimeIntervals
@@ -31,6 +32,20 @@ def test_timeseries_widget():
     )
 
     BaseGroupedTraceWidget(ts)
+
+
+def test_show_timeseries_mpl():
+
+    ts = TimeSeries(
+        name="name",
+        description="no description",
+        data=np.array([[1.0, 2.0, 3.0, 4.0], [11.0, 12.0, 13.0, 14.0]]),
+        rate=100.0,
+        unit="m",
+    )
+
+    show_timeseries_mpl(ts)
+    show_timeseries_mpl(ts, time_window=(0.0, 1.0))
 
 
 class TestTracesPlotlyWidget(unittest.TestCase):
