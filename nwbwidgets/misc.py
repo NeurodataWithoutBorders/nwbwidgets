@@ -12,6 +12,7 @@ from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
 from .analysis.spikes import compute_smoothed_firing_rate
+from .base import TimeIntervalsSelector
 from .controllers import (
     make_trial_event_controller,
     GroupAndSortController,
@@ -283,9 +284,6 @@ class PSTHWidget(widgets.VBox):
 
         if trials is None:
             self.trials = self.get_trials()
-            if self.trials is None:
-                self.children = [widgets.HTML("No trials present")]
-                return
         else:
             self.trials = trials
 
@@ -534,6 +532,16 @@ class PSTHWidget(widgets.VBox):
         fig.suptitle(f"Unit {self.unit_ids[index]}", fontsize=15)
         fig.subplots_adjust(wspace=0.3)
         return fig
+
+class IntervalsPSTHWidget(TimeIntervalsSelector):
+    InnerWidget = PSTHWidget
+
+def route_psth(units, **kwargs):
+    trials = units.get_ancestor("NWBFile").trials
+    if trials is None:
+        return IntervalsPSTHWidget(units, **kwargs)
+    else:
+        return PSTHWidget(units, **kwargs)
 
 
 def show_histogram(

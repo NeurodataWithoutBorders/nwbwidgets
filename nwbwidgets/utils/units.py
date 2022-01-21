@@ -116,7 +116,7 @@ def align_by_time_intervals(
     index,
     intervals,
     start_label="start_time",
-    stop_label="stop_time",
+    stop_label=None,
     start=0.0,
     end=0.0,
     rows_select=(),
