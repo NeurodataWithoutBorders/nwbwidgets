@@ -272,7 +272,7 @@ class PSTHWidget(widgets.VBox):
     def __init__(
             self,
             input_data: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            intervals: pynwb.epoch.TimeIntervals = None,
             unit_index=0,
             unit_controller=None,
             ntt=1000,
@@ -282,10 +282,10 @@ class PSTHWidget(widgets.VBox):
 
         super().__init__()
 
-        if trials is None:
+        if intervals is None:
             self.trials = self.get_trials()
         else:
-            self.trials = trials
+            self.trials = intervals
 
         if unit_controller is None:
             self.unit_ids = self.units.id.data[:]
@@ -512,6 +512,7 @@ class PSTHWidget(widgets.VBox):
                 )
 
             ax1.set_xlim([start, end])
+            ax1.set_xticks([start, end])
             if i_s == 0:
                 ax1.set_ylabel("firing rate (Hz)", fontsize=12)
             ax1.set_xlabel("time (s)", fontsize=12)
@@ -1175,7 +1176,7 @@ class RasterGridWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            intervals: pynwb.epoch.TimeIntervals = None,
             unit_index=0,
             units_trials_controller=None,
     ):
@@ -1185,7 +1186,7 @@ class RasterGridWidget(widgets.VBox):
         if not units_trials_controller:
             units_trials_controller = UnitsAndTrialsControllerWidget(
                 units=units,
-                trials=trials,
+                trials=intervals,
                 unit_index=unit_index
             )
             self.children = [units_trials_controller]
@@ -1203,7 +1204,7 @@ class TuningCurveWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            intervals: pynwb.epoch.TimeIntervals = None,
             unit_index=0,
             units_trials_controller=None,
     ):
@@ -1214,7 +1215,7 @@ class TuningCurveWidget(widgets.VBox):
         if not units_trials_controller:
             units_trials_controller = UnitsAndTrialsControllerWidget(
                 units=units,
-                trials=trials,
+                trials=intervals,
                 unit_index=unit_index
             )
             self.children = [units_trials_controller]
@@ -1247,7 +1248,7 @@ class TuningCurveExtendedWidget(widgets.VBox):
         # Tuning curve widget
         self.tuning_curve = TuningCurveWidget(
             units=units,
-            trials=trials,
+            intervals=trials,
             unit_index=unit_index,
             units_trials_controller=self.units_trials_controller,
         )
@@ -1255,7 +1256,7 @@ class TuningCurveExtendedWidget(widgets.VBox):
         # Raster grid widget
         self.raster_grid = RasterGridWidget(
             units=units,
-            trials=trials,
+            intervals=trials,
             unit_index=unit_index,
             units_trials_controller=self.units_trials_controller,
         )

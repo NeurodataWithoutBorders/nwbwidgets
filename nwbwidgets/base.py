@@ -389,25 +389,25 @@ class TimeIntervalsSelector(widgets.VBox):
         self.kwargs = kwargs
         self.intervals_tables = input_data.get_ancestor("NWBFile").intervals
         self.stimulus_type_dd = widgets.Dropdown(
-            options=list(self.intervals_tables.keys()), 
-            description="stimulus type"
+            options=list(self.intervals_tables),
+            description="intervals table"
         )
         self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
 
-        trials = list(self.intervals_tables.values())[0]
+        intervals = list(self.intervals_tables.values())[0]
         inner_widget = self.InnerWidget(
-            input_data=self.input_data,
-            trials=trials, 
+            self.input_data,
+            intervals=intervals,
             **kwargs
         )
         self.children = [self.stimulus_type_dd, inner_widget]
 
     def stimulus_type_dd_callback(self, change):
         self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
-        trials = self.intervals_tables[self.stimulus_type_dd.value]
+        intervals = self.intervals_tables[self.stimulus_type_dd.value]
         inner_widget = self.InnerWidget(
-            input_data=self.input_data, 
-            trials=trials, 
+            self.input_data,
+            intervals=intervals,
             **self.kwargs
         )
         self.children = [self.stimulus_type_dd, inner_widget]
