@@ -314,17 +314,19 @@ class PSTHWidget(widgets.VBox):
                 self.intervals_dropdown.observe(self.intervals_selector_callback)
                 self.intervals = list(all_intervals_tables.values())[0]
         else:
+            nwbfile = self.units.get_ancestor("NWBFile")
+            self.intervals_dropdown = None
             if isinstance(intervals, str):
-                if intervals not in self.units.get_ancestor("NWBFile").intervals:
+                if intervals == "trials":
+                    self.intervals = nwbfile.trials
+                elif intervals not in nwbfile.intervals:
                     raise ValueError("'{intervals}' not in NWBFile.intervals")
-                self.intervals = self.units.get_ancestor("NWBFile").intervals[intervals]
-                self.intervals_dropdown = None
+                    self.intervals = nwbfile.intervals[intervals]
             elif isinstance(intervals, widgets.Dropdown):
                 self.intervals_dropdown = intervals
-                self.intervals = self.units.get_ancestor("NWBFile").intervals[self.intervals_dropdown.value]
+                self.intervals = nwbfile.intervals[self.intervals_dropdown.value]
             elif isinstance(intervals, pynwb.epoch.TimeIntervals):
                 self.intervals = intervals
-                self.intervals_dropdown = None
             else:
                 raise ValueError("intervals is not an allowable type")
 
