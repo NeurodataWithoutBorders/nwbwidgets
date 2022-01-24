@@ -105,6 +105,21 @@ class ShowPSTHTestCase(unittest.TestCase):
         widget = PSTHWidget(self.nwbfile.units)
         assert widget.intervals_dropdown is not None
 
+    def test_input_intervals_trials_name(self):
+
+        widget = PSTHWidget(self.nwbfile.units, intervals="trials")
+        assert widget.intervals.name == "trials"
+        assert widget.intervals_dropdown is None
+
+    def test_input_intervals_object(self):
+
+        time_intervals = TimeIntervals("custom_intervals_table")
+        time_intervals.add_row(start_time=1., stop_time=2.)
+        time_intervals.add_row(start_time=2.5, stop_time=3.5)
+        widget = PSTHWidget(self.nwbfile.units, intervals=time_intervals)
+        assert widget.intervals.name == "custom_intervals_table"
+        assert widget.intervals_dropdown is None
+
 
     def test_raster_widget(self):
         assert isinstance(RasterWidget(self.nwbfile.units), widgets.Widget)
