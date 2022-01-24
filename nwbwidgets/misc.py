@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pynwb
 import scipy
-from ipywidgets import widgets, fixed, FloatProgress, Layout
+from ipywidgets import widgets, fixed, FloatProgress, Layout, HTML
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
@@ -297,11 +297,14 @@ class PSTHWidget(widgets.VBox):
 
         if intervals is None:
             all_intervals_tables = self.units.get_ancestor("NWBFile").intervals
+            trials = self.units.get_ancestor("NWBFile").trials
+            if trials is not None:
+                all_intervals_tables.add(trials)
             if len(all_intervals_tables) == 0:
-                self.children = [HTMLWidget("could not find intervals")]
+                self.children = [HTML("could not find intervals")]
                 return
             elif len(all_intervals_tables) == 1:
-                self.intervals = next(all_intervals_tables.values())
+                self.intervals = list(all_intervals_tables.values())[0]
                 self.intervals_dropdown = None
             else:
                 self.intervals_dropdown = widgets.Dropdown(
@@ -309,17 +312,21 @@ class PSTHWidget(widgets.VBox):
                     description="intervals",
                 )
                 self.intervals_dropdown.observe(self.intervals_selector_callback)
-                self.intervals = list(all_intervals_tables.values())[0]
+                self.intervals = next(all_intervals_tables.values())
         else:
             if isinstance(intervals, str):
+                if intervals not in self.units.get_ancestor("NWBFile").intervals:
+                    raise ValueError("'{intervals}' not in NWBFile.intervals")
                 self.intervals = self.units.get_ancestor("NWBFile").intervals[intervals]
                 self.intervals_dropdown = None
             elif isinstance(intervals, widgets.Dropdown):
                 self.intervals_dropdown = intervals
                 self.intervals = self.units.get_ancestor("NWBFile").intervals[self.intervals_dropdown.value]
-            else:
+            elif isinstance(intervals, pynwb.epoch.TimeIntervals):
                 self.intervals = intervals
                 self.intervals_dropdown = None
+            else:
+                raise ValueError("intervals is not an allowable type")
 
         if unit_controller is None:
             self.unit_ids = self.units.id.data[:]
