@@ -18,7 +18,7 @@ from nwbwidgets.misc import (
 )
 from pynwb import NWBFile
 from pynwb.misc import DecompositionSeries, AnnotationSeries
-
+from pynwb.epoch import TimeIntervals
 
 def test_show_psth():
     data = np.random.random([6, 50])
@@ -96,7 +96,16 @@ class ShowPSTHTestCase(unittest.TestCase):
         start_labels = ('start_time', 'stop_time')
         fig = psth_widget.update(index=0, start_labels=start_labels)
         assert len(fig.axes) == 2 * len(start_labels)
-        
+
+    def test_multiple_intervals(self):
+        time_intervals = TimeIntervals("custom_intervals_table")
+        time_intervals.add_row(start_time=1., stop_time=2.)
+        time_intervals.add_row(start_time=2.5, stop_time=3.5)
+        self.nwbfile.intervals.add(time_intervals)
+        widget = PSTHWidget(self.nwbfile.units)
+        assert widget.intervals_dropdown is not None
+
+
     def test_raster_widget(self):
         assert isinstance(RasterWidget(self.nwbfile.units), widgets.Widget)
 

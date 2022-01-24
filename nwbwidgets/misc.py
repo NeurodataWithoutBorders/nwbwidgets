@@ -312,7 +312,7 @@ class PSTHWidget(widgets.VBox):
                     description="intervals",
                 )
                 self.intervals_dropdown.observe(self.intervals_selector_callback)
-                self.intervals = next(all_intervals_tables.values())
+                self.intervals = list(all_intervals_tables.values())[0]
         else:
             if isinstance(intervals, str):
                 if intervals not in self.units.get_ancestor("NWBFile").intervals:
