@@ -12,7 +12,7 @@ from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
 from .analysis.spikes import compute_smoothed_firing_rate
-from .base import TimeIntervalsSelector
+from .base import TimeIntervalsSelectorMixin
 from .controllers import (
     make_trial_event_controller,
     GroupAndSortController,
@@ -268,7 +268,7 @@ def show_decomposition_traces(node: DecompositionSeries):
     return vbox
 
 
-class PSTHWidget(widgets.VBox):
+class PSTHWidget(widgets.VBox, TimeIntervalsSelectorMixin):
     def __init__(
         self,
         units: Units,
@@ -283,8 +283,13 @@ class PSTHWidget(widgets.VBox):
         ----------
         input_data: pynwb.Units
         intervals: str, optional
-            Name of intervals to use. If none are given and one is available, use that. If more than one are
-            available, create a dropdown
+            If a string is given, look up that table in nwb.intervals
+            If a TimeIntervals object is given, use that
+            If a Dropdown is given, use that as a selector
+            If there is no input for intervals, look at nwb.intervals
+                If nwb.intervals has 0 entries, render a placeholder
+                If nwb.intervals has 1 entry, use it
+                If nwb.intervals has more than one entry, create a dropdown of all available intervals
         unit_index: int
         unit_controller
         ntt: int
@@ -295,40 +300,7 @@ class PSTHWidget(widgets.VBox):
 
         super().__init__()
 
-        if intervals is None:
-            all_intervals_tables = self.units.get_ancestor("NWBFile").intervals
-            trials = self.units.get_ancestor("NWBFile").trials
-            if trials is not None:
-                all_intervals_tables.add(trials)
-            if len(all_intervals_tables) == 0:
-                self.children = [HTML("could not find intervals")]
-                return
-            elif len(all_intervals_tables) == 1:
-                self.intervals = list(all_intervals_tables.values())[0]
-                self.intervals_dropdown = None
-            else:
-                self.intervals_dropdown = widgets.Dropdown(
-                    options=list(all_intervals_tables),
-                    description="intervals",
-                )
-                self.intervals_dropdown.observe(self.intervals_selector_callback)
-                self.intervals = list(all_intervals_tables.values())[0]
-        else:
-            nwbfile = self.units.get_ancestor("NWBFile")
-            self.intervals_dropdown = None
-            if isinstance(intervals, str):
-                if intervals == "trials":
-                    self.intervals = nwbfile.trials
-                elif intervals not in nwbfile.intervals:
-                    raise ValueError("'{intervals}' not in NWBFile.intervals")
-                    self.intervals = nwbfile.intervals[intervals]
-            elif isinstance(intervals, widgets.Dropdown):
-                self.intervals_dropdown = intervals
-                self.intervals = nwbfile.intervals[self.intervals_dropdown.value]
-            elif isinstance(intervals, pynwb.epoch.TimeIntervals):
-                self.intervals = intervals
-            else:
-                raise ValueError("intervals is not an allowable type")
+        self.set_interval_selector(intervals, units.get_ancestor("NWBFile"))
 
         if unit_controller is None:
             self.unit_ids = self.units.id.data[:]
