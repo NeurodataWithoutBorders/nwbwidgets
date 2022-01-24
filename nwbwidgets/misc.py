@@ -270,22 +270,56 @@ def show_decomposition_traces(node: DecompositionSeries):
 
 class PSTHWidget(widgets.VBox):
     def __init__(
-            self,
-            input_data: Units,
-            intervals: pynwb.epoch.TimeIntervals = None,
-            unit_index=0,
-            unit_controller=None,
-            ntt=1000,
+        self,
+        units: Units,
+        intervals: str = None,
+        unit_index=0,
+        unit_controller=None,
+        ntt=1000,
     ):
+        """
 
-        self.units = input_data
+        Parameters
+        ----------
+        input_data: pynwb.Units
+        intervals: str, optional
+            Name of intervals to use. If none are given and one is available, use that. If more than one are
+            available, create a dropdown
+        unit_index: int
+        unit_controller
+        ntt: int
+        """
+
+        self.units = units
+        self.ntt = ntt
 
         super().__init__()
 
         if intervals is None:
-            self.trials = self.get_trials()
+            all_intervals_tables = self.units.get_ancestor("NWBFile").intervals
+            if len(all_intervals_tables) == 0:
+                self.children = [HTMLWidget("could not find intervals")]
+                return
+            elif len(all_intervals_tables) == 1:
+                self.intervals = next(all_intervals_tables.values())
+                self.intervals_dropdown = None
+            else:
+                self.intervals_dropdown = widgets.Dropdown(
+                    options=list(all_intervals_tables),
+                    description="intervals",
+                )
+                self.intervals_dropdown.observe(self.intervals_selector_callback)
+                self.intervals = list(all_intervals_tables.values())[0]
         else:
-            self.trials = intervals
+            if isinstance(intervals, str):
+                self.intervals = self.units.get_ancestor("NWBFile").intervals[intervals]
+                self.intervals_dropdown = None
+            elif isinstance(intervals, widgets.Dropdown):
+                self.intervals_dropdown = intervals
+                self.intervals = self.units.get_ancestor("NWBFile").intervals[self.intervals_dropdown.value]
+            else:
+                self.intervals = intervals
+                self.intervals_dropdown = None
 
         if unit_controller is None:
             self.unit_ids = self.units.id.data[:]
@@ -299,8 +333,16 @@ class PSTHWidget(widgets.VBox):
         else:
             self.unit_controller = unit_controller
 
+        self.refresh_intervals()
+
+    def make_group_and_sort(self, window=None, control_order=False):
+        return GroupAndSortController(
+            self.intervals, window=window, control_order=control_order
+        )
+
+    def refresh_intervals(self):
         self.trial_event_controller = make_trial_event_controller(
-            self.trials, layout=Layout(width="200px"), multiple=True
+            self.intervals, layout=Layout(width="200px"), multiple=True
         )
         self.start_ft = widgets.FloatText(
             -0.5, step=0.1, description="start (s)", layout=Layout(width="200px"),
@@ -330,7 +372,7 @@ class PSTHWidget(widgets.VBox):
         self.gas = self.make_group_and_sort(window=False, control_order=False)
 
         self.controls = dict(
-            ntt=fixed(ntt),
+            ntt=fixed(self.ntt),
             index=self.unit_controller,
             end=self.end_ft,
             start=self.start_ft,
@@ -344,7 +386,7 @@ class PSTHWidget(widgets.VBox):
 
         out_fig = interactive_output(self.update, self.controls)
 
-        self.children = [
+        children = [
             widgets.HBox(
                 [
                     widgets.VBox(
@@ -371,13 +413,16 @@ class PSTHWidget(widgets.VBox):
             out_fig,
         ]
 
-    def get_trials(self):
-        return self.units.get_ancestor("NWBFile").trials
+        if self.intervals_dropdown is not None:
+            children.insert(0, self.intervals_dropdown)
 
-    def make_group_and_sort(self, window=None, control_order=False):
-        return GroupAndSortController(
-            self.trials, window=window, control_order=control_order
-        )
+        self.children = children
+
+
+    def intervals_selector_callback(self, change):
+        self.children = [self.intervals_dropdown, widgets.HTML("Rendering...")]
+        self.intervals = self.units.get_ancestor("NWBFile").intervals[self.intervals_dropdown.value]
+        self.refresh_intervals()
 
     def update(
             self,
@@ -439,7 +484,7 @@ class PSTHWidget(widgets.VBox):
             data = align_by_time_intervals(
                 self.units,
                 index,
-                self.trials,
+                self.intervals,
                 start_label,
                 start_label,
                 start,
@@ -483,7 +528,7 @@ class PSTHWidget(widgets.VBox):
                 expanded_data = align_by_time_intervals(
                     units=self.units,
                     index=index,
-                    intervals=self.trials,
+                    intervals=self.intervals,
                     start_label=start_label,
                     stop_label=start_label,
                     start=start - sigma_in_secs * 4,
@@ -533,16 +578,6 @@ class PSTHWidget(widgets.VBox):
         fig.suptitle(f"Unit {self.unit_ids[index]}", fontsize=15)
         fig.subplots_adjust(wspace=0.3)
         return fig
-
-class IntervalsPSTHWidget(TimeIntervalsSelector):
-    InnerWidget = PSTHWidget
-
-def route_psth(units, **kwargs):
-    trials = units.get_ancestor("NWBFile").trials
-    if trials is None:
-        return IntervalsPSTHWidget(units, **kwargs)
-    else:
-        return PSTHWidget(units, **kwargs)
 
 
 def show_histogram(
