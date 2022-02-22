@@ -98,12 +98,13 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
 
     """
     data = node.data[istart:istop]
+    gain = getattr(node, "gain", 1)
     if node.conversion and np.isfinite(node.conversion):
         data = data * node.conversion
         unit = node.unit
     else:
         unit = None
-    return data, unit
+    return data * gain, unit
 
 
 def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -> int:
