@@ -83,6 +83,11 @@ default_neurodata_vis_spec = {
     h5py.Dataset: base.show_dset,
     zarr.core.Array: base.show_dset,
     Spectrum: spectrum.show_spectrum,
+    pynwb.icephys.SequentialRecordingsTable: {
+        "Summary": DynamicTableSummaryWidget,
+        "table": show_dynamic_table,
+        "I-V Analysis": icephys.IVCurveWidget
+    }
 }
 
 
