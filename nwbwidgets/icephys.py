@@ -180,11 +180,9 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
             iv_curve_x_point = min(stimulus_data)
         iv_curve_x.append(iv_curve_x_point)
         
-        if (max(response_data) - response_data[0]) > 0:
-            iv_curve_y_point = max(response_data)
-        else:
-            iv_curve_y_point = min(response_data)
-        iv_curve_y.append(iv_curve_y_point)
+        abs_response_data = np.absolute(response_data - response_data[0])
+        ind = np.argmax(abs_response_data)
+        iv_curve_y.append(response_data[ind])
 
         fig.append_trace(
             go.Scatter(
