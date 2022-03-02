@@ -161,7 +161,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
         
         response_gain = row.responses.response.timeseries.gain
         response_conversion = row.responses.response.timeseries.conversion
-        response_data = row.responses.response.timeseries.data[:] * response_gain * response_conversion
+        response_data = np.array(row.responses.response.timeseries.data[:]) * response_gain * response_conversion
         response_rate = row.responses.response.timeseries.rate
         response_x = np.arange(len(response_data)) / response_rate
 
