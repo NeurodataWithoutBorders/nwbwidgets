@@ -131,7 +131,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
     color_wheel = px.colors.qualitative.D3
 
     stimulus_type = nwbfile.icephys_sequential_recordings[sequence_id]["stimulus_type"].values[0]
-    curve_type = "I-V curve"
+    curve_type = "Stimulus-Response curve"
 
     simultaneous_ids = nwbfile.icephys_sequential_recordings[sequence_id]["simultaneous_recordings"].values[0]
     recordings_ids = np.array([])
