@@ -86,7 +86,7 @@ default_neurodata_vis_spec = {
     pynwb.icephys.SequentialRecordingsTable: {
         "Summary": DynamicTableSummaryWidget,
         "table": show_dynamic_table,
-        "I-V Analysis": icephys.IcephysWidget
+        "I-V Analysis": icephys.IVCurveWidget
     }
 }
 

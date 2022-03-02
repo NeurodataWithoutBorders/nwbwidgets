@@ -127,11 +127,9 @@ def show_sweep_sequences(
     return lazy_show_over_data(data, func_, labels=labels, style=style)
 
 
-def show_sequential_recordings(nwbfile):
+def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
     color_wheel = px.colors.qualitative.D3
 
-    elec_name = 'icephys_electrode_0'
-    sequence_id = 0
     stimulus_type = nwbfile.icephys_sequential_recordings[sequence_id]["stimulus_type"].values[0]
     curve_type = "I-V curve"
 
@@ -263,27 +261,65 @@ def show_sequential_recordings(nwbfile):
     fig.update_yaxes(title_text=f"response [{response_unit}]",showgrid=False, row=1, col=2)
     fig.update_yaxes(showline=False, zeroline=True, zerolinewidth=1, zerolinecolor='black')
 
-    # config = {'displayModeBar': False}
-    # fig.show(config=config)
     return fig
 
 
-class IcephysWidget(widgets.HBox):
+class IVCurveWidget(widgets.VBox):
     def __init__(
         self,
-        node: pynwb.icephys.SequentialRecordingsTable,
+        sequential_recordings_table: pynwb.icephys.SequentialRecordingsTable,
         neurodata_vis_spec=None,
-        foreign_time_window_controller=None,
-        foreign_group_and_sort_controller=None,
-        dynamic_table_region_name="electrodes",
         **kwargs
     ):
-        if foreign_group_and_sort_controller is not None:
-            table = None
-        else:
-            table = dynamic_table_region_name
         super().__init__()
 
-        self.fig = show_sequential_recordings(nwbfile=node.get_ancestor())
+        self.table = sequential_recordings_table
 
-        self.children = [self.fig]
+        # Electrodes
+        elec_options = [(n, i) for i, n in enumerate(self.table.get_ancestor().ic_electrodes.keys())]
+        self.electrode_name = elec_options[0][0]
+        dropdown_elec = widgets.Dropdown(
+            options=elec_options,
+            value=0,
+            description='Electrode:',
+        )
+        dropdown_elec.observe(self.update_electrode)
+
+        # Stimuli
+        self.stimuli_index = 0
+        dropdown_stim = widgets.Dropdown(
+            options=[(v, i) for i, v in enumerate(list(self.table.stimulus_type[:]))],
+            value=0,
+            description='Stimulus:',
+        )
+        dropdown_stim.observe(self.update_stimulus)
+
+        self.iv_curve_controller = widgets.HBox([
+            dropdown_elec,
+            dropdown_stim
+        ])
+
+        self.update_figure()
+    
+        self.children = [self.iv_curve_controller, self.fig]
+
+
+    def update_electrode(self, change):
+        if change["name"] == "label":
+            self.electrode_name = change["new"]
+            self.update_figure()
+
+    
+    def update_stimulus(self, change):
+        if change["name"] == "value":
+            self.stimuli_index = change["new"]
+            self.update_figure()
+
+
+    def update_figure(self):
+        self.fig = show_sequential_recordings(
+            nwbfile=self.table.get_ancestor(),
+            elec_name=self.electrode_name, 
+            sequence_id=self.stimuli_index
+        )
+        self.children = [self.iv_curve_controller, self.fig]
