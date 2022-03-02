@@ -1,12 +1,17 @@
 from functools import partial
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import numpy as np
 from ipywidgets import widgets
 from matplotlib.pyplot import Figure
-from ndx_icephys_meta.icephys import SweepSequences
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+import plotly.express as px
 
+import pynwb
+
+from ndx_icephys_meta.icephys import SweepSequences
 from .base import lazy_show_over_data, GroupingWidget
 from .timeseries import show_indexed_timeseries_mpl
 
@@ -120,3 +125,165 @@ def show_sweep_sequences(
         func_ = show_single_sweep_sequence
     func_ = partial(func_, **kwargs)
     return lazy_show_over_data(data, func_, labels=labels, style=style)
+
+
+def show_sequential_recordings(nwbfile):
+    color_wheel = px.colors.qualitative.D3
+
+    elec_name = 'icephys_electrode_0'
+    sequence_id = 0
+    stimulus_type = nwbfile.icephys_sequential_recordings[sequence_id]["stimulus_type"].values[0]
+    curve_type = "I-V curve"
+
+    simultaneous_ids = nwbfile.icephys_sequential_recordings[sequence_id]["simultaneous_recordings"].values[0]
+    recordings_ids = np.array([])
+    for i in nwbfile.icephys_simultaneous_recordings[simultaneous_ids]["recordings"]:
+        recordings_ids = np.append(recordings_ids, i)
+
+    filtered_elec_ids = list()
+    for i, row in nwbfile.intracellular_recordings["electrodes"].iterrows():
+        if row[0].name == elec_name:
+            filtered_elec_ids.append(i)
+            
+    filtered_ids = np.intersect1d(recordings_ids, filtered_elec_ids)
+
+    fig = go.FigureWidget(make_subplots(
+        rows=2, cols=2, 
+        specs=[[{}, {"rowspan": 2}], [{}, None]],
+        subplot_titles=("", curve_type, stimulus_type)
+    ))
+
+    iv_curve_x = list()
+    iv_curve_y = list()
+    ii = 0
+    for i, row in nwbfile.intracellular_recordings.to_dataframe().loc[filtered_ids].iterrows():
+        if ii == 0:
+            response_unit = row.responses.response.timeseries.unit
+            stimulus_unit = row.stimuli.stimulus.timeseries.unit
+        
+        response_gain = row.responses.response.timeseries.gain
+        response_conversion = row.responses.response.timeseries.conversion
+        response_data = row.responses.response.timeseries.data[:] * response_gain * response_conversion
+        response_rate = row.responses.response.timeseries.rate
+        response_x = np.arange(len(response_data)) / response_rate
+
+        if row.stimuli.stimulus.timeseries:
+            stimulus_data = row.stimuli.stimulus.timeseries.data[:]
+            stimulus_rate = row.stimuli.stimulus.timeseries.rate
+        else:
+            stimulus_data = np.zeros(len(response_data))
+            stimulus_rate = response_rate
+        stimulus_x = np.arange(len(stimulus_data)) / stimulus_rate
+        
+        # I-V curve
+        if (max(stimulus_data) - stimulus_data[0]) > 0:
+            iv_curve_x_point = max(stimulus_data)
+        else:
+            iv_curve_x_point = min(stimulus_data)
+        iv_curve_x.append(iv_curve_x_point)
+        
+        if (max(response_data) - response_data[0]) > 0:
+            iv_curve_y_point = max(response_data)
+        else:
+            iv_curve_y_point = min(response_data)
+        iv_curve_y.append(iv_curve_y_point)
+
+        fig.append_trace(
+            go.Scatter(
+                x=response_x,
+                y=response_data,
+                legendgroup=f"{int(ii)}",
+                name=f"Sweep {int(ii)}",
+                marker=dict(color=color_wheel[int(ii%10)])
+            ), 
+            row=1, 
+            col=1
+        )
+
+        fig.append_trace(
+            go.Scatter(
+                x=stimulus_x,
+                y=stimulus_data,
+                legendgroup=f"{int(ii)}", 
+                showlegend=False,
+                marker=dict(color=color_wheel[int(ii%10)])
+            ), 
+            row=2, 
+            col=1
+        )
+        
+        ii += 1
+
+    fig.append_trace(
+        go.Scatter(
+            x=iv_curve_x,
+            y=iv_curve_y,
+            showlegend=False,
+            mode='lines',
+            line=dict(color='black', width=2)
+        ), 
+        row=1, 
+        col=2
+    )
+
+    for ii in range(len(iv_curve_x)):
+        fig.append_trace(
+            go.Scatter(
+                x=[iv_curve_x[ii]],
+                y=[iv_curve_y[ii]],
+                showlegend=False,
+                legendgroup=f"{int(ii)}", 
+                marker=dict(
+                    color=color_wheel[int(ii%10)],
+                    size=10
+                )
+            ), 
+            row=1, 
+            col=2
+        )
+
+    fig.update_layout(
+        height=600, 
+        width=1200,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.1,
+            xanchor="right",
+            x=1
+        )
+    )
+    fig.update_xaxes(showgrid=False, row=1, col=1)
+    fig.update_xaxes(title_text="time [s]", showgrid=False, row=2, col=1)
+    fig.update_xaxes(title_text=f"stimuli [{stimulus_unit}]",showgrid=False, row=1, col=2)
+    fig.update_xaxes(showline=False, zeroline=True, zerolinewidth=1, zerolinecolor='black')
+
+    fig.update_yaxes(title_text=f"response [{response_unit}]",showgrid=False, row=1, col=1)
+    fig.update_yaxes(title_text=f"stimuli [{stimulus_unit}]",showgrid=False, row=2, col=1)
+    fig.update_yaxes(title_text=f"response [{response_unit}]",showgrid=False, row=1, col=2)
+    fig.update_yaxes(showline=False, zeroline=True, zerolinewidth=1, zerolinecolor='black')
+
+    # config = {'displayModeBar': False}
+    # fig.show(config=config)
+    return fig
+
+
+class IcephysWidget(widgets.HBox):
+    def __init__(
+        self,
+        node: pynwb.icephys.SequentialRecordingsTable,
+        neurodata_vis_spec=None,
+        foreign_time_window_controller=None,
+        foreign_group_and_sort_controller=None,
+        dynamic_table_region_name="electrodes",
+        **kwargs
+    ):
+        if foreign_group_and_sort_controller is not None:
+            table = None
+        else:
+            table = dynamic_table_region_name
+        super().__init__()
+
+        self.fig = show_sequential_recordings(nwbfile=node.get_ancestor())
+
+        self.children = [self.fig]
