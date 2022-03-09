@@ -112,9 +112,9 @@ class CalciumImagingTestCase(unittest.TestCase):
         self.df_over_f = DfOverF(rrs)
 
     def test_show_two_photon_series(self):
-        wid = TwoPhotonSeriesWidget(self.image_series, default_neurodata_vis_spec)
+        wid = TwoPhotonSeriesWidget(self.image_series)
         assert isinstance(wid, widgets.Widget)
-        wid.controls['slider'].value = 50
+        wid.time_slider.value = 50.0
 
     def test_show_3d_two_photon_series(self):
         image_series3 = TwoPhotonSeries(
@@ -125,9 +125,9 @@ class CalciumImagingTestCase(unittest.TestCase):
             rate=1.0,
             unit="n.a",
         )
-        wid = TwoPhotonSeriesWidget(image_series3, default_neurodata_vis_spec)
+        wid = TwoPhotonSeriesWidget(image_series3)
         assert isinstance(wid, widgets.Widget)
-        wid.controls['slider'].value = 50
+        wid.time_slider.value = 50.0
 
     def test_show_df_over_f(self):
         dff = show_df_over_f(self.df_over_f, default_neurodata_vis_spec)
