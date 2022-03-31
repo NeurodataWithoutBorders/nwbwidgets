@@ -12,6 +12,7 @@ from matplotlib.pyplot import Figure
 from nwbwidgets import view
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface, MultiContainerInterface
+from pynwb.epoch import TimeIntervals
 
 from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
 
@@ -371,46 +372,61 @@ def row_to_hover_text(row):
     return "<br>".join(text_rows)
 
 
-class TimeIntervalsSelector(widgets.VBox):
-    InnerWidget = None
-
-    def __init__(self, input_data, **kwargs):
+class TimeIntervalsSelectorMixin:
+    """
+    Sister class must have intervals_selector_callback
+    """
+    def set_interval_selector(self, intervals, nwbfile=None):
         """
-        Creates a TimeInterval controller that controls InnerWidget.
+        If a string is given, look up that table in nwb.intervals
+        If a pynwb.epoch.TimeIntervals object is given, use that
+        If a Dropdown is given, use that as a selector
+        If there is no input for intervals, look at nwb.intervals
+            If nwb.intervals has 0 entries, render a placeholder
+            If nwb.intervals has 1 entry, use it
+            If nwb.intervals has more than one entry, create a dropdown of all available intervals
 
         Parameters
         ----------
-        input_data: pynwb object
-            Pynwb object (e.g. pynwb.misc.Units) belonging to a nwbfile 
-            that will be filtered by the TimeIntervalSelector controller. 
+        intervals: str or pynwb.epoch.TimeIntervals or ipywidgets.DropDown or None
+        nwbfile: pynwb.NWBFile
+
+        Returns
+        -------
+
         """
-        super().__init__()
-        self.input_data = input_data
-        self.kwargs = kwargs
-        self.intervals_tables = input_data.get_ancestor("NWBFile").intervals
-        self.stimulus_type_dd = widgets.Dropdown(
-            options=list(self.intervals_tables.keys()), 
-            description="stimulus type"
-        )
-        self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
+        self.intervals_dropdown = None
 
-        trials = list(self.intervals_tables.values())[0]
-        inner_widget = self.InnerWidget(
-            units=self.input_data,
-            trials=trials, 
-            **kwargs
-        )
-        self.children = [self.stimulus_type_dd, inner_widget]
-
-    def stimulus_type_dd_callback(self, change):
-        self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
-        trials = self.intervals_tables[self.stimulus_type_dd.value]
-        inner_widget = self.InnerWidget(
-            input_data=self.input_data, 
-            trials=trials, 
-            **self.kwargs
-        )
-        self.children = [self.stimulus_type_dd, inner_widget]
+        if isinstance(intervals, str):
+            if intervals == "trials":
+                self.intervals = nwbfile.trials
+            elif intervals not in nwbfile.intervals:
+                raise ValueError("'{intervals}' not in NWBFile.intervals")
+                self.intervals = nwbfile.intervals[intervals]
+        elif isinstance(intervals, widgets.Dropdown):
+            self.intervals = nwbfile.intervals[self.intervals_dropdown.value]
+            self.intervals_dropdown.observe(self.intervals_selector_callback)
+        elif isinstance(intervals, TimeIntervals):
+            self.intervals = intervals
+        elif intervals is None:
+            all_intervals_tables = nwbfile.intervals
+            trials = nwbfile.trials
+            if trials is not None:
+                all_intervals_tables.add(trials)
+            if len(all_intervals_tables) == 0:
+                self.children = [HTML("could not find intervals")]
+                return
+            elif len(all_intervals_tables) == 1:
+                self.intervals = list(all_intervals_tables.values())[0]
+            else:
+                self.intervals_dropdown = widgets.Dropdown(
+                    options=list(all_intervals_tables),
+                    description="intervals",
+                )
+                self.intervals_dropdown.observe(self.intervals_selector_callback)
+                self.intervals = list(all_intervals_tables.values())[0]
+        else:
+            raise ValueError("intervals is not an allowable type")
 
 
 def show_multi_container_interface(

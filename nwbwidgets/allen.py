@@ -19,10 +19,6 @@ class AllenRasterWidget(RasterWidget):
         )
 
 
-class AllenPSTHWidget(TimeIntervalsSelector):
-    InnerWidget = PSTHWidget
-
-
 class AllenRasterGridWidget(TimeIntervalsSelector):
     InnerWidget = RasterGridWidget
 
@@ -85,7 +81,6 @@ def allen_show_electrodes(node: DynamicTable):
 
 def load_allen_widgets():
     default_neurodata_vis_spec[Units]["Session Raster"] = AllenRasterWidget
-    default_neurodata_vis_spec[Units]["Grouped PSTH"] = AllenPSTHWidget
     default_neurodata_vis_spec[Units]["Raster Grid"] = AllenRasterGridWidget
     default_neurodata_vis_spec[Units]["Tuning Curves"] = AllenTuningCurveWidget
     # default_neurodata_vis_spec[DynamicTable] = allen_show_dynamic_table

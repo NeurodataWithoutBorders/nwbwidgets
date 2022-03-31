@@ -6,12 +6,13 @@ import pandas as pd
 import plotly.graph_objects as go
 import pynwb
 import scipy
-from ipywidgets import widgets, fixed, FloatProgress, Layout
+from ipywidgets import widgets, fixed, FloatProgress, Layout, HTML
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
 from .analysis.spikes import compute_smoothed_firing_rate
+from .base import TimeIntervalsSelectorMixin
 from .controllers import (
     make_trial_event_controller,
     GroupAndSortController,
@@ -267,27 +268,39 @@ def show_decomposition_traces(node: DecompositionSeries):
     return vbox
 
 
-class PSTHWidget(widgets.VBox):
+class PSTHWidget(widgets.VBox, TimeIntervalsSelectorMixin):
     def __init__(
-            self,
-            input_data: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
-            unit_index=0,
-            unit_controller=None,
-            ntt=1000,
+        self,
+        units: Units,
+        intervals: str = None,
+        unit_index=0,
+        unit_controller=None,
+        ntt=1000,
     ):
+        """
 
-        self.units = input_data
+        Parameters
+        ----------
+        input_data: pynwb.Units
+        intervals: str, optional
+            If a string is given, look up that table in nwb.intervals
+            If a TimeIntervals object is given, use that
+            If a Dropdown is given, use that as a selector
+            If there is no input for intervals, look at nwb.intervals
+                If nwb.intervals has 0 entries, render a placeholder
+                If nwb.intervals has 1 entry, use it
+                If nwb.intervals has more than one entry, create a dropdown of all available intervals
+        unit_index: int
+        unit_controller
+        ntt: int
+        """
+
+        self.units = units
+        self.ntt = ntt
 
         super().__init__()
 
-        if trials is None:
-            self.trials = self.get_trials()
-            if self.trials is None:
-                self.children = [widgets.HTML("No trials present")]
-                return
-        else:
-            self.trials = trials
+        self.set_interval_selector(intervals, units.get_ancestor("NWBFile"))
 
         if unit_controller is None:
             self.unit_ids = self.units.id.data[:]
@@ -301,8 +314,16 @@ class PSTHWidget(widgets.VBox):
         else:
             self.unit_controller = unit_controller
 
+        self.refresh_intervals()
+
+    def make_group_and_sort(self, window=None, control_order=False):
+        return GroupAndSortController(
+            self.intervals, window=window, control_order=control_order
+        )
+
+    def refresh_intervals(self):
         self.trial_event_controller = make_trial_event_controller(
-            self.trials, layout=Layout(width="200px"), multiple=True
+            self.intervals, layout=Layout(width="200px"), multiple=True
         )
         self.start_ft = widgets.FloatText(
             -0.5, step=0.1, description="start (s)", layout=Layout(width="200px"),
@@ -332,7 +353,7 @@ class PSTHWidget(widgets.VBox):
         self.gas = self.make_group_and_sort(window=False, control_order=False)
 
         self.controls = dict(
-            ntt=fixed(ntt),
+            ntt=fixed(self.ntt),
             index=self.unit_controller,
             end=self.end_ft,
             start=self.start_ft,
@@ -346,7 +367,7 @@ class PSTHWidget(widgets.VBox):
 
         out_fig = interactive_output(self.update, self.controls)
 
-        self.children = [
+        children = [
             widgets.HBox(
                 [
                     widgets.VBox(
@@ -373,13 +394,16 @@ class PSTHWidget(widgets.VBox):
             out_fig,
         ]
 
-    def get_trials(self):
-        return self.units.get_ancestor("NWBFile").trials
+        if self.intervals_dropdown is not None:
+            children.insert(0, self.intervals_dropdown)
 
-    def make_group_and_sort(self, window=None, control_order=False):
-        return GroupAndSortController(
-            self.trials, window=window, control_order=control_order
-        )
+        self.children = children
+
+
+    def intervals_selector_callback(self, change):
+        self.children = [self.intervals_dropdown, widgets.HTML("Rendering...")]
+        self.intervals = self.units.get_ancestor("NWBFile").intervals[self.intervals_dropdown.value]
+        self.refresh_intervals()
 
     def update(
             self,
@@ -441,7 +465,7 @@ class PSTHWidget(widgets.VBox):
             data = align_by_time_intervals(
                 self.units,
                 index,
-                self.trials,
+                self.intervals,
                 start_label,
                 start_label,
                 start,
@@ -485,7 +509,7 @@ class PSTHWidget(widgets.VBox):
                 expanded_data = align_by_time_intervals(
                     units=self.units,
                     index=index,
-                    intervals=self.trials,
+                    intervals=self.intervals,
                     start_label=start_label,
                     stop_label=start_label,
                     start=start - sigma_in_secs * 4,
@@ -514,6 +538,7 @@ class PSTHWidget(widgets.VBox):
                 )
 
             ax1.set_xlim([start, end])
+            ax1.set_xticks([start, end])
             if i_s == 0:
                 ax1.set_ylabel("firing rate (Hz)", fontsize=12)
             ax1.set_xlabel("time (s)", fontsize=12)
@@ -1167,7 +1192,7 @@ class RasterGridWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            intervals: pynwb.epoch.TimeIntervals = None,
             unit_index=0,
             units_trials_controller=None,
     ):
@@ -1177,7 +1202,7 @@ class RasterGridWidget(widgets.VBox):
         if not units_trials_controller:
             units_trials_controller = UnitsAndTrialsControllerWidget(
                 units=units,
-                trials=trials,
+                trials=intervals,
                 unit_index=unit_index
             )
             self.children = [units_trials_controller]
@@ -1195,7 +1220,7 @@ class TuningCurveWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            intervals: pynwb.epoch.TimeIntervals = None,
             unit_index=0,
             units_trials_controller=None,
     ):
@@ -1206,7 +1231,7 @@ class TuningCurveWidget(widgets.VBox):
         if not units_trials_controller:
             units_trials_controller = UnitsAndTrialsControllerWidget(
                 units=units,
-                trials=trials,
+                trials=intervals,
                 unit_index=unit_index
             )
             self.children = [units_trials_controller]
@@ -1239,7 +1264,7 @@ class TuningCurveExtendedWidget(widgets.VBox):
         # Tuning curve widget
         self.tuning_curve = TuningCurveWidget(
             units=units,
-            trials=trials,
+            intervals=trials,
             unit_index=unit_index,
             units_trials_controller=self.units_trials_controller,
         )
@@ -1247,7 +1272,7 @@ class TuningCurveExtendedWidget(widgets.VBox):
         # Raster grid widget
         self.raster_grid = RasterGridWidget(
             units=units,
-            trials=trials,
+            intervals=trials,
             unit_index=unit_index,
             units_trials_controller=self.units_trials_controller,
         )

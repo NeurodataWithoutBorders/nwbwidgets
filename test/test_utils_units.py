@@ -114,7 +114,7 @@ class TuningCurveTestCase(UnitsTrialsTestCase):
         super().setUp()
         self.widget = TuningCurveWidget(
             units=self.nwbfile.units,
-            trials=self.nwbfile.trials
+            intervals=self.nwbfile.trials
         )
         # rows controller triggers drawing of graphic
         self.widget.children[0].children[1].value = 'stim'
