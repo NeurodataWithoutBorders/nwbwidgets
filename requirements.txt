@@ -8,3 +8,4 @@ ndx_grayscalevolume
 plotly
 tqdm>=4.36.0
 ndx-spectrum
+dandi

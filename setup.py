@@ -39,6 +39,7 @@ setup(
         "tifffile",
         "ndx-spectrum",
         "trimesh",
+        "dandi"
     ],
     license="MIT",
     keywords=["jupyter", "hdf5", "notebook", "nwb"],
