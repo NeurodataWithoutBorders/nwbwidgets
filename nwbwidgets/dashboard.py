@@ -11,7 +11,7 @@ def dashboard():
     source_options_label = widgets.Label('Source:')
     source_options = widgets.VBox([source_options_label, source_options_radio], layout=widgets.Layout(width='150px', overflow=None))
 
-    source_path_text = widgets.Text(value="000239", layout={'width': '300px'})
+    source_path_text = widgets.Text(value="", layout={'width': '300px'})
     source_path_dandi_button = widgets.Button(icon='angle-right', layout={'width': '50px'})
     source_path_lower = widgets.HBox([source_path_text, source_path_dandi_button])
     source_path_label = widgets.Label('Dandiset number:')
@@ -30,14 +30,17 @@ def dashboard():
     def updated_source(args):
         if args['new'] == "dandi":
             source_path_label.value = "Dandiset number:"
+            source_path_text.value = ""
             source_path_dandi_button.icon='angle-right'
             source_file_dandi_vbox.layout.display = None
         elif args['new'] == "local dir":
             source_path_label.value = "Path to local dir:"
+            source_path_text.value = ""
             source_path_dandi_button.icon='angle-right'
             source_file_dandi_vbox.layout.display = None
         elif args['new'] == "local file":
             source_path_label.value = "Path to local file:"
+            source_path_text.value = ""
             source_path_dandi_button.icon='angle-down'
             source_file_dandi_vbox.layout.display = 'none'
 
