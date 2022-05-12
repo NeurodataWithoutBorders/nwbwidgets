@@ -13,6 +13,5 @@ aiohttp
 ccfwidget
 tifffile
 ndx-spectrum
-ndx-icephys-meta
-ndx-grayscalevolume
 trimesh
+dandi
