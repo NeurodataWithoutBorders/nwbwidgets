@@ -143,7 +143,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
         if row[0].name == elec_name:
             filtered_elec_ids.append(i)
             
-    filtered_ids = np.intersect1d(recordings_ids, filtered_elec_ids)
+    filtered_ids = [int(i) for i in np.intersect1d(recordings_ids, filtered_elec_ids)]
 
     fig = go.FigureWidget(make_subplots(
         rows=2, cols=2, 
@@ -159,9 +159,8 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
             response_unit = row.responses.response.timeseries.unit
             stimulus_unit = row.stimuli.stimulus.timeseries.unit
         
-        response_gain = row.responses.response.timeseries.gain
         response_conversion = row.responses.response.timeseries.conversion
-        response_data = np.array(row.responses.response.timeseries.data[:]) * response_gain * response_conversion
+        response_data = np.array(row.responses.response.timeseries.data[:]) * response_conversion
         response_rate = row.responses.response.timeseries.rate
         response_x = np.arange(len(response_data)) / response_rate
 
