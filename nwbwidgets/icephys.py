@@ -3,14 +3,13 @@ from functools import partial
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import Figure
 
 from ipywidgets import widgets
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import plotly.express as px
 
-import pynwb
+from pynwb.icephys import SequentialRecordingsTable
 
 from ndx_icephys_meta.icephys import SweepSequences
 
@@ -20,7 +19,7 @@ from .timeseries import show_indexed_timeseries_mpl
 
 def show_single_sweep_sequence(
     sweep_sequence, axs=None, title=None, **kwargs
-) -> Figure:
+) -> plt.Figure:
     """
     Show a single rep of a single stimulus sequence
 
@@ -64,7 +63,7 @@ def show_single_sweep_sequence(
     return fig
 
 
-def show_sweep_sequence_reps(stim_df: pd.DataFrame, **kwargs) -> Figure:
+def show_sweep_sequence_reps(stim_df: pd.DataFrame, **kwargs) -> plt.Figure:
     """
     Show data from multiple reps of the same stimulus type
 
@@ -266,7 +265,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
 class IVCurveWidget(widgets.VBox):
     def __init__(
         self,
-        sequential_recordings_table: pynwb.icephys.SequentialRecordingsTable,
+        sequential_recordings_table: SequentialRecordingsTable,
         neurodata_vis_spec=None,
         **kwargs
     ):

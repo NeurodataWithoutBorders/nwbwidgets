@@ -4,7 +4,6 @@ from typing import Union
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import Figure
 
 import ipysheet
 from IPython import display
@@ -261,7 +260,7 @@ def vis2widget(vis) -> widgets.Widget:
     return out
 
 
-def fig2widget(fig: Figure, **kwargs) -> widgets.Widget:
+def fig2widget(fig: plt.Figure, **kwargs) -> widgets.Widget:
     out = widgets.Output()
     with out:
         fig.show()

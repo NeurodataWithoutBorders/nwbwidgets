@@ -6,7 +6,8 @@ import plotly.graph_objects as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 from ipywidgets import widgets, ValueWidget
 
-import pynwb
+from pynwb import TimeSeries
+from pynwb.base import DynamicTable
 from pynwb.ecephys import SpikeEventSeries, ElectricalSeries
 
 from .base import fig2widget, lazy_tabs, render_dataframe
@@ -14,7 +15,7 @@ from .timeseries import BaseGroupedTraceWidget
 from .brains import HumanElectrodesPlotlyWidget
 
 
-def show_spectrogram(nwbobj: pynwb.TimeSeries, channel=0, **kwargs):
+def show_spectrogram(nwbobj: TimeSeries, channel=0, **kwargs):
     fig, ax = plt.subplots()
     f, t, Zxx = stft(nwbobj.data[:, channel], nwbobj.rate, nperseg=2 * 17)
     ax.imshow(
@@ -30,7 +31,7 @@ def show_spectrogram(nwbobj: pynwb.TimeSeries, channel=0, **kwargs):
 
 
 class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
-    def __init__(self, nwbobj: pynwb.base.DynamicTable, **kwargs):
+    def __init__(self, nwbobj: DynamicTable, **kwargs):
         super().__init__()
         group_names = nwbobj.group_name[:]
         ugroups, group_pos, counts = np.unique(

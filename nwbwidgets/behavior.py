@@ -23,9 +23,7 @@ from .timeseries import (
     SingleTracePlotlyWidget,
     SeparateTracesPlotlyWidget,
 )
-
 from .base import lazy_tabs
-
 from .controllers import StartAndDurationController
 
 

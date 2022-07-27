@@ -1,12 +1,11 @@
 from bisect import bisect_right, bisect_left
 
 import numpy as np
-from numpy import searchsorted
 
-import pynwb
+from pynwb.misc import Units
 
 
-def get_spike_times(units: pynwb.misc.Units, index, in_interval):
+def get_spike_times(units: Units, index, in_interval):
     """Use bisect methods to efficiently retrieve spikes from a given unit in a given interval
 
     Parameters
@@ -30,7 +29,7 @@ def get_spike_times(units: pynwb.misc.Units, index, in_interval):
     return np.asarray(st.target[ind_start:ind_stop])
 
 
-def get_min_spike_time(units: pynwb.misc.Units):
+def get_min_spike_time(units: Units):
     """Efficiently retrieve the first spike time across all units
 
     Parameters
@@ -47,7 +46,7 @@ def get_min_spike_time(units: pynwb.misc.Units):
     return np.min(first_spikes)
 
 
-def get_max_spike_time(units: pynwb.misc.Units):
+def get_max_spike_time(units: Units):
     """Efficiently retrieve the last spike time across all units
 
     Parameters
@@ -64,7 +63,7 @@ def get_max_spike_time(units: pynwb.misc.Units):
     return np.max(last_spikes)
 
 
-def align_by_times(units: pynwb.misc.Units, index, starts, stops):
+def align_by_times(units: Units, index, starts, stops):
     """
     Args:
         units: pynwb.misc.Units
@@ -78,14 +77,14 @@ def align_by_times(units: pynwb.misc.Units, index, starts, stops):
     st = units["spike_times"]
     unit_spike_data = st[index]
 
-    istarts = searchsorted(unit_spike_data, starts)
-    istops = searchsorted(unit_spike_data, stops)
+    istarts = np.searchsorted(unit_spike_data, starts)
+    istops = np.searchsorted(unit_spike_data, stops)
     for start, istart, istop in zip(starts, istarts, istops):
         yield unit_spike_data[istart:istop] - start
 
 
 def align_by_trials(
-    units: pynwb.misc.Units,
+    units: Units,
     index,
     start_label="start_time",
     stop_label=None,
@@ -113,7 +112,7 @@ def align_by_trials(
 
 
 def align_by_time_intervals(
-    units: pynwb.misc.Units,
+    units: Units,
     index,
     intervals,
     start_label="start_time",

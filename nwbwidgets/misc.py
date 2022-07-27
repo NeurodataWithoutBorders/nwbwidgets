@@ -10,7 +10,7 @@ from matplotlib.collections import PatchCollection
 import plotly.graph_objects as go
 from ipywidgets import widgets, fixed, FloatProgress, Layout
 
-import pynwb
+from pynwb.Epoch import TimeIntervals
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
 from .analysis.spikes import compute_smoothed_firing_rate
@@ -273,7 +273,7 @@ class PSTHWidget(widgets.VBox):
     def __init__(
             self,
             input_data: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0,
             unit_controller=None,
             ntt=1000,
@@ -775,8 +775,8 @@ def show_psth_raster(
 
 
 def raster_grid(
-        units: pynwb.misc.Units,
-        time_intervals: pynwb.epoch.TimeIntervals,
+        units: Units,
+        time_intervals: TimeIntervals,
         index,
         start,
         end,
@@ -1061,7 +1061,7 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0,
             **kwargs
     ):
@@ -1169,7 +1169,7 @@ class RasterGridWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0,
             units_trials_controller=None,
     ):
@@ -1197,7 +1197,7 @@ class TuningCurveWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0,
             units_trials_controller=None,
     ):
@@ -1226,7 +1226,7 @@ class TuningCurveExtendedWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0
     ):
         super().__init__()
@@ -1262,8 +1262,8 @@ class TuningCurveExtendedWidget(widgets.VBox):
 
 
 def draw_tuning_curve(
-        units: pynwb.misc.Units,
-        time_intervals: pynwb.epoch.TimeIntervals,
+        units: Units,
+        time_intervals: TimeIntervals,
         index,
         start,
         end,
@@ -1299,8 +1299,8 @@ def draw_tuning_curve(
 
 
 def draw_tuning_curve_1d(
-        units: pynwb.misc.Units,
-        time_intervals: pynwb.epoch.TimeIntervals,
+        units: Units,
+        time_intervals: TimeIntervals,
         index,
         start,
         end,
@@ -1345,8 +1345,8 @@ def draw_tuning_curve_1d(
 
 
 def draw_tuning_curve_2d(
-        units: pynwb.misc.Units,
-        time_intervals: pynwb.epoch.TimeIntervals,
+        units: Units,
+        time_intervals: TimeIntervals,
         index,
         start,
         end,
