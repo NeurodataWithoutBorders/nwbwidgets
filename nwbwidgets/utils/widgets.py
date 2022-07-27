@@ -1,8 +1,10 @@
+import asyncio
+
+import matplotlib.pyplot as plt
+
 from ipywidgets import Output
 from ipywidgets.widgets.interaction import clear_output
-import asyncio
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
 
 
 def clean_axes(axes):

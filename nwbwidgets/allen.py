@@ -1,7 +1,9 @@
 from typing import Iterable
 
-import ipywidgets as widgets
 import numpy as np
+
+import ipywidgets as widgets
+
 from hdmf.common import DynamicTable
 from pynwb.misc import Units
 

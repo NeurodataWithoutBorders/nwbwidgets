@@ -1,5 +1,6 @@
 from ipywidgets import widgets, Layout
 import plotly.express as px
+
 from pynwb.misc import DynamicTable
 
 from .utils.dynamictable import infer_columns_to_plot
@@ -132,7 +133,7 @@ class DynamicTableSummaryWidget(widgets.VBox):
                     col_name_1 = col_name = self.col_names_display[col_names_display[1]]
                     col_name_2 = col_name = self.col_names_display[col_names_display[2]]
                     fig = px.scatter_3d(
-                        df, x=col_name_0, y=col_name_1, z=col_name_2, 
+                        df, x=col_name_0, y=col_name_1, z=col_name_2,
                         text=entry_names)
                     fig.show()
                 elif num_real == 2:

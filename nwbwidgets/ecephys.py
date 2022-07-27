@@ -1,11 +1,13 @@
-import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import stft
+import matplotlib.pyplot as plt
+
 import plotly.graph_objects as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 from ipywidgets import widgets, ValueWidget
-from pynwb.ecephys import SpikeEventSeries, ElectricalSeries
-from scipy.signal import stft
+
 import pynwb
+from pynwb.ecephys import SpikeEventSeries, ElectricalSeries
 
 from .base import fig2widget, lazy_tabs, render_dataframe
 from .timeseries import BaseGroupedTraceWidget

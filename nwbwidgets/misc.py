@@ -1,14 +1,16 @@
 from functools import partial
 
-import matplotlib.pyplot as plt
+import scipy
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
-import pynwb
-import scipy
-from ipywidgets import widgets, fixed, FloatProgress, Layout
-from matplotlib.collections import PatchCollection
+import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
+
+import plotly.graph_objects as go
+from ipywidgets import widgets, fixed, FloatProgress, Layout
+
+import pynwb
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
 from .analysis.spikes import compute_smoothed_firing_rate
@@ -834,7 +836,7 @@ def raster_grid(
         nrows, ncols, sharex=True, sharey=True, squeeze=False, figsize=(10, 10)
     )
     big_ax = create_big_ax(fig)
-    
+
     for i, row in enumerate(urow_vals):
         for j, col in enumerate(ucol_vals):
             ax = axs[i, j]
@@ -1110,7 +1112,7 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
             description="unit",
         )
 
-        # Trial event controller (align by) 
+        # Trial event controller (align by)
         self.trial_event_controller = make_trial_event_controller(self.trials)
 
         # Start / End controllers

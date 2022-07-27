@@ -1,7 +1,8 @@
-from pynwb import TimeSeries
+from bisect import bisect, bisect_left
 
 import numpy as np
-from bisect import bisect, bisect_left
+
+from pynwb import TimeSeries
 
 
 def get_timeseries_tt(node: TimeSeries, istart=0, istop=None) -> np.ndarray:

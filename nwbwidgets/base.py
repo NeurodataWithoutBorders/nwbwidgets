@@ -2,18 +2,20 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Union
 
-import h5py
-import ipysheet
-import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import Figure
+
+import ipysheet
 from IPython import display
 from ipywidgets import widgets
-from matplotlib.pyplot import Figure
-from nwbwidgets import view
+from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
+
+import h5py
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface, MultiContainerInterface
 
-from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
+from nwbwidgets import view
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -381,15 +383,15 @@ class TimeIntervalsSelector(widgets.VBox):
         Parameters
         ----------
         input_data: pynwb object
-            Pynwb object (e.g. pynwb.misc.Units) belonging to a nwbfile 
-            that will be filtered by the TimeIntervalSelector controller. 
+            Pynwb object (e.g. pynwb.misc.Units) belonging to a nwbfile
+            that will be filtered by the TimeIntervalSelector controller.
         """
         super().__init__()
         self.input_data = input_data
         self.kwargs = kwargs
         self.intervals_tables = input_data.get_ancestor("NWBFile").intervals
         self.stimulus_type_dd = widgets.Dropdown(
-            options=list(self.intervals_tables.keys()), 
+            options=list(self.intervals_tables.keys()),
             description="stimulus type"
         )
         self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
@@ -397,7 +399,7 @@ class TimeIntervalsSelector(widgets.VBox):
         trials = list(self.intervals_tables.values())[0]
         inner_widget = self.InnerWidget(
             units=self.input_data,
-            trials=trials, 
+            trials=trials,
             **kwargs
         )
         self.children = [self.stimulus_type_dd, inner_widget]
@@ -406,8 +408,8 @@ class TimeIntervalsSelector(widgets.VBox):
         self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
         trials = self.intervals_tables[self.stimulus_type_dd.value]
         inner_widget = self.InnerWidget(
-            input_data=self.input_data, 
-            trials=trials, 
+            input_data=self.input_data,
+            trials=trials,
             **self.kwargs
         )
         self.children = [self.stimulus_type_dd, inner_widget]

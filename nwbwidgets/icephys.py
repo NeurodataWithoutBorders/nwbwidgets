@@ -1,10 +1,11 @@
 from functools import partial
-import matplotlib.pyplot as plt
+
 import numpy as np
 import pandas as pd
-import numpy as np
-from ipywidgets import widgets
+import matplotlib.pyplot as plt
 from matplotlib.pyplot import Figure
+
+from ipywidgets import widgets
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import plotly.express as px
@@ -12,6 +13,7 @@ import plotly.express as px
 import pynwb
 
 from ndx_icephys_meta.icephys import SweepSequences
+
 from .base import lazy_show_over_data, GroupingWidget
 from .timeseries import show_indexed_timeseries_mpl
 
@@ -142,11 +144,11 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
     for i, row in nwbfile.intracellular_recordings["electrodes"].iterrows():
         if row[0].name == elec_name:
             filtered_elec_ids.append(i)
-            
+
     filtered_ids = [int(i) for i in np.intersect1d(recordings_ids, filtered_elec_ids)]
 
     fig = go.FigureWidget(make_subplots(
-        rows=2, cols=2, 
+        rows=2, cols=2,
         specs=[[{}, {"rowspan": 2}], [{}, None]],
         subplot_titles=("", curve_type, stimulus_type)
     ))
@@ -158,7 +160,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
         if ii == 0:
             response_unit = row.responses.response.timeseries.unit
             stimulus_unit = row.stimuli.stimulus.timeseries.unit
-        
+
         response_conversion = row.responses.response.timeseries.conversion
         response_data = np.array(row.responses.response.timeseries.data[:]) * response_conversion
         response_rate = row.responses.response.timeseries.rate
@@ -171,14 +173,14 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
             stimulus_data = np.zeros(len(response_data))
             stimulus_rate = response_rate
         stimulus_x = np.arange(len(stimulus_data)) / stimulus_rate
-        
+
         # I-V curve
         if (max(stimulus_data) - stimulus_data[0]) > 0:
             iv_curve_x_point = max(stimulus_data)
         else:
             iv_curve_x_point = min(stimulus_data)
         iv_curve_x.append(iv_curve_x_point)
-        
+
         abs_response_data = np.absolute(response_data - response_data[0])
         ind = np.argmax(abs_response_data)
         iv_curve_y.append(response_data[ind])
@@ -190,8 +192,8 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
                 legendgroup=f"{int(ii)}",
                 name=f"Sweep {int(ii)}",
                 marker=dict(color=color_wheel[int(ii%10)])
-            ), 
-            row=1, 
+            ),
+            row=1,
             col=1
         )
 
@@ -199,14 +201,14 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
             go.Scatter(
                 x=stimulus_x,
                 y=stimulus_data,
-                legendgroup=f"{int(ii)}", 
+                legendgroup=f"{int(ii)}",
                 showlegend=False,
                 marker=dict(color=color_wheel[int(ii%10)])
-            ), 
-            row=2, 
+            ),
+            row=2,
             col=1
         )
-        
+
         ii += 1
 
     fig.append_trace(
@@ -216,8 +218,8 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
             showlegend=False,
             mode='lines',
             line=dict(color='black', width=2)
-        ), 
-        row=1, 
+        ),
+        row=1,
         col=2
     )
 
@@ -227,18 +229,18 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
                 x=[iv_curve_x[ii]],
                 y=[iv_curve_y[ii]],
                 showlegend=False,
-                legendgroup=f"{int(ii)}", 
+                legendgroup=f"{int(ii)}",
                 marker=dict(
                     color=color_wheel[int(ii%10)],
                     size=10
                 )
-            ), 
-            row=1, 
+            ),
+            row=1,
             col=2
         )
 
     fig.update_layout(
-        height=600, 
+        height=600,
         width=1200,
         legend=dict(
             orientation="h",
@@ -297,7 +299,7 @@ class IVCurveWidget(widgets.VBox):
         ])
 
         self.update_figure()
-    
+
         self.children = [self.iv_curve_controller, self.fig]
 
 
@@ -306,7 +308,7 @@ class IVCurveWidget(widgets.VBox):
             self.electrode_name = change["new"]
             self.update_figure()
 
-    
+
     def update_stimulus(self, change):
         if change["name"] == "value":
             self.stimuli_index = change["new"]
@@ -316,7 +318,7 @@ class IVCurveWidget(widgets.VBox):
     def update_figure(self):
         self.fig = show_sequential_recordings(
             nwbfile=self.table.get_ancestor(),
-            elec_name=self.electrode_name, 
+            elec_name=self.electrode_name,
             sequence_id=self.stimuli_index
         )
         self.children = [self.iv_curve_controller, self.fig]

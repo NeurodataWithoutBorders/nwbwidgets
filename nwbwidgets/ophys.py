@@ -1,10 +1,12 @@
 from functools import lru_cache
 
-import ipywidgets as widgets
 import numpy as np
+from skimage import measure
+
+import ipywidgets as widgets
 import plotly.graph_objects as go
 import plotly.express as px
-from ndx_grayscalevolume import GrayscaleVolume
+
 from pynwb.base import NWBDataInterface
 from pynwb.ophys import (
     RoiResponseSeries,
@@ -13,8 +15,9 @@ from pynwb.ophys import (
     TwoPhotonSeries,
     ImageSegmentation,
 )
-from skimage import measure
+
 from tifffile import imread, TiffFile
+from ndx_grayscalevolume import GrayscaleVolume
 
 from .base import df_to_hover_text
 from .timeseries import BaseGroupedTraceWidget

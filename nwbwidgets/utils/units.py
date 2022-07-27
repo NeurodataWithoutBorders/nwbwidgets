@@ -1,8 +1,9 @@
-import numpy as np
-import pynwb
-
 from bisect import bisect_right, bisect_left
+
+import numpy as np
 from numpy import searchsorted
+
+import pynwb
 
 
 def get_spike_times(units: pynwb.misc.Units, index, in_interval):

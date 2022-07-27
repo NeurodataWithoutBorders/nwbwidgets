@@ -1,12 +1,15 @@
 from abc import abstractmethod
 
-import ipywidgets as widgets
-import matplotlib.pyplot as plt
 import numpy as np
-from nwbwidgets import base
+import matplotlib.pyplot as plt
+
+import ipywidgets as widgets
 from plotly import graph_objects as go
-from pynwb.behavior import SpatialSeries, BehavioralEvents
+
 from pynwb import TimeSeries
+from pynwb.behavior import SpatialSeries, BehavioralEvents
+
+from nwbwidgets import base
 
 from .utils.timeseries import (
     get_timeseries_tt,

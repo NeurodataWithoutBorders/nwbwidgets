@@ -1,15 +1,18 @@
-from abc import abstractmethod
 import functools
-import matplotlib.pyplot as plt
-import numpy as np
 from bisect import bisect
-import plotly.graph_objects as go
+from abc import abstractmethod
+
+import scipy
+import numpy as np
+import matplotlib.pyplot as plt
+
 from ipywidgets import widgets, fixed, Layout
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from plotly.colors import DEFAULT_PLOTLY_COLORS
+
 from pynwb import TimeSeries
 from pynwb.epoch import TimeIntervals
-import scipy
 
 from .controllers import (
     StartAndDurationController,

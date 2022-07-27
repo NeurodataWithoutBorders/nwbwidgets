@@ -2,12 +2,15 @@ from collections import OrderedDict
 
 import h5py
 import hdmf
-import ndx_grayscalevolume
 import pynwb
-import zarr
+
 from ipywidgets import widgets
+
+import zarr
+import ndx_grayscalevolume
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
+
 from .dynamictablesummary import DynamicTableSummaryWidget
 
 from nwbwidgets import (
@@ -57,7 +60,7 @@ default_neurodata_vis_spec = {
     pynwb.ophys.RoiResponseSeries: ophys.RoiResponseSeriesWidget,
     pynwb.misc.AnnotationSeries: OrderedDict(
         {
-            "text": base.show_text_fields, 
+            "text": base.show_text_fields,
             "times": misc.show_annotations
         }
     ),

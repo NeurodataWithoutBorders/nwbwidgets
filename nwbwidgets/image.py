@@ -1,10 +1,13 @@
 from pathlib import Path, PureWindowsPath
 
 import matplotlib.pyplot as plt
+
 import plotly.graph_objects as go
-import pynwb
 from ipywidgets import widgets, fixed, Layout
+
+import pynwb
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
+
 from tifffile import imread, TiffFile
 
 from .base import fig2widget

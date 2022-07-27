@@ -1,7 +1,10 @@
-import ipywidgets as widgets
 import numpy as np
+
+import ipywidgets as widgets
 import plotly.graph_objects as go
+
 import pynwb
+
 import trimesh
 
 from .base import df_to_hover_text
@@ -153,8 +156,8 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
                             name=group
                     )]
                 else:
-            
-            
+
+
                 """
             self.fig.add_trace(
                 go.Scatter3d(
