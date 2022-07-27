@@ -10,7 +10,7 @@ from matplotlib.collections import PatchCollection
 import plotly.graph_objects as go
 from ipywidgets import widgets, fixed, FloatProgress, Layout
 
-from pynwb.Epoch import TimeIntervals
+from pynwb.epoch import TimeIntervals
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
 from .analysis.spikes import compute_smoothed_firing_rate
