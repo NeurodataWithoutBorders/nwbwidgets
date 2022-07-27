@@ -1,8 +1,15 @@
 import unittest
-import plotly.graph_objects as go
-import matplotlib.pyplot as plt
+
 import numpy as np
+import matplotlib.pyplot as plt
+
 from ipywidgets import widgets
+import plotly.graph_objects as go
+
+from pynwb import TimeSeries
+from pynwb.epoch import TimeIntervals
+from pynwb.behavior import SpatialSeries
+
 from nwbwidgets.timeseries import (
     BaseGroupedTraceWidget,
     show_ts_fields,
@@ -17,9 +24,6 @@ from nwbwidgets.timeseries import (
     show_indexed_timeseries_plotly,
     show_timeseries_mpl,
 )
-from pynwb import TimeSeries
-from pynwb.epoch import TimeIntervals
-from pynwb.behavior import SpatialSeries
 
 
 def test_timeseries_widget():

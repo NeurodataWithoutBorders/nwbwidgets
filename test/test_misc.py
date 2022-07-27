@@ -1,10 +1,16 @@
 import unittest
-from datetime import datetime
 
-import matplotlib.pyplot as plt
-import numpy as np
+from datetime import datetime
 from dateutil.tz import tzlocal
+
+import numpy as np
+import matplotlib.pyplot as plt
+
 from ipywidgets import widgets
+
+from pynwb import NWBFile
+from pynwb.misc import DecompositionSeries, AnnotationSeries
+
 from nwbwidgets.misc import (
     show_psth_raster,
     PSTHWidget,
@@ -16,8 +22,6 @@ from nwbwidgets.misc import (
     RasterGridWidget,
     raster_grid,
 )
-from pynwb import NWBFile
-from pynwb.misc import DecompositionSeries, AnnotationSeries
 
 
 def test_show_psth():
@@ -97,7 +101,7 @@ class ShowPSTHTestCase(unittest.TestCase):
         start_labels = ('start_time', 'stop_time')
         fig = psth_widget.update(index=0, start_labels=start_labels)
         assert len(fig.axes) == 2 * len(start_labels)
-        
+
     def test_raster_widget(self):
         assert isinstance(RasterWidget(self.nwbfile.units), widgets.Widget)
 

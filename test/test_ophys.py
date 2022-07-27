@@ -1,11 +1,12 @@
 import unittest
 
 from datetime import datetime
+from dateutil.tz import tzlocal
+
+import numpy as np
 
 import ipywidgets as widgets
-import numpy as np
-from dateutil.tz import tzlocal
-from ndx_grayscalevolume import GrayscaleVolume
+
 from pynwb.device import Device
 from pynwb.ophys import (
     TwoPhotonSeries,
@@ -17,8 +18,10 @@ from pynwb.ophys import (
     PlaneSegmentation
 )
 
-from nwbwidgets.ophys import TwoPhotonSeriesWidget
+from ndx_grayscalevolume import GrayscaleVolume
+
 from nwbwidgets.ophys import (
+    TwoPhotonSeriesWidget,
     show_grayscale_volume,
     show_df_over_f,
     PlaneSegmentation2DWidget,

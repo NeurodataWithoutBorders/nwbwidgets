@@ -1,17 +1,20 @@
 import unittest
+
 from datetime import datetime
+from dateutil.tz import tzlocal
 
 import numpy as np
-from dateutil.tz import tzlocal
+
 import ipywidgets as widgets
+
+from pynwb import NWBFile
+from pynwb.epoch import TimeIntervals
+
 from nwbwidgets.utils.units import (
     get_min_spike_time,
     align_by_trials,
     align_by_time_intervals,
 )
-from pynwb import NWBFile
-from pynwb.epoch import TimeIntervals
-
 from nwbwidgets.base import TimeIntervalsSelector
 from nwbwidgets.misc import TuningCurveWidget, TuningCurveExtendedWidget
 
@@ -77,7 +80,7 @@ class ExtendedTimeIntervalSelectorTestCase(UnitsTrialsTestCase):
 
     def setUp(self):
         super().setUp()
-        
+
         # add intervals to nwbfile
         ti1 = TimeIntervals(name='intervals', description='experimental intervals')
         ti1.add_interval(start_time=0.0, stop_time=2.0)
@@ -159,15 +162,15 @@ class ShowPSTHTestCase(UnitsTrialsTestCase):
             np.array([2.2, 3.0, 25.0, 26.0]),
             np.array([-0.8, 0.0, 22.0, 23.0]),
             np.array([-3.8, -3.0, 19.0, 20.0]),
-            np.array([-5.8, -5., 17., 18.]), 
-            np.array([-10.8, -10.,  12.,  13.]), 
+            np.array([-5.8, -5., 17., 18.]),
+            np.array([-10.8, -10.,  12.,  13.]),
             np.array([-13.8, -13.,   9.,  10.])
         ]
 
         at = align_by_trials(
-            self.nwbfile.units, 
-            index=1, 
-            start=-20.0, 
+            self.nwbfile.units,
+            index=1,
+            start=-20.0,
             end=30.0
         )
 

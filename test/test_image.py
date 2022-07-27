@@ -1,6 +1,11 @@
-import ipywidgets as widgets
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+
+import ipywidgets as widgets
+
+from pynwb.base import TimeSeries
+from pynwb.image import RGBImage, GrayscaleImage, IndexSeries, ImageSeries
+
 from nwbwidgets.image import (
     show_rbga_image,
     show_grayscale_image,
@@ -8,8 +13,6 @@ from nwbwidgets.image import (
     show_image_series,
 )
 from nwbwidgets.view import default_neurodata_vis_spec
-from pynwb.base import TimeSeries
-from pynwb.image import RGBImage, GrayscaleImage, IndexSeries, ImageSeries
 
 
 def test_show_rbg_image():
