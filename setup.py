@@ -1,4 +1,4 @@
-impor os
+import os
 from setuptools import setup
 
 d = {}
