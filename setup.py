@@ -1,5 +1,8 @@
 import os
 from setuptools import setup
+from pathlib import Path
+
+root = Path(__file__).parent
 
 d = {}
 exec(open("nwbwidgets/version.py").read(), None, d)
@@ -8,7 +11,7 @@ version = d["version"]
 with open("README.md") as f:
     long_description = f.read()
 
-with open(os.path.join(path, "requirements.txt")) as f:
+with open(os.path.join(root, "requirements.txt")) as f:
     requirements = f.readlines()
 
 setup(
