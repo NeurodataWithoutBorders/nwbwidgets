@@ -1,4 +1,8 @@
+import os
 from setuptools import setup
+from pathlib import Path
+
+root = Path(__file__).parent
 
 d = {}
 exec(open("nwbwidgets/version.py").read(), None, d)
@@ -6,6 +10,9 @@ version = d["version"]
 
 with open("README.md") as f:
     long_description = f.read()
+
+with open(os.path.join(root, "requirements.txt")) as f:
+    requirements = f.readlines()
 
 setup(
     author="Ben Dichter",
@@ -22,24 +29,7 @@ setup(
     ],
     description="This is nwbwidgets, widgets for viewing the contents of a "
     "NWB-file in Jupyter Notebooks using ipywidgets.",
-    install_requires=[
-        "pynwb",
-        "ipympl",
-        "matplotlib",
-        "numpy",
-        "ipyvolume",
-        "ndx_grayscalevolume",
-        "plotly",
-        "scikit-image",
-        "tqdm>=4.36.0",
-        "ndx-icephys-meta",
-        "ipysheet",
-        "zarr",
-        "ccfwidget",
-        "tifffile",
-        "ndx-spectrum",
-        "trimesh",
-    ],
+    install_requires=requirements,
     license="MIT",
     keywords=["jupyter", "hdf5", "notebook", "nwb"],
     long_description=long_description,
