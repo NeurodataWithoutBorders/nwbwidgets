@@ -1,8 +1,13 @@
 import unittest
+
 from datetime import datetime
+from dateutil.tz import tzlocal
 
 import numpy as np
-from dateutil.tz import tzlocal
+
+from pynwb import NWBFile, TimeSeries
+from pynwb.epoch import TimeIntervals
+
 from nwbwidgets.utils.timeseries import (
     get_timeseries_tt,
     get_timeseries_maxt,
@@ -13,9 +18,6 @@ from nwbwidgets.utils.timeseries import (
     align_by_trials,
     align_by_time_intervals,
 )
-from pynwb import NWBFile
-from pynwb import TimeSeries
-from pynwb.epoch import TimeIntervals
 
 
 def test_get_timeseries_tt():

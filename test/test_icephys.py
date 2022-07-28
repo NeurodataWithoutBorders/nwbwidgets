@@ -1,16 +1,18 @@
-import matplotlib.pyplot as plt
-import numpy as np
 from datetime import datetime
 from dateutil.tz import tzlocal
+
+import numpy as np
+import matplotlib.pyplot as plt
+
 from ipywidgets import widgets
 import plotly.graph_objects as go
 
-from ndx_icephys_meta.icephys import Sweeps, IntracellularRecordings
+from pynwb import NWBFile
 from pynwb.base import TimeSeries
 from pynwb.device import Device
-from pynwb.icephys import IntracellularElectrode
-from pynwb import NWBFile
-from pynwb.icephys import VoltageClampStimulusSeries, VoltageClampSeries
+from pynwb.icephys import IntracellularElectrode, VoltageClampStimulusSeries, VoltageClampSeries
+
+from ndx_icephys_meta.icephys import Sweeps, IntracellularRecordings
 
 from nwbwidgets.icephys import show_single_sweep_sequence, IVCurveWidget
 
@@ -117,7 +119,7 @@ def test_iv_curve():
     # (E) Add a list of repetition table indices as a experimental condition
     ex_nwbfile.add_icephys_experimental_condition(repetitions=[run_index, ])
 
-    # Make widget 
+    # Make widget
     w = IVCurveWidget(sequential_recordings_table=ex_nwbfile.icephys_sequential_recordings)
     assert isinstance(w, widgets.VBox)
     assert isinstance(w.fig, go.FigureWidget)

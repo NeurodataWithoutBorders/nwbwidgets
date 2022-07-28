@@ -1,7 +1,10 @@
-import ipywidgets as widgets
 import numpy as np
+
+import ipywidgets as widgets
 import plotly.graph_objects as go
-import pynwb
+
+from pynwb.base import DynamicTable
+
 import trimesh
 
 from .base import df_to_hover_text
@@ -54,7 +57,7 @@ def make_cylinders(
 
 
 class HumanElectrodesPlotlyWidget(widgets.VBox):
-    def __init__(self, electrodes: pynwb.base.DynamicTable, **kwargs):
+    def __init__(self, electrodes: DynamicTable, **kwargs):
 
         super().__init__()
         self.electrodes = electrodes
@@ -104,7 +107,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
             normals.append(normal)
         return normals
 
-    def show_electrodes(self, electrodes: pynwb.base.DynamicTable, color_by):
+    def show_electrodes(self, electrodes: DynamicTable, color_by):
 
         positions = np.c_[electrodes.x[:], electrodes.y[:], electrodes.z[:]]
 
@@ -153,8 +156,8 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
                             name=group
                     )]
                 else:
-            
-            
+
+
                 """
             self.fig.add_trace(
                 go.Scatter3d(

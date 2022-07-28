@@ -1,9 +1,12 @@
 import unittest
+
 import numpy as np
+
 from hdmf.common import DynamicTable, VectorData
 from pynwb.ecephys import ElectrodeGroup, Device
 
-from nwbwidgets.controllers import RangeController, GroupAndSortController, StartAndDurationController
+from nwbwidgets.controllers import (RangeController, GroupAndSortController,
+                                    StartAndDurationController)
 
 
 class FloatRangeControllerTestCase(unittest.TestCase):

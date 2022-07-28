@@ -4,6 +4,7 @@ Taken from https://github.com/maartenbreddels/ipyvolume/pull/178
 import numpy as np
 import matplotlib.cm
 import matplotlib.colors
+
 from ipyvolume import TransferFunction
 
 

@@ -1,4 +1,5 @@
 from ipyvolume import TransferFunction
+
 from nwbwidgets.utils.cmaps import (
     linear_transfer_function,
     matplotlib_transfer_function,

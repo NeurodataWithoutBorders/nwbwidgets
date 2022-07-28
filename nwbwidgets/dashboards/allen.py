@@ -1,12 +1,16 @@
-from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
-from nwbwidgets.controllers import StartAndDurationController
-from nwbwidgets.timeseries import SingleTracePlotlyWidget
-from nwbwidgets.image import ImageSeriesWidget
+from pathlib import Path, PureWindowsPath
+
+import numpy as np
+
 import plotly.graph_objects as go
 from ipywidgets import widgets, Layout
+
 from tifffile import imread
-from pathlib import Path, PureWindowsPath
-import numpy as np
+
+from nwbwidgets.image import ImageSeriesWidget
+from nwbwidgets.timeseries import SingleTracePlotlyWidget
+from nwbwidgets.controllers import StartAndDurationController
+from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 
 
 class AllenDashboard(widgets.VBox):

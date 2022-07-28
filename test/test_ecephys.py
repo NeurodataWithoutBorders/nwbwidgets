@@ -1,17 +1,19 @@
 import unittest
+
 from datetime import datetime
+from dateutil.tz import tzlocal
+
+import numpy as np
 
 import ipywidgets as widgets
-import numpy as np
-from dateutil.tz import tzlocal
-from pynwb import NWBFile
-from pynwb import TimeSeries
+
+from pynwb import NWBFile, TimeSeries
 from pynwb.ecephys import SpikeEventSeries, ElectricalSeries, LFP
 
-from nwbwidgets.ecephys import show_spectrogram, show_spike_event_series, show_ccf
+from nwbwidgets import nwb2widget
 from nwbwidgets.view import default_neurodata_vis_spec
 from nwbwidgets.base import show_multi_container_interface
-from nwbwidgets import nwb2widget
+from nwbwidgets.ecephys import show_spectrogram, show_spike_event_series, show_ccf
 
 
 class ShowActivityTestCase(unittest.TestCase):
