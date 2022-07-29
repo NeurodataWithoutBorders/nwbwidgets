@@ -30,7 +30,7 @@ setup(
     description="This is nwbwidgets, widgets for viewing the contents of a "
     "NWB-file in Jupyter Notebooks using ipywidgets.",
     install_requires=requirements,
-    license="MIT",
+    license="BSD",
     keywords=["jupyter", "hdf5", "notebook", "nwb"],
     long_description=long_description,
     long_description_content_type="text/markdown",
