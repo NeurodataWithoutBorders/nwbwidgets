@@ -1,7 +1,9 @@
 from typing import Iterable
 
 import numpy as np
+
 from hdmf.common import DynamicTable
+
 from ipywidgets import widgets, Layout, ValueWidget
 
 from ..utils.dynamictable import group_and_sort, infer_categorical_columns

@@ -1,5 +1,6 @@
-import plotly.graph_objects as go
 import numpy as np
+
+import plotly.graph_objects as go
 
 
 def multi_trace(x, y, color, label=None, fig=None, insert_nans=False):

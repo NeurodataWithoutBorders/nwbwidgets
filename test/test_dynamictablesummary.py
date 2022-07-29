@@ -1,9 +1,12 @@
 import unittest
+
 from datetime import datetime
 from dateutil.tz import tzlocal
 
 from ipywidgets import widgets
+
 from pynwb import NWBFile
+
 from nwbwidgets.dynamictablesummary import DynamicTableSummaryWidget
 
 
@@ -148,7 +151,7 @@ class DynamicSummaryTestCase(unittest.TestCase):
         assert len(widget.column_dropdown.value) == 0
 
         # 4 real variables
-        cols_to_plot = (real_names[0], real_names[1], 
+        cols_to_plot = (real_names[0], real_names[1],
                         real_names[2], real_names[3])
         widget.column_dropdown.value = cols_to_plot
         # this should trigger a reset of the dropdown

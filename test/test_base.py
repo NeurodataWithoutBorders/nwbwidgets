@@ -1,15 +1,16 @@
 import unittest
-from datetime import datetime
+import pytest
 
-import matplotlib.pyplot as plt
+from datetime import datetime
+from dateutil.tz import tzlocal
+
 import numpy as np
 import pandas as pd
-import pytest
-from dateutil.tz import tzlocal
+import matplotlib.pyplot as plt
+
 from ipywidgets import widgets
-from pynwb import NWBFile
-from pynwb import ProcessingModule
-from pynwb import TimeSeries
+
+from pynwb import NWBFile, ProcessingModule, TimeSeries
 from pynwb.behavior import Position, SpatialSeries
 from pynwb.core import DynamicTable
 from pynwb.file import Subject
@@ -25,8 +26,7 @@ from nwbwidgets.base import (
     df2accordion,
     lazy_show_over_data,
 )
-from nwbwidgets.view import default_neurodata_vis_spec
-from nwbwidgets.view import show_dynamic_table
+from nwbwidgets.view import default_neurodata_vis_spec, show_dynamic_table
 
 
 def test_show_neurodata_base():

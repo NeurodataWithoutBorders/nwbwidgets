@@ -1,11 +1,12 @@
-from collections.abc import Iterable
 from datetime import datetime
 from functools import partial
+from collections.abc import Iterable
 
 from ipywidgets import widgets
-from nwbwidgets import view
+
 from pynwb.file import NWBFile
 
+from nwbwidgets import view
 from .base import lazy_show_over_data
 
 
