@@ -23,9 +23,9 @@ setup(
         "Development Status :: 3 - Alpha",
         "Framework :: Jupyter",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     description="This is nwbwidgets, widgets for viewing the contents of a "
     "NWB-file in Jupyter Notebooks using ipywidgets.",
@@ -41,7 +41,7 @@ setup(
         "nwbwidgets/analysis",
         "nwbwidgets/controllers",
     ],
-    python_requires=">=2.7",
+    python_requires=">=3.7",
     setup_requires=["setuptools>=38.6.0", "setuptools_scm"],
     url="https://github.com/NeurodataWithoutBorders/nwb-jupyter-widgets",
 )
