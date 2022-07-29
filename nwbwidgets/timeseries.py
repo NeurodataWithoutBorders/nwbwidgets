@@ -693,13 +693,13 @@ class MultiTimeSeriesWidget(widgets.VBox):
             tmin=self.tmin, tmax=self.tmax
         )
 
-        widgets = [
+        ts_widgets = [
             widget_class(
                 time_series, foreign_time_window_controller=self.time_window_controller
             )
             for widget_class, time_series in zip(widget_class_list, time_series_list)
         ]
-        self.children = [self.time_window_controller] + widgets
+        self.children = [self.time_window_controller] + ts_widgets
 
 
 class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):

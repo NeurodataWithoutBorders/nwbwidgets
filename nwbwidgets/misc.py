@@ -2,7 +2,6 @@ from functools import partial
 
 import scipy
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
@@ -1401,7 +1400,6 @@ def sort_mixed_type_list(x):
     x_num_i = list()
     x_oth = list()
     x_oth_i = list()
-    l = len(x)
     for i, xx in enumerate(x):
         try:
             x_num.append(float(xx))
