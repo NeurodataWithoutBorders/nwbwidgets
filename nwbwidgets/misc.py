@@ -588,7 +588,7 @@ def show_psth_smoothed(
     )
 
     if group_inds is None:
-        group_inds = np.zeros((len(smoothed)), dtype=np.int)
+        group_inds = np.zeros((len(smoothed)), dtype=int)
     group_stats = []
     for group in np.unique(group_inds):
         this_mean = np.mean(smoothed[group_inds == group], axis=0)

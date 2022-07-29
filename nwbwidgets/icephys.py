@@ -184,7 +184,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
         ind = np.argmax(abs_response_data)
         iv_curve_y.append(response_data[ind])
 
-        fig.append_trace(
+        fig.add_trace(
             go.Scatter(
                 x=response_x,
                 y=response_data,
@@ -196,7 +196,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
             col=1
         )
 
-        fig.append_trace(
+        fig.add_trace(
             go.Scatter(
                 x=stimulus_x,
                 y=stimulus_data,
@@ -210,7 +210,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
 
         ii += 1
 
-    fig.append_trace(
+    fig.add_trace(
         go.Scatter(
             x=iv_curve_x,
             y=iv_curve_y,
@@ -223,7 +223,7 @@ def show_sequential_recordings(nwbfile, elec_name, sequence_id=0):
     )
 
     for ii in range(len(iv_curve_x)):
-        fig.append_trace(
+        fig.add_trace(
             go.Scatter(
                 x=[iv_curve_x[ii]],
                 y=[iv_curve_y[ii]],

@@ -867,7 +867,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
     ):
         data, time_ts_aligned = self.align_data(start_label, before, after, index)
         if group_inds is None:
-            group_inds = np.zeros(len(self.trials), dtype=np.int)
+            group_inds = np.zeros(len(self.trials), dtype=int)
         if align_to_zero:
             for trial_no in order:
                 data_zero_id = bisect(time_ts_aligned[trial_no], 0)
@@ -958,7 +958,7 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
 
         data,time_ts_aligned = self.align_data(start_label,before,after,index)
         if group_inds is None:
-            group_inds = np.zeros(len(self.trials), dtype=np.int)
+            group_inds = np.zeros(len(self.trials), dtype=int)
         if align_to_zero:
             for trial_no in order:
                 data_zero_id = bisect(time_ts_aligned[trial_no], 0)
