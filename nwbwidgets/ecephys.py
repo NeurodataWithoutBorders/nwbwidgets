@@ -13,6 +13,9 @@ from pynwb.ecephys import SpikeEventSeries, ElectricalSeries
 from .base import fig2widget, lazy_tabs, render_dataframe
 from .timeseries import BaseGroupedTraceWidget
 from .brains import HumanElectrodesPlotlyWidget
+from .utils.dependencies import safe_import, check_widget_dependencies
+
+ccfwidget = safe_import('ccfwidget')
 
 
 def show_spectrogram(nwbobj: TimeSeries, channel=0, **kwargs):
@@ -99,6 +102,7 @@ def show_electrodes(electrodes_table):
     return lazy_tabs(in_dict, electrodes_table)
 
 
+@check_widget_dependencies({'ccfwidget' : ccfwidget})
 def show_ccf(electrodes_table=None, **kwargs):
     from ccfwidget import CCFWidget
 

@@ -8,6 +8,10 @@ from pynwb.base import DynamicTable
 import trimesh
 
 from .base import df_to_hover_text
+from .utils.dependencies import safe_import, check_widget_dependencies
+
+nilearn = safe_import('nilearn')
+skspatial = safe_import('skspatial')
 
 
 def make_cylinder_mesh(
@@ -56,6 +60,7 @@ def make_cylinders(
     ]
 
 
+@check_widget_dependencies({'nilearn' : nilearn, 'skspatial' : skspatial})
 class HumanElectrodesPlotlyWidget(widgets.VBox):
     def __init__(self, electrodes: DynamicTable, **kwargs):
 
