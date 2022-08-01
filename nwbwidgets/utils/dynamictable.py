@@ -76,7 +76,6 @@ def infer_columns_to_plot(dynamic_table: DynamicTable):
     column_names_to_plot: list
         Columns that can be plotted with the dynamic table summary
     """
-    categorical_cols = infer_categorical_columns(dynamic_table)
 
     column_names_to_plot = []
 
