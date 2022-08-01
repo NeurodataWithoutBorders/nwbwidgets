@@ -70,8 +70,8 @@ class TestTracesPlotlyWidget(unittest.TestCase):
             rate=1.0,
         )
         # Create 'intermittent' timeseries by defining timestamps with a gap from [10, 20]
-        self.ts_intermittent = TimeSeries(
-            name="test_timeseries_intermittent",
+        self.ts_single_intermittent = TimeSeries(
+            name="test_timeseries_single_intermittent",
             data=data[:, 0],
             timestamps=np.hstack([np.arange(0, 10, 10 / data.shape[0] * 2),
                                   np.arange(20, 30, 10 / data.shape[0] * 2)]),
@@ -87,17 +87,13 @@ class TestTracesPlotlyWidget(unittest.TestCase):
         ]
 
     def test_single_trace_widget_null_data(self):
-        single_wd = SingleTracePlotlyWidget(timeseries=self.ts_intermittent)
-        tt = get_timeseries_tt(self.ts_single, 12, 18)
-        single_wd.controls["time_window"].value = [
-            tt[int(len(tt) * 0.2)],
-            tt[int(len(tt) * 0.4)],
-        ]
+        single_wd_nd = SingleTracePlotlyWidget(timeseries=self.ts_intermittent)
+        single_wd_nd.controls["time_window"].value = [12, 14]
 
     def test_separate_traces_widget(self):
-        single_wd = SeparateTracesPlotlyWidget(timeseries=self.ts_multi)
+        sep_wd = SeparateTracesPlotlyWidget(timeseries=self.ts_multi)
         tt = get_timeseries_tt(self.ts_multi)
-        single_wd.controls["time_window"].value = [
+        sep_wd.controls["time_window"].value = [
             tt[int(len(tt) * 0.2)],
             tt[int(len(tt) * 0.4)],
         ]
