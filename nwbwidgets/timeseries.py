@@ -353,12 +353,11 @@ class SingleTracePlotlyWidget(AbstractTraceWidget):
             self.out_fig.data[0].x = get_timeseries_tt(timeseries, istart, istop)
             self.out_fig.data[0].y = list(yy)
 
+            # Get data y-range, catching case with no data in current range (if so - no update)
+            y_range = [min(yy), max(yy)] if yy.size != 0 else [None, None]
             self.out_fig.update_layout(
-                yaxis={"range": [min(yy), max(yy)], "autorange": False},
-                xaxis={
-                    "range": [min(self.out_fig.data[0].x), max(self.out_fig.data[0].x)],
-                    "autorange": False,
-                },
+                yaxis={"range": y_range, "autorange": False},
+                xaxis={"range": time_window, "autorange": False},
             )
 
         self.controls["time_window"].observe(on_change)
@@ -411,7 +410,8 @@ class SeparateTracesPlotlyWidget(AbstractTraceWidget):
                         self.out_fig.data[i].x = tt
                         self.out_fig.data[i].y = dd
                         self.out_fig.update_yaxes(
-                            range=[min(dd), max(dd)], row=i + 1, col=1
+                            range=[min(dd), max(dd)] if dd.size != 0 else [None, None],
+                            row=i + 1, col=1
                         )
                         self.out_fig.update_xaxes(
                             range=time_window, row=i + 1, col=1
