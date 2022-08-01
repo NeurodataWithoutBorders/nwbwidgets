@@ -36,15 +36,14 @@ def safe_import(*args):
     return mod
 
 
-def check_widget_dependency(dependency, name):
-    """Decorator that checks as widget for required dependencies.
+def check_widget_dependencies(dependencies):
+    """Decorator that checks a widget for required dependencies.
 
     Parameters
     ----------
-    dependency : module or False
-        Module, if successfully imported, or boolean (False) if not.
-    name : str
-        Full name of the module, to be printed in message.
+    dependencies : dict
+        Each key should be the name of the module. This is printed if module is missing.
+        Each value should be the the module, if successfully imported, or boolean (False) if not.
 
     Returns
     -------
@@ -53,17 +52,20 @@ def check_widget_dependency(dependency, name):
 
     Notes
     -----
-    If the dependency is available this decorator passes through the widget.
-    If the dependency is not available, a text widget is returned noting the missing module.
+    If the dependencies are available this decorator passes through the widget.
+    If the dependencies are not available, a text widget is returned noting the missing module(s).
     """
 
     def wrap(func):
         @wraps(func)
         def wrapped_func(*args, **kwargs):
-            if not dependency:
-                txt = "The " + name + " module is required for this widget."
-                return widgets.Text(txt)
-            else:
+
+            missing = [name for name, dependency in dependencies.items() if not dependency]
+            if not missing:
                 return func(*args, **kwargs)
+            else:
+                txt = "This widget requires the following extra dependencies: {}"
+                return widgets.Label(txt.format(', '.join(missing)))
+
         return wrapped_func
     return wrap
