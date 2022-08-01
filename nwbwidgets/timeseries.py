@@ -693,13 +693,13 @@ class MultiTimeSeriesWidget(widgets.VBox):
             tmin=self.tmin, tmax=self.tmax
         )
 
-        widgets = [
+        ts_widgets = [
             widget_class(
                 time_series, foreign_time_window_controller=self.time_window_controller
             )
             for widget_class, time_series in zip(widget_class_list, time_series_list)
         ]
-        self.children = [self.time_window_controller] + widgets
+        self.children = [self.time_window_controller] + ts_widgets
 
 
 class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
@@ -867,7 +867,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
     ):
         data, time_ts_aligned = self.align_data(start_label, before, after, index)
         if group_inds is None:
-            group_inds = np.zeros(len(self.trials), dtype=np.int)
+            group_inds = np.zeros(len(self.trials), dtype=int)
         if align_to_zero:
             for trial_no in order:
                 data_zero_id = bisect(time_ts_aligned[trial_no], 0)
@@ -958,7 +958,7 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
 
         data,time_ts_aligned = self.align_data(start_label,before,after,index)
         if group_inds is None:
-            group_inds = np.zeros(len(self.trials), dtype=np.int)
+            group_inds = np.zeros(len(self.trials), dtype=int)
         if align_to_zero:
             for trial_no in order:
                 data_zero_id = bisect(time_ts_aligned[trial_no], 0)

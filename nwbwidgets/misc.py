@@ -2,7 +2,6 @@ from functools import partial
 
 import scipy
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
@@ -588,7 +587,7 @@ def show_psth_smoothed(
     )
 
     if group_inds is None:
-        group_inds = np.zeros((len(smoothed)), dtype=np.int)
+        group_inds = np.zeros((len(smoothed)), dtype=int)
     group_stats = []
     for group in np.unique(group_inds):
         this_mean = np.mean(smoothed[group_inds == group], axis=0)
@@ -1401,7 +1400,6 @@ def sort_mixed_type_list(x):
     x_num_i = list()
     x_oth = list()
     x_oth_i = list()
-    l = len(x)
     for i, xx in enumerate(x):
         try:
             x_num.append(float(xx))

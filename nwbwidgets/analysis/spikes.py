@@ -79,7 +79,6 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
     # input data size
     num_t = len(data)  # number of trials
     channel_lengths = [len(ch_data) for ch_data in data]
-    max_channel_length = max(channel_lengths)
 
     if not isinstance(sig, (float, int)) or sig <= 0:
         raise TypeError(
@@ -103,11 +102,9 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
     if t is None:
         num_points = int(5 * (T[1] - T[0]) / sig)
         t = np.linspace(T[0], T[1], num_points)
-        t_min, t_max = T[0], T[1]
     else:
         t = np.ravel(t)
         num_points = len(t)
-        t_min, t_max = np.min(t), np.max(t)
 
     # masked input data size
     data_lengths = [np.ma.count(ch_data) for ch_data in data]
