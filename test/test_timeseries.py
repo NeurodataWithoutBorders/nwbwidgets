@@ -56,14 +56,14 @@ class TestTracesPlotlyWidget(unittest.TestCase):
     def setUp(self):
         data = np.random.rand(160, 3)
         self.ts_multi = SpatialSeries(
-            name="test_timeseries",
+            name="test_timeseries_multi",
             data=data,
             reference_frame="lowerleft",
             starting_time=0.0,
             rate=1.0,
         )
         self.ts_single = TimeSeries(
-            name="test_timeseries",
+            name="test_timeseries_single",
             data=data[:, 0],
             unit="m",
             starting_time=0.0,
@@ -77,6 +77,14 @@ class TestTracesPlotlyWidget(unittest.TestCase):
                                   np.arange(20, 30, 10 / data.shape[0] * 2)]),
             unit='m',
         )
+        self.ts_multi_intermittent = SpatialSeries(
+            name="test_timeseries_multi_intermittent",
+            data=data,
+            timestamps=np.hstack([np.arange(0, 10, 10 / data.shape[0] * 2),
+                                  np.arange(20, 30, 10 / data.shape[0] * 2)]),
+            reference_frame="lowerleft",
+        )
+
 
     def test_single_trace_widget(self):
         single_wd = SingleTracePlotlyWidget(timeseries=self.ts_single)
@@ -87,7 +95,7 @@ class TestTracesPlotlyWidget(unittest.TestCase):
         ]
 
     def test_single_trace_widget_null_data(self):
-        single_wd_nd = SingleTracePlotlyWidget(timeseries=self.ts_intermittent)
+        single_wd_nd = SingleTracePlotlyWidget(timeseries=self.ts_single_intermittent)
         single_wd_nd.controls["time_window"].value = [12, 14]
 
     def test_separate_traces_widget(self):
@@ -97,6 +105,10 @@ class TestTracesPlotlyWidget(unittest.TestCase):
             tt[int(len(tt) * 0.2)],
             tt[int(len(tt) * 0.4)],
         ]
+
+    def test_separate_traces_widget_null_data(self):
+        single_wd_nd = SingleTracePlotlyWidget(timeseries=self.ts_multi_intermittent)
+        single_wd_nd.controls["time_window"].value = [12, 14]
 
 
 class TestIndexTimeSeriesPlotly(unittest.TestCase):
