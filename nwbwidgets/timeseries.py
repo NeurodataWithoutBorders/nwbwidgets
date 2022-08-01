@@ -354,11 +354,7 @@ class SingleTracePlotlyWidget(AbstractTraceWidget):
             self.out_fig.data[0].y = list(yy)
 
             # Get data y-range, catching case with no data in current range (if so - no update)
-            try:
-                y_range = [min(yy), max(yy)]
-            except ValueError:
-                y_range = [None, None]
-
+            y_range = [min(yy), max(yy)] if yy.size != 0 else [None, None]
             self.out_fig.update_layout(
                 yaxis={"range": y_range, "autorange": False},
                 xaxis={"range": time_window, "autorange": False},
