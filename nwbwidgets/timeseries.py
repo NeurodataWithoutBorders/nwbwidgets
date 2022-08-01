@@ -410,7 +410,8 @@ class SeparateTracesPlotlyWidget(AbstractTraceWidget):
                         self.out_fig.data[i].x = tt
                         self.out_fig.data[i].y = dd
                         self.out_fig.update_yaxes(
-                            range=[min(dd), max(dd)], row=i + 1, col=1
+                            range=[min(dd), max(dd)] if dd.size != 0 else [None, None],
+                            row=i + 1, col=1
                         )
                         self.out_fig.update_xaxes(
                             range=time_window, row=i + 1, col=1
