@@ -116,18 +116,12 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
 
         positions = np.c_[electrodes.x[:], electrodes.y[:], electrodes.z[:]]
 
-        if (
-            isinstance(electrodes[color_by][0], bytes)
-            or isinstance(electrodes[color_by][0], str)
-            or isinstance(electrodes[color_by][0], np.bool_)
-        ):
+        if isinstance(electrodes[color_by][0], (bytes, str, np.bool_)):
             ugroups, group_inv = np.unique(electrodes[color_by][:], return_inverse=True)
             colors = group_inv
             show_leg = True
             show_scale = False
-        elif isinstance(electrodes[color_by][0], np.ndarray) or isinstance(
-            electrodes[color_by][0], np.float
-        ):
+        elif isinstance(electrodes[color_by][0], (np.ndarray, np.float)):
             colors = np.ravel(electrodes[color_by][:])
             ugroups, group_inv = [0], np.array([0] * len(colors))
             show_leg = False

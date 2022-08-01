@@ -50,8 +50,7 @@ class AllenRasterGroupAndSortController(GroupAndSortController):
             x
             for x in self.electrodes.colnames
             if not (
-                isinstance(self.electrodes[x][0], Iterable)
-                or isinstance(self.electrodes[x][0], str)
+                isinstance(self.electrodes[x][0], (Iterable, str))
             )
         ]
         return units_orderable_cols + [
