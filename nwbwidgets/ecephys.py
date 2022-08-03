@@ -102,7 +102,7 @@ def show_electrodes(electrodes_table):
     return lazy_tabs(in_dict, electrodes_table)
 
 
-@check_widget_dependencies({'ccfwidget' : ccfwidget})
+@check_widget_dependencies({'ccfwidget' : ccfwidget, 'aiohttp' : safe_import('aiohttp')})
 def show_ccf(electrodes_table=None, **kwargs):
 
     input_kwargs = {}
