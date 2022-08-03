@@ -104,7 +104,6 @@ def show_electrodes(electrodes_table):
 
 @check_widget_dependencies({'ccfwidget' : ccfwidget})
 def show_ccf(electrodes_table=None, **kwargs):
-    from ccfwidget import CCFWidget
 
     input_kwargs = {}
     if electrodes_table is not None:
@@ -115,7 +114,7 @@ def show_ccf(electrodes_table=None, **kwargs):
         input_kwargs.update(markers=markers)
 
     input_kwargs.update(kwargs)
-    return CCFWidget(**input_kwargs)
+    return ccfwidget.CCFWidget(**input_kwargs)
 
 
 def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
