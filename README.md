@@ -17,6 +17,11 @@ The latest published version can be installed by running:
 pip install nwbwidgets
 ```
 
+Note that there are some optional dependencies required for some widgets.
+If an NWB data file contains a data type that requires additional dependencies,
+you will see a list of extra modules needed for that specific widget.
+All other widgets in the file will still work.
+
 ## Usage
 ```python
 from pynwb import NWBHDF5IO
