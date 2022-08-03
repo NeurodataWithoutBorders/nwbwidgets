@@ -30,6 +30,10 @@ setup(
     description="This is nwbwidgets, widgets for viewing the contents of a "
     "NWB-file in Jupyter Notebooks using ipywidgets.",
     install_requires=requirements,
+    extras_require={
+        'human_electrodes' : ['skspatial', 'nilearn', 'trimesh'],
+        'mouse_electrodes' : ['ccfwidget', 'aiohttp']
+    },
     license="BSD",
     keywords=["jupyter", "hdf5", "notebook", "nwb"],
     long_description=long_description,
