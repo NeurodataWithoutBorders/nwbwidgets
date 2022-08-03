@@ -5,13 +5,12 @@ import plotly.graph_objects as go
 
 from pynwb.base import DynamicTable
 
-import trimesh
-
 from .base import df_to_hover_text
 from .utils.dependencies import safe_import, check_widget_dependencies
 
 nilearn = safe_import('nilearn')
 skspatial = safe_import('skspatial')
+trimesh = safe_import('trimesh')
 
 
 def make_cylinder_mesh(
@@ -60,7 +59,7 @@ def make_cylinders(
     ]
 
 
-@check_widget_dependencies({'nilearn' : nilearn, 'skspatial' : skspatial})
+@check_widget_dependencies({'nilearn' : nilearn, 'skspatial' : skspatial, 'trimesh' : trimesh})
 class HumanElectrodesPlotlyWidget(widgets.VBox):
     def __init__(self, electrodes: DynamicTable, **kwargs):
 
