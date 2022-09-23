@@ -25,6 +25,15 @@ NWB Widgets is a library of widgets for visualization NWB data in a Jupyter note
    contents/quickstart
    contents/developer_guide
 
+.. toctree::
+   :maxdepth: 3
+   :caption: Neurodata Widgets:
+
+   contents/neurodata_widgets
+
+   modules
+
+
 
 Indices and tables
 ==================
