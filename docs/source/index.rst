@@ -11,6 +11,12 @@ NWB Widgets
 
 NWB Widgets is a library of widgets for visualization NWB data in a Jupyter notebook (or lab). The widgets allow you to navigate through the hierarchical structure of the NWB file and visualize specific data elements. It is designed to work out-of-the-box with NWB 2.0 files and to be easy to extend.
 
+.. raw:: html
+
+    <div>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/XoWdLNS_wHE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+
 .. note::
 
     This packages is in alpha development; as such, we make every effort towards
