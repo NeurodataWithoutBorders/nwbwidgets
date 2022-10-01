@@ -3,7 +3,7 @@ matplotlib
 scikit-image
 pynwb
 ipympl
-ipysheet
+ipydatagrid
 ipyvolume>=0.6.0a10
 ipywidgets
 plotly

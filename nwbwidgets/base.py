@@ -5,7 +5,7 @@ from typing import Union
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import ipysheet
+from ipydatagrid import DataGrid
 from IPython import display
 from ipywidgets import widgets
 from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
@@ -13,6 +13,7 @@ from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
 import h5py
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface, MultiContainerInterface
+from pynwb.base import DynamicTable
 
 from nwbwidgets import view
 
@@ -32,11 +33,14 @@ def show_fields(node, **kwargs) -> widgets.Widget:
     return vbox
 
 
-def render_dataframe(df):
-    out1 = widgets.Output()
-    with out1:
-        display.display(df.to_dataframe())
-    return out1
+def render_dataframe(dynamic_table: DynamicTable):
+    try:
+        return DataGrid(dynamic_table.to_dataframe())
+    except:
+        out1 = widgets.Output()
+        with out1:
+            display.display(dynamic_table.to_dataframe())
+        return out1
 
 
 def show_neurodata_base(
@@ -325,22 +329,9 @@ def show_dset(dset: h5py.Dataset, **kwargs):
 
 
 def dataset_to_sheet(dset: h5py.Dataset):
-    if dset.ndim == 1:
-        nrows = len(dset)
-
-        sheet = ipysheet.easy.sheet(rows=nrows, columns=1, column_headers=False)
-        for row in range(nrows):
-            ipysheet.easy.cell(row, 0, dset[row], read_only=True)
-    elif dset.ndim == 2:
-        nrows, ncols = dset.shape
-
-        sheet = ipysheet.easy.sheet(rows=nrows, columns=ncols, column_headers=False)
-        for row, col in zip(range(nrows), range(ncols)):
-            ipysheet.easy.cell(row, col, dset[row, col], read_only=True)
-    else:
-        # do not know how to render datasets that have 3 or more dimensions
+    if dset.ndim >= 2:
         return widgets.HTML(print(dset))
-    return sheet
+    return DataGrid(pd.DataFrame(dset[:]))
 
 
 def show_dict(in_dict) -> widgets.Widget:
