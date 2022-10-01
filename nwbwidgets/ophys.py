@@ -281,7 +281,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         plane_seg_hover_dict = {
             key: self.plane_seg[key].data
             for key in self.plane_seg.colnames
-            if key not in ["pixel_mask", "image_mask"]
+            if len(self.plane_seg[key].data.shape) == 1
         }
         plane_seg_hover_dict.update(id=self.plane_seg.id.data)
         plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
