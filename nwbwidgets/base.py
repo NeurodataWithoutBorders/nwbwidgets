@@ -5,7 +5,7 @@ from typing import Union
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from ipydatagrid import DataGrid
+# from ipydatagrid import DataGrid re-add when ipywidgets 8 is supported
 from IPython import display
 from ipywidgets import widgets
 from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
@@ -34,13 +34,13 @@ def show_fields(node, **kwargs) -> widgets.Widget:
 
 
 def render_dataframe(dynamic_table: DynamicTable):
-    try:
-        return DataGrid(dynamic_table.to_dataframe())
-    except:
-        out1 = widgets.Output()
-        with out1:
-            display.display(dynamic_table.to_dataframe())
-        return out1
+    # try:
+    #     return DataGrid(dynamic_table.to_dataframe())
+    # except:
+    out1 = widgets.Output()
+    with out1:
+        display.display(dynamic_table.to_dataframe())
+    return out1
 
 
 def show_neurodata_base(
@@ -329,9 +329,10 @@ def show_dset(dset: h5py.Dataset, **kwargs):
 
 
 def dataset_to_sheet(dset: h5py.Dataset):
-    if dset.ndim >= 2:
-        return widgets.HTML(print(dset))
-    return DataGrid(pd.DataFrame(dset[:]))
+    # if dset.ndim >= 2:
+    #     return widgets.HTML(print(dset))
+    # return DataGrid(pd.DataFrame(dset[:]))
+    return widgets.HTML(print(dset))
 
 
 def show_dict(in_dict) -> widgets.Widget:
