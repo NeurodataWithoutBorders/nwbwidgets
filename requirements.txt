@@ -4,7 +4,7 @@ scikit-image
 pynwb
 ipympl
 ipyvolume>=0.6.0a10
-ipywidgets
+ipywidgets>7.0,<8
 plotly
 tqdm>=4.36.0
 zarr
