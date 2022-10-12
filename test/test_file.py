@@ -6,6 +6,7 @@ import ipywidgets as widgets
 from pynwb import NWBFile
 
 from nwbwidgets import nwb2widget
+from nwbwidgets.panel import panel
 
 
 def test_nwbfile():
@@ -21,3 +22,4 @@ def test_nwbfile():
     )
 
     assert isinstance(nwb2widget(nwbfile), widgets.Widget)
+    assert isinstance(panel(), widgets.Widget)
