@@ -6,7 +6,7 @@ from nwbwidgets import nwb2widget
 from dandi.dandiapi import DandiAPIClient
 
 
-def dashboard():
+def make_input_panel():
     source_options_radio = widgets.RadioButtons(options=['dandi', 'local dir', 'local file'], value='dandi')
     source_options_label = widgets.Label('Source:')
     source_options = widgets.VBox([source_options_label, source_options_radio], layout=widgets.Layout(width='150px', overflow=None))
