@@ -4,16 +4,19 @@ from pathlib import Path
 from pynwb import NWBHDF5IO
 from nwbwidgets import nwb2widget
 from dandi.dandiapi import DandiAPIClient
+import h5py
+import fsspec
+from fsspec.implementations.cached import CachingFileSystem
 
-
-# def panel():
 
 class Panel(widgets.VBox):
 
-    def __init__(self, children=None, **kwargs):
+    def __init__(self, children=None, stream_mode="fsspec", **kwargs):
         if children is None:
             children = list()
         super().__init__(children, **kwargs)
+
+        self.stream_mode = stream_mode
 
         self.source_options_radio = widgets.RadioButtons(options=['dandi', 'local dir', 'local file'], value='dandi')
         self.source_options_label = widgets.Label('Source:')
@@ -92,9 +95,25 @@ class Panel(widgets.VBox):
                 with DandiAPIClient() as client:
                     asset = client.get_dandiset(dandiset_id=self.source_path_text.value, version_id="draft").get_asset_by_path(self.source_file_dandi_dropdown.value)
                     s3_url = asset.get_content_url(follow_redirects=1, strip_query=True)
+                    
+                if self.stream_mode == "ros3":
                     io = NWBHDF5IO(s3_url, mode='r', load_namespaces=True, driver='ros3')
                     nwb = io.read()
                     self.widgets_panel.children = [nwb2widget(nwb)]
+
+                elif self.stream_mode == "fsspec":
+                    # Create a virtual filesystem based on the http protocol and use caching to save accessed data to RAM.
+                    fs = CachingFileSystem(
+                        fs=fsspec.filesystem("http"),
+                        cache_storage="nwb-cache",  # Local folder for the cache
+                    )
+
+                    with fs.open(s3_url, "rb") as f:
+                        with h5py.File(f) as file:
+                            with NWBHDF5IO(file=file, load_namespaces=True) as io:
+                                nwbfile = io.read()
+                                self.widgets_panel.children = [nwb2widget(nwbfile)]
+
             elif self.source_path_label.value == "Path to local dir:":
                 full_file_path = str(Path(self.source_path_text.value) / self.source_file_dandi_dropdown.value)
                 io = NWBHDF5IO(full_file_path, mode='r', load_namespaces=True)
