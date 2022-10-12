@@ -1,14 +1,14 @@
 
 # Quickstart
 
-The easiest way to use NWB widgets is:
+The easiest way to use NWB widgets is with the interactive `Panel`:
 ```python
-from nwbwidgets.panel import panel
+from nwbwidgets.panel import Panel
 
-panel()
+Panel()
 ```
 
-[GIF]
+![panel](../_static/quickstart/example_ecephys.gif)
 
 ## Basic usage with local files
 
