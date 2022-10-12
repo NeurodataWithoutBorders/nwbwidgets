@@ -2,18 +2,20 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Union
 
-import h5py
-import ipysheet
-import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.pyplot as plt
+
+# from ipydatagrid import DataGrid re-add when ipywidgets 8 is supported
 from IPython import display
 from ipywidgets import widgets
-from matplotlib.pyplot import Figure
-from nwbwidgets import view
+from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
+
+import h5py
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface, MultiContainerInterface
+from pynwb.base import DynamicTable
 
-from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
+from nwbwidgets import view
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
@@ -31,10 +33,13 @@ def show_fields(node, **kwargs) -> widgets.Widget:
     return vbox
 
 
-def render_dataframe(df):
+def render_dataframe(dynamic_table: DynamicTable):
+    # try:
+    #     return DataGrid(dynamic_table.to_dataframe())
+    # except:
     out1 = widgets.Output()
     with out1:
-        display.display(df.to_dataframe())
+        display.display(dynamic_table.to_dataframe())
     return out1
 
 
@@ -259,7 +264,7 @@ def vis2widget(vis) -> widgets.Widget:
     return out
 
 
-def fig2widget(fig: Figure, **kwargs) -> widgets.Widget:
+def fig2widget(fig: plt.Figure, **kwargs) -> widgets.Widget:
     out = widgets.Output()
     with out:
         fig.show()
@@ -324,22 +329,10 @@ def show_dset(dset: h5py.Dataset, **kwargs):
 
 
 def dataset_to_sheet(dset: h5py.Dataset):
-    if dset.ndim == 1:
-        nrows = len(dset)
-
-        sheet = ipysheet.easy.sheet(rows=nrows, columns=1, column_headers=False)
-        for row in range(nrows):
-            ipysheet.easy.cell(row, 0, dset[row], read_only=True)
-    elif dset.ndim == 2:
-        nrows, ncols = dset.shape
-
-        sheet = ipysheet.easy.sheet(rows=nrows, columns=ncols, column_headers=False)
-        for row, col in zip(range(nrows), range(ncols)):
-            ipysheet.easy.cell(row, col, dset[row, col], read_only=True)
-    else:
-        # do not know how to render datasets that have 3 or more dimensions
-        return widgets.HTML(print(dset))
-    return sheet
+    # if dset.ndim >= 2:
+    #     return widgets.HTML(print(dset))
+    # return DataGrid(pd.DataFrame(dset[:]))
+    return widgets.HTML(print(dset))
 
 
 def show_dict(in_dict) -> widgets.Widget:
@@ -381,15 +374,15 @@ class TimeIntervalsSelector(widgets.VBox):
         Parameters
         ----------
         input_data: pynwb object
-            Pynwb object (e.g. pynwb.misc.Units) belonging to a nwbfile 
-            that will be filtered by the TimeIntervalSelector controller. 
+            Pynwb object (e.g. pynwb.misc.Units) belonging to a nwbfile
+            that will be filtered by the TimeIntervalSelector controller.
         """
         super().__init__()
         self.input_data = input_data
         self.kwargs = kwargs
         self.intervals_tables = input_data.get_ancestor("NWBFile").intervals
         self.stimulus_type_dd = widgets.Dropdown(
-            options=list(self.intervals_tables.keys()), 
+            options=list(self.intervals_tables.keys()),
             description="stimulus type"
         )
         self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
@@ -397,7 +390,7 @@ class TimeIntervalsSelector(widgets.VBox):
         trials = list(self.intervals_tables.values())[0]
         inner_widget = self.InnerWidget(
             units=self.input_data,
-            trials=trials, 
+            trials=trials,
             **kwargs
         )
         self.children = [self.stimulus_type_dd, inner_widget]
@@ -406,8 +399,8 @@ class TimeIntervalsSelector(widgets.VBox):
         self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
         trials = self.intervals_tables[self.stimulus_type_dd.value]
         inner_widget = self.InnerWidget(
-            input_data=self.input_data, 
-            trials=trials, 
+            input_data=self.input_data,
+            trials=trials,
             **self.kwargs
         )
         self.children = [self.stimulus_type_dd, inner_widget]

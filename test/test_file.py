@@ -1,9 +1,11 @@
 from datetime import datetime
+from dateutil.tz import tzlocal
 
 import ipywidgets as widgets
-from dateutil.tz import tzlocal
-from nwbwidgets import nwb2widget
+
 from pynwb import NWBFile
+
+from nwbwidgets import nwb2widget
 
 
 def test_nwbfile():

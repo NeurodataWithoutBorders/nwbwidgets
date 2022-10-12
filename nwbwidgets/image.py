@@ -1,10 +1,11 @@
-from pathlib import Path, PureWindowsPath
-
 import matplotlib.pyplot as plt
+
 import plotly.graph_objects as go
-import pynwb
 from ipywidgets import widgets, fixed, Layout
+
+from pynwb import TimeSeries
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
+
 from tifffile import imread, TiffFile
 
 from .base import fig2widget
@@ -144,7 +145,7 @@ def show_grayscale_image_series(image_series: ImageSeries, neurodata_vis_spec: d
 
 
 def show_index_series(index_series, neurodata_vis_spec: dict):
-    show_timeseries = neurodata_vis_spec[pynwb.TimeSeries]
+    show_timeseries = neurodata_vis_spec[TimeSeries]
     series_widget = show_timeseries(index_series)
 
     indexed_timeseries = index_series.indexed_timeseries

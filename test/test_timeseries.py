@@ -1,8 +1,15 @@
 import unittest
-import plotly.graph_objects as go
-import matplotlib.pyplot as plt
+
 import numpy as np
+import matplotlib.pyplot as plt
+
 from ipywidgets import widgets
+import plotly.graph_objects as go
+
+from pynwb import TimeSeries
+from pynwb.epoch import TimeIntervals
+from pynwb.behavior import SpatialSeries
+
 from nwbwidgets.timeseries import (
     BaseGroupedTraceWidget,
     show_ts_fields,
@@ -15,10 +22,8 @@ from nwbwidgets.timeseries import (
     SeparateTracesPlotlyWidget,
     get_timeseries_tt,
     show_indexed_timeseries_plotly,
+    show_timeseries_mpl,
 )
-from pynwb import TimeSeries
-from pynwb.epoch import TimeIntervals
-from pynwb.behavior import SpatialSeries
 
 
 def test_timeseries_widget():
@@ -33,23 +38,53 @@ def test_timeseries_widget():
     BaseGroupedTraceWidget(ts)
 
 
+def test_show_timeseries_mpl():
+
+    ts = TimeSeries(
+        name="name",
+        description="no description",
+        data=np.array([[1.0, 2.0, 3.0, 4.0], [11.0, 12.0, 13.0, 14.0]]),
+        rate=100.0,
+        unit="m",
+    )
+
+    show_timeseries_mpl(ts)
+    show_timeseries_mpl(ts, time_window=(0.0, 1.0))
+
+
 class TestTracesPlotlyWidget(unittest.TestCase):
     def setUp(self):
         data = np.random.rand(160, 3)
         self.ts_multi = SpatialSeries(
-            name="test_timeseries",
+            name="test_timeseries_multi",
             data=data,
             reference_frame="lowerleft",
             starting_time=0.0,
             rate=1.0,
         )
         self.ts_single = TimeSeries(
-            name="test_timeseries",
+            name="test_timeseries_single",
             data=data[:, 0],
             unit="m",
             starting_time=0.0,
             rate=1.0,
         )
+        # Create 'intermittent' timeseries by defining timestamps with a gap from [10, 20]
+        self.ts_single_intermittent = TimeSeries(
+            name="test_timeseries_single_intermittent",
+            data=data[:, 0],
+            timestamps=np.hstack([np.arange(0, 10, 10 / data.shape[0] * 2),
+                                  np.arange(20, 30, 10 / data.shape[0] * 2)]),
+            unit='m',
+        )
+        self.ts_multi_intermittent = SpatialSeries(
+            name="test_timeseries_multi_intermittent",
+            data=data,
+            timestamps=np.hstack([np.arange(0, 10, 10 / data.shape[0] * 2),
+                                  np.arange(20, 30, 10 / data.shape[0] * 2)]),
+            reference_frame="lowerleft",
+        )
+
 
     def test_single_trace_widget(self):
         single_wd = SingleTracePlotlyWidget(timeseries=self.ts_single)
@@ -59,13 +94,21 @@ class TestTracesPlotlyWidget(unittest.TestCase):
             tt[int(len(tt) * 0.4)],
         ]
 
-    def test_single_trace_widget(self):
-        single_wd = SeparateTracesPlotlyWidget(timeseries=self.ts_multi)
+    def test_single_trace_widget_null_data(self):
+        single_wd_nd = SingleTracePlotlyWidget(timeseries=self.ts_single_intermittent)
+        single_wd_nd.controls["time_window"].value = [12, 14]
+
+    def test_separate_traces_widget(self):
+        sep_wd = SeparateTracesPlotlyWidget(timeseries=self.ts_multi)
         tt = get_timeseries_tt(self.ts_multi)
-        single_wd.controls["time_window"].value = [
+        sep_wd.controls["time_window"].value = [
             tt[int(len(tt) * 0.2)],
             tt[int(len(tt) * 0.4)],
         ]
+
+    def test_separate_traces_widget_null_data(self):
+        single_wd_nd = SingleTracePlotlyWidget(timeseries=self.ts_multi_intermittent)
+        single_wd_nd.controls["time_window"].value = [12, 14]
 
 
 class TestIndexTimeSeriesPlotly(unittest.TestCase):
@@ -119,41 +162,6 @@ class TestIndexTimeSeriesPlotly(unittest.TestCase):
             timeseries=self.ts_single,
             trace_range=[2, 5],
         )
-
-
-class TestTracesPlotlyWidget(unittest.TestCase):
-    def setUp(self):
-        data = np.random.rand(160, 3)
-        self.ts_multi = SpatialSeries(
-            name="test_timeseries",
-            data=data,
-            reference_frame="lowerleft",
-            starting_time=0.0,
-            rate=1.0,
-        )
-        self.ts_single = TimeSeries(
-            name="test_timeseries",
-            data=data[:, 0],
-            unit="m",
-            starting_time=0.0,
-            rate=1.0,
-        )
-
-    def test_single_trace_widget(self):
-        single_wd = SingleTracePlotlyWidget(timeseries=self.ts_single)
-        tt = get_timeseries_tt(self.ts_single)
-        single_wd.controls["time_window"].value = [
-            tt[int(len(tt) * 0.2)],
-            tt[int(len(tt) * 0.4)],
-        ]
-
-    def test_single_trace_widget(self):
-        single_wd = SeparateTracesPlotlyWidget(timeseries=self.ts_multi)
-        tt = get_timeseries_tt(self.ts_multi)
-        single_wd.controls["time_window"].value = [
-            tt[int(len(tt) * 0.2)],
-            tt[int(len(tt) * 0.4)],
-        ]
 
 
 class ShowTimeSeriesTestCase(unittest.TestCase):

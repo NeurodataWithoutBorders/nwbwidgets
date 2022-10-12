@@ -1,7 +1,10 @@
-import ipywidgets as widgets
 import numpy as np
+
+import ipywidgets as widgets
 import plotly.graph_objects as go
-import pynwb
+
+from pynwb.base import DynamicTable
+
 import trimesh
 
 from .base import df_to_hover_text
@@ -54,7 +57,7 @@ def make_cylinders(
 
 
 class HumanElectrodesPlotlyWidget(widgets.VBox):
-    def __init__(self, electrodes: pynwb.base.DynamicTable, **kwargs):
+    def __init__(self, electrodes: DynamicTable, **kwargs):
 
         super().__init__()
         self.electrodes = electrodes
@@ -104,22 +107,16 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
             normals.append(normal)
         return normals
 
-    def show_electrodes(self, electrodes: pynwb.base.DynamicTable, color_by):
+    def show_electrodes(self, electrodes: DynamicTable, color_by):
 
         positions = np.c_[electrodes.x[:], electrodes.y[:], electrodes.z[:]]
 
-        if (
-            isinstance(electrodes[color_by][0], bytes)
-            or isinstance(electrodes[color_by][0], str)
-            or isinstance(electrodes[color_by][0], np.bool_)
-        ):
+        if isinstance(electrodes[color_by][0], (bytes, str, np.bool_)):
             ugroups, group_inv = np.unique(electrodes[color_by][:], return_inverse=True)
             colors = group_inv
             show_leg = True
             show_scale = False
-        elif isinstance(electrodes[color_by][0], np.ndarray) or isinstance(
-            electrodes[color_by][0], np.float
-        ):
+        elif isinstance(electrodes[color_by][0], (np.ndarray, np.float)):
             colors = np.ravel(electrodes[color_by][:])
             ugroups, group_inv = [0], np.array([0] * len(colors))
             show_leg = False
@@ -153,8 +150,8 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
                             name=group
                     )]
                 else:
-            
-            
+
+
                 """
             self.fig.add_trace(
                 go.Scatter3d(

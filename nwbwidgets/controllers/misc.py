@@ -1,5 +1,7 @@
 import numpy as np
+
 from ipywidgets import widgets, Layout
+
 from tqdm.notebook import tqdm as tqdm_notebook
 
 

@@ -1,6 +1,11 @@
 import unittest
 
 import numpy as np
+
+from pynwb import TimeSeries
+from pynwb.epoch import TimeIntervals
+from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
+
 from nwbwidgets.behavior import (
     show_behavioral_events,
     show_spatial_series,
@@ -8,12 +13,9 @@ from nwbwidgets.behavior import (
     SpatialSeriesTraceWidget2D,
     SpatialSeriesTraceWidget3D,
 )
+from nwbwidgets.view import default_neurodata_vis_spec
 from nwbwidgets.base import show_multi_container_interface
 from nwbwidgets.timeseries import SeparateTracesPlotlyWidget
-from nwbwidgets.view import default_neurodata_vis_spec
-from pynwb import TimeSeries
-from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
-from pynwb.epoch import TimeIntervals
 
 
 class ShowSpatialSeriesTestCase(unittest.TestCase):

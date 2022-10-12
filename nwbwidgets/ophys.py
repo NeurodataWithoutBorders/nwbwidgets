@@ -1,10 +1,12 @@
 from functools import lru_cache
 
-import ipywidgets as widgets
 import numpy as np
+from skimage import measure
+
+import ipywidgets as widgets
 import plotly.graph_objects as go
 import plotly.express as px
-from ndx_grayscalevolume import GrayscaleVolume
+
 from pynwb.base import NWBDataInterface
 from pynwb.ophys import (
     RoiResponseSeries,
@@ -13,8 +15,9 @@ from pynwb.ophys import (
     TwoPhotonSeries,
     ImageSegmentation,
 )
-from skimage import measure
+
 from tifffile import imread, TiffFile
+from ndx_grayscalevolume import GrayscaleVolume
 
 from .base import df_to_hover_text
 from .timeseries import BaseGroupedTraceWidget
@@ -45,7 +48,6 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                 tif = TiffFile(path_ext_file)
                 n_samples = len(tif.pages)
                 page = tif.pages[0]
-                n_y, n_x = page.shape
 
                 def update_figure(index=0):
                     # Read first frame
@@ -101,9 +103,9 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
     if len(df_over_f.roi_response_series) == 1:
-        title, input = list(df_over_f.roi_response_series.items())[0]
+        title, data_input = list(df_over_f.roi_response_series.items())[0]
         return neurodata_vis_spec[RoiResponseSeries](
-            input, neurodata_vis_spec, title=title
+            data_input, neurodata_vis_spec, title=title
         )
     else:
         return neurodata_vis_spec[NWBDataInterface](df_over_f, neurodata_vis_spec)
@@ -262,7 +264,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             layout_kwargs.update(title=color_by)
 
         data = self.plane_seg["image_mask"].data
-        nUnits = len(data)
+        n_units = len(data)
         if fig is None:
             fig = go.FigureWidget()
 
@@ -284,9 +286,9 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         plane_seg_hover_dict.update(id=self.plane_seg.id.data)
         plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
         all_hover = df_to_hover_text(plane_seg_hover_df)
-        self.progress_bar.reset(total=nUnits)
+        self.progress_bar.reset(total=n_units)
         self.progress_bar.set_description("Loading Image Masks")
-        for i in range(nUnits):
+        for i in range(n_units):
             kwargs = dict(showlegend=False)
             if color_by is not None:
                 if plane_seg_hover_df[color_by][i] not in aux_leg:

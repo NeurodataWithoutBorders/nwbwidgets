@@ -3,12 +3,15 @@ from collections.abc import Iterable
 
 import h5py
 import hdmf
-import ndx_grayscalevolume
 import pynwb
-import zarr
+
 from ipywidgets import widgets
+
+import zarr
+import ndx_grayscalevolume
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
+
 from .dynamictablesummary import DynamicTableSummaryWidget
 
 from nwbwidgets import (
@@ -58,7 +61,7 @@ default_neurodata_vis_spec = {
     pynwb.ophys.RoiResponseSeries: ophys.RoiResponseSeriesWidget,
     pynwb.misc.AnnotationSeries: OrderedDict(
         {
-            "text": base.show_text_fields, 
+            "text": base.show_text_fields,
             "times": misc.show_annotations
         }
     ),
@@ -84,6 +87,11 @@ default_neurodata_vis_spec = {
     h5py.Dataset: base.show_dset,
     zarr.core.Array: base.show_dset,
     Spectrum: spectrum.show_spectrum,
+    pynwb.icephys.SequentialRecordingsTable: {
+        "Summary": DynamicTableSummaryWidget,
+        "table": show_dynamic_table,
+        "I-V Analysis": icephys.IVCurveWidget
+    }
 }
 
 

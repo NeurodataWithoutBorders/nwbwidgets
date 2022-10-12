@@ -1,10 +1,12 @@
 import numpy as np
+
 from hdmf.common.table import VectorData
-from nwbwidgets.utils.dynamictable import infer_categorical_columns
-from nwbwidgets.utils.testing import dicts_exact_equal
 from pynwb.core import DynamicTable
 from pynwb.ecephys import ElectrodeGroup
 from pynwb.device import Device
+
+from nwbwidgets.utils.dynamictable import infer_categorical_columns
+from nwbwidgets.utils.testing import dicts_exact_equal
 
 
 def test_infer_categorical_columns():

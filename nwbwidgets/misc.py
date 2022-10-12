@@ -1,14 +1,15 @@
 from functools import partial
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-import pynwb
 import scipy
-from ipywidgets import widgets, fixed, FloatProgress, Layout
-from matplotlib.collections import PatchCollection
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
+
+import plotly.graph_objects as go
+from ipywidgets import widgets, fixed, FloatProgress, Layout
+
+from pynwb.epoch import TimeIntervals
 from pynwb.misc import AnnotationSeries, Units, DecompositionSeries
 
 from .analysis.spikes import compute_smoothed_firing_rate
@@ -271,7 +272,7 @@ class PSTHWidget(widgets.VBox):
     def __init__(
             self,
             input_data: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0,
             unit_controller=None,
             ntt=1000,
@@ -586,7 +587,7 @@ def show_psth_smoothed(
     )
 
     if group_inds is None:
-        group_inds = np.zeros((len(smoothed)), dtype=np.int)
+        group_inds = np.zeros((len(smoothed)), dtype=int)
     group_stats = []
     for group in np.unique(group_inds):
         this_mean = np.mean(smoothed[group_inds == group], axis=0)
@@ -773,8 +774,8 @@ def show_psth_raster(
 
 
 def raster_grid(
-        units: pynwb.misc.Units,
-        time_intervals: pynwb.epoch.TimeIntervals,
+        units: Units,
+        time_intervals: TimeIntervals,
         index,
         start,
         end,
@@ -834,7 +835,7 @@ def raster_grid(
         nrows, ncols, sharex=True, sharey=True, squeeze=False, figsize=(10, 10)
     )
     big_ax = create_big_ax(fig)
-    
+
     for i, row in enumerate(urow_vals):
         for j, col in enumerate(ucol_vals):
             ax = axs[i, j]
@@ -1059,7 +1060,7 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0,
             **kwargs
     ):
@@ -1110,7 +1111,7 @@ class UnitsAndTrialsControllerWidget(widgets.VBox):
             description="unit",
         )
 
-        # Trial event controller (align by) 
+        # Trial event controller (align by)
         self.trial_event_controller = make_trial_event_controller(self.trials)
 
         # Start / End controllers
@@ -1167,7 +1168,7 @@ class RasterGridWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0,
             units_trials_controller=None,
     ):
@@ -1195,7 +1196,7 @@ class TuningCurveWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0,
             units_trials_controller=None,
     ):
@@ -1224,7 +1225,7 @@ class TuningCurveExtendedWidget(widgets.VBox):
     def __init__(
             self,
             units: Units,
-            trials: pynwb.epoch.TimeIntervals = None,
+            trials: TimeIntervals = None,
             unit_index=0
     ):
         super().__init__()
@@ -1260,8 +1261,8 @@ class TuningCurveExtendedWidget(widgets.VBox):
 
 
 def draw_tuning_curve(
-        units: pynwb.misc.Units,
-        time_intervals: pynwb.epoch.TimeIntervals,
+        units: Units,
+        time_intervals: TimeIntervals,
         index,
         start,
         end,
@@ -1297,8 +1298,8 @@ def draw_tuning_curve(
 
 
 def draw_tuning_curve_1d(
-        units: pynwb.misc.Units,
-        time_intervals: pynwb.epoch.TimeIntervals,
+        units: Units,
+        time_intervals: TimeIntervals,
         index,
         start,
         end,
@@ -1343,8 +1344,8 @@ def draw_tuning_curve_1d(
 
 
 def draw_tuning_curve_2d(
-        units: pynwb.misc.Units,
-        time_intervals: pynwb.epoch.TimeIntervals,
+        units: Units,
+        time_intervals: TimeIntervals,
         index,
         start,
         end,
@@ -1399,7 +1400,6 @@ def sort_mixed_type_list(x):
     x_num_i = list()
     x_oth = list()
     x_oth_i = list()
-    l = len(x)
     for i, xx in enumerate(x):
         try:
             x_num.append(float(xx))
