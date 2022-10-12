@@ -34,4 +34,4 @@ def test_panel():
     # Click accept specific file button
     panel.source_file_dandi_button.click()
 
-    assert len(panel.widgets_panel.children) > 1
+    assert len(panel.widgets_panel.children) > 0
