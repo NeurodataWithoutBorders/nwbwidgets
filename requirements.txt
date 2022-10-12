@@ -15,4 +15,5 @@ ndx-spectrum
 ndx-icephys-meta
 ndx-grayscalevolume
 trimesh
+dandi
 importlib-metadata <5.0
