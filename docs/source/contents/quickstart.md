@@ -1,7 +1,16 @@
 
 # Quickstart
 
-## Basic usage
+The easiest way to use NWB widgets is:
+```python
+from nwbwidgets.panel import panel
+
+panel()
+```
+
+[GIF]
+
+## Basic usage with local files
 
 In your Jupyter notebook, run:
 ```python
