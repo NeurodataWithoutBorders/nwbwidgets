@@ -11,12 +11,14 @@ from fsspec.implementations.cached import CachingFileSystem
 
 class Panel(widgets.VBox):
 
-    def __init__(self, children=None, stream_mode="fsspec", **kwargs):
+    def __init__(self, children:list=None, stream_mode:str="fsspec", cache_path:str=None, **kwargs):
         if children is None:
             children = list()
         super().__init__(children, **kwargs)
 
         self.stream_mode = stream_mode
+        if cache_path is None:
+            cache_path = "nwb-cache"
 
         self.source_options_radio = widgets.RadioButtons(options=['dandi', 'local dir', 'local file'], value='dandi')
         self.source_options_label = widgets.Label('Source:')
@@ -105,7 +107,7 @@ class Panel(widgets.VBox):
                     # Create a virtual filesystem based on the http protocol and use caching to save accessed data to RAM.
                     fs = CachingFileSystem(
                         fs=fsspec.filesystem("http"),
-                        cache_storage="nwb-cache",  # Local folder for the cache
+                        cache_storage=cache_path,  # Local folder for the cache
                     )
 
                     with fs.open(s3_url, "rb") as f:
