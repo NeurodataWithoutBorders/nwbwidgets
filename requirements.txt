@@ -17,3 +17,4 @@ ndx-grayscalevolume
 trimesh
 dandi
 importlib-metadata <5.0
+fsspec

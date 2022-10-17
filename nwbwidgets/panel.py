@@ -5,8 +5,6 @@ from pynwb import NWBHDF5IO
 from nwbwidgets import nwb2widget
 from dandi.dandiapi import DandiAPIClient
 import h5py
-import fsspec
-from fsspec.implementations.cached import CachingFileSystem
 
 
 class Panel(widgets.VBox):
@@ -102,6 +100,9 @@ class Panel(widgets.VBox):
                     io = NWBHDF5IO(s3_url, mode='r', load_namespaces=True, driver='ros3')
 
                 elif self.stream_mode == "fsspec":
+                    import fsspec
+                    from fsspec.implementations.cached import CachingFileSystem
+                    
                     # Create a virtual filesystem based on the http protocol and use caching to save accessed data to RAM.
                     fs = CachingFileSystem(
                         fs=fsspec.filesystem("http"),
