@@ -100,8 +100,6 @@ class Panel(widgets.VBox):
                     
                 if self.stream_mode == "ros3":
                     io = NWBHDF5IO(s3_url, mode='r', load_namespaces=True, driver='ros3')
-                    nwb = io.read()
-                    self.widgets_panel.children = [nwb2widget(nwb)]
 
                 elif self.stream_mode == "fsspec":
                     # Create a virtual filesystem based on the http protocol and use caching to save accessed data to RAM.
@@ -109,12 +107,12 @@ class Panel(widgets.VBox):
                         fs=fsspec.filesystem("http"),
                         cache_storage=cache_path,  # Local folder for the cache
                     )
+                    f = fs.open(s3_url, "rb")
+                    file = h5py.File(f)
+                    io = NWBHDF5IO(file=file, load_namespaces=True)
 
-                    with fs.open(s3_url, "rb") as f:
-                        with h5py.File(f) as file:
-                            with NWBHDF5IO(file=file, load_namespaces=True) as io:
-                                nwbfile = io.read()
-                                self.widgets_panel.children = [nwb2widget(nwbfile)]
+                nwbfile = io.read()
+                self.widgets_panel.children = [nwb2widget(nwbfile)]
 
             elif self.source_path_label.value == "Path to local dir:":
                 full_file_path = str(Path(self.source_path_text.value) / self.source_file_dandi_dropdown.value)
