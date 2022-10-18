@@ -1,0 +1,3 @@
+qtvoila
+PySide6
+nwbwidgets
