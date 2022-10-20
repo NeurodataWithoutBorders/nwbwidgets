@@ -9,7 +9,7 @@ import h5py
 
 class Panel(widgets.VBox):
 
-    def __init__(self, children:list=None, stream_mode:str="fsspec", cache_path:str=None, **kwargs):
+    def __init__(self, children: list = None, stream_mode: str = "fsspec", cache_path: str = None, **kwargs):
         if children is None:
             children = list()
         super().__init__(children, **kwargs)
