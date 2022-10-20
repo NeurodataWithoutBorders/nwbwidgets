@@ -85,21 +85,29 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 
                 self.figure2 = None
 
-                def update_volume_figure(data):
+                def update_volume_figure(index=0):
                     import ipyvolume.pylab as p3
 
                     output = widgets.Output()
-
-                    p3.figure()
-                    p3.volshow(data, tf=linear_transfer_function([0, 0, 0], max_opacity=0.3))
-                    output.clear_output(wait=True)
                     self.figure2 = output
+
                     with output:
+                        p3.figure()
+                        p3.volshow(
+                            indexed_timeseries.data[index].transpose([1, 0, 2]),
+                            tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
+                        )
+                        output.clear_output(wait=True)
                         p3.show()
 
-                def plot_volume(indexed_timeseries: TwoPhotonSeries):
+                def first_volume_render(index=0):
+                    update_volume_figure(index=self.slider.value)
                     self.slider.observe(lambda change: update_volume_figure(index=change.new), names="value")
-                    self.figure2 = widgets.HTML("Move the slider to render!")
+
+                def plot_volume_init(indexed_timeseries: TwoPhotonSeries):
+                    init_button = widgets.Button(description="Render")
+                    init_button.on_click(first_volume_render)
+                    self.figure2 = init_button  # Have an activation button instead of initial render attempt
                     return widgets.VBox(children=[self.figure2, self.slider])
 
                 def update_plane_slice_figure(index=0):
@@ -112,7 +120,8 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                     return widgets.VBox(children=[self.figure, self.slider])
 
                 tab = LazyTab(
-                    func_dict={"Planar Slice": plot_plane_slices, "3D Volume": plot_volume}, data=indexed_timeseries
+                    func_dict={"Planar Slice": plot_plane_slices, "3D Volume": plot_volume_init},
+                    data=indexed_timeseries,
                 )
                 self.children = [tab]
             else:
