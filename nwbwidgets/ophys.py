@@ -35,16 +35,15 @@ class TwoPhotonSeriesWidget(widgets.VBox):
         super().__init__()
         self.figure = None
         self.slider = None
-        self.stopper = None
-        self.main_subprocess = None
-        self.stopper_subprocess = None
+
+        series_name = indexed_timeseries.name
+        base_title = f"TwoPhotonSeries: {series_name}"
 
         def _add_fig_trace(img_fig: go.Figure, index):
             if self.figure is None:
                 self.figure = go.FigureWidget(img_fig)
             else:
                 self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
-            self.figure.layout.title = f"Frame no: {index}"
 
         if indexed_timeseries.data is None:
             if indexed_timeseries.external_file is not None:
@@ -59,17 +58,24 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                     img_fig = px.imshow(imread(path_ext_file, key=int(index)), binary_string=True)
                     _add_fig_trace(img_fig, index)
 
-                self.slider = widgets.IntSlider(value=0, min=0, max=n_samples - 1, orientation="horizontal")
+                self.slider = widgets.IntSlider(
+                    value=0, min=0, max=n_samples - 1, orientation="horizontal", description="TIFF index: "
+                )
                 self.controls = dict(slider=self.slider)
                 self.slider.observe(lambda change: update_figure(index=change.new), names="value")
 
                 update_figure()
+                self.figure.layout.title = f"{base_title} - read from first external file"
                 self.children = [self.figure, self.slider]
         else:
-            self.slider = widgets.IntSlider(
-                value=0, min=0, max=indexed_timeseries.data.shape[0] - 1, orientation="horizontal"
+            self.frame_slider = widgets.IntSlider(
+                value=0,
+                min=0,
+                max=indexed_timeseries.data.shape[0] - 1,
+                orientation="horizontal",
+                description="Frame: ",
             )
-            self.controls = dict(slider=self.slider)
+            self.controls = dict(slider=self.frame_slider)
 
             if len(indexed_timeseries.data.shape) == 3:
 
@@ -77,14 +83,43 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                     img_fig = px.imshow(indexed_timeseries.data[index].T, binary_string=True)
                     _add_fig_trace(img_fig, index)
 
-                self.slider.observe(lambda change: update_figure(index=change.new), names="value")
+                self.frame_slider.observe(lambda change: update_figure(index=change.new), names="value")
+
                 update_figure()
-                self.children = [self.figure, self.slider]
+                self.figure.layout.title = f"{base_title} - planar view"
+                self.children = [self.figure, self.frame_slider]
 
             elif len(indexed_timeseries.data.shape) == 4:
 
                 self.figure2 = None
+                self.plane_slider = None
 
+                # Planar Slice tab
+                def update_plane_slice_figure(frame_index=0, plane_index=0):
+                    img_fig = px.imshow(indexed_timeseries.data[frame_index][:, :, plane_index].T, binary_string=True)
+                    _add_fig_trace(img_fig, frame_index)
+
+                def plot_plane_slices(indexed_timeseries: TwoPhotonSeries):
+                    self.plane_slider = widgets.IntSlider(
+                        value=0,
+                        min=0,
+                        max=indexed_timeseries.data.shape[-1] - 1,
+                        orientation="horizontal",
+                        description="Plane: ",
+                    )
+
+                    self.frame_slider.observe(
+                        lambda change: update_plane_slice_figure(frame_index=change.new), names="value"
+                    )
+                    self.plane_slider.observe(
+                        lambda change: update_plane_slice_figure(plane_index=change.new), names="value"
+                    )
+
+                    update_plane_slice_figure()
+                    self.figure.layout.title = f"{base_title} - planar view of volume"
+                    return widgets.VBox(children=[self.figure, self.frame_slider, self.plane_slider])
+
+                # Volume tab
                 def update_volume_figure(index=0):
                     import ipyvolume.pylab as p3
 
@@ -101,24 +136,17 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                         p3.show()
 
                 def first_volume_render(index=0):
-                    update_volume_figure(index=self.slider.value)
-                    self.slider.observe(lambda change: update_volume_figure(index=change.new), names="value")
+                    update_volume_figure(index=self.frame_slider.value)
+                    self.frame_slider.observe(lambda change: update_volume_figure(index=change.new), names="value")
 
                 def plot_volume_init(indexed_timeseries: TwoPhotonSeries):
                     init_button = widgets.Button(description="Render")
                     init_button.on_click(first_volume_render)
                     self.figure2 = init_button  # Have an activation button instead of initial render attempt
-                    return widgets.VBox(children=[self.figure2, self.slider])
+                    self.figure2.layout.title = f"{base_title} - interactive volume"
+                    return widgets.VBox(children=[self.figure2, self.frame_slider])
 
-                def update_plane_slice_figure(index=0):
-                    img_fig = px.imshow(indexed_timeseries.data[index][:, :, -1].T, binary_string=True)
-                    _add_fig_trace(img_fig, index)
-
-                def plot_plane_slices(indexed_timeseries: TwoPhotonSeries):
-                    self.slider.observe(lambda change: update_plane_slice_figure(index=change.new), names="value")
-                    update_plane_slice_figure()
-                    return widgets.VBox(children=[self.figure, self.slider])
-
+                # Main view
                 tab = LazyTab(
                     func_dict={"Planar Slice": plot_plane_slices, "3D Volume": plot_volume_init},
                     data=indexed_timeseries,
