@@ -1,7 +1,7 @@
 from functools import lru_cache
-
 import numpy as np
 from skimage import measure
+from multiprocessing import Process, Value
 
 import ipywidgets as widgets
 import plotly.graph_objects as go
@@ -35,6 +35,9 @@ class TwoPhotonSeriesWidget(widgets.VBox):
         super().__init__()
         self.figure = None
         self.slider = None
+        self.stopper = None
+        self.main_subprocess = None
+        self.stopper_subprocess = None
 
         def _add_fig_trace(img_fig: go.Figure, index):
             if self.figure is None:
@@ -80,24 +83,24 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 
             elif len(indexed_timeseries.data.shape) == 4:
 
-                def update_volume_figure(index=0):
-                    # import ipyvolume.pylab as p3
-                    # output = widgets.Output()
-                    # p3.figure()
-                    # p3.volshow(
-                    #     indexed_timeseries.data[index].transpose([1, 0, 2])
-                    #     # tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
-                    # )
-                    # output.clear_output(wait=True)
-                    # self.figure = p3
-                    # with output:
-                    #     p3.show()
-                    self.figure = widgets.HTML("Not currently working locally on Windows...")
+                self.figure2 = None
+
+                def update_volume_figure(data):
+                    import ipyvolume.pylab as p3
+
+                    output = widgets.Output()
+
+                    p3.figure()
+                    p3.volshow(data, tf=linear_transfer_function([0, 0, 0], max_opacity=0.3))
+                    output.clear_output(wait=True)
+                    self.figure2 = output
+                    with output:
+                        p3.show()
 
                 def plot_volume(indexed_timeseries: TwoPhotonSeries):
                     self.slider.observe(lambda change: update_volume_figure(index=change.new), names="value")
-                    update_volume_figure()
-                    return widgets.VBox(children=[self.figure, self.slider])
+                    self.figure2 = widgets.HTML("Move the slider to render!")
+                    return widgets.VBox(children=[self.figure2, self.slider])
 
                 def update_plane_slice_figure(index=0):
                     img_fig = px.imshow(indexed_timeseries.data[index][:, :, -1].T, binary_string=True)
