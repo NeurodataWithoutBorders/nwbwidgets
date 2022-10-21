@@ -120,31 +120,31 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                     return widgets.VBox(children=[self.figure, self.frame_slider, self.plane_slider])
 
                 # Volume tab
+                output = widgets.Output()
                 def update_volume_figure(index=0):
                     import ipyvolume.pylab as p3
 
-                    output = widgets.Output()
-                    self.figure2 = output
-
+                    p3.figure()
+                    p3.volshow(
+                        indexed_timeseries.data[index].transpose([1, 0, 2]),
+                        tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
+                    )
+                    output.clear_output(wait=True)
                     with output:
-                        p3.figure()
-                        p3.volshow(
-                            indexed_timeseries.data[index].transpose([1, 0, 2]),
-                            tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
-                        )
-                        output.clear_output(wait=True)
                         p3.show()
 
                 def first_volume_render(index=0):
+                    self.figure2 = output
                     update_volume_figure(index=self.frame_slider.value)
                     self.frame_slider.observe(lambda change: update_volume_figure(index=change.new), names="value")
 
                 def plot_volume_init(indexed_timeseries: TwoPhotonSeries):
-                    init_button = widgets.Button(description="Render")
-                    init_button.on_click(first_volume_render)
-                    self.figure2 = init_button  # Have an activation button instead of initial render attempt
+                    self.init_button = widgets.Button(description="Render")
+                    self.init_button.on_click(first_volume_render)
+                    #self.figure2 = init_button  # Have an activation button instead of initial render attempt
+                    self.figure2 = output
                     self.figure2.layout.title = f"{base_title} - interactive volume"
-                    return widgets.VBox(children=[self.figure2, self.frame_slider])
+                    return widgets.VBox(children=[self.figure2, self.frame_slider, self.init_button])
 
                 # Main view
                 tab = LazyTab(
