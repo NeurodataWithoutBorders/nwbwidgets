@@ -5,7 +5,7 @@ pynwb
 ipympl
 ipydatagrid
 ipyvolume>=0.6.0a10
-ipywidgets
+ipywidgets>=7.4.0, <8.0.0
 plotly
 tqdm>=4.36.0
 zarr
@@ -16,3 +16,6 @@ ndx-spectrum
 ndx-icephys-meta
 ndx-grayscalevolume
 trimesh
+dandi
+importlib-metadata <5.0
+fsspec
