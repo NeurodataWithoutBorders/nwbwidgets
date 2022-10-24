@@ -9,8 +9,6 @@ from nwbwidgets.utils.dandi import (
     list_dandiset_files,
     get_file_url
 )
-from dandi.dandiapi import DandiAPIClient
-import h5py
 
 
 class Panel(widgets.VBox):
@@ -222,6 +220,7 @@ class Panel(widgets.VBox):
             io = NWBHDF5IO(s3_url, mode='r', load_namespaces=True, driver='ros3')
 
         elif self.stream_mode == "fsspec":
+            import h5py
             import fsspec
             from fsspec.implementations.cached import CachingFileSystem
             
