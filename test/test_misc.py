@@ -11,6 +11,7 @@ from ipywidgets import widgets
 from pynwb import NWBFile
 from pynwb.misc import DecompositionSeries, AnnotationSeries
 
+from nwbwidgets.base import render_dataframe
 from nwbwidgets.misc import (
     show_psth_raster,
     PSTHWidget,
@@ -123,6 +124,9 @@ class ShowPSTHTestCase(unittest.TestCase):
             ),
             plt.Figure,
         )
+
+    def test_render_dataframe(self):
+        render_dataframe(self.nwbfile.units)
 
 
 class ShowDecompositionTestCase(unittest.TestCase):
