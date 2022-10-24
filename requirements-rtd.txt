@@ -1,20 +1,7 @@
-numpy
-matplotlib
-scikit-image
-pynwb
-ipympl
-ipyvolume>=0.6.0a10
-ipywidgets>=7.4.0, <8.0.0
-plotly
-tqdm>=4.36.0
-zarr
-aiohttp
-ccfwidget
-tifffile
-ndx-spectrum
-ndx-icephys-meta
-ndx-grayscalevolume
-trimesh
-dandi
-importlib-metadata <5.0
-fsspec
+Jinja2<3.1
+Sphinx==5.1.1
+sphinx_rtd_theme==1.0.0
+readthedocs-sphinx-search==0.1.2
+sphinx-toggleprompt==0.2.0
+sphinx-copybutton==0.5.0
+myst-parser
