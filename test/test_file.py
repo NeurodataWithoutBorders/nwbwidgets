@@ -34,7 +34,7 @@ def test_panel():
     panel.source_options_radio.value = "DANDI"
 
     # Choose DANDI set
-    panel.source_dandi_id.value = panel.source_dandi_id.value.options[10]
+    panel.source_dandi_id.value = panel.source_dandi_id.options[10]
     # Click accept specific file button
     panel.source_dandi_file_button.click()
 
