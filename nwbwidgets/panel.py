@@ -1,5 +1,8 @@
 import ipywidgets as widgets
 from pathlib import Path
+import h5py
+import fsspec
+from fsspec.implementations.cached import CachingFileSystem
 
 from pynwb import NWBHDF5IO
 from nwbwidgets import nwb2widget
@@ -15,7 +18,6 @@ class Panel(widgets.VBox):
 
     def __init__(
         self, 
-        children: list = None, 
         stream_mode: str = "fsspec", 
         cache_path: str = None, 
         enable_dandi_source: bool = True,
@@ -23,15 +25,30 @@ class Panel(widgets.VBox):
         enable_local_source: bool = True,
         **kwargs
     ):
-        if children is None:
-            children = list()
-        super().__init__(children, **kwargs)
+        """
+        NWB widgets Panel for visualization of NWB files.
+
+        Args:
+            stream_mode (str, optional): Either "fsspec" or "ros3". Defaults to "fsspec".
+            cache_path (str, optional): The path to cached data if streaming with "fsspec". If left as None, a directory "nwb-cache" is created under the current working directory. Defaults to None.
+            enable_dandi_source (bool, optional): Enable DANDI source option. Defaults to True.
+            enable_s3_source (bool, optional): Enable S3 source option. Defaults to True.
+            enable_local_source (bool, optional): Enable local source option. Defaults to True.
+        """
+        super().__init__(children=[], **kwargs)
 
         self.stream_mode = stream_mode
 
         self.cache_path = cache_path
         if cache_path is None:
             self.cache_path = "nwb-cache"
+
+        # Create a virtual filesystem based on the http protocol and use caching to save accessed data to RAM.
+        if enable_dandi_source or enable_s3_source:
+            self.cfs = CachingFileSystem(
+                fs=fsspec.filesystem("http"),
+                cache_storage=self.cache_path,  # Local folder for the cache
+            )
 
         self.source_options_names = list()
         if enable_local_source:
@@ -80,7 +97,8 @@ class Panel(widgets.VBox):
             self.create_components_dandi_source()
 
 
-    def updated_source(self, args):
+    def updated_source(self, args=None):
+        """Update Panel components depending on chosen source."""
         if args['new'] == "DANDI":
             self.create_components_dandi_source()
         elif args['new'] == "S3":
@@ -92,6 +110,7 @@ class Panel(widgets.VBox):
         
     
     def create_components_dandi_source(self, args=None):
+        """Create widgets components for DANDI option"""
         if self.all_dandisets_metadata is None:
             self.source_changing_panel.children = [widgets.Label("Fetching DANDI datasets info, this might take up to a minute...")]
             self.all_dandisets_metadata = get_all_dandisets_metadata()
@@ -129,6 +148,7 @@ class Panel(widgets.VBox):
 
 
     def create_components_s3_source(self):
+        """Create widgets components for S3 option"""
         self.source_s3_file_url = widgets.Text(
             value="",
             description="URL:",
@@ -146,6 +166,7 @@ class Panel(widgets.VBox):
 
 
     def create_components_local_dir_source(self):
+        """Create widgets components for Loca dir option"""
         self.local_dir_path = widgets.Text(
             value="",
             description="Dir path:",
@@ -175,6 +196,7 @@ class Panel(widgets.VBox):
 
 
     def create_components_local_file_source(self):
+        """Create widgets components for Local file option"""
         self.local_file_path = widgets.Text(
             value="",
             description="File path:",
@@ -204,6 +226,7 @@ class Panel(widgets.VBox):
 
     
     def list_local_dir_files(self, args=None):
+        """List NWB files in local dir"""
         if Path(self.local_dir_path.value).is_dir():
             all_files = [f.name for f in Path(self.local_dir_path.value).glob("*.nwb")]
             self.local_dir_files.options = all_files
@@ -212,6 +235,7 @@ class Panel(widgets.VBox):
 
 
     def stream_dandiset_file(self, args=None):
+        """Stream NWB file from DANDI"""
         self.widgets_panel.children = [widgets.Label("loading...")]
         dandiset_id = self.source_dandi_id.value.split("-")[0].strip()
         file_path = self.source_dandi_file_dropdown.value
@@ -219,17 +243,8 @@ class Panel(widgets.VBox):
         if self.stream_mode == "ros3":
             io = NWBHDF5IO(s3_url, mode='r', load_namespaces=True, driver='ros3')
 
-        elif self.stream_mode == "fsspec":
-            import h5py
-            import fsspec
-            from fsspec.implementations.cached import CachingFileSystem
-            
-            # Create a virtual filesystem based on the http protocol and use caching to save accessed data to RAM.
-            fs = CachingFileSystem(
-                fs=fsspec.filesystem("http"),
-                cache_storage=self.cache_path,  # Local folder for the cache
-            )
-            f = fs.open(s3_url, "rb")
+        elif self.stream_mode == "fsspec":            
+            f = self.cfs.open(s3_url, "rb")
             file = h5py.File(f)
             io = NWBHDF5IO(file=file, load_namespaces=True)
 
@@ -238,20 +253,13 @@ class Panel(widgets.VBox):
     
 
     def stream_s3_file(self, args=None):
+        """Stream NWB file from S3 url"""
         self.widgets_panel.children = [widgets.Label("loading...")]
         s3_url = self.source_s3_file_url.value
         if self.stream_mode == "ros3":
             io = NWBHDF5IO(s3_url, mode='r', load_namespaces=True, driver='ros3')
-        elif self.stream_mode == "fsspec":
-            import fsspec
-            from fsspec.implementations.cached import CachingFileSystem
-            
-            # Create a virtual filesystem based on the http protocol and use caching to save accessed data to RAM.
-            fs = CachingFileSystem(
-                fs=fsspec.filesystem("http"),
-                cache_storage=self.cache_path,  # Local folder for the cache
-            )
-            f = fs.open(s3_url, "rb")
+        elif self.stream_mode == "fsspec":            
+            f = self.cfs.open(s3_url, "rb")
             file = h5py.File(f)
             io = NWBHDF5IO(file=file, load_namespaces=True)
 
@@ -260,6 +268,7 @@ class Panel(widgets.VBox):
 
 
     def load_local_dir_file(self, args=None):
+        """Load local NWB file"""
         full_file_path = str(Path(self.local_dir_path.value) / self.local_dir_files.value)
         io = NWBHDF5IO(full_file_path, mode='r', load_namespaces=True)
         nwb = io.read()
@@ -267,6 +276,7 @@ class Panel(widgets.VBox):
 
 
     def load_local_file(self, args=None):
+        """Load local NWB file"""
         full_file_path = str(Path(self.local_file_path.value))
         io = NWBHDF5IO(full_file_path, mode='r', load_namespaces=True)
         nwb = io.read()

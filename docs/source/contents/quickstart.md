@@ -10,11 +10,23 @@ from nwbwidgets.panel import Panel
 Panel()
 ```
 
-![panel](../_static/quickstart/panel_fsspec.gif)
+![panel](../_static/quickstart/panel.gif)
 
 With `Panel` you can easily browser through local files as well as stream remote datasets from DANDI archive.
-For data streaming the default mode is [fsspec](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html#streaming-method-2-fsspec). If you would like to use [ROS3](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html#streaming-method-1-ros3) instead, you can do so with `Panel(stream_mode='ros3')`.
+For data streaming the default mode is [fsspec](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html#streaming-method-2-fsspec). If you would like to use [ROS3](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html#streaming-method-1-ros3) instead, you can do so with: 
+```python
+Panel(stream_mode='ros3')
+```
 
+If you intend to you `Panel` only for local storage (no streaming), you can instantiate it as:
+```python
+Panel(enable_dandi_source=False, enable_s3_source=False)
+```
+
+If you intend to you `Panel` only for streaming data (no local storage), you can instantiate it as:
+```python
+Panel(enable_local_source=False)
+```
 
 ## Basic usage with `nwb2widget`
 
