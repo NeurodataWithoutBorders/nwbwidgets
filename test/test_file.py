@@ -28,15 +28,14 @@ def test_panel():
     assert isinstance(panel, widgets.Widget)
 
     # Change dropdown options for coverage
-    panel.source_options_radio.value = "local dir"
-    panel.source_options_radio.value = "local file"
-    panel.source_options_radio.value = "dandi"
+    panel.source_options_radio.value = "Local dir"
+    panel.source_options_radio.value = "Local file"
+    panel.source_options_radio.value = "S3"
+    panel.source_options_radio.value = "DANDI"
 
     # Choose DANDI set
-    panel.source_path_text.value = "000226"
-    # Click accept DANDI set button
-    panel.source_path_dandi_button.click()
+    panel.source_dandi_id.value = panel.source_dandi_id.value.options[10]
     # Click accept specific file button
-    panel.source_file_dandi_button.click()
+    panel.source_dandi_file_button.click()
 
     assert len(panel.widgets_panel.children) > 0
