@@ -2,7 +2,10 @@ from functools import lru_cache
 import numpy as np
 from skimage import measure
 from multiprocessing import Process, Value
+from typing import Tuple, Optional
+from functools import lru_cache
 
+import h5py
 import ipywidgets as widgets
 import plotly.graph_objects as go
 import plotly.express as px
@@ -27,7 +30,146 @@ from .controllers import ProgressBar
 
 color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
 
+class TwoPhotonSeriesVolumetricPlaneSliceWidget(widgets.VBox):
+    """Sub-widget specifically for plane-wise views of a 4D TwoPhotonSeries."""
+    def __init__(self, two_photon_series: TwoPhotonSeries):
+        num_dimensions = len(two_photon_series.data.shape)
+        if num_dimensions != 4:
+            raise ValueError(f"The TwoPhotonSeriesVolumetricPlaneSliceWidget is only appropriate for use on 4-dimensional TwoPhotonSeries! Detected dimension of {num_dimensions}.")
 
+        super().__init__()
+
+        self.two_photon_series = two_photon_series
+
+        self.setup_figure()
+        self.setup_controllers()
+        self.setup_observers()
+
+        self.children=[self.figure, self.controllers_box]
+
+    def setup_figure(self):
+        """Basic setup for the figure layout."""
+        self.current_data = self.two_photon_series.data[0, :, :, 0].T
+
+        image = px.imshow(self.current_data, binary_string=True)
+        image.update_traces(hovertemplate=None, hoverinfo='skip')
+        self.figure = go.FigureWidget(image)
+        self.figure.layout.title = f"TwoPhotonSeries: {self.two_photon_series.name} - Planar slices of volume"
+        self.figure.update_xaxes(visible=False, showticklabels=False).update_yaxes(visible=False, showticklabels=False)
+
+    def setup_controllers(self):
+        """Setup all controllers for the widget."""
+        # Frame and plane controllers
+        self.frame_slider = widgets.IntSlider(
+            value=0,
+            min=0,
+            max=self.two_photon_series.data.shape[0] - 1,
+            orientation="horizontal",
+            description="Frame: ",
+            continuous_update=False,
+        )
+        self.plane_slider = widgets.IntSlider(
+            value=0,
+            min=0,
+            max=self.two_photon_series.data.shape[-1] - 1,
+            orientation="horizontal",
+            description="Plane: ",
+            continuous_update=False,
+        )
+        self.frame_and_plane_controller_box = widgets.VBox(children=[self.frame_slider, self.plane_slider])
+
+        # Contrast controllers
+        self.manual_contrast_checkbox = widgets.Checkbox(value=False, description="Enable Manual Contrast: ")
+        self.auto_contrast_method = widgets.Dropdown(options=["minmax", "infer"], description="Automatic Contrast Method: ")
+        initial_min = np.min(self.current_data)
+        initial_max = np.max(self.current_data)
+        self.contrast_slider = widgets.IntRangeSlider(
+            value=(initial_min, initial_max),
+            min=initial_min,
+            max=initial_max,
+            orientation="horizontal",
+            description="Manual Contrast Range: ",
+            continuous_update=False,
+        )
+        self.contrast_controller_box = widgets.VBox(children=[self.manual_contrast_checkbox, self.auto_contrast_method])
+                          
+        self.controllers_box = widgets.HBox(children=[self.frame_and_plane_controller_box, self.contrast_controller_box])
+
+    def setup_observers(self):
+        """Given all of the controllers have been initialized and all the update routines have been defined, setup the observer rules for updates on each controller."""
+        self.frame_slider.observe(
+            lambda change: self.update_plane_slice_figure(frame_index=change.new), names="value"
+        )
+        self.plane_slider.observe(
+            lambda change: self.update_plane_slice_figure(plane_index=change.new), names="value"
+        )
+
+        self.manual_contrast_checkbox.observe(
+            lambda change: self.switch_contrast_modes(enable_manual_contrast=change.new), names="value"
+        )
+        self.auto_contrast_method.observe(
+            lambda change: self.update_plane_slice_figure(contrast_rescaling=change.new), names="value"
+        )
+        self.contrast_slider.observe(
+            lambda change: self.update_plane_slice_figure(contrast=change.new), names="value"
+        )
+
+    def switch_contrast_modes(self, enable_manual_contrast: bool):
+        """If the manual contrast checkbox is altered, adjust the manual vs. automatic disabling of the correpsonding controllers."""
+        if enable_manual_contrast:
+            self.contrast_controller_box.children = [self.manual_contrast_checkbox, self.contrast_slider]
+            self.update_plane_slice_figure(contrast=self.contrast_slider.value)
+        else:
+            self.contrast_controller_box.children[1] = [self.manual_contrast_checkbox, self.contrast_slider]
+            self.update_plane_slice_figure(contrast_rescaling=self.auto_contrast_method.value)
+
+    def update_contrast_range_per_frame_and_plane(self):
+        """
+        If either of the frame or plane sliders are changed, be sure to update the valid range of the manual contrast.
+
+        Applies even if current hidden, in case user wants to enable it.
+        """
+        self.contrast_slider.min = np.min(self.current_data)
+        self.contrast_slider.max = np.max(self.current_data)
+        self.contrast_slider.value = (max(self.contrast_slider.value[0], self.contrast_slider.min), min(self.contrast_slider.value[1], self.contrast_slider.max))
+
+    @lru_cache # default size of 128 items ought to be enough to create a 1GB cache on large images
+    def _cache_data_read(self, dataset: h5py.Dataset, frame_index: int, plane_index: int) -> np.ndarray:
+        return dataset[frame_index, :, :, plane_index].T
+
+    def update_data(self, frame_index: int, plane_index: int):
+        self.current_data = self._cache_data_read(dataset=self.two_photon_series.data, frame_index=frame_index, plane_index=plane_index)
+        self.update_contrast_range_per_frame_and_plane()
+        
+    def update_plane_slice_figure(
+        self,
+        frame_index:Optional[int]=None,
+        plane_index: Optional[int]=None,
+        contrast_rescaling: Optional[str] = None,
+        contrast: Optional[Tuple[int]]=None,
+    ):
+        """Primary update/generation method of the main figure."""
+        update_data_region = True if frame_index is not None or plane_index is not None else False
+
+        frame_index = frame_index or self.frame_slider.value
+        plane_index = plane_index or self.plane_slider.value
+        contrast_rescaling = contrast_rescaling or self.auto_contrast_method.value
+        contrast = contrast or self.contrast_slider.value
+
+        if update_data_region:
+            self.update_data(frame_index=frame_index, plane_index=plane_index)
+
+        img_fig_kwargs = dict(binary_string=True)
+        if self.manual_contrast_checkbox.value:  # Manual contrast
+            img_fig_kwargs.update(zmin=contrast[0], zmax=contrast[1])
+        else:
+            img_fig_kwargs.update(contrast_rescaling=contrast_rescaling)
+
+        image = px.imshow(self.current_data, **img_fig_kwargs)
+        image.update_traces(hovertemplate=None, hoverinfo='skip')
+        self.figure.data[0].update(image.data[0])
+
+        
 class TwoPhotonSeriesWidget(widgets.VBox):
     """Widget showing Image stack recorded over time from 2-photon microscope."""
 
@@ -91,33 +233,10 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 
             elif len(indexed_timeseries.data.shape) == 4:
 
-                self.figure2 = None
-                self.plane_slider = None
-
-                # Planar Slice tab
-                def update_plane_slice_figure(frame_index=0, plane_index=0):
-                    img_fig = px.imshow(indexed_timeseries.data[frame_index][:, :, plane_index].T, binary_string=True)
-                    _add_fig_trace(img_fig, frame_index)
+                self.volume_figure = None
 
                 def plot_plane_slices(indexed_timeseries: TwoPhotonSeries):
-                    self.plane_slider = widgets.IntSlider(
-                        value=0,
-                        min=0,
-                        max=indexed_timeseries.data.shape[-1] - 1,
-                        orientation="horizontal",
-                        description="Plane: ",
-                    )
-
-                    self.frame_slider.observe(
-                        lambda change: update_plane_slice_figure(frame_index=change.new), names="value"
-                    )
-                    self.plane_slider.observe(
-                        lambda change: update_plane_slice_figure(plane_index=change.new), names="value"
-                    )
-
-                    update_plane_slice_figure()
-                    self.figure.layout.title = f"{base_title} - planar view of volume"
-                    return widgets.VBox(children=[self.figure, self.frame_slider, self.plane_slider])
+                    return TwoPhotonSeriesVolumetricPlaneSliceWidget(two_photon_series=indexed_timeseries)
 
                 # Volume tab
                 output = widgets.Output()
@@ -134,17 +253,16 @@ class TwoPhotonSeriesWidget(widgets.VBox):
                         p3.show()
 
                 def first_volume_render(index=0):
-                    self.figure2 = output
+                    self.volume_figure = output
                     update_volume_figure(index=self.frame_slider.value)
                     self.frame_slider.observe(lambda change: update_volume_figure(index=change.new), names="value")
 
                 def plot_volume_init(indexed_timeseries: TwoPhotonSeries):
                     self.init_button = widgets.Button(description="Render")
                     self.init_button.on_click(first_volume_render)
-                    #self.figure2 = init_button  # Have an activation button instead of initial render attempt
-                    self.figure2 = output
-                    self.figure2.layout.title = f"{base_title} - interactive volume"
-                    return widgets.VBox(children=[self.figure2, self.frame_slider, self.init_button])
+                    self.volume_figure = output
+                    self.volume_figure.layout.title = f"{base_title} - interactive volume"
+                    return widgets.VBox(children=[self.volume_figure, self.frame_slider, self.init_button])
 
                 # Main view
                 tab = LazyTab(
