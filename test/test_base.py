@@ -12,7 +12,7 @@ from ipywidgets import widgets
 
 from pynwb import NWBFile, ProcessingModule, TimeSeries
 from pynwb.behavior import Position, SpatialSeries
-from pynwb.core import DynamicTable
+from pynwb.core import DynamicTable, NWBData
 from pynwb.file import Subject
 
 from nwbwidgets.base import (
@@ -25,6 +25,7 @@ from nwbwidgets.base import (
     show_fields,
     df2accordion,
     lazy_show_over_data,
+    dataset_to_sheet,
 )
 from nwbwidgets.view import default_neurodata_vis_spec, show_dynamic_table
 
@@ -171,3 +172,18 @@ def test_lazy_show_over_data():
         return fig
 
     assert isinstance(lazy_show_over_data(list_=list_, func_=func_fig), widgets.Widget)
+
+
+def test_dataset_1d():
+    dset = NWBData(data=np.arange(10), name="1d data")
+    dataset_to_sheet(dset.data)
+
+
+def test_dataset_2d():
+    dset = NWBData(data=np.random.randn(10, 10), name="2d data")
+    dataset_to_sheet(dset.data)
+
+
+def test_dataset_3d():
+    dset = NWBData(data=np.random.randn(10, 10, 10), name="3d data")
+    dataset_to_sheet(dset.data)
