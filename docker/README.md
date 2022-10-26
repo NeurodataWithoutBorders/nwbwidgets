@@ -1,4 +1,6 @@
 ## Build Docker Image
+
+From `/docker` directory, run:
 ```bash
 $ docker build -t nwbwidgets-voila .
 ```

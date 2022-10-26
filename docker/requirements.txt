@@ -1,7 +1,7 @@
 numpy
 matplotlib
 scikit-image
-pynwb
+pynwb>=2.2.0
 ipympl
 ipyvolume>=0.6.0a10
 ipywidgets>=7.4.0, <8.0.0
@@ -9,14 +9,14 @@ plotly
 tqdm>=4.36.0
 zarr
 aiohttp
-# ccfwidget
+ccfwidget
 tifffile
 ndx-spectrum
 ndx-icephys-meta
 ndx-grayscalevolume
 trimesh
-dandi
-importlib-metadata <5.0
+dandi>=0.46.6
+importlib-metadata<5.0
 fsspec
 voila
 # nwbwidgets>=0.9.2

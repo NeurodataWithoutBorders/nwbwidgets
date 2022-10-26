@@ -1,11 +1,5 @@
 FROM python:3.10
 
-# Only needed for now, while there's no pynwb release with fsspec
-RUN git clone --recurse-submodules https://github.com/NeurodataWithoutBorders/pynwb \
-    && cd pynwb \
-    && pip install -r requirements.txt \
-    && pip install .
-
 RUN cd ..
 COPY requirements.txt .
 RUN pip install --upgrade pip \
