@@ -1,6 +1,6 @@
 pynwb>=2.2.0
 dandi>=0.46.6
-# nwbwidgets>=0.9.2
+nwbwidgets>=0.10.0
 ndx-grayscalevolume==0.0.2
 ndx-icephys-meta==0.1.0
 ndx-spectrum==0.2.2
