@@ -111,6 +111,14 @@ nwbwidgets.ophys module
    :undoc-members:
    :show-inheritance:
 
+nwbwidgets.panel module
+-----------------------
+
+.. automodule:: nwbwidgets.panel
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 nwbwidgets.spectrum module
 --------------------------
 

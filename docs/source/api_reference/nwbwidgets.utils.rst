@@ -12,6 +12,14 @@ nwbwidgets.utils.cmaps module
    :undoc-members:
    :show-inheritance:
 
+nwbwidgets.utils.dandi module
+-----------------------------
+
+.. automodule:: nwbwidgets.utils.dandi
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 nwbwidgets.utils.dynamictable module
 ------------------------------------
 
