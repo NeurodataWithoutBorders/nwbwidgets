@@ -26,7 +26,7 @@ project_root = os.path.dirname(os.path.dirname(cwd))
 # Insert the project root dir as the first element in the PYTHONPATH.
 # This lets us ensure that the source package is imported, and that its
 # version is used.
-sys.path.insert(0, os.path.join(project_root, 'src'))
+sys.path.insert(0, os.path.join(project_root, '../../nwbwidgets'))
 
 
 
@@ -62,3 +62,10 @@ exclude_patterns = []
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+
+# TODO - not working- Include arguments with typehints from classes
+# ref: https://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
+# ref: https://stackoverflow.com/questions/63957326/sphinx-does-not-show-class-instantiation-arguments-for-generic-classes-i-e-par
+autoclass_content = 'both'
+autodoc_typehints = 'signature'
