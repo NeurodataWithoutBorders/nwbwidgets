@@ -1014,12 +1014,12 @@ def trialize_time_series(
     return data_df_trialized
 
 
-def create_empty_figure():
+def create_empty_figure(text="No data"):
     empty_figure = go.Figure()
     empty_figure.update_layout(
         xaxis={"visible": False},
         yaxis={"visible": False},
-        annotations=[{"text": "No data", "xref": "paper", "yref": "paper", "showarrow": False, "font": {"size": 28}}],
+        annotations=[{"text": f"{text}", "xref": "paper", "yref": "paper", "showarrow": False, "font": {"size": 28}}],
     )
 
     return empty_figure
@@ -1237,8 +1237,9 @@ class TrializedTimeSeries(widgets.HBox):
         )
 
         self.plot_button = widgets.Button(description="Plot selection!")
-
-        self.figure_widget = go.FigureWidget()
+        
+        empty_figure = create_empty_figure(text="Select configuration to plot")
+        self.figure_widget = go.FigureWidget(empty_figure)
 
         # Set observers
         self.select_filter_columns.observe(self.update_filter_menu, names="value")

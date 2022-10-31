@@ -58,13 +58,13 @@ default_neurodata_vis_spec = {
     pynwb.ophys.PlaneSegmentation: ophys.route_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     #pynwb.ophys.RoiResponseSeries: ophys.RoiResponseSeriesWidget,
-    pynwb.ophys.RoiResponseSeries: timeseries.TrializedTimeSeries,
-    # pynwb.ophys.RoiResponseSeries: OrderedDict(
-    #     {
-    #     "traces": ophys.RoiResponseSeriesWidget,
-    #     #"trial_aligned": timeseries.TrializedTimeSeries,
-    #     }
-    # ),
+    #pynwb.ophys.RoiResponseSeries: timeseries.TrializedTimeSeries,
+    pynwb.ophys.RoiResponseSeries: OrderedDict(
+        {
+        "traces": ophys.RoiResponseSeriesWidget,
+        #"trial_aligned": timeseries.TrializedTimeSeries,
+        }
+    ),
     pynwb.misc.AnnotationSeries: OrderedDict(
         {
             "text": base.show_text_fields,
