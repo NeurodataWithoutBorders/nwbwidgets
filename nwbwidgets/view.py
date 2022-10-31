@@ -57,12 +57,10 @@ default_neurodata_vis_spec = {
     ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
     pynwb.ophys.PlaneSegmentation: ophys.route_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
-    #pynwb.ophys.RoiResponseSeries: ophys.RoiResponseSeriesWidget,
-    #pynwb.ophys.RoiResponseSeries: timeseries.TrializedTimeSeries,
     pynwb.ophys.RoiResponseSeries: OrderedDict(
         {
         "traces": ophys.RoiResponseSeriesWidget,
-        #"trial_aligned": timeseries.TrializedTimeSeries,
+        "trial_aligned": timeseries.TrializedTimeSeries,
         }
     ),
     pynwb.misc.AnnotationSeries: OrderedDict(

@@ -1187,7 +1187,11 @@ class TrializedTimeSeries(widgets.HBox):
         self.trials_table = trials_table
         if self.trials_table is None:
             self.trials_table = time_series.get_ancestor("NWBFile").trials
-                    
+        
+        if self.trials_table is None:
+            self.children = [widgets.HTML("No trials present")]
+            return        
+        
         self.trials_table_df = self.trials_table.to_dataframe()
         
         # Labels to refer to data created by the widget. Should not collapse with the column names on the dynamic table
