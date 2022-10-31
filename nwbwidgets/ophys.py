@@ -80,7 +80,7 @@ class TwoPhotonSeriesVolumetricPlaneSliceWidget(widgets.VBox):
 
         # Contrast controllers
         self.manual_contrast_checkbox = widgets.Checkbox(value=False, description="Enable Manual Contrast: ")
-        self.auto_contrast_method = widgets.Dropdown(options=["minmax", "infer"], description="Automatic Contrast Method: ")
+        self.auto_contrast_method = widgets.Dropdown(options=["minmax", "infer"], description="Method: ")
         initial_min = np.min(self.current_data)
         initial_max = np.max(self.current_data)
         self.contrast_slider = widgets.IntRangeSlider(
@@ -88,7 +88,7 @@ class TwoPhotonSeriesVolumetricPlaneSliceWidget(widgets.VBox):
             min=initial_min,
             max=initial_max,
             orientation="horizontal",
-            description="Manual Contrast Range: ",
+            description="Range: ",
             continuous_update=False,
         )
         self.contrast_controller_box = widgets.VBox(children=[self.manual_contrast_checkbox, self.auto_contrast_method])
@@ -120,7 +120,7 @@ class TwoPhotonSeriesVolumetricPlaneSliceWidget(widgets.VBox):
             self.contrast_controller_box.children = [self.manual_contrast_checkbox, self.contrast_slider]
             self.update_plane_slice_figure(contrast=self.contrast_slider.value)
         else:
-            self.contrast_controller_box.children[1] = [self.manual_contrast_checkbox, self.contrast_slider]
+            self.contrast_controller_box.children = [self.manual_contrast_checkbox, self.auto_contrast_method]
             self.update_plane_slice_figure(contrast_rescaling=self.auto_contrast_method.value)
 
     def update_contrast_range_per_frame_and_plane(self):
