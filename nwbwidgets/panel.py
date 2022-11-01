@@ -3,14 +3,16 @@ from pathlib import Path
 import h5py
 import fsspec
 from fsspec.implementations.cached import CachingFileSystem
+from dandi.dandiapi import DandiAPIClient
+from tqdm.notebook import tqdm
 
 from pynwb import NWBHDF5IO
 from nwbwidgets import nwb2widget
 from nwbwidgets.utils.dandi import (
-    get_all_dandisets_metadata,
     get_dandiset_metadata,
     list_dandiset_files,
     get_file_url,
+    has_nwb,
 )
 
 
@@ -110,12 +112,7 @@ class Panel(widgets.VBox):
     def create_components_dandi_source(self, args=None):
         """Create widgets components for DANDI option"""
         if self.all_dandisets_metadata is None:
-            self.source_changing_panel.children = [
-                widgets.Label(
-                    "Fetching DANDI datasets info, this might take up to a minute..."
-                )
-            ]
-            self.all_dandisets_metadata = get_all_dandisets_metadata()
+            self.all_dandisets_metadata = self.get_all_dandisets_metadata()
 
         dandiset_options = list()
         for m in self.all_dandisets_metadata:
@@ -288,3 +285,20 @@ class Panel(widgets.VBox):
         io = NWBHDF5IO(full_file_path, mode="r", load_namespaces=True)
         nwb = io.read()
         self.widgets_panel.children = [nwb2widget(nwb)]
+
+    def get_all_dandisets_metadata(self):
+        with DandiAPIClient() as client:
+            all_metadata = list()
+            dandisets_iter = tqdm(list(client.get_dandisets()), desc="Loading dandiset metadata")
+            self.source_changing_panel.children = [dandisets_iter.container]
+            for ii, dandiset in enumerate(dandisets_iter):
+                if 1 < ii < 560:
+                    try:
+                        metadata = dandiset.get_metadata()
+                        if has_nwb(metadata):
+                            all_metadata.append(metadata)
+                    except:
+                        pass
+                else:
+                    pass
+        return all_metadata

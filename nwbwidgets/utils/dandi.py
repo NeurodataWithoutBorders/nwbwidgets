@@ -2,22 +2,6 @@ from dandi.dandiapi import DandiAPIClient
 from dandischema.models import Dandiset
 
 
-def get_all_dandisets_metadata():
-    with DandiAPIClient() as client:
-        all_metadata = list()
-        for ii, dandiset in enumerate(client.get_dandisets()):
-            if 1 < ii < 560:
-                try:
-                    metadata = dandiset.get_metadata()
-                    if has_nwb(metadata):
-                        all_metadata.append(metadata)
-                except:
-                    pass
-            else:
-                pass
-    return all_metadata
-
-
 def get_dandiset_metadata(dandiset_id: str):
     with DandiAPIClient() as client:
         dandiset = client.get_dandiset(dandiset_id=dandiset_id, version_id="draft")
