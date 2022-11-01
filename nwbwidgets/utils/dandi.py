@@ -1,13 +1,16 @@
 from dandi.dandiapi import DandiAPIClient
+from dandischema.models import Dandiset
 
 
 def get_all_dandisets_metadata():
     with DandiAPIClient() as client:
         all_metadata = list()
-        for ii, m in enumerate(client.get_dandisets()):
-            if ii > 1 and ii < 560:
+        for ii, dandiset in enumerate(client.get_dandisets()):
+            if 1 < ii < 560:
                 try:
-                    all_metadata.append(m.get_metadata())
+                    metadata = dandiset.get_metadata()
+                    if has_nwb(metadata):
+                        all_metadata.append(metadata)
                 except:
                     pass
             else:
@@ -31,3 +34,11 @@ def get_file_url(dandiset_id:str, file_path: str):
     with DandiAPIClient() as client:
         asset = client.get_dandiset(dandiset_id, 'draft').get_asset_by_path(file_path)
         return asset.get_content_url(follow_redirects=1, strip_query=True)
+
+
+def has_nwb(metadata: Dandiset):
+    if hasattr(metadata, "assetsSummary"):
+        assets_summary = metadata.assetsSummary
+        if hasattr(assets_summary, "dataStandard"):
+            return any(x.identifier == "RRID:SCR_015242" for x in assets_summary.dataStandard)
+    return False
