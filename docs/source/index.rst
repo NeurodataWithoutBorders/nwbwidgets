@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 NWB Widgets
-=======================================
+===========
 ..
   :scale: 100 %
   :align: right
@@ -28,14 +28,15 @@ NWB Widgets is a library of widgets for visualization NWB data in a Jupyter note
    :caption: Contents:
 
    contents/installation
-   contents/quickstart
+   contents/running_on_jupyter
+   contents/running_remotely
    contents/developer_guide
 
 .. toctree::
    :maxdepth: 3
-   :caption: Neurodata Widgets:
+   :caption: Neurodata Widgets
 
-   contents/neurodata_widgets
+   contents/neurodata_widgets/index
 
 .. toctree::
    :maxdepth: 2
