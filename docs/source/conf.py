@@ -69,3 +69,7 @@ html_static_path = ['_static']
 # ref: https://stackoverflow.com/questions/63957326/sphinx-does-not-show-class-instantiation-arguments-for-generic-classes-i-e-par
 autoclass_content = 'both'
 autodoc_typehints = 'signature'
+
+intersphinx_mapping = {
+    'pynwb': ('https://pynwb.readthedocs.io/en/stable/', None)
+}
