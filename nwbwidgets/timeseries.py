@@ -1341,6 +1341,7 @@ class TrializedTimeSeries(widgets.HBox):
             value=[None],
         )
 
+        self.filtering_active = False
         self.filter_menu = widgets.VBox()
 
         self.faceting_column_selection = widgets.Dropdown(
@@ -1351,7 +1352,6 @@ class TrializedTimeSeries(widgets.HBox):
         )
 
         data_shape = self.time_series.data.shape
-
         dimension_options = list(range(data_shape[1]))
         self.data_column_selection = widgets.Dropdown(
             options=dimension_options, description= "Data col", description_tooltipw=f"{self.time_series.name} column to plot", value=0
@@ -1359,13 +1359,13 @@ class TrializedTimeSeries(widgets.HBox):
 
         self.column_to_align_to_widget = make_trial_event_controller(trials=self.trials_table)
         self.align_to_start_offset_widget = widgets.FloatText(
-            0, step=0.1, description="start (s)", layout=Layout(width="200px"),
+            0.0, step=0.1, description="start (s)", layout=Layout(width="200px"),
             description_tooltip='Start time for calculation before or after (negative or positive) the reference point (aligned to)'
         )
 
         self.align_until_time_widget = widgets.FloatText(
-            2, step=0.1, description="end (s)", layout=Layout(width="200px"),
-            description_tooltip='End time for calculation before or after (negative or positive) the reference point (aligned to).'
+            4.0, step=0.1, description="end (s)", layout=Layout(width="200px"),
+            description_tooltip='End time for calculation after the reference point (aligned to).'
         )
         
         self.plot_button = widgets.Button(description="Plot selection!")
@@ -1407,9 +1407,11 @@ class TrializedTimeSeries(widgets.HBox):
                 for column in selected_columns
             ]
             self.filter_menu.children = tuple(selection_boxes)
+            self.filtering_active = True
             self.filter_menu.layout.visibility = "visible"
 
         else:
+            self.filtering_active = False
             self.filter_menu.layout.visibility = "hidden"
 
     def update_row_faceting(self, change):
@@ -1445,7 +1447,7 @@ class TrializedTimeSeries(widgets.HBox):
             column_to_align_to=self.column_to_align_to_widget.value
         )
 
-        if self.filter_menu.children != (self.default_filter_widget,):
+        if self.filtering_active:
             query_string = "and".join(
                 [
                     self.query_expresion(children)
@@ -1454,7 +1456,6 @@ class TrializedTimeSeries(widgets.HBox):
             )
             df_query = self.trialized_data_df.query(query_string)
         else:
-            query_string = ""
             df_query = self.trialized_data_df
 
         # Generate the plot
