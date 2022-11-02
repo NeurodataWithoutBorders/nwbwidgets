@@ -23,7 +23,7 @@ from .controllers import (
     StartAndDurationController,
     GroupAndSortController,
     RangeController,
-    ProgressBar
+    ProgressBar,
 )
 from .utils.plotly import multi_trace
 from .utils.timeseries import (
@@ -58,7 +58,7 @@ def show_timeseries_mpl(
     ylabel=None,
     title=None,
     figsize=None,
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -110,7 +110,7 @@ def show_indexed_timeseries_mpl(
     title=None,
     figsize=None,
     neurodata_vis_spec=None,
-    **kwargs
+    **kwargs,
 ):
     if ylabel is None and node.unit:
         ylabel = node.unit
@@ -216,7 +216,7 @@ def plot_traces(
     trace_window=None,
     title: str = None,
     ylabel: str = "traces",
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -294,7 +294,7 @@ class AbstractTraceWidget(widgets.VBox):
         self,
         timeseries: TimeSeries,
         foreign_time_window_controller: StartAndDurationController = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.timeseries = timeseries
@@ -335,7 +335,7 @@ class SingleTracePlotlyWidget(AbstractTraceWidget):
         self,
         timeseries: TimeSeries,
         foreign_time_window_controller: StartAndDurationController = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             timeseries=timeseries,
@@ -416,11 +416,10 @@ class SeparateTracesPlotlyWidget(AbstractTraceWidget):
                         self.out_fig.data[i].y = dd
                         self.out_fig.update_yaxes(
                             range=[min(dd), max(dd)] if dd.size != 0 else [None, None],
-                            row=i + 1, col=1
+                            row=i + 1,
+                            col=1,
                         )
-                        self.out_fig.update_xaxes(
-                            range=time_window, row=i + 1, col=1
-                        )
+                        self.out_fig.update_xaxes(range=time_window, row=i + 1, col=1)
 
         self.controls["time_window"].observe(on_change)
 
@@ -476,7 +475,7 @@ def plot_grouped_traces(
     show_legend=True,
     dynamic_table_region_name=None,
     window=None,
-    **kwargs
+    **kwargs,
 ):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -497,7 +496,9 @@ def plot_grouped_traces(
         channel_inds = order
 
     if len(channel_inds):
-        mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
+        mini_data, tt, offsets = _prep_timeseries(
+            time_series, time_window, channel_inds
+        )
     else:
         mini_data = None
         tt = time_window
@@ -548,7 +549,7 @@ def plot_grouped_traces_plotly(
     labels=None,
     colors=color_wheel,
     fig=None,
-    **kwargs
+    **kwargs,
 ):
     mini_data, tt, offsets = _prep_timeseries(time_series, time_window, order)
 
@@ -576,7 +577,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
         foreign_time_window_controller: StartAndDurationController = None,
         foreign_group_and_sort_controller: GroupAndSortController = None,
         mpl_plotter=plot_grouped_traces,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -800,22 +801,34 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
             control_limit=control_limit,
         )
 
-    def plot_group(self,group_inds, data_trialized, time_trialized, fig, order):
+    def plot_group(self, group_inds, data_trialized, time_trialized, fig, order):
         for group in np.unique(group_inds):
-            line_color = color_wheel[group%len(color_wheel)]
-            pb = ProgressBar(np.where(group_inds==group)[0],
-                             desc=f"plotting {group} data", leave=False)
+            line_color = color_wheel[group % len(color_wheel)]
+            pb = ProgressBar(
+                np.where(group_inds == group)[0],
+                desc=f"plotting {group} data",
+                leave=False,
+            )
             group_data = []
             group_ts = []
-            for i,trim_trial_no in enumerate(pb):
+            for i, trim_trial_no in enumerate(pb):
                 trial_idx = order[trim_trial_no]
                 group_data.append(data_trialized[trial_idx])
                 group_ts.append(time_trialized[trial_idx])
-            fig = multi_trace(group_ts,group_data,fig=fig,color=line_color,label=str(group),insert_nans=True)
+            fig = multi_trace(
+                group_ts,
+                group_data,
+                fig=fig,
+                color=line_color,
+                label=str(group),
+                insert_nans=True,
+            )
         tt_flat = np.concatenate(time_trialized)
-        fig.update_layout(xaxis_title='time (s)',
-                          yaxis_title=self.time_series.name,
-                          xaxis_range=(np.min(tt_flat), np.max(tt_flat)))
+        fig.update_layout(
+            xaxis_title="time (s)",
+            yaxis_title=self.time_series.name,
+            xaxis_range=(np.min(tt_flat), np.max(tt_flat)),
+        )
         return fig
 
 
@@ -848,11 +861,15 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
         out_data_aligned = []
         out_ts_aligned = []
         for start in starts:
-            idx_start = int((start - self.time_series.starting_time)*self.time_series.rate)
-            idx_stop = int(idx_start + (before+after)*self.time_series.rate)
-            out_ts_aligned.append(np.linspace(-before,after,num=idx_stop-idx_start))
+            idx_start = int(
+                (start - self.time_series.starting_time) * self.time_series.rate
+            )
+            idx_stop = int(idx_start + (before + after) * self.time_series.rate)
+            out_ts_aligned.append(np.linspace(-before, after, num=idx_stop - idx_start))
             if len(self.time_series_data.shape) > 1 and index is not None:
-                out_data_aligned.append(self.time_series_data[idx_start:idx_stop, index])
+                out_data_aligned.append(
+                    self.time_series_data[idx_start:idx_stop, index]
+                )
             else:
                 out_data_aligned.append(self.time_series_data[idx_start:idx_stop])
         return out_data_aligned, out_ts_aligned
@@ -868,7 +885,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
         labels=None,
         align_to_zero=False,
         sem=False,
-        fig:go.FigureWidget = None,
+        fig: go.FigureWidget = None,
     ):
         data, time_ts_aligned = self.align_data(start_label, before, after, index)
         if group_inds is None:
@@ -901,13 +918,27 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
                 color = color_wheel[stats["group"]]
                 if labels is not None:
                     plot_kwargs.update(text=labels[stats["group"]])
-                fig.add_scattergl(x=time_ts_aligned[0], y=stats["lower"], line_color=color)
-                fig.add_scattergl(x=time_ts_aligned[0], y=stats["upper"], line_color=color, fill='tonexty', opacity=0.2)
-                fig.add_scattergl(x=time_ts_aligned[0], y=stats["mean"], line_color=color, **plot_kwargs)
+                fig.add_scattergl(
+                    x=time_ts_aligned[0], y=stats["lower"], line_color=color
+                )
+                fig.add_scattergl(
+                    x=time_ts_aligned[0],
+                    y=stats["upper"],
+                    line_color=color,
+                    fill="tonexty",
+                    opacity=0.2,
+                )
+                fig.add_scattergl(
+                    x=time_ts_aligned[0],
+                    y=stats["mean"],
+                    line_color=color,
+                    **plot_kwargs,
+                )
 
         else:
-            fig = self.plot_group(group_inds,data,time_ts_aligned,fig,order)
+            fig = self.plot_group(group_inds, data, time_ts_aligned, fig, order)
         return fig
+
 
 class AlignMultiTraceTimeSeriesByTrialsVariable(
     AlignMultiTraceTimeSeriesByTrialsAbstract
@@ -938,12 +969,17 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
         out_data_aligned = []
         out_ts_aligned = []
         for start in starts:
-            idx_start = bisect(self.time_series_timestamps, start-before)
+            idx_start = bisect(self.time_series_timestamps, start - before)
             idx_stop = bisect(self.time_series_timestamps, start + after, lo=idx_start)
-            out_ts_aligned.append(self.time_series_timestamps[idx_start:idx_stop]-
-                                  self.time_series_timestamps[idx_start]-before)
+            out_ts_aligned.append(
+                self.time_series_timestamps[idx_start:idx_stop]
+                - self.time_series_timestamps[idx_start]
+                - before
+            )
             if len(self.time_series_data.shape) > 1 and index is not None:
-                out_data_aligned.append(self.time_series_data[idx_start:idx_stop, index])
+                out_data_aligned.append(
+                    self.time_series_data[idx_start:idx_stop, index]
+                )
             else:
                 out_data_aligned.append(self.time_series_data[idx_start:idx_stop])
         return out_data_aligned, out_ts_aligned
@@ -958,10 +994,10 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
         group_inds=None,
         labels=None,
         align_to_zero=False,
-        fig:go.FigureWidget = None,
+        fig: go.FigureWidget = None,
     ):
 
-        data,time_ts_aligned = self.align_data(start_label,before,after,index)
+        data, time_ts_aligned = self.align_data(start_label, before, after, index)
         if group_inds is None:
             group_inds = np.zeros(len(self.trials), dtype=int)
         if align_to_zero:
@@ -971,11 +1007,13 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
         fig = fig if fig is not None else go.FigureWidget()
         fig.data = []
         fig.layout = {}
-        return self.plot_group(group_inds,data,time_ts_aligned,fig,order)
+        return self.plot_group(group_inds, data, time_ts_aligned, fig, order)
 
 
 def trialize_time_series(
-    time_series: TimeSeries, trials_table: Union[DynamicTable, pd.DataFrame], index: int = 0
+    time_series: TimeSeries,
+    trials_table: Union[DynamicTable, pd.DataFrame],
+    index: int = 0,
 ) -> pd.DataFrame:
 
     if isinstance(trials_table, DynamicTable):
@@ -983,33 +1021,38 @@ def trialize_time_series(
     else:
         trials_table_df = trials_table
 
-    if time_series.timestamps:
-        timestamps = time_series.timestamps[:]
-    else:
-        number_of_frames = time_series.data.shape[0]
-        dt = 1.0 / time_series.rate
-        time_offset = time_series.starting_time if time_series.starting_time else 0
-        timestamps = np.arange(0, number_of_frames) * dt + time_offset
-
     trials_table_df = trials_table_df.reset_index().rename(columns={"id": "trial"})
 
     # Map timestamps to the trial interval (start_time, stop_time)
+    timestamps = get_timeseries_tt(node=time_series)
     start_times = trials_table_df.start_time.to_numpy()
     stop_times = trials_table_df.stop_time.to_numpy()
     larger_than_start_time = start_times[np.newaxis, :] < timestamps[:, np.newaxis]
     smaller_than_stop_time = timestamps[:, np.newaxis] <= stop_times[np.newaxis, :]
-    timestamps_contained_in_trial = np.logical_and(larger_than_start_time, smaller_than_stop_time)
+    timestamps_contained_in_trial = np.logical_and(
+        larger_than_start_time, smaller_than_stop_time
+    )
     # First dimension is timestamp index second dimension is trial table index
-    data_index_within_trials, index_in_trial_table = np.nonzero(timestamps_contained_in_trial)
+    data_index_within_trials, index_in_trial_table = np.nonzero(
+        timestamps_contained_in_trial
+    )
 
     # Check efficiency of accessing HDF5 with indexes
     data = time_series.data[data_index_within_trials, index]
-    data_df = pd.DataFrame(dict(timestamps=timestamps[data_index_within_trials], data=data))
+    data_df = pd.DataFrame(
+        dict(timestamps=timestamps[data_index_within_trials], data=data)
+    )
 
     # Create an start_time in the data table and merge withe the trial table using a left join operation
-    data_df["start_time"] = [trials_table_df.start_time[index] for index in index_in_trial_table]
-    data_df_trialized = pd.merge(left=data_df, right=trials_table_df, on="start_time", how="left")
-    data_df_trialized["centered_timestamps"] = data_df_trialized.timestamps - data_df_trialized.start_time
+    data_df["start_time"] = [
+        trials_table_df.start_time[index] for index in index_in_trial_table
+    ]
+    data_df_trialized = pd.merge(
+        left=data_df, right=trials_table_df, on="start_time", how="left"
+    )
+    data_df_trialized["centered_timestamps"] = (
+        data_df_trialized.timestamps - data_df_trialized.start_time
+    )
 
     return data_df_trialized
 
@@ -1019,7 +1062,15 @@ def create_empty_figure(text="No data"):
     empty_figure.update_layout(
         xaxis={"visible": False},
         yaxis={"visible": False},
-        annotations=[{"text": f"{text}", "xref": "paper", "yref": "paper", "showarrow": False, "font": {"size": 28}}],
+        annotations=[
+            {
+                "text": f"{text}",
+                "xref": "paper",
+                "yref": "paper",
+                "showarrow": False,
+                "font": {"size": 28},
+            }
+        ],
     )
 
     return empty_figure
@@ -1060,7 +1111,9 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
             num_trials = sub_df["trial"].unique().size
             moving_average_window = 2 * num_trials
 
-            moving_average_df = calculate_moving_average_over_trials(sub_df, moving_average_window)
+            moving_average_df = calculate_moving_average_over_trials(
+                sub_df, moving_average_window
+            )
 
             figure.add_scattergl(
                 x=moving_average_df.centered_timestamps,
@@ -1087,7 +1140,9 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
             num_trials = sub_df["trial"].unique().size
             moving_average_window = 2 * num_trials
 
-            moving_average_df = calculate_moving_average_over_trials(sub_df, moving_average_window)
+            moving_average_df = calculate_moving_average_over_trials(
+                sub_df, moving_average_window
+            )
 
             figure.add_scattergl(
                 x=moving_average_df.centered_timestamps,
@@ -1120,7 +1175,9 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
                 num_trials = sub_df["trial"].unique().size
                 moving_average_window = 2 * num_trials
 
-                moving_average_df = calculate_moving_average_over_trials(sub_df, moving_average_window)
+                moving_average_df = calculate_moving_average_over_trials(
+                    sub_df, moving_average_window
+                )
 
                 figure.add_scattergl(
                     x=moving_average_df.centered_timestamps,
@@ -1134,7 +1191,9 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
     return figure
 
 
-def build_faceting_figure(df, facet_col, facet_row, data_label="data"):
+def build_faceting_figure(
+    df, facet_col, facet_row, data_label="data", trial_label="trial"
+):
     faceting_values = [facet_row, facet_col]
     faceting_values = [value for value in faceting_values if value is not None]
     if faceting_values:
@@ -1146,40 +1205,78 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data"):
         return empty_figure
 
     # Construct all the traces grouped by trial
-    figure = px.line(df, x="centered_timestamps", y=data_label, color="trial", facet_col=facet_col, facet_row=facet_row)
+    figure = px.line(
+        df,
+        x="centered_timestamps",
+        y=data_label,
+        color=trial_label,
+        facet_col=facet_col,
+        facet_row=facet_row,
+    )
     figure.update_traces(line_color="gray", line_width=1, showlegend=False)
 
     # Add moving average
-    figure = add_moving_average_traces(figure, df, facet_col=facet_col, facet_row=facet_row)
+    figure = add_moving_average_traces(
+        figure, df, facet_col=facet_col, facet_row=facet_row
+    )
 
     # Annotations
     figure.for_each_xaxis(lambda x: x.update(title=""))
     figure.for_each_yaxis(lambda y: y.update(title=""))
     figure.add_annotation(
-        x=-0.075, y=0.5, textangle=270, text=f"{data_label}", xref="paper", yref="paper", showarrow=False
+        x=-0.075,
+        y=0.5,
+        textangle=270,
+        text=f"{data_label}",
+        xref="paper",
+        yref="paper",
+        showarrow=False,
     )
-    figure.add_annotation(x=0.5, y=-0.125, text="Centered timestamps (s)", xref="paper", yref="paper", showarrow=False)
+    figure.add_annotation(
+        x=0.5,
+        y=-0.125,
+        text="Centered timestamps (s)",
+        xref="paper",
+        yref="paper",
+        showarrow=False,
+    )
 
     if facet_row is not None:
         figure.add_annotation(
-            x=1.05, y=0.5, textangle=90, text=f"{facet_row}", xref="paper", yref="paper", showarrow=False
+            x=1.05,
+            y=0.5,
+            textangle=90,
+            text=f"{facet_row}",
+            xref="paper",
+            yref="paper",
+            showarrow=False,
         )
 
     if facet_col is not None:
         figure.add_annotation(
-            x=0.5, y=1.1, textangle=0, text=f"{facet_col}", xref="paper", yref="paper", showarrow=False
+            x=0.5,
+            y=1.1,
+            textangle=0,
+            text=f"{facet_col}",
+            xref="paper",
+            yref="paper",
+            showarrow=False,
         )
 
     annotation_list = figure.layout.annotations
-    valid_annotations = (annotation for annotation in annotation_list if "=" in annotation.text)
+    valid_annotations = (
+        annotation for annotation in annotation_list if "=" in annotation.text
+    )
     for annotation in valid_annotations:
         annotation.text = annotation.text.split("=")[1]
 
     return figure
 
+
 class TrializedTimeSeries(widgets.HBox):
-        
-    def __init__(self, time_series: TimeSeries, trials_table: Optional[DynamicTable]=None):
+    def __init__(
+        self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None
+    ):
         super().__init__()
 
         self.time_series = time_series
@@ -1187,36 +1284,47 @@ class TrializedTimeSeries(widgets.HBox):
         self.trials_table = trials_table
         if self.trials_table is None:
             self.trials_table = time_series.get_ancestor("NWBFile").trials
-        
+
         if self.trials_table is None:
             self.children = [widgets.HTML("No trials present")]
-            return        
-        
+            return
+
         self.trials_table_df = self.trials_table.to_dataframe()
-        
+
         # Labels to refer to data created by the widget. Should not collapse with the column names on the dynamic table
         self.data_label = "data_widget"
         self.trial_label = "trial_widget"
         self.timestamps_label = "timestamps"
         self.centered_timestamps_label = "centered_timestamps"
-        
-        self.available_columns = self.trials_table_df.columns 
 
-        
+        self.available_columns = self.trials_table_df.columns
+
         invalid_columns = ["start_time", "stop_time"]
-        invalid_columns += [self.data_label, self.trial_label, self.timestamps_label, self.centered_timestamps_label]
+        invalid_columns += [
+            self.data_label,
+            self.trial_label,
+            self.timestamps_label,
+            self.centered_timestamps_label,
+        ]
         get_indexed_column_name = lambda col: "_".join(col.name.split("_")[:-1])
-        ragged_columns = [get_indexed_column_name(col) for col in self.trials_table.columns if "index" in col.name]
+        ragged_columns = [
+            get_indexed_column_name(col)
+            for col in self.trials_table.columns
+            if "index" in col.name
+        ]
         invalid_columns += ragged_columns
-        
+
         self.invalid_columns = invalid_columns
-        
+
         self.columns_for_filtering = [
-            column for column in self.trials_table_df.columns if column not in self.invalid_columns
+            column
+            for column in self.trials_table_df.columns
+            if column not in self.invalid_columns
         ]
 
         self.options_per_column = {
-            column: list(self.trials_table_df[column].dropna().unique()) for column in self.columns_for_filtering
+            column: list(self.trials_table_df[column].dropna().unique())
+            for column in self.columns_for_filtering
         }
 
         # Define widgets
@@ -1231,9 +1339,11 @@ class TrializedTimeSeries(widgets.HBox):
         self.filter_menu = widgets.VBox([self.default_filter_widget])
 
         self.faceting_column_selection = widgets.Dropdown(
-            options=self.columns_for_filtering, description="col faceting"
+            value=None, options=self.columns_for_filtering, description="col faceting"
         )
-        self.faceting_row_selection = widgets.Dropdown(options=self.columns_for_filtering, description="row faceting")
+        self.faceting_row_selection = widgets.Dropdown(
+            value=None, options=self.columns_for_filtering, description="row faceting"
+        )
 
         dimension_options = list(range(self.data_dimensions))
         self.data_column_selection = widgets.Dropdown(
@@ -1241,7 +1351,7 @@ class TrializedTimeSeries(widgets.HBox):
         )
 
         self.plot_button = widgets.Button(description="Plot selection!")
-        
+
         empty_figure = create_empty_figure(text="Select configuration to plot")
         self.figure_widget = go.FigureWidget(empty_figure)
 
@@ -1270,7 +1380,9 @@ class TrializedTimeSeries(widgets.HBox):
         selected_columns = self.select_filter_columns.value
         if selected_columns != (None,):
             selection_boxes = [
-                widgets.Dropdown(options=self.options_per_column[column], description=column)
+                widgets.Dropdown(
+                    options=self.options_per_column[column], description=column
+                )
                 for column in selected_columns
             ]
             self.filter_menu.children = tuple(selection_boxes)
@@ -1278,14 +1390,18 @@ class TrializedTimeSeries(widgets.HBox):
             self.filter_menu.children = (self.default_filter_widget,)
 
     def update_row_faceting(self, change):
-        non_selected_columns = list(set(self.columns_for_filtering).difference(self.select_filter_columns.value))
+        non_selected_columns = list(
+            set(self.columns_for_filtering).difference(self.select_filter_columns.value)
+        )
 
-        self.faceting_row_selection.options = list(non_selected_columns) + [None]
+        self.faceting_row_selection.options = list(non_selected_columns)
         self.faceting_row_selection.value = None
 
     def update_column_faceting(self, change):
-        non_selected_columns = list(set(self.columns_for_filtering).difference(self.select_filter_columns.value))
-        self.faceting_column_selection.options = list(non_selected_columns) + [None]
+        non_selected_columns = list(
+            set(self.columns_for_filtering).difference(self.select_filter_columns.value)
+        )
+        self.faceting_column_selection.options = list(non_selected_columns)
         self.faceting_column_selection.value = None
 
     def query_expresion(self, children):
@@ -1294,16 +1410,22 @@ class TrializedTimeSeries(widgets.HBox):
         else:
             return f" {children.description} == {children.value} "
 
-
     def update_plot_widget(self, button_instance):
 
         # Load and prepare data
         self.trialized_data_df = trialize_time_series(
-            time_series=self.time_series, trials_table=self.trials_table, index=self.data_column_selection.value
+            time_series=self.time_series,
+            trials_table=self.trials_table,
+            index=self.data_column_selection.value,
         )
 
         if self.filter_menu.children != (self.default_filter_widget,):
-            query_string = "and".join([self.query_expresion(children) for children in self.filter_menu.children])
+            query_string = "and".join(
+                [
+                    self.query_expresion(children)
+                    for children in self.filter_menu.children
+                ]
+            )
             df_query = self.trialized_data_df.query(query_string)
         else:
             query_string = ""
@@ -1312,7 +1434,9 @@ class TrializedTimeSeries(widgets.HBox):
         # Generate the plot
         facet_col = self.faceting_column_selection.value
         facet_row = self.faceting_row_selection.value
-        figure = build_faceting_figure(df=df_query, facet_col=facet_col, facet_row=facet_row)
+        figure = build_faceting_figure(
+            df=df_query, facet_col=facet_col, facet_row=facet_row
+        )
 
         # Update the widget
         with self.figure_widget.batch_update():
