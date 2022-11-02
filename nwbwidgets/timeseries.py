@@ -1013,7 +1013,10 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
 def trialize_time_series(
     time_series: TimeSeries,
     trials_table: Union[DynamicTable, pd.DataFrame],
-    index: int = 0,
+    index: Optional[int] = 0,
+    start_time_shift: float = 0,
+    trialize_till_stop_time: Optional[float] = 0,
+    column_to_align_to:str = "start_time",
 ) -> pd.DataFrame:
 
     if isinstance(trials_table, DynamicTable):
@@ -1025,19 +1028,23 @@ def trialize_time_series(
 
     # Map timestamps to the trial interval (start_time, stop_time)
     timestamps = get_timeseries_tt(node=time_series)
-    start_times = trials_table_df.start_time.to_numpy()
-    stop_times = trials_table_df.stop_time.to_numpy()
-    larger_than_start_time = start_times[np.newaxis, :] < timestamps[:, np.newaxis]
+    start_times = trials_table_df[column_to_align_to].to_numpy()
+    if trialize_till_stop_time:
+        stop_times = start_times + trialize_till_stop_time
+    else:
+        stop_times = trials_table_df.stop_time.to_numpy()
+    
+    larger_than_align_time = (start_times[np.newaxis, :] + start_time_shift) < timestamps[:, np.newaxis]
     smaller_than_stop_time = timestamps[:, np.newaxis] <= stop_times[np.newaxis, :]
     timestamps_contained_in_trial = np.logical_and(
-        larger_than_start_time, smaller_than_stop_time
+        larger_than_align_time, smaller_than_stop_time
     )
     # First dimension is timestamp index second dimension is trial table index
     data_index_within_trials, index_in_trial_table = np.nonzero(
         timestamps_contained_in_trial
     )
 
-    # Check efficiency of accessing HDF5 with indexes
+    # TO-DO: Check efficiency of accessing HDF5 with indexes
     data = time_series.data[data_index_within_trials, index]
     data_df = pd.DataFrame(
         dict(timestamps=timestamps[data_index_within_trials], data=data)
@@ -1051,7 +1058,7 @@ def trialize_time_series(
         left=data_df, right=trials_table_df, on="start_time", how="left"
     )
     data_df_trialized["centered_timestamps"] = (
-        data_df_trialized.timestamps - data_df_trialized.start_time
+        data_df_trialized.timestamps - data_df_trialized[column_to_align_to]
     )
 
     return data_df_trialized
@@ -1280,7 +1287,6 @@ class TrializedTimeSeries(widgets.HBox):
         super().__init__()
 
         self.time_series = time_series
-        self.data_dimensions = self.time_series.data.shape[1]
         self.trials_table = trials_table
         if self.trials_table is None:
             self.trials_table = time_series.get_ancestor("NWBFile").trials
@@ -1335,8 +1341,7 @@ class TrializedTimeSeries(widgets.HBox):
             value=[None],
         )
 
-        self.default_filter_widget = widgets.Select()
-        self.filter_menu = widgets.VBox([self.default_filter_widget])
+        self.filter_menu = widgets.VBox()
 
         self.faceting_column_selection = widgets.Dropdown(
             value=None, options=self.columns_for_filtering, description="col faceting"
@@ -1345,11 +1350,24 @@ class TrializedTimeSeries(widgets.HBox):
             value=None, options=self.columns_for_filtering, description="row faceting"
         )
 
-        dimension_options = list(range(self.data_dimensions))
+        data_shape = self.time_series.data.shape
+
+        dimension_options = list(range(data_shape[1]))
         self.data_column_selection = widgets.Dropdown(
-            options=dimension_options, description="Data dim", value=0
+            options=dimension_options, description= "Data col", description_tooltipw=f"{self.time_series.name} column to plot", value=0
         )
 
+        self.column_to_align_to_widget = make_trial_event_controller(trials=self.trials_table)
+        self.align_to_start_offset_widget = widgets.FloatText(
+            0, step=0.1, description="start (s)", layout=Layout(width="200px"),
+            description_tooltip='Start time for calculation before or after (negative or positive) the reference point (aligned to)'
+        )
+
+        self.align_until_time_widget = widgets.FloatText(
+            2, step=0.1, description="end (s)", layout=Layout(width="200px"),
+            description_tooltip='End time for calculation before or after (negative or positive) the reference point (aligned to).'
+        )
+        
         self.plot_button = widgets.Button(description="Plot selection!")
 
         empty_figure = create_empty_figure(text="Select configuration to plot")
@@ -1366,12 +1384,15 @@ class TrializedTimeSeries(widgets.HBox):
         # Create the structure
         self.control = widgets.VBox(
             [
+                self.data_column_selection,
                 self.select_filter_columns,
                 self.filter_menu,
                 self.faceting_column_selection,
                 self.faceting_row_selection,
+                self.column_to_align_to_widget,
+                self.align_to_start_offset_widget,
+                self.align_until_time_widget,
                 self.plot_button,
-                self.data_column_selection,
             ]
         )
         self.children = [self.control, self.figure_widget]
@@ -1386,8 +1407,10 @@ class TrializedTimeSeries(widgets.HBox):
                 for column in selected_columns
             ]
             self.filter_menu.children = tuple(selection_boxes)
+            self.filter_menu.layout.visibility = "visible"
+
         else:
-            self.filter_menu.children = (self.default_filter_widget,)
+            self.filter_menu.layout.visibility = "hidden"
 
     def update_row_faceting(self, change):
         non_selected_columns = list(
@@ -1416,7 +1439,10 @@ class TrializedTimeSeries(widgets.HBox):
         self.trialized_data_df = trialize_time_series(
             time_series=self.time_series,
             trials_table=self.trials_table,
+            start_time_shift=self.align_to_start_offset_widget.value,
+            trialize_till_stop_time=self.align_until_time_widget.value,
             index=self.data_column_selection.value,
+            column_to_align_to=self.column_to_align_to_widget.value
         )
 
         if self.filter_menu.children != (self.default_filter_widget,):
