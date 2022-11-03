@@ -945,6 +945,31 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrial
         return self.plot_group(group_inds, data, time_ts_aligned, fig, order)
 
 
+def get_time_series_data(
+    time_series: TimeSeries,
+    idx_start: Optional[int] = None,
+    idx_stop: Optional[int] = None,
+    data_column: Optional[int] = None,
+    scale_data: bool = True,
+):
+
+    if (data_column is not None) and time_series.data.ndim > 1:
+        data = time_series.data[idx_start:idx_stop, data_column]
+    else:
+        data = time_series.data[idx_start:idx_stop]
+
+    # Scale data
+    if scale_data:
+        offset_scalar = time_series.offset
+        conversion_factor_scalar = time_series.conversion
+        channel_conversion_vector = (
+            time_series.channel_conversion if hasattr(time_series, "channel_conversion") else np.ones_like(data)
+        )
+
+        data = data * channel_conversion_vector * conversion_factor_scalar + offset_scalar
+    return data.flatten()
+
+
 def trialize_time_series(
     time_series: TimeSeries,
     trials_table: Union[DynamicTable, pd.DataFrame],
@@ -965,35 +990,31 @@ def trialize_time_series(
     timestamps = get_timeseries_tt(node=time_series)
     # Get
     values_to_align_array = trials_table_df[alignment_column].to_numpy()
-    left_time_limit_array = values_to_align_array + start_time_shift
+    left_trial_bound = values_to_align_array + start_time_shift
+    left_trial_bound = left_trial_bound[
+        left_trial_bound <= timestamps.max()
+    ]  # Filter values outside of the time series to avoid extra computation
+    right_trial_bound = left_trial_bound + duration
 
-    # Filter values outside of the time series to avoid extra computation
-    left_time_limit_array = left_time_limit_array[left_time_limit_array <= timestamps.max()]
+    from_index_array = np.searchsorted(timestamps, left_trial_bound)
+    to_index_array = np.searchsorted(timestamps, right_trial_bound)
 
-    timestamps_list = []
     data_list = []
-    for left_time in left_time_limit_array:
-        idx_start = bisect(timestamps, left_time)
-        idx_stop = bisect(timestamps, left_time + duration, lo=idx_start)
-
+    timestamps_list = []
+    alignment_column_list = []
+    for trial_index, (idx_start, idx_stop) in enumerate(zip(from_index_array, to_index_array)):
+        trial_data = get_time_series_data(time_series, idx_start=idx_start, idx_stop=idx_stop, data_column=data_column)
+        data_list.append(trial_data)
         timestamps_list.append(timestamps[idx_start:idx_stop])
+        alignment_column_list.append([trials_table_df.start_time[trial_index]] * (idx_stop - idx_start))
 
-        if len(time_series.data.shape) > 1 and data_column is not None:
-            data_list.append(time_series.data[idx_start:idx_stop, data_column])
-        else:
-            data_list.append(time_series.data[idx_start:idx_stop])
+    data_dict = {
+        "data": np.concatenate(data_list),
+        "timestamps": np.concatenate(timestamps_list),
+        f"{alignment_column}": np.concatenate(alignment_column_list),
+    }
 
-    data_dic_generator = (
-        {
-            "data": data.flatten(),
-            "timestamps": timestamps,
-            f"{alignment_column}": [value_to_align] * timestamps.size,
-        }
-        for data, timestamps, value_to_align in zip(data_list, timestamps_list, values_to_align_array)
-    )
-
-    trial_frame_generator = (pd.DataFrame(data_dict) for data_dict in data_dic_generator)
-    data_df = pd.concat(trial_frame_generator)
+    data_df = pd.DataFrame(data_dict)
 
     data_df_trialized = pd.merge(left=data_df, right=trials_table_df, on=alignment_column, how="left")
     data_df_trialized["centered_timestamps"] = data_df_trialized.timestamps - data_df_trialized[alignment_column]
@@ -1168,7 +1189,7 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
     )
     figure.add_annotation(
         x=0.5,
-        y=-0.125,
+        y=-0.135,
         text="Centered timestamps (s)",
         xref="paper",
         yref="paper",
