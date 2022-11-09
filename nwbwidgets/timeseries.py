@@ -1314,6 +1314,13 @@ class TrializedTimeSeries(widgets.HBox):
             description_tooltip="End time for calculation before or after (negative or positive) the reference point (aligned to).",
         )
 
+        self.match_x_axis_widget = widgets.Checkbox(
+                                    value=True,
+                                    description='Lock x-axis across facets',
+                                    disabled=False,
+                                    indent=False
+                                )
+        
         self.plot_button = widgets.Button(description="Plot selection!")
 
         empty_figure = create_empty_figure(text="Select configuration to plot")
@@ -1338,6 +1345,7 @@ class TrializedTimeSeries(widgets.HBox):
                 self.column_to_align_to_widget,
                 self.start_time_shift_widget,
                 self.end_time_widget,
+                self.match_x_axis_widget,
                 self.plot_button,
             ]
         )
@@ -1402,6 +1410,7 @@ class TrializedTimeSeries(widgets.HBox):
         with self.figure_widget.batch_update():
             self.figure_widget.update(layout_annotations=None)
             self.figure_widget.update(figure.to_dict(), overwrite=True)
+            self.figure_widget.update_xaxes(matches=matches)
 
 
 def route_trialized_time_series(time_series: TimeSeries, neurodata_vis_spec=None, **kwargs):
