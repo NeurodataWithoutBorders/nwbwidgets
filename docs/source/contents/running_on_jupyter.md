@@ -41,4 +41,46 @@ nwbfile = io.read()
 nwb2widget(nwbfile)
 ```
 
-This option will also work if the `nwbfile` object is streaming data from a [remote source](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html).
+## Reading remote data
+It is also possible to read NWB files directly from S3, e.g. from the DANDI Archive. To identify the http path of 
+the s3 url, you will need the dandiset_id, the version and the relative path of the NWB file within that dandiset:
+
+```python
+from dandi.dandiapi import DandiAPIClient
+
+
+dandiset_id = "000006"  # ephys dataset from the Svoboda Lab
+version="draft"
+filepath = "sub-anm372795/sub-anm372795_ses-20170718.nwb"  # 450 kB file
+with DandiAPIClient() as client:
+    asset = client.get_dandiset(dandiset_id, version).get_asset_by_path(filepath)
+    s3_url = asset.get_content_url(follow_redirects=1, strip_query=True)
+```
+
+To read the data, it is recommended to use fsspec and set up a local cache
+
+```python
+import fsspec
+import pynwb
+import h5py
+from fsspec.implementations.cached import CachingFileSystem
+from nwbwidgets import nwb2widget
+
+# first, create a virtual filesystem based on the http protocol and use
+# caching to save accessed data to RAM.
+fs = CachingFileSystem(
+    fs=fsspec.filesystem("http"),
+    cache_storage="nwb-cache",  # Local folder for the cache
+)
+
+# next, open the file
+f = fs.open(s3_url, "rb")
+file = h5py.File(f)
+io = pynwb.NWBHDF5IO(file=file, load_namespaces=True)
+nwbfile = io.read()
+
+nwb2widget(nwbfile)
+```
+
+This approach can be extended to different kinds of remote stores. Learn more about reading data from a remote source
+in PyNWB [here](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html).
