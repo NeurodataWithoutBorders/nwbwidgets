@@ -1,8 +1,5 @@
 import unittest
 
-from datetime import datetime
-from dateutil.tz import tzlocal
-
 import numpy as np
 
 import ipywidgets as widgets
@@ -30,6 +27,8 @@ from nwbwidgets.ophys import (
     show_image_segmentation,
 )
 from nwbwidgets.view import default_neurodata_vis_spec
+
+from pynwb.testing.mock.ophys import mock_PlaneSegmentation
 
 
 def test_show_grayscale_volume():
@@ -186,3 +185,26 @@ class CalciumImagingTestCase(unittest.TestCase):
             show_image_segmentation(self.img_seg, default_neurodata_vis_spec),
             widgets.Widget,
         )
+
+
+def test_plane_segmentation_many_categories():
+
+    ps = mock_PlaneSegmentation(n_rois=0)
+    ps.add_column("category", "category")
+
+    for i in range(50):
+        image_mask = np.zeros((100, 100))
+
+        # randomly generate example image masks
+        x = np.random.randint(0, 95)
+        y = np.random.randint(0, 95)
+        image_mask[x:x + 5, y:y + 5] = 1
+
+        # add image mask to plane segmentation
+        ps.add_roi(
+            image_mask=image_mask,
+            category=str(i % 17),
+        )
+
+    PlaneSegmentation2DWidget(ps)
+
