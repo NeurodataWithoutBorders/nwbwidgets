@@ -59,8 +59,8 @@ default_neurodata_vis_spec = {
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     pynwb.ophys.RoiResponseSeries: OrderedDict(
         {
+        "trial_aligned": timeseries.route_trialized_time_series,
         "traces": ophys.RoiResponseSeriesWidget,
-        "trial_aligned": timeseries.TrializedTimeSeries,
         }
     ),
     pynwb.misc.AnnotationSeries: OrderedDict(

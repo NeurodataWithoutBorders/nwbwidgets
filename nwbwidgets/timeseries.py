@@ -1376,7 +1376,6 @@ class TrializedTimeSeries(widgets.HBox):
             return f" {children.description} == {children.value} "
 
     def update_plot_widget(self, button_instance):
-
         # Load and prepare data
 
         if self.filtering_active:
@@ -1403,3 +1402,16 @@ class TrializedTimeSeries(widgets.HBox):
         with self.figure_widget.batch_update():
             self.figure_widget.update(layout_annotations=None)
             self.figure_widget.update(figure.to_dict(), overwrite=True)
+
+
+def route_trialized_time_series(time_series: TimeSeries, neurodata_vis_spec=None, **kwargs):
+    """Function to route different type of time series to the appropriate TrializedTimeSeries case
+
+    Args:
+        time_series (TimeSeries): A pynwb.TimeSeries object
+        neurodata_vis_spec (_type_, optional): The general dictionary  that maps neuodatatypes in nwb to specific 
+        visualizations.
+    """
+    
+    
+    return  TrializedTimeSeries(time_series)

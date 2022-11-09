@@ -102,13 +102,7 @@ class TwoPhotonSeriesWidget(widgets.VBox):
 
 
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
-    if len(df_over_f.roi_response_series) == 1:
-        title, data_input = list(df_over_f.roi_response_series.items())[0]
-        return neurodata_vis_spec[RoiResponseSeries](
-            data_input, neurodata_vis_spec, title=title
-        )
-    else:
-        return neurodata_vis_spec[NWBDataInterface](df_over_f, neurodata_vis_spec)
+    return neurodata_vis_spec[NWBDataInterface](df_over_f, neurodata_vis_spec)
 
 
 def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: dict):
