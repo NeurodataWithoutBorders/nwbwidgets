@@ -25,7 +25,10 @@ from .utils.cmaps import linear_transfer_function
 from .utils.dynamictable import infer_categorical_columns
 from .controllers import ProgressBar
 
-color_wheel = ["red", "blue", "green", "black", "magenta", "yellow"]
+import plotly.express as px
+
+
+color_wheel = px.colors.qualitative.Dark24
 
 
 class TwoPhotonSeriesWidget(widgets.VBox):
@@ -288,7 +291,8 @@ class PlaneSegmentation2DWidget(widgets.VBox):
                 if plane_seg_hover_df[color_by][i] not in aux_leg:
                     kwargs.update(showlegend=True)
                     aux_leg.append(plane_seg_hover_df[color_by][i])
-                c = color_wheel[np.where(cats == plane_seg_hover_df[color_by][i])[0][0]]
+                index = np.where(cats == plane_seg_hover_df[color_by][i])[0][0]
+                c = color_wheel[index % len(color_wheel)]
                 kwargs.update(
                     line_color=c,
                     name=str(plane_seg_hover_df[color_by][i]),
