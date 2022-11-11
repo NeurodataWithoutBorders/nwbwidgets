@@ -945,31 +945,6 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrial
         return self.plot_group(group_inds, data, time_ts_aligned, fig, order)
 
 
-def get_time_series_data(
-    time_series: TimeSeries,
-    idx_start: Optional[int] = None,
-    idx_stop: Optional[int] = None,
-    data_column: Optional[int] = None,
-    scale_data: bool = True,
-):
-
-    if (data_column is not None) and time_series.data.ndim > 1:
-        data = time_series.data[idx_start:idx_stop, data_column]
-    else:
-        data = time_series.data[idx_start:idx_stop]
-
-    # Scale data
-    if scale_data:
-        offset_scalar = time_series.offset
-        conversion_factor_scalar = time_series.conversion
-        channel_conversion_vector = (
-            time_series.channel_conversion if hasattr(time_series, "channel_conversion") else np.ones_like(data)
-        )
-
-        data = data * channel_conversion_vector * conversion_factor_scalar + offset_scalar
-    return data.flatten()
-
-
 def trialize_time_series(
     time_series: TimeSeries,
     trials_table: Union[DynamicTable, pd.DataFrame],
@@ -1003,7 +978,7 @@ def trialize_time_series(
     timestamps_list = []
     alignment_column_list = []
     for trial_index, (idx_start, idx_stop) in enumerate(zip(from_index_array, to_index_array)):
-        trial_data = get_time_series_data(time_series, idx_start=idx_start, idx_stop=idx_stop, data_column=data_column)
+        trial_data, unit = get_timeseries_in_units(time_series, istart=idx_start, istop=idx_stop, data_column=data_column)
         data_list.append(trial_data)
         timestamps_list.append(timestamps[idx_start:idx_stop])
         alignment_column_list.append([trials_table_df.start_time[trial_index]] * (idx_stop - idx_start))
@@ -1179,7 +1154,7 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
     figure.for_each_xaxis(lambda x: x.update(title=""))
     figure.for_each_yaxis(lambda y: y.update(title=""))
     figure.add_annotation(
-        x=-0.075,
+        x=-0.095,
         y=0.5,
         textangle=270,
         text=f"{data_label}",
@@ -1189,7 +1164,7 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
     )
     figure.add_annotation(
         x=0.5,
-        y=-0.135,
+        y=-0.145,
         text="Centered timestamps (s)",
         xref="paper",
         yref="paper",
@@ -1198,7 +1173,7 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
 
     if facet_row is not None:
         figure.add_annotation(
-            x=1.05,
+            x=1.075,
             y=0.5,
             textangle=90,
             text=f"{facet_row}",
@@ -1210,7 +1185,7 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
     if facet_col is not None:
         figure.add_annotation(
             x=0.5,
-            y=1.1,
+            y=1.15,
             textangle=0,
             text=f"{facet_col}",
             xref="paper",
@@ -1410,6 +1385,7 @@ class TrializedTimeSeries(widgets.HBox):
         with self.figure_widget.batch_update():
             self.figure_widget.update(layout_annotations=None)
             self.figure_widget.update(figure.to_dict(), overwrite=True)
+            matches = "x" if self.match_x_axis_widget.value else None
             self.figure_widget.update_xaxes(matches=matches)
 
 
