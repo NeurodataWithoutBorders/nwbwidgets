@@ -3,6 +3,7 @@ from bisect import bisect
 from abc import abstractmethod
 from typing import Union, Optional
 
+from natsort import natsorted
 import scipy
 import numpy as np
 import pandas as pd
@@ -1236,13 +1237,13 @@ class TrializedTimeSeries(widgets.HBox):
         invalid_columns += ragged_columns
 
         self.invalid_columns = invalid_columns
-
-        self.columns_for_filtering = [
+        self.columns_for_filtering = natsorted([
             column for column in self.trials_table_df.columns if column not in self.invalid_columns
-        ]
+        ])
 
         self.options_per_column = {
-            column: list(self.trials_table_df[column].dropna().unique()) for column in self.columns_for_filtering
+            column: natsorted(list(self.trials_table_df[column].dropna().unique()))
+            for column in self.columns_for_filtering
         }
 
         # Define widgets
@@ -1344,12 +1345,12 @@ class TrializedTimeSeries(widgets.HBox):
     def update_row_faceting(self, change):
         non_selected_columns = list(set(self.columns_for_filtering).difference(self.select_filter_columns.value))
 
-        self.faceting_row_selection.options = list(non_selected_columns)
+        self.faceting_row_selection.options = natsorted(list(non_selected_columns))
         self.faceting_row_selection.value = None
 
     def update_column_faceting(self, change):
         non_selected_columns = list(set(self.columns_for_filtering).difference(self.select_filter_columns.value))
-        self.faceting_column_selection.options = list(non_selected_columns)
+        self.faceting_column_selection.options = natsorted(list(non_selected_columns))
         self.faceting_column_selection.value = None
 
     def query_expresion(self, children):
