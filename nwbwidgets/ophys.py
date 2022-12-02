@@ -3,7 +3,7 @@ from functools import lru_cache
 import numpy as np
 from skimage import measure
 from multiprocessing import Process, Value
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List, Dict
 from functools import lru_cache
 
 import h5py
@@ -34,58 +34,65 @@ color_wheel = px.colors.qualitative.Dark24
 
 
 class FrameController(widgets.VBox):
-    controller_fields = "frame_slider"
+    controller_fields = ("frame_slider",)
 
     def __init__(self):
+        super().__init__()
+
         self.frame_slider = widgets.IntSlider(
-            value=0,
-            min=0,
-            max=1,
+            value=0,  # Actual value will depend on data selection
+            min=0,  # Actual value will depend on data selection
+            max=1,  # Actual value will depend on data selection
             orientation="horizontal",
             description="Frame: ",
             continuous_update=False,
         )
+        
+        self.children = (self.frame_slider,)
 
-
-class VolumetricDataController(widgets.VBox):
-    controller_fields = ("frame_slider", "plane_slider")
+class PlaneController(widgets.VBox):
+    controller_fields = ("plane_slider",)
 
     def __init__(self):
-        self.frame_slider = FrameController()
+        super().__init__()
+
         self.plane_slider = widgets.IntSlider(
-            value=0,
-            min=0,
-            max=1,
+            value=0,  # Actual value will depend on data selection
+            min=0,  # Actual value will depend on data selection
+            max=1,  # Actual value will depend on data selection
             orientation="horizontal",
             description="Plane: ",
             continuous_update=False,
         )
-
-        self.children = [self.frame_slider, self.plane_slider]
+        
+        self.children = (self.plane_slider,)
+        
 
 
 class ImShowController(widgets.VBox):
     """Controller specifically for handling various options for the plot.express.imshow function."""
 
-    controller_fields = ("frame_slider", "plane_slider")
+    controller_fields = ("manual_contrast_toggle", "auto_contrast_method", "contrast_slider")
 
     def __init__(self):
+        super().__init__()
+        
         self.manual_contrast_toggle = widgets.ToggleButtons(
-            description="Constrast: ", options=[("Automatic", 0), ("Manual", 1)]
+            description="Constrast: ",
+            options=[("Automatic", "Automatic"), ("Manual", "Manual")],  # Values set to strings for external readability
         )
         self.auto_contrast_method = widgets.Dropdown(description="Method: ", options=["minmax", "infer"])
         self.contrast_slider = widgets.IntRangeSlider(
-            value=(0, 1),  # True value will depend on data selection
-            min=0,  # True value will depend on data selection
-            max=1,  # True value will depend on data selection
+            value=(0, 1),  # Actual value will depend on data selection
+            min=0,  # Actual value will depend on data selection
+            max=1,  # Actual value will depend on data selection
             orientation="horizontal",
             description="Range: ",
             continuous_update=False,
         )
 
         # Setup initial controller-specific layout
-        self.children[0] = self.auto_contrast_method
-        # self.children = [self.manual_contrast_toggle, self.auto_contrast_method]
+        self.children = (self.manual_contrast_toggle, self.auto_contrast_method)
 
         # Setup controller-specific observer events
         self.setup_observers()
@@ -97,31 +104,58 @@ class ImShowController(widgets.VBox):
 
     def switch_contrast_modes(self, enable_manual_contrast: bool):
         """When the manual contrast toggle is altered, adjust the manual vs. automatic visibility of the components."""
-        if self.manual_contrast_toggle:
-            self.children[1] = self.auto_contrast_method
-            # self.children = [self.manual_contrast_toggle, self.contrast_slider]
+        if self.manual_contrast_toggle.value == "Manual":
+            self.children = (self.manual_contrast_toggle, self.contrast_slider)
         else:
-            self.chdilren[1] = self.contrast_slider
-            # self.children = [self.manual_contrast_toggle, self.auto_contrast_method]
+            self.children = (self.manual_contrast_toggle, self.auto_contrast_method)
 
+class ViewTypeController(widgets.VBox):
+    controller_fields = ("view_type_toggle",)
 
-class MultiController:
+    def __init__(self):
+        super().__init__()
+
+        self.view_type_toggle = widgets.ToggleButtons(
+            options=[("Simplified", "Simplified"), ("Detailed", "Detailed")],  # Values set to strings for external readability
+        )
+        self.children = (self.view_type_toggle,)
+            
+            
+class MultiController(widgets.VBox):
+    controller_fields: Tuple[str] = tuple()
+    components: Dict[str, widgets.VBox] = dict()
+    
     def __init__(self, components: list):
-        self.controller_box = None
-        self.components = {component.__name__: component for component in components}
-        for component in self.components:
+        super().__init__()
+        
+        children = list()
+        controller_fields = list()
+        self.components = {component.__class__.__name__: component for component in components}
+        for component in self.components.values():
+            # Set attributes at outermost level
             for field in component.controller_fields:
-                self.setattr(field, getattr(component, field))
+                controller_fields.append(field)
+                setattr(self, field, getattr(component, field))
+
+            # Default layout of children
+            if not isinstance(component, MultiController):
+                children.append(component)
+                
+        self.children = tuple(children)
+        self.controller_fields = tuple(controller_fields)
+            
         self.setup_observers()
 
     def setup_observers(self):
         pass
 
-
+class VolumetricDataController(MultiController):
+    def __init__(self):
+        super().__init__(components=[FrameController(), PlaneController()])
+    
 class VolumetricPlaneSliceController(MultiController):
-    simplified_or_detailed_view = widgets.ToggleButtons(options=[("Simplified", 0), ("Detailed", 1)])
-
-    controllers = [simplified_or_detailed_view, VolumetricDataController(), ImShowController()]
+    def __init__(self):
+        super().__init__(components=[ViewTypeController(), VolumetricDataController(), ImShowController()])
 
 
 class PlaneSliceVizualization(widgets.VBox):
@@ -147,31 +181,37 @@ class PlaneSliceVizualization(widgets.VBox):
         self.setup_observers()
 
         # Setup layout of Canvas relative to Controllers
-        self.children = [self.Canvas, self.Controller.controller_box]
+        self.children = [self.Canvas, self.Controller]
 
     @lru_cache  # default size of 128 items ought to be enough to create a 1GB cache on large images
     def _cache_data_read(self, dataset: h5py.Dataset, frame_index: int, plane_index: int) -> np.ndarray:
         return dataset[frame_index, :, :, plane_index].T
 
-    def update_contrast_range_per_frame_and_plane(self):
+    def update_contrast_range(self):
         """
         If either of the frame or plane sliders are changed, be sure to update the valid range of the manual contrast.
 
         Applies even if current hidden, in case user wants to enable it.
         """
-        self.contrast_slider.min = np.min(self.current_data)
-        self.contrast_slider.max = np.max(self.current_data)
-        self.contrast_slider.value = (
-            max(self.contrast_slider.value[0], self.contrast_slider.min),
-            min(self.contrast_slider.value[1], self.contrast_slider.max),
+        self.Controller.contrast_slider.min = np.min(self.data)
+        self.Controller.contrast_slider.max = np.max(self.data)
+        self.Controller.contrast_slider.value = (
+            max(self.Controller.contrast_slider.value[0], self.Controller.contrast_slider.min),
+            min(self.Controller.contrast_slider.value[1], self.Controller.contrast_slider.max),
         )
 
-    def update_data(self, frame_index: int, plane_index: int):
+    def update_data(self, frame_index: Optional[int] = None, plane_index: Optional[int] = None):
+        frame_index = frame_index or self.Controller.frame_slider.value
+        plane_index = plane_index or self.Controller.plane_slider.value
+
         self.data = self._cache_data_read(
             dataset=self.two_photon_series.data, frame_index=frame_index, plane_index=plane_index
         )
-        self.update_contrast_range_per_frame_and_plane()
+
         self.data = self.two_photon_series.data[frame_index, :, :, plane_index]
+        
+        if self.Controller.manual_contrast_toggle.value == "Manual":
+            self.update_contrast_range()
 
     def setup_data(self, max_mb_treshold: float = 20.0):
         """
@@ -194,7 +234,7 @@ class PlaneSliceVizualization(widgets.VBox):
             by_height = 2
             self.data = self.two_photon_series.data[0, ::by_width, ::by_height, 0]
 
-    def update_data_to_plot(self, frame_index: int, plane_index: int):
+    def update_data_to_plot(self):
         self.data_to_plot = self.data.T
 
     def setup_data_to_plot(self):
@@ -205,21 +245,25 @@ class PlaneSliceVizualization(widgets.VBox):
         self.Controller = VolumetricPlaneSliceController()
 
         # Setup layout of controllers relative to each other
-        self.Controller.controller_box = widgets.VBox(
-            [self.Controller.components["simplified_or_detailed_view"]],
-            widgets.HBox(
+        self.Controller.children = [
+            widgets.VBox(
                 children=[
-                    self.Controller.components["VolumetricDataController"],
-                    self.Controller.components["ImShowController"],
+                    self.Controller.components["ViewTypeController"],
+                    widgets.HBox(
+                        children=[
+                            self.Controller.components["VolumetricDataController"],
+                            self.Controller.components["ImShowController"],
+                        ]
+                    ),
                 ]
-            ),
-        )
+            )
+        ]
 
         # Set some initial values based on neurodata object and initial data to plot
         self.Controller.frame_slider.max = self.two_photon_series.data.shape[0] - 1
         self.Controller.plane_slider.max = self.two_photon_series.data.shape[-1] - 1
+        self.Controller.contrast_slider.max = np.max(self.data_to_plot)
         self.Controller.contrast_slider.min = np.min(self.data_to_plot)
-        self.Controller.contrast_slider.min = np.max(self.data_to_plot)
 
     def update_figure(
         self,
@@ -228,18 +272,22 @@ class PlaneSliceVizualization(widgets.VBox):
         contrast_rescaling: Optional[str] = None,
         contrast: Optional[Tuple[int]] = None,
     ):
-        frame_index = frame_index or self.frame_slider.value
-        plane_index = plane_index or self.plane_slider.value
-        contrast_rescaling = contrast_rescaling or self.auto_contrast_method.value
-        contrast = contrast or self.contrast_slider.value
-
+        if frame_index is not None or plane_index is not None:
+            self.update_data(frame_index=frame_index, plane_index=plane_index)
+            self.update_data_to_plot()
+        
+        frame_index = frame_index or self.Controller.frame_slider.value
+        plane_index = plane_index or self.Controller.plane_slider.value
+        contrast_rescaling = contrast_rescaling or self.Controller.auto_contrast_method.value
+        contrast = contrast or self.Controller.contrast_slider.value
+        
         img_fig_kwargs = dict(binary_string=True)
-        if self.manual_contrast_toggle.value:  # Manual contrast
+        if self.Controller.manual_contrast_toggle.value == "Manual":
             img_fig_kwargs.update(zmin=contrast[0], zmax=contrast[1])
         else:
             img_fig_kwargs.update(contrast_rescaling=contrast_rescaling)
 
-        self.figure = px.imshow(self.current_data, **img_fig_kwargs)
+        self.figure = px.imshow(self.data_to_plot, **img_fig_kwargs)
         self.figure.update_traces(hovertemplate=None, hoverinfo="skip")
 
     def update_canvas(
@@ -267,14 +315,14 @@ class PlaneSliceVizualization(widgets.VBox):
         self.Canvas.update_xaxes(visible=False, showticklabels=False).update_yaxes(visible=False, showticklabels=False)
 
     def setup_observers(self):
-        self.frame_slider.observe(lambda change: self.update_plane_slice_figure(frame_index=change.new), names="value")
-        self.plane_slider.observe(lambda change: self.update_plane_slice_figure(plane_index=change.new), names="value")
+        self.Controller.frame_slider.observe(lambda change: self.update_canvas(frame_index=change.new), names="value")
+        self.Controller.plane_slider.observe(lambda change: self.update_canvas(plane_index=change.new), names="value")
 
-        self.manual_contrast_checkbox.observe(lambda change: self.update_canvas(contrast=change.new), names="value")
-        self.auto_contrast_method.observe(
+        self.Controller.view_type_toggle.observe(lambda change: self.update_canvas(contrast=change.new), names="value")
+        self.Controller.auto_contrast_method.observe(
             lambda change: self.update_canvas(contrast_rescaling=change.new), names="value"
         )
-        self.contrast_slider.observe(lambda change: self.update_canvas(contrast=change.new), names="value")
+        self.Controller.contrast_slider.observe(lambda change: self.update_canvas(contrast=change.new), names="value")
 
 
 class TwoPhotonSeriesWidget(widgets.VBox):
