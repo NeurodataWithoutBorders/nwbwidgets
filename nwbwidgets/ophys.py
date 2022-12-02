@@ -106,7 +106,7 @@ class ImShowController(widgets.VBox):
         """When the manual contrast toggle is altered, adjust the manual vs. automatic visibility of the components."""
         if self.manual_contrast_toggle.value == "Manual":
             self.children = (self.manual_contrast_toggle, self.contrast_slider)
-        else:
+        elif self.manual_contrast_toggle.value == "Automatic":
             self.children = (self.manual_contrast_toggle, self.auto_contrast_method)
 
 class ViewTypeController(widgets.VBox):
@@ -193,8 +193,8 @@ class PlaneSliceVizualization(widgets.VBox):
 
         Applies even if current hidden, in case user wants to enable it.
         """
-        self.Controller.contrast_slider.min = np.min(self.data)
         self.Controller.contrast_slider.max = np.max(self.data)
+        self.Controller.contrast_slider.min = np.min(self.data)
         self.Controller.contrast_slider.value = (
             max(self.Controller.contrast_slider.value[0], self.Controller.contrast_slider.min),
             min(self.Controller.contrast_slider.value[1], self.Controller.contrast_slider.max),
@@ -264,6 +264,7 @@ class PlaneSliceVizualization(widgets.VBox):
         self.Controller.plane_slider.max = self.two_photon_series.data.shape[-1] - 1
         self.Controller.contrast_slider.max = np.max(self.data_to_plot)
         self.Controller.contrast_slider.min = np.min(self.data_to_plot)
+        self.Controller.contrast_slider.value = (self.Controller.contrast_slider.min, self.Controller.contrast_slider.max)
 
     def update_figure(
         self,
@@ -284,7 +285,7 @@ class PlaneSliceVizualization(widgets.VBox):
         img_fig_kwargs = dict(binary_string=True)
         if self.Controller.manual_contrast_toggle.value == "Manual":
             img_fig_kwargs.update(zmin=contrast[0], zmax=contrast[1])
-        else:
+        elif self.Controller.manual_contrast_toggle.value == "Automatic":
             img_fig_kwargs.update(contrast_rescaling=contrast_rescaling)
 
         self.figure = px.imshow(self.data_to_plot, **img_fig_kwargs)
@@ -318,7 +319,7 @@ class PlaneSliceVizualization(widgets.VBox):
         self.Controller.frame_slider.observe(lambda change: self.update_canvas(frame_index=change.new), names="value")
         self.Controller.plane_slider.observe(lambda change: self.update_canvas(plane_index=change.new), names="value")
 
-        self.Controller.view_type_toggle.observe(lambda change: self.update_canvas(contrast=change.new), names="value")
+        self.Controller.view_type_toggle.observe(lambda change: self.update_canvas(), names="value")
         self.Controller.auto_contrast_method.observe(
             lambda change: self.update_canvas(contrast_rescaling=change.new), names="value"
         )
