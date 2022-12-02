@@ -33,6 +33,31 @@ from .controllers import ProgressBar
 color_wheel = px.colors.qualitative.Dark24
 
 
+class RotationController(widgets.HBox):
+    controller_fields = ("rotation",  "rotate_left", "rotate_right")
+    
+    def __init__(self):
+        super().__init__()
+        
+        self.rotation = 0  # A hidden non-widget value counter to keep relative track of progression
+        self.rotate_left = widgets.Button(icon="rotate-left", layout=widgets.Layout(width='35px'))
+        self.rotate_right = widgets.Button(icon="rotate-right", layout=widgets.Layout(width='35px'))
+        
+        self.set_observers()
+        
+        self.children = (self.rotate_left, self.rotate_right)
+        
+    def set_observers(self):
+        def _rotate_right(change):
+            self.rotation += 1
+
+        def _rotate_left(change):
+            self.rotation -= 1
+        
+        self.rotate_right.on_click(_rotate_right)
+        self.rotate_left.on_click(_rotate_left)
+
+
 class FrameController(widgets.VBox):
     controller_fields = ("frame_slider",)
 
@@ -145,7 +170,7 @@ class MultiController(widgets.VBox):
                 setattr(self, field, getattr(component, field))
 
             # Default layout of children
-            if not isinstance(component, MultiController):
+            if isinstance(component, widgets.Widget) and not isinstance(component, MultiController):
                 children.append(component)
 
         self.children = tuple(children)
@@ -159,13 +184,37 @@ class MultiController(widgets.VBox):
 
 class VolumetricDataController(MultiController):
     def __init__(self):
-        super().__init__(components=[FrameController(), PlaneController()])
+        super().__init__(components=[RotationController(), FrameController(), PlaneController()])
 
+        # Align rotation buttons to center of sliders
+        self.layout.align_items = "center"
 
 class VolumetricPlaneSliceController(MultiController):
     def __init__(self):
         super().__init__(components=[ViewTypeController(), VolumetricDataController(), ImShowController()])
 
+        self.setup_visibility()
+        self.setup_observers()
+    
+    def set_detailed_visibility(self, visibile: bool):
+        widget_visibility_type = "visible" if visibile else "hidden"
+        
+        self.contrast_type_toggle.layout.visibility = widget_visibility_type
+        self.manual_contrast_slider.layout.visibility = widget_visibility_type
+        self.auto_contrast_method.layout.visibility = widget_visibility_type
+    
+    def update_visibility(self):
+        if self.view_type_toggle.value == "Simplified":
+            self.set_detailed_visibility(visibile=False)
+        elif self.view_type_toggle.value == "Detailed":
+            self.set_detailed_visibility(visibile=True)
+        
+    def setup_visibility(self):
+        self.set_detailed_visibility(visibile=False)
+        
+    def setup_observers(self):
+        self.view_type_toggle.observe(lambda change: self.update_visibility())
+        
 
 class PlaneSliceVizualization(widgets.VBox):
     """Sub-widget specifically for plane-wise views of a 4D TwoPhotonSeries."""
@@ -180,6 +229,7 @@ class PlaneSliceVizualization(widgets.VBox):
 
         super().__init__()
         self.two_photon_series = two_photon_series
+        self.rotation = 0
 
         self.setup_data()
         self.setup_data_to_plot()
@@ -242,9 +292,18 @@ class PlaneSliceVizualization(widgets.VBox):
             by_width = 2
             by_height = 2
             self.data = self.two_photon_series.data[0, ::by_width, ::by_height, 0]
-
+            
     def update_data_to_plot(self):
-        self.data_to_plot = self.data.T
+        rotation = self.Controller.components["VolumetricDataController"].components["RotationController"].rotation if hasattr(self, "Controller") else 0
+        rotation_mod = rotation % 4  # Only supporting 90 degree increments
+        if rotation_mod == 0:
+            self.data_to_plot = self.data
+        elif rotation_mod == 1:
+            self.data_to_plot = self.data.T
+        elif rotation_mod == 2:
+            self.data_to_plot = np.flip(self.data)
+        elif rotation_mod == 3:
+            self.data_to_plot = np.flip(self.data.T)
 
     def setup_data_to_plot(self):
         self.update_data_to_plot()
@@ -280,17 +339,18 @@ class PlaneSliceVizualization(widgets.VBox):
 
     def update_figure(
         self,
+        rotation_changed: Optional[bool] = None,
         frame_index: Optional[int] = None,
         plane_index: Optional[int] = None,
         contrast_rescaling: Optional[str] = None,
         contrast: Optional[Tuple[int]] = None,
     ):
-        if frame_index is not None or plane_index is not None:
+        if rotation_changed is not None:
+            self.update_data_to_plot()
+        elif frame_index is not None or plane_index is not None:
             self.update_data(frame_index=frame_index, plane_index=plane_index)
             self.update_data_to_plot()
 
-        frame_index = frame_index or self.Controller.frame_slider.value
-        plane_index = plane_index or self.Controller.plane_slider.value
         contrast_rescaling = contrast_rescaling or self.Controller.auto_contrast_method.value
         contrast = contrast or self.Controller.manual_contrast_slider.value
 
@@ -305,33 +365,35 @@ class PlaneSliceVizualization(widgets.VBox):
 
     def update_canvas(
         self,
+        rotation_changed: Optional[bool] = None,
         frame_index: Optional[int] = None,
         plane_index: Optional[int] = None,
         contrast_rescaling: Optional[str] = None,
         contrast: Optional[Tuple[int]] = None,
     ):
         self.update_figure(
-            frame_index=frame_index, plane_index=plane_index, contrast_rescaling=contrast_rescaling, contrast=contrast
+            rotation_changed=rotation_changed, frame_index=frame_index, plane_index=plane_index, contrast_rescaling=contrast_rescaling, contrast=contrast
         )
         self.Canvas.data[0].update(self.figure.data[0])
 
-    def setup_canvas(
-        self,
-        frame_index: Optional[int] = None,
-        plane_index: Optional[int] = None,
-        contrast_rescaling: Optional[str] = None,
-        contrast: Optional[Tuple[int]] = None,
-    ):
+    def setup_canvas(self):
+        # Setup main figure area
         self.update_figure()
         self.Canvas = go.FigureWidget(self.figure)
         self.Canvas.layout.title = f"TwoPhotonSeries: {self.two_photon_series.name} - Planar slices of volume"
         self.Canvas.update_xaxes(visible=False, showticklabels=False).update_yaxes(visible=False, showticklabels=False)
+        
+        # Final vizualization-specific setup of controller positions
+        # Move the Simplified/Detailed switch to the right part of screen
+        self.Controller.components["ViewTypeController"].layout.align_items = "flex-end" 
 
     def setup_observers(self):
+        self.Controller.rotate_right.on_click(lambda change: self.update_canvas(rotation_changed=True))
+        self.Controller.rotate_left.on_click(lambda change: self.update_canvas(rotation_changed=True))
         self.Controller.frame_slider.observe(lambda change: self.update_canvas(frame_index=change.new), names="value")
         self.Controller.plane_slider.observe(lambda change: self.update_canvas(plane_index=change.new), names="value")
 
-        self.Controller.view_type_toggle.observe(lambda change: self.update_canvas(), names="value")
+        self.Controller.contrast_type_toggle.observe(lambda change: self.update_canvas(), names="value")
         self.Controller.auto_contrast_method.observe(
             lambda change: self.update_canvas(contrast_rescaling=change.new), names="value"
         )
