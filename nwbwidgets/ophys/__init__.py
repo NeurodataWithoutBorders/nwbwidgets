@@ -1,3 +1,3 @@
-from .plane_slice_visualization import PlaneSliceVisualization
-from .two_photon_series import TwoPhotonSeriesVizualization
-from .segmentation import PlaneSegmentation2DWidget, RoiResponseSeries
+from .plane_slice import PlaneSliceVisualization
+from .two_photon_series import TwoPhotonSeriesVisualization
+from .segmentation import PlaneSegmentation2DWidget, RoiResponseSeries, show_image_segmentation

@@ -8,11 +8,11 @@ import plotly.express as px
 from pynwb.base import NWBDataInterface
 from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, ImageSegmentation
 
-from .base import df_to_hover_text
-from .timeseries import BaseGroupedTraceWidget
-from .utils.cmaps import linear_transfer_function
-from .utils.dynamictable import infer_categorical_columns
-from .controllers import ProgressBar
+from ..base import df_to_hover_text
+from ..timeseries import BaseGroupedTraceWidget
+from ..utils.cmaps import linear_transfer_function
+from ..utils.dynamictable import infer_categorical_columns
+from ..controllers import ProgressBar
 
 
 color_wheel = px.colors.qualitative.Dark24
