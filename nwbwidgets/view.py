@@ -53,7 +53,7 @@ default_neurodata_vis_spec = {
     pynwb.file.Subject: base.show_fields,
     pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
     pynwb.ophys.ImageSegmentation: ophys.show_image_segmentation,
-    pynwb.ophys.TwoPhotonSeries: ophys.TwoPhotonSeriesWidget,
+    pynwb.ophys.TwoPhotonSeries: ophys.TwoPhotonSeriesVisualization,
     ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
     pynwb.ophys.PlaneSegmentation: ophys.route_plane_segmentation,
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
