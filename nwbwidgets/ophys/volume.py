@@ -6,17 +6,13 @@ from ..utils.cmaps import linear_transfer_function
 
 
 class VolumeVisualization(widgets.VBox):
-    def _first_volume_render(self):
-        self.Canvas = widgets.Output()
-        self.update_canvas(index=self.frame_slider.value)
-
     def __init__(self, two_photon_series: TwoPhotonSeries):
         super().__init__()
         self.two_photon_series = two_photon_series
         self.canvas_title = f"TwoPhotonSeries: {self.two_photon_series.name} - Interactive Volume"
-
-        self.Canvas = widgets.Button(description="Render")
-        self.Canvas.on_click(self._first_volume_render)
+        
+        self.Canvas = widgets.ToggleButton(description="Render")
+        self.Canvas.observe(self.setup_canvas, names="value")
         self.Canvas.layout.title = self.canvas_title
 
         self.setup_controllers()
@@ -39,6 +35,7 @@ class VolumeVisualization(widgets.VBox):
 
     def setup_controllers(self):
         self.Controller = FrameController()
+        self.Controller.frame_slider.max = self.two_photon_series.data.shape[0] - 1
 
     def update_canvas(self, frame_index: int = 0):
         import ipyvolume.pylab as p3
@@ -49,13 +46,17 @@ class VolumeVisualization(widgets.VBox):
         with self.Canvas:
             p3.show()
 
-    def setup_canvas(self):
+    def setup_canvas(self, change):
+        self.Canvas.description = "Loading..."
+        
         self.Canvas = widgets.Output()
         self.Canvas.layout.title = self.canvas_title
 
         self.setup_data()
         self.setup_data_to_plot()
         self.update_canvas()
+        
+        self.children = (self.Canvas, self.Controller)
 
     def setup_observers(self):
         self.Controller.frame_slider.observe(lambda change: self.update_canvas(frame_index=change.new), names="value")
