@@ -1,3 +1,5 @@
+from typing import Optional
+
 import ipywidgets as widgets
 
 from ..controllers import RotationController, ImShowController, ViewTypeController, MultiController
@@ -39,17 +41,28 @@ class PlaneController(widgets.VBox):
         self.children = (self.plane_slider,)
 
 
-class VolumetricDataController(MultiController):
-    def __init__(self):
-        super().__init__(components=[RotationController(), FrameController(), PlaneController()])
+class SinglePlaneDataController(MultiController):
+    def __init__(self, components: Optional[list] = None):
+        default_components = [RotationController(), FrameController()]
+        if components is not None:
+            default_components.extend(components)
+        super().__init__(components=default_components)
 
         # Align rotation buttons to center of sliders
         self.layout.align_items = "center"
 
 
-class VolumetricPlaneSliceController(MultiController):
+class VolumetricDataController(SinglePlaneDataController):
     def __init__(self):
-        super().__init__(components=[ViewTypeController(), VolumetricDataController(), ImShowController()])
+        super().__init__(components=[PlaneController()])
+
+
+class BasePlaneSliceController(MultiController):
+    def __init__(self, components: Optional[list] = None):
+        default_components = [ViewTypeController(), ImShowController()]
+        if components is not None:
+            default_components.extend(components)
+        super().__init__(components=default_components)
 
         self.setup_visibility()
         self.setup_observers()
@@ -72,3 +85,13 @@ class VolumetricPlaneSliceController(MultiController):
 
     def setup_observers(self):
         self.view_type_toggle.observe(lambda change: self.update_visibility())
+
+
+class SinglePlaneSliceController(BasePlaneSliceController):
+    def __init__(self):
+        super().__init__(components=[SinglePlaneDataController()])
+
+
+class VolumetricPlaneSliceController(BasePlaneSliceController):
+    def __init__(self):
+        super().__init__(components=[VolumetricDataController()])

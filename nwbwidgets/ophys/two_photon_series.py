@@ -4,8 +4,8 @@ import plotly.express as px
 from pynwb.ophys import TwoPhotonSeries
 from tifffile import imread, TiffFile
 
-from .single_plane import SinglePlaneVisualization
-from .plane_slice import PlaneSliceVisualization
+from .single_plane_2 import SinglePlaneVisualization2
+from .plane_slice_2 import PlaneSliceVisualization2
 from .volume import VolumeVisualization
 from ..base import LazyTab
 
@@ -50,11 +50,11 @@ class TwoPhotonSeriesVisualization(widgets.VBox):
                 self.children = [self.figure, self.slider]
         else:
             if len(indexed_timeseries.data.shape) == 3:
-                self.children = (SinglePlaneVisualization(two_photon_series=indexed_timeseries),)
+                self.children = (SinglePlaneVisualization2(two_photon_series=indexed_timeseries),)
 
             elif len(indexed_timeseries.data.shape) == 4:
                 tab = LazyTab(
-                    func_dict={"Planar Slice": PlaneSliceVisualization, "3D Volume": VolumeVisualization},
+                    func_dict={"Planar Slice": PlaneSliceVisualization2, "3D Volume": VolumeVisualization},
                     data=indexed_timeseries,
                 )
                 self.children = (tab,)
