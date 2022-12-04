@@ -6,6 +6,7 @@ from ..utils.cmaps import linear_transfer_function
 
 class VolumeVisualization(widgets.VBox):
     def __init__(self, two_photon_series: TwoPhotonSeries):
+        super().__init__()
         self.two_photon_series = two_photon_series
 
         self.volume_figure = widgets.Button(description="Render")
