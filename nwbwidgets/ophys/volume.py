@@ -1,3 +1,5 @@
+from typing import Optional
+
 import ipywidgets as widgets
 from pynwb.ophys import TwoPhotonSeries
 
@@ -7,16 +9,24 @@ from ..utils.cmaps import linear_transfer_function
 
 class VolumeVisualization(widgets.VBox):
     def _first_volume_render(self):
+        self.Canvas.description = "Loading..."
+        
+        self.setup_data()
+        self.update_data_to_plot()
+        
         self.Canvas = widgets.Output()
-        self.update_canvas(index=self.frame_slider.value)
+        self.Canvas.layout.title = self.canvas_title
+        self.update_canvas(frame_index=self.Controller.frame_slider.value)
+        
+        self.children = (self.Canvas, self.Controller)
 
     def __init__(self, two_photon_series: TwoPhotonSeries):
         super().__init__()
         self.two_photon_series = two_photon_series
         self.canvas_title = f"TwoPhotonSeries: {self.two_photon_series.name} - Interactive Volume"
 
-        self.Canvas = widgets.Button(description="Render")
-        self.Canvas.on_click(self._first_volume_render)
+        self.Canvas = widgets.ToggleButton(description="Render")
+        self.Canvas.observe(lambda change: self._first_volume_render(), names="value")
         self.Canvas.layout.title = self.canvas_title
 
         self.setup_controllers()
@@ -24,7 +34,9 @@ class VolumeVisualization(widgets.VBox):
 
         self.children = (self.Canvas, self.Controller)
 
-    def update_data(self, frame_index=0):
+    def update_data(self, frame_index: Optional[int] = None):
+        frame_index = frame_index or self.Controller.frame_slider.value
+        
         self.data = self.two_photon_series.data[frame_index, ...]
 
     def setup_data(self):
@@ -33,9 +45,6 @@ class VolumeVisualization(widgets.VBox):
 
     def update_data_to_plot(self):
         self.data_to_plot = self.data.transpose([1, 0, 2])
-
-    def setup_data_to_plot(self):
-        self.update_data_to_plot()
 
     def setup_controllers(self):
         self.Controller = FrameController()
@@ -48,14 +57,6 @@ class VolumeVisualization(widgets.VBox):
         self.Canvas.clear_output(wait=True)
         with self.Canvas:
             p3.show()
-
-    def setup_canvas(self):
-        self.Canvas = widgets.Output()
-        self.Canvas.layout.title = self.canvas_title
-
-        self.setup_data()
-        self.setup_data_to_plot()
-        self.update_canvas()
 
     def setup_observers(self):
         self.Controller.frame_slider.observe(lambda change: self.update_canvas(frame_index=change.new), names="value")
