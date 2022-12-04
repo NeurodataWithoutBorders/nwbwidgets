@@ -5,11 +5,11 @@ from typing import Tuple, Optional
 import numpy as np
 import h5py
 
-from .single_plane_2 import SinglePlaneVisualization2
+from .single_plane import SinglePlaneVisualization
 from .ophys_controllers import VolumetricPlaneSliceController
 
 
-class PlaneSliceVisualization(SinglePlaneVisualization2):
+class PlaneSliceVisualization(SinglePlaneVisualization):
     """Sub-widget specifically for plane-wise views of a 4D TwoPhotonSeries."""
 
     def _dimension_check(self):
@@ -80,10 +80,10 @@ class PlaneSliceVisualization(SinglePlaneVisualization2):
             self.update_data(plane_index=plane_index)
             self.update_data_to_plot()
 
-        super().update_figure()
+        super().update_figure(rotation_changed=rotation_changed, frame_index=frame_index, contrast_rescaling=contrast_rescaling, contrast=contrast)
 
     def set_canvas_title(self):
-        self.canvas_title = f"TwoPhotonSeries: {self.two_photon_series.name}"
+        self.canvas_title = f"TwoPhotonSeries: {self.two_photon_series.name} - Planar slices of volume"
 
     def setup_observers(self):
         super().setup_observers()

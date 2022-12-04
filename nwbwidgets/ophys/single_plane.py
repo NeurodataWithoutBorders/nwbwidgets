@@ -25,7 +25,7 @@ class SinglePlaneVisualization(widgets.VBox):
 
     def __init__(self, two_photon_series: TwoPhotonSeries):
         self.two_photon_series = two_photon_series
-        self._dimension_check(two_photon_series=two_photon_series)
+        self._dimension_check()
 
         super().__init__()
 
@@ -169,12 +169,12 @@ class SinglePlaneVisualization(widgets.VBox):
         self.figure.update_traces(hovertemplate=None, hoverinfo="skip")
 
     def update_canvas(self, **update_figure_kwargs):
-        self.update_figure(update_figure_kwargs)
+        self.update_figure(**update_figure_kwargs)
         self.Canvas.data[0].update(self.figure.data[0])
 
     def set_canvas_title(self):
         """This can change in child classes."""
-        self.canvas_title = f"TwoPhotonSeries: {self.two_photon_series.name} - Planar slices of volume"
+        self.canvas_title = f"TwoPhotonSeries: {self.two_photon_series.name}"
 
     def setup_canvas(self):
         # Setup main figure area
@@ -192,7 +192,6 @@ class SinglePlaneVisualization(widgets.VBox):
         self.Controller.rotate_right.on_click(lambda change: self.update_canvas(rotation_changed=True))
         self.Controller.rotate_left.on_click(lambda change: self.update_canvas(rotation_changed=True))
         self.Controller.frame_slider.observe(lambda change: self.update_canvas(frame_index=change.new), names="value")
-        self.Controller.plane_slider.observe(lambda change: self.update_canvas(plane_index=change.new), names="value")
 
         self.Controller.contrast_type_toggle.observe(lambda change: self.update_canvas(), names="value")
         self.Controller.auto_contrast_method.observe(

@@ -84,7 +84,7 @@ class BasePlaneSliceController(MultiController):
         self.set_detailed_visibility(visibile=False)
 
     def setup_observers(self):
-        self.view_type_toggle.observe(lambda change: self.update_visibility())
+        self.view_type_toggle.observe(lambda change: self.update_visibility(), names="value")
 
 
 class SinglePlaneSliceController(BasePlaneSliceController):
