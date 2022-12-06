@@ -45,9 +45,7 @@ color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 def show_ts_fields(node):
     info = []
     for key in ("description", "unit", "resolution", "conversion"):
-        info.append(
-            widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True)
-        )
+        info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
     return widgets.VBox(info)
 
 
@@ -154,10 +152,7 @@ def show_indexed_timeseries_plotly(
     if istart != 0 or istop is not None:
         if time_window is not None:
             raise ValueError("input either time window or istart/stop but not both")
-        if not (
-            0 <= istart < timeseries.data.shape[0]
-            and (istop is None or 0 < istop <= timeseries.data.shape[0])
-        ):
+        if not (0 <= istart < timeseries.data.shape[0] and (istop is None or 0 < istop <= timeseries.data.shape[0])):
             raise ValueError("enter correct istart/stop values")
         t_istart = istart
         t_istop = istop
@@ -172,9 +167,7 @@ def show_indexed_timeseries_plotly(
     if len(data.shape) == 1:
         data = data[:, np.newaxis]
     if trace_range is not None:
-        if not (
-            0 <= trace_range[0] < data.shape[1] and 0 < trace_range[1] <= data.shape[1]
-        ):
+        if not (0 <= trace_range[0] < data.shape[1] and 0 < trace_range[1] <= data.shape[1]):
             raise ValueError("enter correct trace range")
         trace_istart = trace_range[0]
         trace_istop = trace_range[1]
@@ -192,9 +185,7 @@ def show_indexed_timeseries_plotly(
     col = 1 if col is None else col
     for i, trace_id in enumerate(range(trace_istart, trace_istop)):
         fig.add_trace(
-            go.Scattergl(
-                x=tt, y=data[:, trace_id] + offsets[i], mode="lines", **scatter_kwargs
-            ),
+            go.Scattergl(x=tt, y=data[:, trace_id] + offsets[i], mode="lines", **scatter_kwargs),
             row=row,
             col=col,
         )
@@ -248,13 +239,9 @@ def plot_traces(
         trace_window = [0, timeseries.data.shape[1]]
     tt = get_timeseries_tt(timeseries, t_ind_start, t_ind_stop)
     if timeseries.data.shape[1] == len(tt):  # fix of orientation is incorrect
-        mini_data = timeseries.data[
-            trace_window[0] : trace_window[1], t_ind_start:t_ind_stop
-        ].T
+        mini_data = timeseries.data[trace_window[0] : trace_window[1], t_ind_start:t_ind_stop].T
     else:
-        mini_data = timeseries.data[
-            t_ind_start:t_ind_stop, trace_window[0] : trace_window[1]
-        ]
+        mini_data = timeseries.data[t_ind_start:t_ind_stop, trace_window[0] : trace_window[1]]
 
     gap = np.median(np.nanstd(mini_data, axis=0)) * 20
     offsets = np.arange(trace_window[1] - trace_window[0]) * gap
@@ -285,9 +272,7 @@ def show_timeseries(node, **kwargs):
         return BaseGroupedTraceWidget(node, **kwargs)
     else:
         raise ValueError(
-            "Visualization for TimeSeries that has data with shape {} not implemented".format(
-                node.data.shape
-            )
+            "Visualization for TimeSeries that has data with shape {} not implemented".format(node.data.shape)
         )
 
 
@@ -320,9 +305,7 @@ class AbstractTraceWidget(widgets.VBox):
         return
 
     def set_controls(self, **kwargs):
-        self.controls.update(
-            timeseries=fixed(self.timeseries), time_window=self.time_window_controller
-        )
+        self.controls.update(timeseries=fixed(self.timeseries), time_window=self.time_window_controller)
         self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
     def set_children(self):
@@ -348,9 +331,7 @@ class SingleTracePlotlyWidget(AbstractTraceWidget):
     def set_out_fig(self):
         timeseries = self.controls["timeseries"].value
         time_window = self.controls["time_window"].value
-        self.out_fig = show_indexed_timeseries_plotly(
-            timeseries=timeseries, time_window=time_window
-        )
+        self.out_fig = show_indexed_timeseries_plotly(timeseries=timeseries, time_window=time_window)
 
         def on_change(change):
             time_window = self.controls["time_window"].value
@@ -394,9 +375,7 @@ class SeparateTracesPlotlyWidget(AbstractTraceWidget):
                     figure_kwargs=dict(yaxis=dict(title_text=xyz)),
                 )
         else:
-            self.out_fig = show_indexed_timeseries_plotly(
-                timeseries=timeseries, time_window=time_window
-            )
+            self.out_fig = show_indexed_timeseries_plotly(timeseries=timeseries, time_window=time_window)
 
         def on_change(change):
             time_window = self.controls["time_window"].value
@@ -450,9 +429,7 @@ def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
     unique_sorted_order, inverse_sort = np.unique(order, return_inverse=True)
 
     if len(time_series.data.shape) > 1:
-        mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][
-            :, inverse_sort
-        ]
+        mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][:, inverse_sort]
         if np.all(np.isnan(mini_data)):
             return None, tt, None
         gap = np.median(np.nanstd(mini_data, axis=0)) * 20
@@ -498,9 +475,7 @@ def plot_grouped_traces(
         channel_inds = order
 
     if len(channel_inds):
-        mini_data, tt, offsets = _prep_timeseries(
-            time_series, time_window, channel_inds
-        )
+        mini_data, tt, offsets = _prep_timeseries(time_series, time_window, channel_inds)
     else:
         mini_data = None
         tt = time_window
@@ -594,10 +569,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
         kwargs
         """
 
-        if (
-            dynamic_table_region_name is not None
-            and foreign_group_and_sort_controller is not None
-        ):
+        if dynamic_table_region_name is not None and foreign_group_and_sort_controller is not None:
             raise TypeError(
                 "You cannot supply both `dynamic_table_region_name` and `foreign_group_and_sort_controller`."
             )
@@ -610,9 +582,7 @@ class BaseGroupedTraceWidget(widgets.HBox):
         else:
             self.tmin = get_timeseries_mint(time_series)
             self.tmax = get_timeseries_maxt(time_series)
-            self.time_window_controller = StartAndDurationController(
-                tmin=self.tmin, tmax=self.tmax
-            )
+            self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
 
         self.controls = dict(
             time_series=widgets.fixed(self.time_series),
@@ -684,27 +654,15 @@ class MultiTimeSeriesWidget(widgets.VBox):
         """
         super().__init__()
         if constrain_time_range:
-            self.tmin = max(
-                get_timeseries_mint(time_series) for time_series in time_series_list
-            )
-            self.tmax = min(
-                get_timeseries_maxt(time_series) for time_series in time_series_list
-            )
+            self.tmin = max(get_timeseries_mint(time_series) for time_series in time_series_list)
+            self.tmax = min(get_timeseries_maxt(time_series) for time_series in time_series_list)
         else:
-            self.tmin = min(
-                get_timeseries_mint(time_series) for time_series in time_series_list
-            )
-            self.tmax = max(
-                get_timeseries_maxt(time_series) for time_series in time_series_list
-            )
-        self.time_window_controller = StartAndDurationController(
-            tmin=self.tmin, tmax=self.tmax
-        )
+            self.tmin = min(get_timeseries_mint(time_series) for time_series in time_series_list)
+            self.tmax = max(get_timeseries_maxt(time_series) for time_series in time_series_list)
+        self.time_window_controller = StartAndDurationController(tmin=self.tmin, tmax=self.tmax)
 
         ts_widgets = [
-            widget_class(
-                time_series, foreign_time_window_controller=self.time_window_controller
-            )
+            widget_class(time_series, foreign_time_window_controller=self.time_window_controller)
             for widget_class, time_series in zip(widget_class_list, time_series_list)
         ]
         self.children = [self.time_window_controller] + ts_widgets
@@ -750,16 +708,10 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
         else:
             self.trace_controller = trace_controller
 
-        self.trial_event_controller = make_trial_event_controller(
-            self.trials, layout=Layout(width="200px")
-        )
+        self.trial_event_controller = make_trial_event_controller(self.trials, layout=Layout(width="200px"))
 
-        self.before_ft = widgets.FloatText(
-            0.5, min=0, description="before (s)", layout=Layout(width="200px")
-        )
-        self.after_ft = widgets.FloatText(
-            2.0, min=0, description="after (s)", layout=Layout(width="200px")
-        )
+        self.before_ft = widgets.FloatText(0.5, min=0, description="before (s)", layout=Layout(width="200px"))
+        self.after_ft = widgets.FloatText(2.0, min=0, description="after (s)", layout=Layout(width="200px"))
 
         self.gas = self.make_group_and_sort(window=False, control_order=False)
 
@@ -793,9 +745,7 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
     def get_trials(self):
         return self.time_series.get_ancestor("NWBFile").trials
 
-    def make_group_and_sort(
-        self, window=None, control_order=False, control_limit=False
-    ):
+    def make_group_and_sort(self, window=None, control_order=False, control_limit=False):
         return GroupAndSortController(
             self.trials,
             window=window,
@@ -834,9 +784,7 @@ class AlignMultiTraceTimeSeriesByTrialsAbstract(widgets.VBox):
         return fig
 
 
-class AlignMultiTraceTimeSeriesByTrialsConstant(
-    AlignMultiTraceTimeSeriesByTrialsAbstract
-):
+class AlignMultiTraceTimeSeriesByTrialsConstant(AlignMultiTraceTimeSeriesByTrialsAbstract):
     def __init__(
         self,
         time_series: TimeSeries,
@@ -863,15 +811,11 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
         out_data_aligned = []
         out_ts_aligned = []
         for start in starts:
-            idx_start = int(
-                (start - self.time_series.starting_time) * self.time_series.rate
-            )
+            idx_start = int((start - self.time_series.starting_time) * self.time_series.rate)
             idx_stop = int(idx_start + (before + after) * self.time_series.rate)
             out_ts_aligned.append(np.linspace(-before, after, num=idx_stop - idx_start))
             if len(self.time_series_data.shape) > 1 and index is not None:
-                out_data_aligned.append(
-                    self.time_series_data[idx_start:idx_stop, index]
-                )
+                out_data_aligned.append(self.time_series_data[idx_start:idx_stop, index])
             else:
                 out_data_aligned.append(self.time_series_data[idx_start:idx_stop])
         return out_data_aligned, out_ts_aligned
@@ -903,9 +847,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
             group_stats = []
             for group in np.unique(group_inds):
                 this_mean = np.nanmean(data[group_inds == group, :], axis=0)
-                err = scipy.stats.sem(
-                    data[group_inds == group, :], axis=0, nan_policy="omit"
-                )
+                err = scipy.stats.sem(data[group_inds == group, :], axis=0, nan_policy="omit")
                 group_stats.append(
                     dict(
                         mean=this_mean,
@@ -920,9 +862,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
                 color = color_wheel[stats["group"]]
                 if labels is not None:
                     plot_kwargs.update(text=labels[stats["group"]])
-                fig.add_scattergl(
-                    x=time_ts_aligned[0], y=stats["lower"], line_color=color
-                )
+                fig.add_scattergl(x=time_ts_aligned[0], y=stats["lower"], line_color=color)
                 fig.add_scattergl(
                     x=time_ts_aligned[0],
                     y=stats["upper"],
@@ -942,9 +882,7 @@ class AlignMultiTraceTimeSeriesByTrialsConstant(
         return fig
 
 
-class AlignMultiTraceTimeSeriesByTrialsVariable(
-    AlignMultiTraceTimeSeriesByTrialsAbstract
-):
+class AlignMultiTraceTimeSeriesByTrialsVariable(AlignMultiTraceTimeSeriesByTrialsAbstract):
     def __init__(
         self,
         time_series: TimeSeries,
@@ -974,14 +912,10 @@ class AlignMultiTraceTimeSeriesByTrialsVariable(
             idx_start = bisect(self.time_series_timestamps, start - before)
             idx_stop = bisect(self.time_series_timestamps, start + after, lo=idx_start)
             out_ts_aligned.append(
-                self.time_series_timestamps[idx_start:idx_stop]
-                - self.time_series_timestamps[idx_start]
-                - before
+                self.time_series_timestamps[idx_start:idx_stop] - self.time_series_timestamps[idx_start] - before
             )
             if len(self.time_series_data.shape) > 1 and index is not None:
-                out_data_aligned.append(
-                    self.time_series_data[idx_start:idx_stop, index]
-                )
+                out_data_aligned.append(self.time_series_data[idx_start:idx_stop, index])
             else:
                 out_data_aligned.append(self.time_series_data[idx_start:idx_stop])
         return out_data_aligned, out_ts_aligned
@@ -1030,31 +964,29 @@ def trialize_time_series(
 
     # Map timestamps to the trial interval (start_time, stop_time)
     timestamps = get_timeseries_tt(node=time_series)
-    # Get
+    
+    # Get the left and right bounds of the trials to get data and time
     values_to_align_array = trials_table_df[alignment_column].to_numpy()
-    left_trial_bound = values_to_align_array + start_time_shift
-    left_trial_bound = left_trial_bound[
-        left_trial_bound <= timestamps.max()
+    trial_left_bound = values_to_align_array + start_time_shift
+    trial_left_bound = trial_left_bound[
+        trial_left_bound <= timestamps.max()
     ]  # Filter values outside of the time series to avoid extra computation
-    right_trial_bound = left_trial_bound + duration
+    trial_right_bound = trial_left_bound + duration
 
-    from_index_array = np.searchsorted(timestamps, left_trial_bound)
-    to_index_array = np.searchsorted(timestamps, right_trial_bound)
+    trial_left_bound_index = np.searchsorted(timestamps, trial_left_bound)
+    trial_right_bound_index = np.searchsorted(timestamps, trial_right_bound)
+    interval_bounds = zip(trial_left_bound_index, trial_right_bound_index)
 
     data_list = []
     timestamps_list = []
     alignment_column_list = []
-    for trial_index, (idx_start, idx_stop) in enumerate(
-        zip(from_index_array, to_index_array)
-    ):
+    for trial_index, (idx_start, idx_stop) in enumerate(interval_bounds):
         trial_data, unit = get_timeseries_in_units(
             time_series, istart=idx_start, istop=idx_stop, data_column=data_column
         )
         data_list.append(trial_data)
         timestamps_list.append(timestamps[idx_start:idx_stop])
-        alignment_column_list.append(
-            [trials_table_df.start_time[trial_index]] * (idx_stop - idx_start)
-        )
+        alignment_column_list.append([trials_table_df[alignment_column][trial_index]] * (idx_stop - idx_start))
 
     data_dict = {
         "data": np.concatenate(data_list),
@@ -1064,12 +996,8 @@ def trialize_time_series(
 
     data_df = pd.DataFrame(data_dict)
 
-    data_df_trialized = pd.merge(
-        left=data_df, right=trials_table_df, on=alignment_column, how="left"
-    )
-    data_df_trialized["centered_timestamps"] = (
-        data_df_trialized.timestamps - data_df_trialized[alignment_column]
-    )
+    data_df_trialized = pd.merge(left=data_df, right=trials_table_df, on=alignment_column, how="left")
+    data_df_trialized["centered_timestamps"] = data_df_trialized.timestamps - data_df_trialized[alignment_column]
 
     return data_df_trialized
 
@@ -1116,7 +1044,8 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
         )
     elif facet_col is not None and facet_row is None:
 
-        col_faceting_values = df[facet_col].dropna().unique()
+        col_faceting_values = natsorted(df[facet_col].dropna().unique())
+
         for col_index, col_face_value in enumerate(col_faceting_values):
             if isinstance(col_face_value, str):
                 query_string = f"{facet_col}=='{col_face_value}'"
@@ -1128,9 +1057,7 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
             num_trials = sub_df["trial"].unique().size
             moving_average_window = 2 * num_trials
 
-            moving_average_df = calculate_moving_average_over_trials(
-                sub_df, moving_average_window
-            )
+            moving_average_df = calculate_moving_average_over_trials(sub_df, moving_average_window)
 
             figure.add_scattergl(
                 x=moving_average_df.centered_timestamps,
@@ -1143,8 +1070,7 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
 
     elif facet_col is None and facet_row is not None:
 
-        row_faceting_values = df[facet_row].dropna().unique()
-        row_faceting_values.sort()
+        row_faceting_values = natsorted(df[facet_row].dropna().unique())
 
         for row_index, row_face_value in enumerate(reversed(row_faceting_values)):
             if isinstance(row_face_value, str):
@@ -1157,9 +1083,7 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
             num_trials = sub_df["trial"].unique().size
             moving_average_window = 2 * num_trials
 
-            moving_average_df = calculate_moving_average_over_trials(
-                sub_df, moving_average_window
-            )
+            moving_average_df = calculate_moving_average_over_trials(sub_df, moving_average_window)
 
             figure.add_scattergl(
                 x=moving_average_df.centered_timestamps,
@@ -1170,8 +1094,9 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
                 col=1,
             )
     else:
-        col_faceting_values = df[facet_col].dropna().unique()
-        row_faceting_values = df[facet_row].dropna().unique()
+        col_faceting_values = natsorted(df[facet_col].dropna().unique())
+        row_faceting_values = natsorted(df[facet_row].dropna().unique())
+
         for row_index, row_face_value in enumerate(reversed(row_faceting_values)):
             for col_index, col_face_value in enumerate(col_faceting_values):
 
@@ -1192,9 +1117,7 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
                 num_trials = sub_df["trial"].unique().size
                 moving_average_window = 2 * num_trials
 
-                moving_average_df = calculate_moving_average_over_trials(
-                    sub_df, moving_average_window
-                )
+                moving_average_df = calculate_moving_average_over_trials(sub_df, moving_average_window)
 
                 figure.add_scattergl(
                     x=moving_average_df.centered_timestamps,
@@ -1208,18 +1131,27 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
     return figure
 
 
-def build_faceting_figure(
-    df, facet_col, facet_row, data_label="data", trial_label="trial"
-):
-    faceting_values = [facet_row, facet_col]
-    faceting_values = [value for value in faceting_values if value is not None]
-    if faceting_values:
-        values_to_sort_by = ["centered_timestamps"] + faceting_values
-        df = df.dropna(subset=faceting_values).sort_values(by=values_to_sort_by)
-
+def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_label="trial"):
+    
     if df.empty:
         empty_figure = create_empty_figure()
         return empty_figure
+
+    # Get the category orders
+    category_orders = dict()
+    if facet_row:
+        row_faceting_values = natsorted(df[facet_row].dropna().unique())
+        category_orders.update({facet_row: row_faceting_values})
+    if facet_col:
+        col_faceting_values = natsorted(df[facet_col].dropna().unique())
+        category_orders.update({facet_col: col_faceting_values})
+
+    # Drop NA values
+    faceting_values = [facet_row, facet_col]
+    faceting_values = [value for value in faceting_values if value is not None]
+    if faceting_values:
+        df = df.dropna(subset=faceting_values)
+
 
     # Construct all the traces grouped by trial
     figure = px.line(
@@ -1229,19 +1161,18 @@ def build_faceting_figure(
         color=trial_label,
         facet_col=facet_col,
         facet_row=facet_row,
+        category_orders=category_orders,
     )
     figure.update_traces(line_color="gray", line_width=1, showlegend=False)
 
     # Add moving average
-    figure = add_moving_average_traces(
-        figure, df, facet_col=facet_col, facet_row=facet_row
-    )
+    figure = add_moving_average_traces(figure, df, facet_col=facet_col, facet_row=facet_row)
 
     # Annotations
     figure.for_each_xaxis(lambda x: x.update(title=""))
     figure.for_each_yaxis(lambda y: y.update(title=""))
     figure.add_annotation(
-        x=-0.095,
+        x=-0.125,
         y=0.5,
         textangle=270,
         text=f"{data_label}",
@@ -1251,7 +1182,7 @@ def build_faceting_figure(
     )
     figure.add_annotation(
         x=0.5,
-        y=-0.145,
+        y=-0.165,
         text="Centered timestamps (s)",
         xref="paper",
         yref="paper",
@@ -1281,9 +1212,7 @@ def build_faceting_figure(
         )
 
     annotation_list = figure.layout.annotations
-    valid_annotations = (
-        annotation for annotation in annotation_list if "=" in annotation.text
-    )
+    valid_annotations = (annotation for annotation in annotation_list if "=" in annotation.text)
     for annotation in valid_annotations:
         annotation.text = annotation.text.split("=")[1]
 
@@ -1291,9 +1220,7 @@ def build_faceting_figure(
 
 
 class TrializedTimeSeriesController(widgets.VBox):
-    def __init__(
-        self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None
-    ):
+    def __init__(self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None):
         super().__init__()
 
         self.time_series = time_series
@@ -1316,20 +1243,12 @@ class TrializedTimeSeriesController(widgets.VBox):
             self.centered_timestamps_label,
         ]
         get_indexed_column_name = lambda col: "_".join(col.name.split("_")[:-1])
-        ragged_columns = [
-            get_indexed_column_name(col)
-            for col in self.trials_table.columns
-            if "index" in col.name
-        ]
+        ragged_columns = [get_indexed_column_name(col) for col in self.trials_table.columns if "index" in col.name]
         invalid_columns += ragged_columns
 
         self.invalid_columns = invalid_columns
         self.columns_for_filtering = natsorted(
-            [
-                column
-                for column in self.trials_table_df.columns
-                if column not in self.invalid_columns
-            ]
+            [column for column in self.trials_table_df.columns if column not in self.invalid_columns]
         )
 
         self.options_per_column = {
@@ -1364,9 +1283,7 @@ class TrializedTimeSeriesController(widgets.VBox):
             value=0,
         )
 
-        self.column_to_align_to_widget = make_trial_event_controller(
-            trials=self.trials_table
-        )
+        self.column_to_align_to_widget = make_trial_event_controller(trials=self.trials_table)
         self.start_time_shift_widget = widgets.FloatText(
             0.0,
             step=0.1,
@@ -1411,9 +1328,7 @@ class TrializedTimeSeriesController(widgets.VBox):
         selected_columns = self.select_filter_columns.value
         if selected_columns != (None,):
             selection_boxes = [
-                widgets.Dropdown(
-                    options=self.options_per_column[column], description=column
-                )
+                widgets.Dropdown(options=self.options_per_column[column], description=column)
                 for column in selected_columns
             ]
             self.filter_menu.children = tuple(selection_boxes)
@@ -1425,25 +1340,19 @@ class TrializedTimeSeriesController(widgets.VBox):
             self.filter_menu.layout.visibility = "hidden"
 
     def update_row_faceting(self, change):
-        non_selected_columns = list(
-            set(self.columns_for_filtering).difference(self.select_filter_columns.value)
-        )
+        non_selected_columns = list(set(self.columns_for_filtering).difference(self.select_filter_columns.value))
 
         self.faceting_row_selection.options = natsorted(list(non_selected_columns))
         self.faceting_row_selection.value = None
 
     def update_column_faceting(self, change):
-        non_selected_columns = list(
-            set(self.columns_for_filtering).difference(self.select_filter_columns.value)
-        )
+        non_selected_columns = list(set(self.columns_for_filtering).difference(self.select_filter_columns.value))
         self.faceting_column_selection.options = natsorted(list(non_selected_columns))
         self.faceting_column_selection.value = None
 
 
 class TrializedTimeSeries(widgets.HBox):
-    def __init__(
-        self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None
-    ):
+    def __init__(self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None):
         super().__init__()
 
         self.time_series = time_series
@@ -1457,9 +1366,7 @@ class TrializedTimeSeries(widgets.HBox):
 
         self.trials_table_df = self.trials_table.to_dataframe()
 
-        self.controller = TrializedTimeSeriesController(
-            time_series=self.time_series, trials_table=self.trials_table
-        )
+        self.controller = TrializedTimeSeriesController(time_series=self.time_series, trials_table=self.trials_table)
         self.plot_button = widgets.Button(description="Plot selection!")
 
         empty_figure = create_empty_figure(text="Select configuration to plot")
@@ -1487,10 +1394,7 @@ class TrializedTimeSeries(widgets.HBox):
 
         if self.controller.filtering_active:
             query_string = "and".join(
-                [
-                    self.query_expresion(children)
-                    for children in self.controller.filter_menu.children
-                ]
+                [self.query_expresion(children) for children in self.controller.filter_menu.children]
             )
             df_query = self.trials_table.to_dataframe().query(query_string)
         else:
@@ -1500,10 +1404,7 @@ class TrializedTimeSeries(widgets.HBox):
             time_series=self.time_series,
             trials_table=df_query,
             start_time_shift=self.controller.start_time_shift_widget.value,
-            duration=(
-                self.controller.end_time_widget.value
-                - self.controller.start_time_shift_widget.value
-            ),
+            duration=(self.controller.end_time_widget.value - self.controller.start_time_shift_widget.value),
             data_column=self.controller.data_column_selection.value,
             alignment_column=self.controller.column_to_align_to_widget.value,
         )
@@ -1516,9 +1417,7 @@ class TrializedTimeSeries(widgets.HBox):
         # Generate the plot
         facet_col = self.controller.faceting_column_selection.value
         facet_row = self.controller.faceting_row_selection.value
-        figure = build_faceting_figure(
-            df=self.trialized_data_df, facet_col=facet_col, facet_row=facet_row
-        )
+        figure = build_faceting_figure(df=self.trialized_data_df, facet_col=facet_col, facet_row=facet_row)
 
         # Update the widget
         with self.figure_widget.batch_update():
@@ -1528,9 +1427,7 @@ class TrializedTimeSeries(widgets.HBox):
             self.figure_widget.update_xaxes(matches=matches)
 
 
-def route_trialized_time_series(
-    time_series: TimeSeries, neurodata_vis_spec=None, **kwargs
-):
+def route_trialized_time_series(time_series: TimeSeries, neurodata_vis_spec=None, **kwargs):
     """Function to route different type of time series to the appropriate TrializedTimeSeries case
 
     Args:
@@ -1540,4 +1437,3 @@ def route_trialized_time_series(
     """
 
     return TrializedTimeSeries(time_series)
-
