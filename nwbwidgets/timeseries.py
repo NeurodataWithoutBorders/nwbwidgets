@@ -1138,6 +1138,12 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
         empty_figure = create_empty_figure()
         return empty_figure
 
+    # Drop NA values
+    faceting_values = [facet_row, facet_col]
+    faceting_values = [value for value in faceting_values if value is not None]
+    if faceting_values:
+        df = df.dropna(subset=faceting_values)
+
     # Get the category orders
     category_orders = dict()
     if facet_row:
@@ -1146,12 +1152,6 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
     if facet_col:
         col_faceting_values = natsorted(df[facet_col].dropna().unique())
         category_orders.update({facet_col: col_faceting_values})
-
-    # Drop NA values
-    faceting_values = [facet_row, facet_col]
-    faceting_values = [value for value in faceting_values if value is not None]
-    if faceting_values:
-        df = df.dropna(subset=faceting_values)
 
     # Construct all the traces grouped by trial
     figure = px.line(
@@ -1359,6 +1359,8 @@ class TrializedTimeSeries(widgets.HBox):
 
         self.time_series = time_series
         self.trials_table = trials_table
+        
+        # Load references to neurodata types (time_series and trials table)
         if self.trials_table is None:
             self.trials_table = time_series.get_ancestor("NWBFile").trials
 
@@ -1368,18 +1370,20 @@ class TrializedTimeSeries(widgets.HBox):
 
         self.trials_table_df = self.trials_table.to_dataframe()
 
+        # Build controllers
         self.controller = TrializedTimeSeriesController(
             time_series=self.time_series, trials_table=self.trials_table, column_selection_text=column_selection_text
         )
         self.plot_button = widgets.Button(description="Plot selection!")
 
+        # Build figure widget starting with an empty plot
         empty_figure = create_empty_figure(text="Select configuration to plot")
         self.figure_widget = go.FigureWidget(empty_figure)
 
         # Register plotting button callback
         self.plot_button.on_click(self.update_plot_widget)
 
-        # Create the structure
+        # Define widget structure
         self.control = widgets.VBox(
             [
                 self.controller,
