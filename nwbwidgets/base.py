@@ -5,7 +5,7 @@ from typing import Union
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import ipysheet
+from ipydatagrid import DataGrid
 from IPython import display
 from ipywidgets import widgets
 from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
@@ -13,6 +13,7 @@ from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
 import h5py
 from pynwb import ProcessingModule
 from pynwb.core import NWBDataInterface, MultiContainerInterface
+from pynwb.base import DynamicTable
 
 from nwbwidgets import view
 
@@ -32,11 +33,14 @@ def show_fields(node, **kwargs) -> widgets.Widget:
     return vbox
 
 
-def render_dataframe(df):
-    out1 = widgets.Output()
-    with out1:
-        display.display(df.to_dataframe())
-    return out1
+def render_dataframe(dynamic_table: DynamicTable):
+    try:
+        return DataGrid(dynamic_table.to_dataframe())
+    except:
+        out1 = widgets.Output()
+        with out1:
+            display.display(dynamic_table.to_dataframe())
+        return out1
 
 
 def show_neurodata_base(
@@ -82,7 +86,7 @@ def show_neurodata_base(
             info.append(hbox_exp)
         elif (isinstance(value, Iterable) and len(value)) or value:
             neuro_data.append(
-                view.nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec)
+                nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec)
             )
             labels.append(key)
     accordion = widgets.Accordion(children=neuro_data, selected_index=None)
@@ -236,12 +240,11 @@ def nwb2widget(node, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.Widget:
             if isinstance(spec, dict):
                 return lazy_tabs(spec, node)
             elif callable(spec):
-                return vis2widget(
-                    spec(node, neurodata_vis_spec=neurodata_vis_spec, **pass_kwargs)
-                )
+                visualization = spec(node, neurodata_vis_spec=neurodata_vis_spec, **pass_kwargs)
+                return vis2widget(visualization)
     out1 = widgets.Output()
     with out1:
-        print(node)
+        print(node) # Is this necessary?
     return out1
 
 
@@ -325,22 +328,9 @@ def show_dset(dset: h5py.Dataset, **kwargs):
 
 
 def dataset_to_sheet(dset: h5py.Dataset):
-    if dset.ndim == 1:
-        nrows = len(dset)
-
-        sheet = ipysheet.easy.sheet(rows=nrows, columns=1, column_headers=False)
-        for row in range(nrows):
-            ipysheet.easy.cell(row, 0, dset[row], read_only=True)
-    elif dset.ndim == 2:
-        nrows, ncols = dset.shape
-
-        sheet = ipysheet.easy.sheet(rows=nrows, columns=ncols, column_headers=False)
-        for row, col in zip(range(nrows), range(ncols)):
-            ipysheet.easy.cell(row, col, dset[row, col], read_only=True)
-    else:
-        # do not know how to render datasets that have 3 or more dimensions
+    if dset.ndim >= 2:
         return widgets.HTML(print(dset))
-    return sheet
+    return DataGrid(pd.DataFrame(dset[:]))
 
 
 def show_dict(in_dict) -> widgets.Widget:
