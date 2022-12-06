@@ -83,7 +83,7 @@ def get_timeseries_mint(node: TimeSeries) -> float:
         return node.starting_time
 
 
-def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
+def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None, data_column=None):
     """
     Convert data into the designated units
 
@@ -98,13 +98,28 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None):
     numpy.ndarray, str
 
     """
-    data = node.data[istart:istop]
-    if node.conversion and np.isfinite(node.conversion):
-        data = data * node.conversion
-        unit = node.unit
+    time_series = node
+    
+    if (data_column is not None) and time_series.data.ndim > 1:
+        data = time_series.data[istart:istop, data_column]
+    else:
+        data = time_series.data[istart:istop]
+        
+    if time_series.conversion and np.isfinite(time_series.conversion):
+
+        offset_scalar = time_series.offset
+        conversion_factor_scalar = time_series.conversion
+        channel_conversion_vector = (
+            time_series.channel_conversion if hasattr(time_series, "channel_conversion") else np.ones_like(data)
+        )
+
+        data = data * channel_conversion_vector * conversion_factor_scalar + offset_scalar
+
+        unit = time_series.unit
     else:
         unit = None
-    return data, unit
+        
+    return data.flatten(), unit
 
 
 def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -> int:
