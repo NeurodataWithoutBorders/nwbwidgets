@@ -18,7 +18,8 @@ from plotly.colors import DEFAULT_PLOTLY_COLORS
 
 from pynwb.epoch import TimeIntervals
 from pynwb.base import TimeSeries, DynamicTable
-
+from pynwb.ophys import RoiResponseSeries
+from pynwb.ecephys import ElectricalSeries
 
 from .controllers import (
     StartAndDurationController,
@@ -964,7 +965,7 @@ def trialize_time_series(
 
     # Map timestamps to the trial interval (start_time, stop_time)
     timestamps = get_timeseries_tt(node=time_series)
-    
+
     # Get the left and right bounds of the trials to get data and time
     values_to_align_array = trials_table_df[alignment_column].to_numpy()
     trial_left_bound = values_to_align_array + start_time_shift
@@ -1132,7 +1133,7 @@ def add_moving_average_traces(figure, df, facet_col, facet_row):
 
 
 def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_label="trial"):
-    
+
     if df.empty:
         empty_figure = create_empty_figure()
         return empty_figure
@@ -1151,7 +1152,6 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
     faceting_values = [value for value in faceting_values if value is not None]
     if faceting_values:
         df = df.dropna(subset=faceting_values)
-
 
     # Construct all the traces grouped by trial
     figure = px.line(
@@ -1172,7 +1172,7 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
     figure.for_each_xaxis(lambda x: x.update(title=""))
     figure.for_each_yaxis(lambda y: y.update(title=""))
     figure.add_annotation(
-        x=-0.125,
+        x=-0.165,
         y=0.5,
         textangle=270,
         text=f"{data_label}",
@@ -1220,7 +1220,9 @@ def build_faceting_figure(df, facet_col, facet_row, data_label="data", trial_lab
 
 
 class TrializedTimeSeriesController(widgets.VBox):
-    def __init__(self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None):
+    def __init__(
+        self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None, column_selection_text="Data col"
+    ):
         super().__init__()
 
         self.time_series = time_series
@@ -1228,8 +1230,6 @@ class TrializedTimeSeriesController(widgets.VBox):
         self.trials_table_df = self.trials_table.to_dataframe()
 
         # Labels to refer to data created by the widget. Should not collapse with the column names on the dynamic table
-        self.data_label = "data_widget"
-        self.trial_label = "trial_widget"
         self.timestamps_label = "timestamps"
         self.centered_timestamps_label = "centered_timestamps"
 
@@ -1237,11 +1237,11 @@ class TrializedTimeSeriesController(widgets.VBox):
 
         invalid_columns = ["start_time", "stop_time"]
         invalid_columns += [
-            self.data_label,
-            self.trial_label,
             self.timestamps_label,
             self.centered_timestamps_label,
         ]
+
+        # Extract ragged columns (can't filter or facet with them)
         get_indexed_column_name = lambda col: "_".join(col.name.split("_")[:-1])
         ragged_columns = [get_indexed_column_name(col) for col in self.trials_table.columns if "index" in col.name]
         invalid_columns += ragged_columns
@@ -1278,7 +1278,7 @@ class TrializedTimeSeriesController(widgets.VBox):
         dimension_options = list(range(data_shape[1]))
         self.data_column_selection = widgets.Dropdown(
             options=dimension_options,
-            description="Data col",
+            description=column_selection_text,
             description_tooltipw=f"{self.time_series.name} column to plot",
             value=0,
         )
@@ -1352,7 +1352,9 @@ class TrializedTimeSeriesController(widgets.VBox):
 
 
 class TrializedTimeSeries(widgets.HBox):
-    def __init__(self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None):
+    def __init__(
+        self, time_series: TimeSeries, trials_table: Optional[DynamicTable] = None, column_selection_text="Data col"
+    ):
         super().__init__()
 
         self.time_series = time_series
@@ -1366,7 +1368,9 @@ class TrializedTimeSeries(widgets.HBox):
 
         self.trials_table_df = self.trials_table.to_dataframe()
 
-        self.controller = TrializedTimeSeriesController(time_series=self.time_series, trials_table=self.trials_table)
+        self.controller = TrializedTimeSeriesController(
+            time_series=self.time_series, trials_table=self.trials_table, column_selection_text=column_selection_text
+        )
         self.plot_button = widgets.Button(description="Plot selection!")
 
         empty_figure = create_empty_figure(text="Select configuration to plot")
@@ -1436,4 +1440,9 @@ def route_trialized_time_series(time_series: TimeSeries, neurodata_vis_spec=None
         visualizations.
     """
 
-    return TrializedTimeSeries(time_series)
+    if isinstance(time_series, RoiResponseSeries):
+        return TrializedTimeSeries(time_series=time_series, column_selection_text="ROI")
+    elif isinstance(time_series, ElectricalSeries):
+        return TrializedTimeSeries(time_series=time_series, column_selection_text="Electrode")
+    else:
+        return TrializedTimeSeries(time_series=time_series)
