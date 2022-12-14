@@ -29,4 +29,4 @@ force-exclude = '''
 [tool.isort]
 profile = "black"
 reverse_relative = true
-known_first_party = ["nwbinspector"]
+known_first_party = ["nwbwidgets"]
