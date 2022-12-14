@@ -9,8 +9,6 @@ ipywidgets>=7.4.0, <8.0.0
 plotly
 tqdm>=4.36.0
 zarr
-aiohttp
-ccfwidget
 tifffile
 ndx-spectrum
 ndx-icephys-meta

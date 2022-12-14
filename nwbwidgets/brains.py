@@ -5,9 +5,12 @@ import plotly.graph_objects as go
 
 from pynwb.base import DynamicTable
 
-import trimesh
-
 from .base import df_to_hover_text
+from .utils.dependencies import safe_import, check_widget_dependencies
+
+nilearn = safe_import('nilearn')
+skspatial = safe_import('skspatial')
+trimesh = safe_import('trimesh')
 
 
 def make_cylinder_mesh(
@@ -56,6 +59,7 @@ def make_cylinders(
     ]
 
 
+@check_widget_dependencies({'nilearn' : nilearn, 'skspatial' : skspatial, 'trimesh' : trimesh})
 class HumanElectrodesPlotlyWidget(widgets.VBox):
     def __init__(self, electrodes: DynamicTable, **kwargs):
 
@@ -95,7 +99,6 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
     def find_normals(points, k=3):
         normals = []
         for point in points:
-            from skspatial.objects import Points, Plane
 
             distance = np.linalg.norm(points - point, axis=1)
             # closest_inds = np.argpartition(distance, 3)
@@ -103,7 +106,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
             # normal = np.cross((x1 - x0), (x2 - x0))
             closest_inds = np.argpartition(distance, k)
             close_points = points[closest_inds[:k]]
-            normal = np.asarray(Plane.best_fit(close_points).normal)
+            normal = np.asarray(skspatial.objects.Plane.best_fit(close_points).normal)
             normals.append(normal)
         return normals
 
@@ -184,12 +187,10 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
 
     def plot_human_brain(self, left_opacity=1.0, right_opacity=1.0):
 
-        from nilearn import datasets, surface
-
-        mesh = datasets.fetch_surf_fsaverage("fsaverage5")
+        mesh = nilearn.datasets.fetch_surf_fsaverage("fsaverage5")
 
         def create_mesh(name, **kwargs):
-            vertices, triangles = surface.load_surf_mesh(mesh[name])
+            vertices, triangles = nilearn.surface.load_surf_mesh(mesh[name])
             x, y, z = vertices.T
             i, j, k = triangles.T
 
