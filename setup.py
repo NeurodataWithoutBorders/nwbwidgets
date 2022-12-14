@@ -32,7 +32,8 @@ setup(
     install_requires=requirements,
     extras_require={
         'human_electrodes' : ['skspatial', 'nilearn', 'trimesh'],
-        'mouse_electrodes' : ['ccfwidget', 'aiohttp']
+        'mouse_electrodes' : ['ccfwidget', 'aiohttp'],
+        'full' : ['ccfwidget', 'aiohttp', 'skspatial', 'nilearn', 'trimesh'],
     },
     license="BSD",
     keywords=["jupyter", "hdf5", "notebook", "nwb"],
