@@ -31,9 +31,9 @@ setup(
     "NWB-file in Jupyter Notebooks using ipywidgets.",
     install_requires=requirements,
     extras_require={
-        'human_electrodes' : ['skspatial', 'nilearn', 'trimesh'],
+        'human_electrodes' : ['nilearn', 'trimesh'],
         'mouse_electrodes' : ['ccfwidget', 'aiohttp'],
-        'full' : ['ccfwidget', 'aiohttp', 'skspatial', 'nilearn', 'trimesh'],
+        'full' : ['ccfwidget', 'aiohttp', 'nilearn', 'trimesh'],
     },
     license="BSD",
     keywords=["jupyter", "hdf5", "notebook", "nwb"],
