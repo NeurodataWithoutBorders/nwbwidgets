@@ -2,117 +2,33 @@ from functools import lru_cache
 
 import numpy as np
 from skimage import measure
-
 import ipywidgets as widgets
 import plotly.graph_objects as go
 import plotly.express as px
-
 from pynwb.base import NWBDataInterface
-from pynwb.ophys import (
-    RoiResponseSeries,
-    DfOverF,
-    PlaneSegmentation,
-    TwoPhotonSeries,
-    ImageSegmentation,
-)
+from pynwb.ophys import RoiResponseSeries, DfOverF, PlaneSegmentation, ImageSegmentation
 
-from tifffile import imread, TiffFile
-from ndx_grayscalevolume import GrayscaleVolume
-
-from .base import df_to_hover_text
-from .timeseries import BaseGroupedTraceWidget
-from .utils.cmaps import linear_transfer_function
-from .utils.dynamictable import infer_categorical_columns
-from .controllers import ProgressBar
-
-import plotly.express as px
+from ..base import df_to_hover_text
+from ..timeseries import BaseGroupedTraceWidget
+from ..utils.cmaps import linear_transfer_function
+from ..utils.dynamictable import infer_categorical_columns
+from ..controllers import ProgressBar
 
 
 color_wheel = px.colors.qualitative.Dark24
 
 
-class TwoPhotonSeriesWidget(widgets.VBox):
-    """Widget showing Image stack recorded over time from 2-photon microscope."""
-
-    def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
-        super().__init__()
-
-        def _add_fig_trace(img_fig: go.Figure, index):
-            if self.figure is None:
-                self.figure = go.FigureWidget(img_fig)
-            else:
-                self.figure.for_each_trace(lambda trace: trace.update(img_fig.data[0]))
-            self.figure.layout.title = f"Frame no: {index}"
-
-        if indexed_timeseries.data is None:
-            if indexed_timeseries.external_file is not None:
-                path_ext_file = indexed_timeseries.external_file[0]
-                # Get Frames dimensions
-                tif = TiffFile(path_ext_file)
-                n_samples = len(tif.pages)
-                page = tif.pages[0]
-
-                def update_figure(index=0):
-                    # Read first frame
-                    img_fig = px.imshow(
-                        imread(path_ext_file, key=int(index)), binary_string=True
-                    )
-                    _add_fig_trace(img_fig, index)
-
-                slider = widgets.IntSlider(
-                    value=0, min=0, max=n_samples - 1, orientation="horizontal"
-                )
-        else:
-            if len(indexed_timeseries.data.shape) == 3:
-
-                def update_figure(index=0):
-                    img_fig = px.imshow(
-                        indexed_timeseries.data[index].T, binary_string=True
-                    )
-                    _add_fig_trace(img_fig, index)
-
-            elif len(indexed_timeseries.data.shape) == 4:
-                import ipyvolume.pylab as p3
-
-                output = widgets.Output()
-
-                def update_figure(index=0):
-                    p3.figure()
-                    p3.volshow(
-                        indexed_timeseries.data[index].transpose([1, 0, 2]),
-                        tf=linear_transfer_function([0, 0, 0], max_opacity=0.3),
-                    )
-                    output.clear_output(wait=True)
-                    self.figure = output
-                    with output:
-                        p3.show()
-
-            else:
-                raise NotImplementedError
-
-            slider = widgets.IntSlider(
-                value=0,
-                min=0,
-                max=indexed_timeseries.data.shape[0] - 1,
-                orientation="horizontal",
-            )
-
-        slider.observe(lambda change: update_figure(change.new), names="value")
-        self.figure = None
-        self.controls = dict(slider=slider)
-        update_figure()
-        self.children = [self.figure, slider]
-
-
 def show_df_over_f(df_over_f: DfOverF, neurodata_vis_spec: dict):
-    return neurodata_vis_spec[NWBDataInterface](df_over_f, neurodata_vis_spec)
+    if len(df_over_f.roi_response_series) == 1:
+        title, data_input = list(df_over_f.roi_response_series.items())[0]
+        return neurodata_vis_spec[RoiResponseSeries](data_input, neurodata_vis_spec, title=title)
+    else:
+        return neurodata_vis_spec[NWBDataInterface](df_over_f, neurodata_vis_spec)
 
 
 def show_image_segmentation(img_seg: ImageSegmentation, neurodata_vis_spec: dict):
     if len(img_seg.plane_segmentations) == 1:
-        return route_plane_segmentation(
-            list(img_seg.plane_segmentations.values())[0], neurodata_vis_spec
-        )
+        return route_plane_segmentation(list(img_seg.plane_segmentations.values())[0], neurodata_vis_spec)
     else:
         return neurodata_vis_spec[NWBDataInterface](img_seg, neurodata_vis_spec)
 
@@ -174,19 +90,11 @@ class PlaneSegmentation2DWidget(widgets.VBox):
 
     def on_button_click(self, b):
         if len(self.categorical_columns) == 1:
-            self.color_by = list(self.categorical_columns.keys())[
-                0
-            ]  # changing local variables to instance variables?
-            self.children += (
-                self.show_plane_segmentation_2d(color_by=self.color_by, **self.kwargs),
-            )
+            self.color_by = list(self.categorical_columns.keys())[0]  # changing local variables to instance variables?
+            self.children += (self.show_plane_segmentation_2d(color_by=self.color_by, **self.kwargs),)
         elif len(self.categorical_columns) > 1:
-            self.cat_controller = widgets.Dropdown(
-                options=list(self.categorical_columns), description="color by"
-            )
-            self.fig = self.show_plane_segmentation_2d(
-                color_by=self.cat_controller.value, **self.kwargs
-            )
+            self.cat_controller = widgets.Dropdown(options=list(self.categorical_columns), description="color by")
+            self.fig = self.show_plane_segmentation_2d(color_by=self.cat_controller.value, **self.kwargs)
 
             def on_change(change):
                 if change["new"] and isinstance(change["new"], dict):
@@ -198,9 +106,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             self.cat_controller.observe(on_change)
             self.children += (self.cat_controller, self.fig)
         else:
-            self.children += (
-                self.show_plane_segmentation_2d(color_by=None, **self.kwargs),
-            )
+            self.children += (self.show_plane_segmentation_2d(color_by=None, **self.kwargs),)
         self.children = self.children[1:]
 
     def update_fig(self, color_by):
@@ -208,9 +114,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         legendgroups = []
         with self.fig.batch_update():
             for color_val, data in zip(self.plane_seg[color_by][:], self.fig.data):
-                color = self.color_wheel[
-                    np.where(cats == color_val)[0][0]
-                ]  # store the color
+                color = self.color_wheel[np.where(cats == color_val)[0][0]]  # store the color
                 data.line.color = color  # set the color
                 data.legendgroup = str(color_val)  # set the legend group to the color
                 data.name = str(color_val)
@@ -231,7 +135,6 @@ class PlaneSegmentation2DWidget(widgets.VBox):
         ref_image=None,
     ):
         """
-
         Parameters
         ----------
         plane_seg: PlaneSegmentation
@@ -243,20 +146,11 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             width of image in pixels. Height is automatically determined
             to be proportional
         ref_image: image, optional
-
-
-        Returns
-        -------
-
         """
         layout_kwargs = dict()
         if color_by:
             if color_by not in self.plane_seg:
-                raise ValueError(
-                    "specified color_by parameter, {}, not in plane_seg object".format(
-                        color_by
-                    )
-                )
+                raise ValueError("specified color_by parameter, {}, not in plane_seg object".format(color_by))
             cats = np.unique(self.plane_seg[color_by][:])
             layout_kwargs.update(title=color_by)
 
@@ -266,19 +160,13 @@ class PlaneSegmentation2DWidget(widgets.VBox):
             fig = go.FigureWidget()
 
         if ref_image is not None:
-            fig.add_trace(
-                go.Heatmap(
-                    z=ref_image, hoverinfo="skip", showscale=False, colorscale="gray"
-                )
-            )
+            fig.add_trace(go.Heatmap(z=ref_image, hoverinfo="skip", showscale=False, colorscale="gray"))
 
         aux_leg = []
         import pandas as pd
 
         plane_seg_hover_dict = {
-            key: self.plane_seg[key].data
-            for key in self.plane_seg.colnames
-            if key not in ["pixel_mask", "image_mask"]
+            key: self.plane_seg[key].data for key in self.plane_seg.colnames if key not in ["pixel_mask", "image_mask"]
         }
         plane_seg_hover_dict.update(id=self.plane_seg.id.data)
         plane_seg_hover_df = pd.DataFrame(plane_seg_hover_dict)
@@ -335,9 +223,7 @@ class PlaneSegmentation2DWidget(widgets.VBox):
 
     @lru_cache(1000)
     def compute_outline(self, i, threshold):
-        x, y = zip(
-            *measure.find_contours(self.plane_seg["image_mask"][i], threshold)[0]
-        )
+        x, y = zip(*measure.find_contours(self.plane_seg["image_mask"][i], threshold)[0])
         return x, y
 
 
@@ -350,16 +236,6 @@ def route_plane_segmentation(plane_seg: PlaneSegmentation, neurodata_vis_spec: d
         return PlaneSegmentation2DWidget(plane_seg)
 
 
-def show_grayscale_volume(vol: GrayscaleVolume, neurodata_vis_spec: dict):
-    import ipyvolume.pylab as p3
-
-    fig = p3.figure()
-    p3.volshow(vol.data, tf=linear_transfer_function([0, 0, 0], max_opacity=0.1))
-    return fig
-
-
 class RoiResponseSeriesWidget(BaseGroupedTraceWidget):
-    def __init__(
-        self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs
-    ):
+    def __init__(self, roi_response_series: RoiResponseSeries, neurodata_vis_spec=None, **kwargs):
         super().__init__(roi_response_series, "rois", **kwargs)
