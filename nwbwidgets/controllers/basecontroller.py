@@ -40,19 +40,18 @@ class BaseController(ABC):
             The values of this dictionary can be either widgets or other controllers.
         """
         unpacked_components = dict()
-        for component_name, component in self.components.items():
+        for component_name, component in components.items():
             if isinstance(component, BaseController):
                 self._unpack_attributes(component=component)  # Unpack attributes to new outermost level
-                unpacked_components.update(component_name=component.components)  # Nested dictionary
+                unpacked_components.update({component_name: component.components})  # Nested dictionary
             else:
                 self._check_attribute_name_collision(name=component_name)
-                setattr(self, component_name, component, component)
-                unpacked_components.update(component_name=component)
+                setattr(self, component_name, component)
+                unpacked_components.update({component_name: component})
         self.components = unpacked_components  # Maintain sub-component structure for provenance
 
         self.setup_observers()
 
-    @abstractmethod
     def setup_observers(self):
         """
         Define observation events specific to the interactions and values of components within the same MultiController.
@@ -87,4 +86,4 @@ class BaseController(ABC):
             The non-private attributes of this controller exposed at the outer-most level.
             These can be widgets, other controllers, or even mutable references.
         """
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_") and k != "components"}
