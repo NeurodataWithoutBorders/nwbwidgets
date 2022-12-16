@@ -7,9 +7,7 @@ from plotly import graph_objects as go
 from pynwb import TimeSeries
 from pynwb.behavior import BehavioralEvents, SpatialSeries
 
-from nwbwidgets import base
-
-from .base import lazy_tabs
+from .base import lazy_tabs, dict2accordion
 from .controllers import StartAndDurationController
 from .timeseries import (
     AbstractTraceWidget,
@@ -26,7 +24,7 @@ from .utils.timeseries import (
 
 
 def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dict):
-    return base.dict2accordion(beh_events.time_series, neurodata_vis_spec, ls="", marker="|")
+    return dict2accordion(beh_events.time_series, neurodata_vis_spec, ls="", marker="|")
 
 
 def show_spatial_series(node: SpatialSeries, **kwargs):
