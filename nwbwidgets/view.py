@@ -9,7 +9,7 @@ from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
 
-from nwbwidgets import (
+from . import (
     base,
     behavior,
     ecephys,
