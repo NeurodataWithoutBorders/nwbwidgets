@@ -8,8 +8,8 @@ from fsspec.implementations.cached import CachingFileSystem
 from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
 
-from nwbwidgets import nwb2widget
-from nwbwidgets.utils.dandi import (
+from . import nwb2widget
+from .utils.dandi import (
     get_dandiset_metadata,
     get_file_url,
     has_nwb,
