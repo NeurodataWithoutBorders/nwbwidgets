@@ -6,7 +6,6 @@ from ipywidgets import widgets
 from pynwb.file import NWBFile
 
 from . import view
-
 from .base import lazy_show_over_data
 
 

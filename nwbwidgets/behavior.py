@@ -7,7 +7,7 @@ from plotly import graph_objects as go
 from pynwb import TimeSeries
 from pynwb.behavior import BehavioralEvents, SpatialSeries
 
-from .base import lazy_tabs, dict2accordion
+from .base import dict2accordion, lazy_tabs
 from .controllers import StartAndDurationController
 from .timeseries import (
     AbstractTraceWidget,
