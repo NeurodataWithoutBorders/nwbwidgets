@@ -125,7 +125,6 @@ class CalciumImagingTestCase(unittest.TestCase):
     def test_show_df_over_f(self):
         dff = show_df_over_f(self.df_over_f, default_neurodata_vis_spec)
         assert isinstance(dff, widgets.Widget)
-        dff.controls["gas"].window = [1, 2]
 
     def test_plane_segmentation_2d_widget(self):
         wid = PlaneSegmentation2DWidget(self.ps2)

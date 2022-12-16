@@ -9,6 +9,7 @@ from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
 
+from .base import nwb2widget as nwb2widget_base
 from .base import (
     dict2accordion,
     processing_module,
@@ -19,6 +20,7 @@ from .base import (
     show_neurodata_base,
     show_text_fields,
 )
+
 from .behavior import route_spatial_series, show_behavioral_events
 from .dynamictablesummary import DynamicTableSummaryWidget
 from .ecephys import ElectricalSeriesWidget, show_electrodes, show_spike_event_series
@@ -118,4 +120,4 @@ default_neurodata_vis_spec = {
 
 
 def nwb2widget(node, neurodata_vis_spec=default_neurodata_vis_spec):
-    return base.nwb2widget(node, neurodata_vis_spec)
+    return nwb2widget_base(node, neurodata_vis_spec)
