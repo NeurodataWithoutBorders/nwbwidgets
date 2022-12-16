@@ -45,15 +45,6 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: executable
-    attributes:
-      label: Python Executable
-      options:
-        - Conda
-        - Python
-    validations:
-      required: true
-  - type: dropdown
     id: python_version
     attributes:
       label: Python Version
