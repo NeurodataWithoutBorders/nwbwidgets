@@ -1,5 +1,8 @@
 name: Tests and coverage
-on: [push]
+
+on:
+  pull_request:
+
 jobs:
   run:
     runs-on: ${{ matrix.os }}
