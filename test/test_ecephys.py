@@ -1,9 +1,9 @@
 import unittest
 from datetime import datetime
 
-import pytest
 import ipywidgets as widgets
 import numpy as np
+import pytest
 from dateutil.tz import tzlocal
 from pynwb import NWBFile, TimeSeries
 from pynwb.ecephys import LFP, ElectricalSeries, SpikeEventSeries
