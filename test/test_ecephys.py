@@ -102,5 +102,5 @@ def test_show_spectrogram():
     show_spectrogram(ts, channel=channel)
 
 
-# def test_show_ccf():
-#     show_ccf()
+def test_show_ccf():
+    show_ccf()
