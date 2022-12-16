@@ -9,7 +9,6 @@ from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
 
-from .base import nwb2widget as nwb2widget_base
 from .base import (
     dict2accordion,
     processing_module,
@@ -19,6 +18,7 @@ from .base import (
     show_multi_container_interface,
     show_neurodata_base,
     show_text_fields,
+    nwb2widget as nwb2widget_base,
 )
 
 from .behavior import route_spatial_series, show_behavioral_events
