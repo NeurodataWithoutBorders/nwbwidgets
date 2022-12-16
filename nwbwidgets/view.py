@@ -2,29 +2,27 @@ from collections import OrderedDict
 
 import h5py
 import hdmf
-import pynwb
-
-from ipywidgets import widgets
-
-import zarr
 import ndx_grayscalevolume
+import pynwb
+import zarr
+from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
 
-from .dynamictablesummary import DynamicTableSummaryWidget
-
 from nwbwidgets import (
-    behavior,
-    misc,
     base,
+    behavior,
     ecephys,
-    image,
-    ophys,
-    icephys,
-    timeseries,
     file,
+    icephys,
+    image,
+    misc,
+    ophys,
     spectrum,
+    timeseries,
 )
+
+from .dynamictablesummary import DynamicTableSummaryWidget
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
@@ -59,23 +57,17 @@ default_neurodata_vis_spec = {
     pynwb.ophys.DfOverF: ophys.show_df_over_f,
     pynwb.ophys.RoiResponseSeries: OrderedDict(
         {
-        "trial_aligned": timeseries.route_trialized_time_series,
-        "traces": ophys.RoiResponseSeriesWidget,
+            "trial_aligned": timeseries.route_trialized_time_series,
+            "traces": ophys.RoiResponseSeriesWidget,
         }
     ),
-    pynwb.misc.AnnotationSeries: OrderedDict(
-        {
-            "text": base.show_text_fields,
-            "times": misc.show_annotations
-        }
-    ),
+    pynwb.misc.AnnotationSeries: OrderedDict({"text": base.show_text_fields, "times": misc.show_annotations}),
     pynwb.core.LabelledDict: base.dict2accordion,
     pynwb.ProcessingModule: base.processing_module,
-    hdmf.common.DynamicTable:
-        {
+    hdmf.common.DynamicTable: {
         "Summary": DynamicTableSummaryWidget,
         "table": show_dynamic_table,
-        },
+    },
     pynwb.ecephys.ElectricalSeries: ecephys.ElectricalSeriesWidget,
     pynwb.behavior.SpatialSeries: behavior.route_spatial_series,
     pynwb.image.GrayscaleImage: image.show_grayscale_image,
@@ -94,8 +86,8 @@ default_neurodata_vis_spec = {
     pynwb.icephys.SequentialRecordingsTable: {
         "Summary": DynamicTableSummaryWidget,
         "table": show_dynamic_table,
-        "I-V Analysis": icephys.IVCurveWidget
-    }
+        "I-V Analysis": icephys.IVCurveWidget,
+    },
 }
 
 

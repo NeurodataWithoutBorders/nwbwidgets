@@ -1,44 +1,41 @@
 import functools
-from bisect import bisect
 from abc import abstractmethod
-from typing import Union, Optional
+from bisect import bisect
+from typing import Optional, Union
 
-from natsort import natsorted
-import scipy
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
-from ipywidgets import widgets, fixed, Layout
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.graph_objs as go
-from plotly.subplots import make_subplots
+import scipy
+from ipywidgets import Layout, fixed, widgets
+from natsort import natsorted
 from plotly.colors import DEFAULT_PLOTLY_COLORS
-
-from pynwb.epoch import TimeIntervals
-from pynwb.base import TimeSeries, DynamicTable
-from pynwb.ophys import RoiResponseSeries
+from plotly.subplots import make_subplots
+from pynwb.base import DynamicTable, TimeSeries
 from pynwb.ecephys import ElectricalSeries
+from pynwb.epoch import TimeIntervals
+from pynwb.ophys import RoiResponseSeries
 
 from .controllers import (
-    StartAndDurationController,
     GroupAndSortController,
-    RangeController,
     ProgressBar,
+    RangeController,
+    StartAndDurationController,
 )
+from .controllers.misc import make_trial_event_controller
 from .utils.plotly import multi_trace
 from .utils.timeseries import (
-    get_timeseries_tt,
+    bisect_timeseries_by_times,
+    get_timeseries_in_units,
     get_timeseries_maxt,
     get_timeseries_mint,
+    get_timeseries_tt,
     timeseries_time_to_ind,
-    get_timeseries_in_units,
-    bisect_timeseries_by_times,
 )
 from .utils.widgets import interactive_output, set_plotly_callbacks
-from .controllers.misc import make_trial_event_controller
-
 
 color_wheel = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -1359,7 +1356,7 @@ class TrializedTimeSeries(widgets.HBox):
 
         self.time_series = time_series
         self.trials_table = trials_table
-        
+
         # Load references to neurodata types (time_series and trials table)
         if self.trials_table is None:
             self.trials_table = time_series.get_ancestor("NWBFile").trials

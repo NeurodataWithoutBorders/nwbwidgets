@@ -1,54 +1,42 @@
 import unittest
-
 from datetime import datetime
-from dateutil.tz import tzlocal
 
 import numpy as np
-
+from dateutil.tz import tzlocal
 from pynwb import NWBFile, TimeSeries
 from pynwb.epoch import TimeIntervals
 
 from nwbwidgets.utils.timeseries import (
-    get_timeseries_tt,
+    align_by_time_intervals,
+    align_by_trials,
+    bisect_timeseries_by_times,
+    get_timeseries_in_units,
     get_timeseries_maxt,
     get_timeseries_mint,
-    get_timeseries_in_units,
+    get_timeseries_tt,
     timeseries_time_to_ind,
-    bisect_timeseries_by_times,
-    align_by_trials,
-    align_by_time_intervals,
 )
 
 
 def test_get_timeseries_tt():
     data = list(range(100, 200, 10))
-    ts = TimeSeries(
-        name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0
-    )
+    ts = TimeSeries(name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0)
 
     tt = get_timeseries_tt(ts)
-    np.testing.assert_array_equal(
-        tt, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-    )
+    np.testing.assert_array_equal(tt, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
 
 
 def test_get_timeseries_tt_infstarting_time():
     data = list(range(100, 200, 10))
-    ts = TimeSeries(
-        name="test_timeseries", data=data, unit="m", starting_time=np.inf, rate=1.0
-    )
+    ts = TimeSeries(name="test_timeseries", data=data, unit="m", starting_time=np.inf, rate=1.0)
 
     tt = get_timeseries_tt(ts)
-    np.testing.assert_array_equal(
-        tt, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-    )
+    np.testing.assert_array_equal(tt, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
 
 
 def test_get_timeseries_tt_negativeistop():
     data = list(range(100, 200, 10))
-    ts = TimeSeries(
-        name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0
-    )
+    ts = TimeSeries(name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0)
 
     tt = get_timeseries_tt(ts, istop=-1)
     np.testing.assert_array_equal(tt, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0])
@@ -85,9 +73,7 @@ def test_align_by_trials():
     ts = TimeSeries(name="test_timeseries", data=data, unit="m", timestamps=timestamps)
     nwbfile.add_acquisition(ts)
 
-    nwbfile.add_trial_column(
-        name="stim", description="the visual stimuli during the trial"
-    )
+    nwbfile.add_trial_column(name="stim", description="the visual stimuli during the trial")
     nwbfile.add_trial(start_time=0.0, stop_time=2.0, stim="person")
     nwbfile.add_trial(start_time=3.0, stop_time=5.0, stim="ocean")
     nwbfile.add_trial(start_time=6.0, stop_time=8.0, stim="desert")
@@ -133,15 +119,11 @@ class TimeSeriesTimeStampTestCase(unittest.TestCase):
             bisect_timeseries_by_times(self.ts_rate, [0, 1, 2], 4),
             [[100, 110, 120, 130], [110, 120, 130, 140], [120, 130, 140, 150]],
         )
-        assert isinstance(
-            bisect_timeseries_by_times(self.ts_timestamps, [0, 1, 2], 4), list
-        )
+        assert isinstance(bisect_timeseries_by_times(self.ts_timestamps, [0, 1, 2], 4), list)
 
     def test_get_timeseries_tt_timestamp(self):
         tt = get_timeseries_tt(self.ts_rate)
-        np.testing.assert_array_equal(
-            tt, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-        )
+        np.testing.assert_array_equal(tt, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
 
     def test_align_by_time_intervals(self):
         intervals = TimeIntervals(name="Time Intervals")

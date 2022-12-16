@@ -2,18 +2,16 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Union
 
-import pandas as pd
+import h5py
 import matplotlib.pyplot as plt
-
+import pandas as pd
 from ipydatagrid import DataGrid
 from IPython import display
 from ipywidgets import widgets
 from ipywidgets.widgets.interaction import show_inline_matplotlib_plots
-
-import h5py
 from pynwb import ProcessingModule
-from pynwb.core import NWBDataInterface, MultiContainerInterface
 from pynwb.base import DynamicTable
+from pynwb.core import MultiContainerInterface, NWBDataInterface
 
 from nwbwidgets import view
 
@@ -21,9 +19,7 @@ GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
 
 def show_fields(node, **kwargs) -> widgets.Widget:
-    field_lay = widgets.Layout(
-        max_height="40px", max_width="600px", min_height="30px", min_width="130px"
-    )
+    field_lay = widgets.Layout(max_height="40px", max_width="600px", min_height="30px", min_width="130px")
     info = []
     for key, val in node.fields.items():
         lbl_key = widgets.Label(key + ":", layout=field_lay)
@@ -43,16 +39,12 @@ def render_dataframe(dynamic_table: DynamicTable):
         return out1
 
 
-def show_neurodata_base(
-    node: NWBDataInterface, neurodata_vis_spec: dict
-) -> widgets.Widget:
+def show_neurodata_base(node: NWBDataInterface, neurodata_vis_spec: dict) -> widgets.Widget:
     """
     Gets a pynwb object and returns a Vertical Box containing textual info and
     an expandable Accordion with it's children.
     """
-    field_lay = widgets.Layout(
-        max_height="40px", max_width="500px", min_height="30px", min_width="180px"
-    )
+    field_lay = widgets.Layout(max_height="40px", max_width="500px", min_height="30px", min_width="180px")
     info = []  # string data type, exposed as a Text widget
     neuro_data = []  # more complex data types, also with children
     labels = []
@@ -64,15 +56,7 @@ def show_neurodata_base(
         elif key == "related_publications":
             pub_list = []
             for pub in value:
-                pub_list.append(
-                    widgets.HTML(
-                        value="<a href=http://dx.doi.org/"
-                        + pub[4:]
-                        + ">"
-                        + pub
-                        + "</a>"
-                    )
-                )
+                pub_list.append(widgets.HTML(value="<a href=http://dx.doi.org/" + pub[4:] + ">" + pub + "</a>"))
             lbl_key = widgets.Label(key + ":", layout=field_lay)
             pub_list.insert(0, lbl_key)
             info.append(widgets.HBox(children=pub_list))
@@ -85,16 +69,11 @@ def show_neurodata_base(
             hbox_exp = widgets.HBox(children=[lbl_experimenter, lbl_names])
             info.append(hbox_exp)
         elif (isinstance(value, Iterable) and len(value)) or value:
-            neuro_data.append(
-                nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec)
-            )
+            neuro_data.append(nwb2widget(value, neurodata_vis_spec=neurodata_vis_spec))
             labels.append(key)
     accordion = widgets.Accordion(children=neuro_data, selected_index=None)
     for i, label in enumerate(labels):
-        if (
-            hasattr(node.fields[label], "description")
-            and node.fields[label].description
-        ):
+        if hasattr(node.fields[label], "description") and node.fields[label].description:
             accordion.set_title(i, label + ": " + node.fields[label].description)
         else:
             accordion.set_title(i, label)
@@ -113,13 +92,9 @@ def dict2accordion(d: dict, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.
             accordion.set_title(i, label)
 
     def on_selected_index(change):
-        if change.new is not None and isinstance(
-            change.owner.children[change.new], widgets.HTML
-        ):
+        if change.new is not None and isinstance(change.owner.children[change.new], widgets.HTML):
             children[change.new] = nwb2widget(
-                list(d.values())[change.new],
-                neurodata_vis_spec=neurodata_vis_spec,
-                **pass_kwargs
+                list(d.values())[change.new], neurodata_vis_spec=neurodata_vis_spec, **pass_kwargs
             )
             change.owner.children = children
 
@@ -128,9 +103,7 @@ def dict2accordion(d: dict, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.
     return accordion
 
 
-def lazy_tabs(
-    in_dict: dict, node, style: GroupingWidget = widgets.Tab
-) -> GroupingWidget:
+def lazy_tabs(in_dict: dict, node, style: GroupingWidget = widgets.Tab) -> GroupingWidget:
     """Creates a lazy tab object where multiple visualizations can be used for a single node and are generated on the
     fly
 
@@ -150,9 +123,7 @@ def lazy_tabs(
     """
     tabs_spec = list(in_dict.items())
 
-    children = [tabs_spec[0][1](node)] + [
-        widgets.HTML("Rendering...") for _ in range(len(tabs_spec) - 1)
-    ]
+    children = [tabs_spec[0][1](node)] + [widgets.HTML("Rendering...") for _ in range(len(tabs_spec) - 1)]
     tab = style(children=children)
     [tab.set_title(i, label) for i, (label, _) in enumerate(tabs_spec)]
 
@@ -180,9 +151,7 @@ class LazyTab(widgets.Tab):
         """
 
         tabs_spec = list(func_dict.items())
-        children = [tabs_spec[0][1](data)] + [
-            widgets.HTML("Rendering...") for _ in range(len(tabs_spec) - 1)
-        ]
+        children = [tabs_spec[0][1](data)] + [widgets.HTML("Rendering...") for _ in range(len(tabs_spec) - 1)]
 
         super().__init__(children=children)
 
@@ -196,9 +165,7 @@ class LazyTab(widgets.Tab):
         self.observe(on_selected_index, names="selected_index")
 
 
-def lazy_show_over_data(
-    list_, func_, labels=None, style: GroupingWidget = widgets.Tab
-) -> GroupingWidget:
+def lazy_show_over_data(list_, func_, labels=None, style: GroupingWidget = widgets.Tab) -> GroupingWidget:
     """
     Apply same function to list of data in lazy tabs or lazy accordion
     Parameters
@@ -214,17 +181,13 @@ def lazy_show_over_data(
         subtype Tab or Accordion
 
     """
-    children = [vis2widget(func_(list_[0]))] + [
-        widgets.HTML("Rendering...") for _ in range(len(list_) - 1)
-    ]
+    children = [vis2widget(func_(list_[0]))] + [widgets.HTML("Rendering...") for _ in range(len(list_) - 1)]
     out = style(children=children)
     if labels is not None:
         [out.set_title(i, label) for i, label in enumerate(labels)]
 
     def on_selected_index(change):
-        if change.new is not None and isinstance(
-            change.owner.children[change.new], widgets.HTML
-        ):
+        if change.new is not None and isinstance(change.owner.children[change.new], widgets.HTML):
             children[change.new] = vis2widget(func_(list_[change.new]))
             change.owner.children = children
 
@@ -244,7 +207,7 @@ def nwb2widget(node, neurodata_vis_spec: dict, **pass_kwargs) -> widgets.Widget:
                 return vis2widget(visualization)
     out1 = widgets.Output()
     with out1:
-        print(node) # Is this necessary?
+        print(node)  # Is this necessary?
     return out1
 
 
@@ -271,23 +234,15 @@ def fig2widget(fig: plt.Figure, **kwargs) -> widgets.Widget:
     return out
 
 
-def processing_module(
-    node: ProcessingModule, neurodata_vis_spec: dict
-) -> widgets.Widget:
+def processing_module(node: ProcessingModule, neurodata_vis_spec: dict) -> widgets.Widget:
     return nwb2widget(node.data_interfaces, neurodata_vis_spec=neurodata_vis_spec)
 
 
-def show_text_fields(
-    node, exclude=("comments", "interval"), **kwargs
-) -> widgets.Widget:
+def show_text_fields(node, exclude=("comments", "interval"), **kwargs) -> widgets.Widget:
     info = []
     for key in node.fields:
         if key not in exclude and isinstance(key, (str, float, int)):
-            info.append(
-                widgets.Text(
-                    value=repr(getattr(node, key)), description=key, disabled=True
-                )
-            )
+            info.append(widgets.Text(value=repr(getattr(node, key)), description=key, disabled=True))
     return widgets.VBox(info)
 
 
@@ -334,9 +289,7 @@ def dataset_to_sheet(dset: h5py.Dataset):
 
 
 def show_dict(in_dict) -> widgets.Widget:
-    field_lay = widgets.Layout(
-        max_height="40px", max_width="600px", min_height="30px", min_width="130px"
-    )
+    field_lay = widgets.Layout(max_height="40px", max_width="600px", min_height="30px", min_width="130px")
     info = []
     for key, val in in_dict.items():
         lbl_key = widgets.Label(key + ":", layout=field_lay)
@@ -380,33 +333,22 @@ class TimeIntervalsSelector(widgets.VBox):
         self.kwargs = kwargs
         self.intervals_tables = input_data.get_ancestor("NWBFile").intervals
         self.stimulus_type_dd = widgets.Dropdown(
-            options=list(self.intervals_tables.keys()),
-            description="stimulus type"
+            options=list(self.intervals_tables.keys()), description="stimulus type"
         )
         self.stimulus_type_dd.observe(self.stimulus_type_dd_callback)
 
         trials = list(self.intervals_tables.values())[0]
-        inner_widget = self.InnerWidget(
-            units=self.input_data,
-            trials=trials,
-            **kwargs
-        )
+        inner_widget = self.InnerWidget(units=self.input_data, trials=trials, **kwargs)
         self.children = [self.stimulus_type_dd, inner_widget]
 
     def stimulus_type_dd_callback(self, change):
         self.children = [self.stimulus_type_dd, widgets.HTML("Rendering...")]
         trials = self.intervals_tables[self.stimulus_type_dd.value]
-        inner_widget = self.InnerWidget(
-            input_data=self.input_data,
-            trials=trials,
-            **self.kwargs
-        )
+        inner_widget = self.InnerWidget(input_data=self.input_data, trials=trials, **self.kwargs)
         self.children = [self.stimulus_type_dd, inner_widget]
 
 
-def show_multi_container_interface(
-    node: MultiContainerInterface, neurodata_vis_spec=None
-):
+def show_multi_container_interface(node: MultiContainerInterface, neurodata_vis_spec=None):
     if isinstance(node.__clsconf__, dict):
         cls_conf = [node.__clsconf__]
     else:

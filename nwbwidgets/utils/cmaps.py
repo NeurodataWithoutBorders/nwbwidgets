@@ -1,16 +1,13 @@
 """
 Taken from https://github.com/maartenbreddels/ipyvolume/pull/178
 """
-import numpy as np
 import matplotlib.cm
 import matplotlib.colors
-
+import numpy as np
 from ipyvolume import TransferFunction
 
 
-def linear_transfer_function(
-    color, min_opacity=0, max_opacity=0.05, reverse_opacity=False, n_elements=256
-):
+def linear_transfer_function(color, min_opacity=0, max_opacity=0.05, reverse_opacity=False, n_elements=256):
     """Transfer function of a single color and linear opacity.
     :param color: List-like RGB, or string with hexadecimal or named color.
         RGB values should be within 0-1 range.
@@ -39,9 +36,7 @@ def linear_transfer_function(
     opacity = np.linspace(min_opacity, max_opacity, num=n_elements)
     if reverse_opacity:
         opacity = np.flip(opacity, axis=0)
-    rgba = np.transpose(
-        np.stack([[r] * n_elements, [g] * n_elements, [b] * n_elements, opacity])
-    )
+    rgba = np.transpose(np.stack([[r] * n_elements, [g] * n_elements, [b] * n_elements, opacity]))
     transfer_function = TransferFunction(rgba=rgba)
     return transfer_function
 

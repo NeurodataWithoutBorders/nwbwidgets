@@ -1,12 +1,9 @@
 import matplotlib.pyplot as plt
-
 import plotly.graph_objects as go
-from ipywidgets import widgets, fixed, Layout
-
+from ipywidgets import Layout, fixed, widgets
 from pynwb import TimeSeries
 from pynwb.image import GrayscaleImage, ImageSeries, RGBImage
-
-from tifffile import imread, TiffFile
+from tifffile import TiffFile, imread
 
 from .base import fig2widget
 from .controllers import StartAndDurationController
@@ -21,10 +18,7 @@ class ImageSeriesWidget(widgets.VBox):
     """Widget showing ImageSeries."""
 
     def __init__(
-        self,
-        imageseries: ImageSeries,
-        foreign_time_window_controller: StartAndDurationController = None,
-        **kwargs
+        self, imageseries: ImageSeries, foreign_time_window_controller: StartAndDurationController = None, **kwargs
     ):
         super().__init__()
         self.imageseries = imageseries
@@ -56,9 +50,7 @@ class ImageSeriesWidget(widgets.VBox):
             return timeseries_time_to_ind(self.imageseries, time)
 
     def set_controls(self, **kwargs):
-        self.controls.update(
-            timeseries=fixed(self.imageseries), time_window=self.time_window_controller
-        )
+        self.controls.update(timeseries=fixed(self.imageseries), time_window=self.time_window_controller)
         self.controls.update({key: widgets.fixed(val) for key, val in kwargs.items()})
 
     def get_frame(self, idx):
@@ -78,9 +70,7 @@ class ImageSeriesWidget(widgets.VBox):
         )
         self.out_fig.update_layout(
             xaxis=go.layout.XAxis(showticklabels=False, ticks=""),
-            yaxis=go.layout.YAxis(
-                showticklabels=False, ticks="", scaleanchor="x", scaleratio=1
-            ),
+            yaxis=go.layout.YAxis(showticklabels=False, ticks="", scaleanchor="x", scaleratio=1),
         )
 
         def on_change(change):
@@ -113,9 +103,7 @@ def show_image_series(image_series: ImageSeries, neurodata_vis_spec: dict):
         continuous_update=False,
         description="index",
     )
-    mode = widgets.Dropdown(
-        options=("rgb", "bgr"), layout=Layout(width="200px"), description="mode"
-    )
+    mode = widgets.Dropdown(options=("rgb", "bgr"), layout=Layout(width="200px"), description="mode")
     controls = {"index": slider, "mode": mode}
     out_fig = widgets.interactive_output(show_image, controls)
     vbox = widgets.VBox(children=[out_fig, slider, mode])

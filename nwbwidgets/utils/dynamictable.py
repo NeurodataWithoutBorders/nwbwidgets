@@ -3,7 +3,6 @@ from typing import Iterable
 
 import numpy as np
 import pandas as pd
-
 from pynwb.core import DynamicTable
 
 
@@ -35,17 +34,11 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
         keys: as columns that are categorical, values as the unique values
     """
     categorical_cols = {}
-    region = (
-        np.array(region, dtype="uint")
-        if region is not None
-        else np.arange(len(dynamic_table), dtype="uint")
-    )
+    region = np.array(region, dtype="uint") if region is not None else np.arange(len(dynamic_table), dtype="uint")
     for name in dynamic_table.colnames:
         if len(dynamic_table[name].shape) == 1:
             try:
-                if isinstance(
-                    dynamic_table[name].data[0], (str, numbers.Number, bytes)
-                ):
+                if isinstance(dynamic_table[name].data[0], (str, numbers.Number, bytes)):
                     column_data = [dynamic_table[name].data[i] for i in region]
                 elif hasattr(dynamic_table[name].data[0], "name"):
                     column_data = [dynamic_table[name].data[i].name for i in region]
@@ -55,9 +48,7 @@ def infer_categorical_columns(dynamic_table: DynamicTable, region: Iterable = No
                 if not isinstance(unique_vals[0], str) and all(np.isnan(unique_vals)):
                     continue
                 if 1 < len(unique_vals) <= (len(column_data) / 2):
-                    unique_vals = [
-                        x.decode() if isinstance(x, bytes) else x for x in unique_vals
-                    ]  # handle h5py 3.0
+                    unique_vals = [x.decode() if isinstance(x, bytes) else x for x in unique_vals]  # handle h5py 3.0
                     categorical_cols[name] = np.array(column_data)
             except Exception as e:
                 print(e)
@@ -94,9 +85,7 @@ def infer_columns_to_plot(dynamic_table: DynamicTable):
     return column_names_to_plot, categorical_columns
 
 
-def group_and_sort(
-    group_vals=None, group_select=None, order_vals=None, keep_rows=None, limit=None
-):
+def group_and_sort(group_vals=None, group_select=None, order_vals=None, keep_rows=None, limit=None):
     """
     Logical flow:
     0) Apply discard_rows - throw out any listed rows

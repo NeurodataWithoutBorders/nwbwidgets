@@ -1,14 +1,12 @@
 from typing import Iterable
 
 import numpy as np
-
 from hdmf.common import DynamicTable
+from ipywidgets import Layout, ValueWidget, widgets
 
-from ipywidgets import widgets, Layout, ValueWidget
-
+from . import RangeController
 from ..utils.dynamictable import group_and_sort, infer_categorical_columns
 from ..utils.pynwb import robust_unique
-from . import RangeController
 
 
 class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
@@ -24,9 +22,7 @@ class AbstractGroupAndSortController(widgets.VBox, ValueWidget):
 
     def __init__(self, dynamic_table: DynamicTable, keep_rows=None):
         super().__init__()
-        self.keep_rows = (
-            keep_rows if keep_rows is not None else np.arange(len(dynamic_table))
-        )
+        self.keep_rows = keep_rows if keep_rows is not None else np.arange(len(dynamic_table))
         self.dynamic_table = dynamic_table
         self.nitems = len(self.keep_rows)
         self.column_values = None
@@ -116,11 +112,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.ascending_dd.layout.visibility = "hidden"
             self.ascending_dd.observe(self.ascending_dd_observer)
 
-            self.group_sm = widgets.SelectMultiple(
-                layout=Layout(width="0px"),
-                disabled=True,
-                rows=1
-            )
+            self.group_sm = widgets.SelectMultiple(layout=Layout(width="0px"), disabled=True, rows=1)
             self.group_sm.layout.visibility = "hidden"
             self.group_sm.observe(self.group_sm_observer)
 
@@ -145,11 +137,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 "Units": "units",
                 "PlaneSegmentation": "image_planes",
             }
-            desc = (
-                dt_desc_map[dynamic_table.neurodata_type]
-                if dynamic_table is not None
-                else "traces"
-            )
+            desc = dt_desc_map[dynamic_table.neurodata_type] if dynamic_table is not None else "traces"
             self.range_controller = RangeController(
                 0,
                 self.nitems,
@@ -166,7 +154,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.range_controller = widgets.HTML("")
 
         self.children = self.get_children()
-        #self.layout = Layout(overflow_x='auto')
+        # self.layout = Layout(overflow_x='auto')
         self.update_value()
 
     def get_children(self):
@@ -175,9 +163,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
         if self.group_dd:
             children.append(self.group_dd)
         if self.group_sm is not None:
-            children.append(
-                widgets.HBox(children=(self.group_sm, self.range_controller))
-            )
+            children.append(widgets.HBox(children=(self.group_sm, self.range_controller)))
         else:
             children.append(self.range_controller)
         if len(self.categorical_columns) > 0:
@@ -193,7 +179,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 children.append(
                     widgets.VBox(
                         children=(self.order_dd, self.ascending_dd),
-                        #layout=Layout(max_width="90%"),
+                        # layout=Layout(max_width="90%"),
                     )
                 )
 
@@ -306,10 +292,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.selected_column_values = change["new"]
             value_before = self.window
             self.group_and_sort()
-            if (
-                hasattr(self.range_controller, "slider")
-                and not self.range_controller.slider.value == value_before
-            ):
+            if hasattr(self.range_controller, "slider") and not self.range_controller.slider.value == value_before:
                 pass  # do nothing, value was updated automatically
             else:
                 self.update_value()
@@ -342,18 +325,13 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 else self.categorical_columns[column_name][rows_select]
             )
         else:
-            raise ValueError(
-                "column {} not in DynamicTable {}".format(
-                    column_name, self.dynamic_table
-                )
-            )
+            raise ValueError("column {} not in DynamicTable {}".format(column_name, self.dynamic_table))
 
     def get_orderable_cols(self):
         candidate_cols = [
             x
             for x in self.units.colnames
-            if not isinstance(self.units[x][0], Iterable)
-            or isinstance(self.units[x][0], str)
+            if not isinstance(self.units[x][0], Iterable) or isinstance(self.units[x][0], str)
         ]
         return [x for x in candidate_cols if len(robust_unique(self.units[x][:])) > 1]
 
