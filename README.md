@@ -7,6 +7,7 @@ A library of widgets for visualization NWB data in a Jupyter notebook (or lab). 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/NeurodataWithoutBorders/nwb-jupyter-widgets/master?filepath=examples%2FNWBWidgets-modality-demos.ipynb)
 
 
+
 ## Installation
 
 `nwbwidgets` requires Python >= 3.7.

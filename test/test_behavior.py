@@ -1,21 +1,20 @@
 import unittest
 
 import numpy as np
-
 from pynwb import TimeSeries
+from pynwb.behavior import BehavioralEvents, Position, SpatialSeries
 from pynwb.epoch import TimeIntervals
-from pynwb.behavior import Position, SpatialSeries, BehavioralEvents
 
+from nwbwidgets.base import show_multi_container_interface
 from nwbwidgets.behavior import (
+    SpatialSeriesTraceWidget2D,
+    SpatialSeriesTraceWidget3D,
     show_behavioral_events,
     show_spatial_series,
     trial_align_spatial_series,
-    SpatialSeriesTraceWidget2D,
-    SpatialSeriesTraceWidget3D,
 )
-from nwbwidgets.view import default_neurodata_vis_spec
-from nwbwidgets.base import show_multi_container_interface
 from nwbwidgets.timeseries import SeparateTracesPlotlyWidget
+from nwbwidgets.view import default_neurodata_vis_spec
 
 
 class ShowSpatialSeriesTestCase(unittest.TestCase):
@@ -61,9 +60,7 @@ class ShowSpatialSeriesThreeDTestCase(unittest.TestCase):
     def setUp(self):
         self.spatial_series = SpatialSeries(
             name="position",
-            data=np.array(
-                [np.linspace(0, 1, 20), np.linspace(0, 1, 20), np.linspace(0, 1, 20)]
-            ).T,
+            data=np.array([np.linspace(0, 1, 20), np.linspace(0, 1, 20), np.linspace(0, 1, 20)]).T,
             rate=50.0,
             reference_frame="starting gate",
         )
@@ -103,9 +100,7 @@ class SpatialSeriesTrialsAlign(unittest.TestCase):
                 stt = start_time + np.random.rand()
                 spt = stt + 7 - np.random.rand()
                 self.time_intervals.add_interval(start_time=stt, stop_time=spt)
-        self.time_intervals.add_column(
-            name="temp", description="desc", data=np.random.randint(2, size=n_intervals)
-        )
+        self.time_intervals.add_column(name="temp", description="desc", data=np.random.randint(2, size=n_intervals))
         self.time_intervals.add_column(
             name="temp2",
             description="desc",
@@ -121,9 +116,7 @@ class SpatialSeriesTrialsAlign(unittest.TestCase):
 
 def test_show_behavioral_events():
     data = np.arange(100, 200, 10)
-    ts = TimeSeries(
-        name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0
-    )
+    ts = TimeSeries(name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0)
 
     beh_events = BehavioralEvents(time_series=ts)
 

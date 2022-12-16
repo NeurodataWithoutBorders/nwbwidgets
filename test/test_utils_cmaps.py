@@ -7,9 +7,7 @@ from nwbwidgets.utils.cmaps import (
 
 
 def test_linear_transfer_function():
-    assert isinstance(
-        linear_transfer_function("blue", reverse_opacity=True), TransferFunction
-    )
+    assert isinstance(linear_transfer_function("blue", reverse_opacity=True), TransferFunction)
 
 
 def test_matplotlib_transfer_function():

@@ -27,7 +27,7 @@ def show_lfp(node: LFP, **kwargs):
 class LFPRecordingExtractor(se.RecordingExtractor):
     def __init__(self, lfp_node: LFP):
         super().__init__()
-        lfp = list(lfp_node.electrical_series.values())[0]    
+        lfp = list(lfp_node.electrical_series.values())[0]
         self._samplerate = lfp.rate
         self._data = lfp.data
         self._num_channels = self._data.shape[1]

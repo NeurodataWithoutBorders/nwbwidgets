@@ -8,6 +8,7 @@ from ipywidgets import widgets
 ###################################################################################################
 ###################################################################################################
 
+
 def safe_import(*args):
     """Try to import a module, with a safety net for if the module is not available.
 
@@ -65,7 +66,8 @@ def check_widget_dependencies(dependencies):
                 return func(*args, **kwargs)
             else:
                 txt = "This widget requires the following extra dependencies: {}"
-                return widgets.Label(txt.format(', '.join(missing)))
+                return widgets.Label(txt.format(", ".join(missing)))
 
         return wrapped_func
+
     return wrap

@@ -1,8 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
 from ipywidgets import widgets
-
 from ndx_spectrum import Spectrum
 
 
@@ -39,9 +37,7 @@ def show_spectrum(node: Spectrum, **kwargs) -> widgets.Widget:
     out = widgets.Output()
     with out:
         widgets.interact(
-            lambda channel_range, frequency_range: plot_spectrum_figure(
-                node, channel_range, frequency_range
-            ),
+            lambda channel_range, frequency_range: plot_spectrum_figure(node, channel_range, frequency_range),
             channel_range=channel_slider,
             frequency_range=freq_slider,
         )
@@ -97,10 +93,6 @@ def plot_spectrum_figure(spectrum, channel_nos, frequency_nos):
 def check_spectrum(node):
     assert isinstance(node, Spectrum), "datatype not of type Spectrum"
     assert "frequencies" in node.fields, "frequencies not found in Spectrum"
-    assert (
-        "power" in node.fields or "phase" in node.fields
-    ), "neither of power/phase found in Spectrum"
+    assert "power" in node.fields or "phase" in node.fields, "neither of power/phase found in Spectrum"
     if "power" in node.fields and "phase" in node.fields:
-        assert (
-            node.power.shape == node.phase.shape
-        ), "power and phase arrays should be of same dims"
+        assert node.power.shape == node.phase.shape, "power and phase arrays should be of same dims"

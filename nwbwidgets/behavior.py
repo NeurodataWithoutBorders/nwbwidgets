@@ -1,36 +1,32 @@
 from abc import abstractmethod
 
-import numpy as np
-import matplotlib.pyplot as plt
-
 import ipywidgets as widgets
+import matplotlib.pyplot as plt
+import numpy as np
 from plotly import graph_objects as go
-
 from pynwb import TimeSeries
-from pynwb.behavior import SpatialSeries, BehavioralEvents
+from pynwb.behavior import BehavioralEvents, SpatialSeries
 
 from nwbwidgets import base
 
-from .utils.timeseries import (
-    get_timeseries_tt,
-    get_timeseries_in_units,
-    timeseries_time_to_ind,
-)
-from .timeseries import (
-    AlignMultiTraceTimeSeriesByTrialsConstant,
-    AlignMultiTraceTimeSeriesByTrialsVariable,
-    AbstractTraceWidget,
-    SingleTracePlotlyWidget,
-    SeparateTracesPlotlyWidget,
-)
 from .base import lazy_tabs
 from .controllers import StartAndDurationController
+from .timeseries import (
+    AbstractTraceWidget,
+    AlignMultiTraceTimeSeriesByTrialsConstant,
+    AlignMultiTraceTimeSeriesByTrialsVariable,
+    SeparateTracesPlotlyWidget,
+    SingleTracePlotlyWidget,
+)
+from .utils.timeseries import (
+    get_timeseries_in_units,
+    get_timeseries_tt,
+    timeseries_time_to_ind,
+)
 
 
 def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dict):
-    return base.dict2accordion(
-        beh_events.time_series, neurodata_vis_spec, ls="", marker="|"
-    )
+    return base.dict2accordion(beh_events.time_series, neurodata_vis_spec, ls="", marker="|")
 
 
 def show_spatial_series(node: SpatialSeries, **kwargs):

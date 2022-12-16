@@ -1,18 +1,12 @@
 from abc import abstractmethod
 
-from ipywidgets import widgets, Layout, ValueWidget, link, HBox
+from ipywidgets import HBox, Layout, ValueWidget, link, widgets
 from ipywidgets.widgets.widget_description import DescriptionWidget
 
 
 class WindowController(HBox, ValueWidget, DescriptionWidget):
     def __init__(
-        self,
-        vmin,
-        vmax,
-        start_value=(None, None),
-        description="window (s)",
-        orientation="horizontal",
-        **kwargs
+        self, vmin, vmax, start_value=(None, None), description="window (s)", orientation="horizontal", **kwargs
     ):
 
         if orientation not in ("horizontal", "vertical"):
@@ -26,31 +20,15 @@ class WindowController(HBox, ValueWidget, DescriptionWidget):
         self.orientation = orientation
 
         if self.orientation == "horizontal":
-            self.to_start_button = widgets.Button(
-                description="◀◀", layout=Layout(width="65px")
-            )
-            self.backwards_button = widgets.Button(
-                description="◀", layout=Layout(width="40px")
-            )
-            self.forward_button = widgets.Button(
-                description="▶", layout=Layout(width="40px")
-            )
-            self.to_end_button = widgets.Button(
-                description="▶▶", layout=Layout(width="65px")
-            )
+            self.to_start_button = widgets.Button(description="◀◀", layout=Layout(width="65px"))
+            self.backwards_button = widgets.Button(description="◀", layout=Layout(width="40px"))
+            self.forward_button = widgets.Button(description="▶", layout=Layout(width="40px"))
+            self.to_end_button = widgets.Button(description="▶▶", layout=Layout(width="65px"))
         else:  # vertical
-            self.to_end_button = widgets.Button(
-                description="▲▲", layout=Layout(width="50px")
-            )
-            self.forward_button = widgets.Button(
-                description="▲", layout=Layout(width="50px")
-            )
-            self.backwards_button = widgets.Button(
-                description="▼", layout=Layout(width="50px")
-            )
-            self.to_start_button = widgets.Button(
-                description="▼▼", layout=Layout(width="50px")
-            )
+            self.to_end_button = widgets.Button(description="▲▲", layout=Layout(width="50px"))
+            self.forward_button = widgets.Button(description="▲", layout=Layout(width="50px"))
+            self.backwards_button = widgets.Button(description="▼", layout=Layout(width="50px"))
+            self.to_start_button = widgets.Button(description="▼▼", layout=Layout(width="50px"))
 
         self.to_start_button.on_click(self.move_start)
         self.backwards_button.on_click(self.move_down)
@@ -93,7 +71,7 @@ class RangeController(WindowController):
         dtype="float",
         description="time window (s)",
         orientation="horizontal",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(vmin, vmax, start_value, description, orientation, **kwargs)
 
@@ -137,9 +115,7 @@ class RangeController(WindowController):
             slider_kwargs.update(kwargs)
             return widgets.FloatRangeSlider(**slider_kwargs)
         elif self.dtype == "int":
-            slider_kwargs.update(
-                description="unit window", layout=Layout(height="100%")
-            )
+            slider_kwargs.update(description="unit window", layout=Layout(height="100%"))
             slider_kwargs.update(kwargs)
             return widgets.IntRangeSlider(**slider_kwargs)
         else:
@@ -187,9 +163,7 @@ class RangeController(WindowController):
                         self.backwards_button,
                         self.to_start_button,
                     ],
-                    layout=widgets.Layout(
-                        display="flex", flex_flow="column", align_items="center"
-                    ),
+                    layout=widgets.Layout(display="flex", flex_flow="column", align_items="center"),
                 )
             ]
 
@@ -201,9 +175,7 @@ class StartAndDurationController(WindowController):
 
     DEFAULT_DURATION = 5
 
-    def __init__(
-        self, tmax, tmin=0, start_value=None, description="start (s)", **kwargs
-    ):
+    def __init__(self, tmax, tmin=0, start_value=None, description="start (s)", **kwargs):
         """
 
         Parameters
@@ -219,9 +191,7 @@ class StartAndDurationController(WindowController):
         """
 
         if tmin > tmax:
-            raise ValueError(
-                "tmax and tmin were probably entered in the wrong order. tmax should be first"
-            )
+            raise ValueError("tmax and tmin were probably entered in the wrong order. tmax should be first")
 
         super().__init__(tmin, tmax, start_value, description, **kwargs)
 
@@ -326,8 +296,6 @@ class StartAndDurationController(WindowController):
                         self.backwards_button,
                         # self.to_start_button,
                     ],
-                    layout=widgets.Layout(
-                        display="flex", flex_flow="column", align_items="center"
-                    ),
+                    layout=widgets.Layout(display="flex", flex_flow="column", align_items="center"),
                 )
             ]

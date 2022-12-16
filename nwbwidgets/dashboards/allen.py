@@ -1,15 +1,13 @@
 from pathlib import Path, PureWindowsPath
 
 import numpy as np
-
 import plotly.graph_objects as go
-from ipywidgets import widgets, Layout
-
+from ipywidgets import Layout, widgets
 from tifffile import imread
 
+from nwbwidgets.controllers import StartAndDurationController
 from nwbwidgets.image import ImageSeriesWidget
 from nwbwidgets.timeseries import SingleTracePlotlyWidget
-from nwbwidgets.controllers import StartAndDurationController
 from nwbwidgets.utils.timeseries import get_timeseries_maxt, get_timeseries_mint
 
 
@@ -19,21 +17,15 @@ class AllenDashboard(widgets.VBox):
         self.nwb = nwb
         self.show_spikes = False
 
-        self.btn_spike_times = widgets.Button(
-            description="Show spike times", button_style=""
-        )
+        self.btn_spike_times = widgets.Button(description="Show spike times", button_style="")
         self.btn_spike_times.on_click(self.spikes_viewer)
 
         # Start time and duration controller
         self.tmin = get_timeseries_mint(
-            nwb.processing["ophys"]
-            .data_interfaces["fluorescence"]
-            .roi_response_series["roi_response_series"]
+            nwb.processing["ophys"].data_interfaces["fluorescence"].roi_response_series["roi_response_series"]
         )
         self.tmax = get_timeseries_maxt(
-            nwb.processing["ophys"]
-            .data_interfaces["fluorescence"]
-            .roi_response_series["roi_response_series"]
+            nwb.processing["ophys"].data_interfaces["fluorescence"].roi_response_series["roi_response_series"]
         )
         self.time_window_controller = StartAndDurationController(
             tmin=self.tmin,
@@ -44,9 +36,7 @@ class AllenDashboard(widgets.VBox):
 
         # Electrophys single trace
         self.electrical = SingleTracePlotlyWidget(
-            timeseries=nwb.processing["ecephys"].data_interfaces[
-                "filtered_membrane_voltage"
-            ],
+            timeseries=nwb.processing["ecephys"].data_interfaces["filtered_membrane_voltage"],
             foreign_time_window_controller=self.time_window_controller,
         )
         self.electrical.out_fig.update_layout(
