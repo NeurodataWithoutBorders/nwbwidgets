@@ -13,7 +13,7 @@ from pynwb import ProcessingModule
 from pynwb.base import DynamicTable
 from pynwb.core import MultiContainerInterface, NWBDataInterface
 
-from nwbwidgets import view
+from . import view
 
 GroupingWidget = Union[widgets.Accordion, widgets.Tab]
 
