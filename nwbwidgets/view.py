@@ -9,8 +9,9 @@ from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
 
+from .base import dict2accordion
+from .base import nwb2widget as nwb2widget_base
 from .base import (
-    dict2accordion,
     processing_module,
     render_dataframe,
     show_dset,
@@ -118,4 +119,4 @@ default_neurodata_vis_spec = {
 
 
 def nwb2widget(node, neurodata_vis_spec=default_neurodata_vis_spec):
-    return base.nwb2widget(node, neurodata_vis_spec)
+    return nwb2widget_base(node, neurodata_vis_spec)

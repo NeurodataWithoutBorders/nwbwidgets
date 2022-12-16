@@ -1359,7 +1359,8 @@ class TrializedTimeSeries(widgets.HBox):
 
         # Load references to neurodata types (time_series and trials table)
         if self.trials_table is None:
-            self.trials_table = time_series.get_ancestor("NWBFile").trials
+            parent_nwbfile = time_series.get_ancestor("NWBFile")
+            self.trials_table = parent_nwbfile.trials if parent_nwbfile else None
 
         if self.trials_table is None:
             self.children = [widgets.HTML("No trials present")]

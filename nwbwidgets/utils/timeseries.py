@@ -97,7 +97,7 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None, data_colu
     time_series = node
 
     if (data_column is not None) and time_series.data.ndim > 1:
-        data = time_series.data[istart:istop, data_column]
+        data = time_series.data[istart:istop, data_column].flatten()
     else:
         data = time_series.data[istart:istop]
 
@@ -115,7 +115,7 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None, data_colu
     else:
         unit = None
 
-    return data.flatten(), unit
+    return data, unit
 
 
 def timeseries_time_to_ind(node: TimeSeries, time, ind_min=None, ind_max=None) -> int:
