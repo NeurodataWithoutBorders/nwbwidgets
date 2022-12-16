@@ -4,7 +4,7 @@ import numpy as np
 from hdmf.common import DynamicTable
 from ipywidgets import Layout, ValueWidget, widgets
 
-from . import RangeController
+from .time_window_controllers import RangeController
 from ..utils.dynamictable import group_and_sort, infer_categorical_columns
 from ..utils.pynwb import robust_unique
 

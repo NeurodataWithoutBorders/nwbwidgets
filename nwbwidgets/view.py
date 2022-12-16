@@ -15,6 +15,7 @@ from .base import (
     render_dataframe,
     show_dset,
     show_fields,
+    show_multi_container_interface,
     show_neurodata_base,
     show_text_fields,
 )
@@ -47,7 +48,7 @@ from .ophys import (
     show_image_segmentation,
 )
 from .spectrum import show_spectrum
-from .timeseries import route_trialized_time_series
+from .timeseries import route_trialized_time_series, show_timeseries
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
@@ -101,8 +102,8 @@ default_neurodata_vis_spec = {
     pynwb.base.Image: show_rbga_image,
     pynwb.image.ImageSeries: ImageSeriesWidget,
     pynwb.image.IndexSeries: show_index_series,
-    pynwb.TimeSeries: timeseries.show_timeseries,
-    pynwb.core.MultiContainerInterface: base.show_multi_container_interface,
+    pynwb.TimeSeries: show_timeseries,
+    pynwb.core.MultiContainerInterface: show_multi_container_interface,
     pynwb.core.NWBContainer: show_neurodata_base,
     pynwb.core.NWBDataInterface: show_neurodata_base,
     h5py.Dataset: show_dset,
