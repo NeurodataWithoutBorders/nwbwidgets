@@ -1,8 +1,7 @@
 from datetime import datetime
-from dateutil.tz import tzlocal
 
 import ipywidgets as widgets
-
+from dateutil.tz import tzlocal
 from pynwb import NWBFile
 
 from nwbwidgets import nwb2widget

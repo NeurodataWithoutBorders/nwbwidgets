@@ -1,12 +1,12 @@
+from collections.abc import Iterable
 from datetime import datetime
 from functools import partial
-from collections.abc import Iterable
 
 from ipywidgets import widgets
-
 from pynwb.file import NWBFile
 
 from nwbwidgets import view
+
 from .base import lazy_show_over_data
 
 
@@ -15,9 +15,7 @@ def show_nwbfile(nwbfile: NWBFile, neurodata_vis_spec: dict) -> widgets.Widget:
     Gets a pynwb object and returns a Vertical Box containing textual info and
     an expandable Accordion with it's children.
     """
-    field_lay = widgets.Layout(
-        max_height="40px", max_width="500px", min_height="30px", min_width="180px"
-    )
+    field_lay = widgets.Layout(max_height="40px", max_width="500px", min_height="30px", min_width="180px")
     info = []  # string data type, exposed as a Text widget
     neuro_data = []  # more complex data types, also with children
     labels = []
@@ -31,15 +29,7 @@ def show_nwbfile(nwbfile: NWBFile, neurodata_vis_spec: dict) -> widgets.Widget:
             for pub in value:
                 if isinstance(pub, bytes):
                     pub = pub.decode()
-                pub_list.append(
-                    widgets.HTML(
-                        value="<a href=http://dx.doi.org/"
-                        + pub[4:]
-                        + ">"
-                        + pub
-                        + "</a>"
-                    )
-                )
+                pub_list.append(widgets.HTML(value="<a href=http://dx.doi.org/" + pub[4:] + ">" + pub + "</a>"))
             lbl_key = widgets.Label(key + ":", layout=field_lay)
             pub_list.insert(0, lbl_key)
             info.append(widgets.HBox(children=pub_list))
@@ -49,9 +39,7 @@ def show_nwbfile(nwbfile: NWBFile, neurodata_vis_spec: dict) -> widgets.Widget:
                 if isinstance(value[0], str):
                     lbl_names = widgets.Label(", ".join(value), layout=field_lay)
                 elif isinstance(value[0], bytes):
-                    lbl_names = widgets.Label(
-                        b", ".join(value).decode(), layout=field_lay
-                    )
+                    lbl_names = widgets.Label(b", ".join(value).decode(), layout=field_lay)
                 else:
                     raise ValueError("unrecognized type for experimenter")
             else:
@@ -65,8 +53,6 @@ def show_nwbfile(nwbfile: NWBFile, neurodata_vis_spec: dict) -> widgets.Widget:
             else:
                 labels.append(key)
     func_ = partial(view.nwb2widget, neurodata_vis_spec=neurodata_vis_spec)
-    accordion = lazy_show_over_data(
-        neuro_data, func_, labels=labels, style=widgets.Accordion
-    )
+    accordion = lazy_show_over_data(neuro_data, func_, labels=labels, style=widgets.Accordion)
 
     return widgets.VBox(info + [accordion])

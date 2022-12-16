@@ -1,24 +1,20 @@
 from typing import Iterable
 
-import numpy as np
-
 import ipywidgets as widgets
-
+import numpy as np
 from hdmf.common import DynamicTable
 from pynwb.misc import Units
 
-from .base import lazy_tabs, render_dataframe, TimeIntervalsSelector
+from .base import TimeIntervalsSelector, lazy_tabs, render_dataframe
 from .controllers import GroupAndSortController
-from .misc import RasterWidget, PSTHWidget, RasterGridWidget, TuningCurveWidget
+from .misc import PSTHWidget, RasterGridWidget, RasterWidget, TuningCurveWidget
 from .utils.pynwb import robust_unique
 from .view import default_neurodata_vis_spec
 
 
 class AllenRasterWidget(RasterWidget):
     def make_group_and_sort(self, group_by=None, control_order=False):
-        return AllenRasterGroupAndSortController(
-            self.units, group_by=group_by, control_order=control_order
-        )
+        return AllenRasterGroupAndSortController(self.units, group_by=group_by, control_order=control_order)
 
 
 class AllenPSTHWidget(TimeIntervalsSelector):
@@ -47,15 +43,9 @@ class AllenRasterGroupAndSortController(GroupAndSortController):
     def get_orderable_cols(self):
         units_orderable_cols = super().get_orderable_cols()
         candidate_cols = [
-            x
-            for x in self.electrodes.colnames
-            if not (
-                isinstance(self.electrodes[x][0], (Iterable, str))
-            )
+            x for x in self.electrodes.colnames if not (isinstance(self.electrodes[x][0], (Iterable, str)))
         ]
-        return units_orderable_cols + [
-            x for x in candidate_cols if len(robust_unique(self.electrodes[x][:])) > 1
-        ]
+        return units_orderable_cols + [x for x in candidate_cols if len(robust_unique(self.electrodes[x][:])) > 1]
 
     def get_group_vals(self, by, rows_select=()):
         if by is None:
@@ -65,10 +55,7 @@ class AllenRasterGroupAndSortController(GroupAndSortController):
         else:
             if self.electrodes is not None and by in self.electrodes:
                 ids = self.electrodes.id[:]
-                inds = [
-                    np.argmax(ids == val)
-                    for val in self.dynamic_table["peak_channel_id"][:]
-                ]
+                inds = [np.argmax(ids == val) for val in self.dynamic_table["peak_channel_id"][:]]
                 return self.electrodes[by][:][inds][rows_select]
 
 

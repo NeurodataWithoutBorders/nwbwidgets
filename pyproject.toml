@@ -1,0 +1,32 @@
+[tool.black]
+line-length = 120
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  \.toml
+  |\.yml
+  |\.txt
+  |\.sh
+  |\.git
+  |\.ini
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+force-exclude = '''
+/(
+   /*.txt
+   /docs
+   /docs/*
+)\
+'''
+
+[tool.isort]
+profile = "black"
+reverse_relative = true
+known_first_party = ["nwbwidgets"]

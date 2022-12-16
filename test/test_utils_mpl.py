@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from nwbwidgets.utils.mpl import create_big_ax, grid_sps
 

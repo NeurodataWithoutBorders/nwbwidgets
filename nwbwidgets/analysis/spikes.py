@@ -81,9 +81,7 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
     channel_lengths = [len(ch_data) for ch_data in data]
 
     if not isinstance(sig, (float, int)) or sig <= 0:
-        raise TypeError(
-            "sig must be positive. Only the non-adaptive method is supported"
-        )
+        raise TypeError("sig must be positive. Only the non-adaptive method is supported")
     if not isinstance(num_bootstraps, int) or num_bootstraps <= 0:
         raise TypeError("num_bootstraps must be a positive integer")
 
@@ -113,9 +111,7 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
     # warn if spikes have low density
     L = num_times_total / (num_t * (T[1] - T[0]))
     if 2 * L * num_t * sig < 1 or L < 0.1:
-        print(
-            "Spikes have very low density. The time units may not be the same, or the kernel width is too small"
-        )
+        print("Spikes have very low density. The time units may not be the same, or the kernel width is too small")
         print(
             "Total events: %f \nsig: %f ms \nT: %f \nevents*sig: %f\n"
             % (num_times_total, sig * 1000, T, num_times_total * sig / (T[1] - T[0]))
@@ -132,9 +128,7 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
 
     # find error
     if num_t < 4 and err == 2:
-        print(
-            "Switching to Poisson errorbars as number of trials is too small for bootstrap"
-        )
+        print("Switching to Poisson errorbars as number of trials is too small for bootstrap")
         err = 1
     # std dev is sqrt(rate*(integral over kernal^2)/trials)
     # for Gaussian integral over Kernal^2 is 1/(2*sig*srqt(pi))
@@ -143,9 +137,7 @@ def psth(data=None, sig=0.05, T=None, err=2, t=None, num_bootstraps=1000):
     elif err == 1:
         E = np.sqrt(R / (2 * num_t * sig * np.sqrt(np.pi)))
     elif err == 2:
-        mean_ = [
-            np.mean(RR[np.random.randint(0, num_t), :]) for _ in range(num_bootstraps)
-        ]
+        mean_ = [np.mean(RR[np.random.randint(0, num_t), :]) for _ in range(num_bootstraps)]
         E = np.std(mean_)
     else:
         raise TypeError("err must be 0, 1, or 2")

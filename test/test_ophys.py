@@ -1,45 +1,38 @@
 import unittest
 
-import numpy as np
-
 import ipywidgets as widgets
-
+import numpy as np
+from ndx_grayscalevolume import GrayscaleVolume
 from pynwb.device import Device
 from pynwb.ophys import (
-    TwoPhotonSeries,
-    OpticalChannel,
-    ImageSegmentation,
-    Fluorescence,
     DfOverF,
+    Fluorescence,
+    ImageSegmentation,
     ImagingPlane,
-    PlaneSegmentation
+    OpticalChannel,
+    PlaneSegmentation,
+    TwoPhotonSeries,
 )
-
-from ndx_grayscalevolume import GrayscaleVolume
+from pynwb.testing.mock.ophys import mock_PlaneSegmentation
 
 from nwbwidgets.ophys import (
-    TwoPhotonSeriesWidget,
-    show_grayscale_volume,
-    show_df_over_f,
     PlaneSegmentation2DWidget,
-    show_plane_segmentation_3d_voxel,
-    show_plane_segmentation_3d_mask,
+    TwoPhotonSeriesWidget,
+    show_df_over_f,
+    show_grayscale_volume,
     show_image_segmentation,
+    show_plane_segmentation_3d_mask,
+    show_plane_segmentation_3d_voxel,
 )
 from nwbwidgets.view import default_neurodata_vis_spec
-
-from pynwb.testing.mock.ophys import mock_PlaneSegmentation
 
 
 def test_show_grayscale_volume():
     vol = GrayscaleVolume(name="vol", data=np.random.rand(2700).reshape((30, 30, 3)))
-    assert isinstance(
-        show_grayscale_volume(vol, default_neurodata_vis_spec), widgets.Widget
-    )
+    assert isinstance(show_grayscale_volume(vol, default_neurodata_vis_spec), widgets.Widget)
 
 
 class CalciumImagingTestCase(unittest.TestCase):
-
     @classmethod
     def setUpClass(self):
         device = Device("imaging_device_1")
@@ -101,12 +94,10 @@ class CalciumImagingTestCase(unittest.TestCase):
         self.ps2.add_roi(image_mask=img_mask2, type=2, type2=1)
 
         fl = Fluorescence()
-        rt_region = self.ps2.create_roi_table_region(
-            "the first of two ROIs", region=[0, 1, 2, 3]
-        )
+        rt_region = self.ps2.create_roi_table_region("the first of two ROIs", region=[0, 1, 2, 3])
 
         rois_shape = 5
-        data = np.arange(10*rois_shape).reshape([10, -1], order='F')
+        data = np.arange(10 * rois_shape).reshape([10, -1], order="F")
         timestamps = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
         rrs = fl.create_roi_response_series(
             name="my_rrs", data=data, rois=rt_region, unit="lumens", timestamps=timestamps
@@ -116,7 +107,7 @@ class CalciumImagingTestCase(unittest.TestCase):
     def test_show_two_photon_series(self):
         wid = TwoPhotonSeriesWidget(self.image_series, default_neurodata_vis_spec)
         assert isinstance(wid, widgets.Widget)
-        wid.controls['slider'].value = 50
+        wid.controls["slider"].value = 50
 
     def test_show_3d_two_photon_series(self):
         image_series3 = TwoPhotonSeries(
@@ -129,12 +120,12 @@ class CalciumImagingTestCase(unittest.TestCase):
         )
         wid = TwoPhotonSeriesWidget(image_series3, default_neurodata_vis_spec)
         assert isinstance(wid, widgets.Widget)
-        wid.controls['slider'].value = 50
+        wid.controls["slider"].value = 50
 
     def test_show_df_over_f(self):
         dff = show_df_over_f(self.df_over_f, default_neurodata_vis_spec)
         assert isinstance(dff, widgets.Widget)
-        dff.controls['gas'].window = [1, 2]
+        dff.controls["gas"].window = [1, 2]
 
     def test_plane_segmentation_2d_widget(self):
         wid = PlaneSegmentation2DWidget(self.ps2)
@@ -198,7 +189,7 @@ def test_plane_segmentation_many_categories():
         # randomly generate example image masks
         x = np.random.randint(0, 95)
         y = np.random.randint(0, 95)
-        image_mask[x:x + 5, y:y + 5] = 1
+        image_mask[x : x + 5, y : y + 5] = 1
 
         # add image mask to plane segmentation
         ps.add_roi(
@@ -207,4 +198,3 @@ def test_plane_segmentation_many_categories():
         )
 
     PlaneSegmentation2DWidget(ps)
-

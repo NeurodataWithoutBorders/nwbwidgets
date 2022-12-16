@@ -1,0 +1,5 @@
+ccfwidget
+aiohttp
+#skspatial # Need to find install source for skpsatial
+nilearn
+trimesh
