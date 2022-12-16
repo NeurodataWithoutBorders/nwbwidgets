@@ -8,13 +8,13 @@ from fsspec.implementations.cached import CachingFileSystem
 from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
 
-from . import nwb2widget
 from .utils.dandi import (
     get_dandiset_metadata,
     get_file_url,
     has_nwb,
     list_dandiset_files,
 )
+from .view import nwb2widget
 
 
 class Panel(widgets.VBox):
