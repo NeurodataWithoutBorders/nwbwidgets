@@ -34,7 +34,7 @@ setup(
     extras_require={
         "human_electrodes": ["nilearn", "trimesh"],
         "mouse_electrodes": ["ccfwidget", "aiohttp"],
-        "full": ["ccfwidget", "aiohttp", "nilearn", "trimesh"],
+        "full": ["ccfwidget", "aiohttp"],
     },
     license="BSD",
     keywords=["jupyter", "hdf5", "notebook", "nwb"],
