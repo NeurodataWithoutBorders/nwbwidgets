@@ -1,159 +1,142 @@
 from hdmf.testing import TestCase
-from ipywidgets import Button, Checkbox, Dropdown, ToggleButton, HBox
+from ipywidgets import Button, Checkbox, Dropdown, ToggleButton
 
 from nwbwidgets.controllers import GenericController, MultiController
 
 
-class ExampleGenericController1(GenericController):
+class ExampleMultiController(MultiController):
     def __init__(self, components: dict):
-        super().__init__(components=dict(button=Button(), toggle_button=ToggleButton()))
+        self.custom_attribute = "abc"
+        super().__init__(components=components)
 
 
-class ExampleGenericController2(GenericController):
-    def __init__(self, components: dict):
-        super().__init__(components=dict(dropdown=Dropdown(), check_box=Checkbox()))
+class ExampleControllerWithObservers(GenericController):
+    def __init__(self):
+        super().__init__(components=dict(button=Button(), check_box=Checkbox()))
+
+    def check_box_on_button_click(self, change):
+        if self.check_box.value is True:
+            self.check_box.value = False
+        elif self.check_box.value is False:
+            self.check_box.value = True
+
+    def setup_observers(self):
+        self.button.on_click(self.check_box_on_button_click)
 
 
-class ExampleMultiController1(MultiController):
-    def __init__(self, components: dict):
+class ExampleMultiControllerWithObservers(MultiController):
+    def __init__(self):
         super().__init__(
             components=dict(
-                example_controller_1=ExampleGenericController1(), example_controller_2=ExampleGenericController2()
+                example_controller_1=ExampleMultiController(components=dict()),
+                example_controller_2=ExampleControllerWithObservers(),
             )
         )
 
+    def adjust_custom_attribute_on_button_click(self, change):
+        if self.custom_attribute == "abc":
+            self.custom_attribute = "def"
+        elif self.custom_attribute == "def":
+            self.custom_attribute = "abc"
 
-class ExampleMultiController2(MultiController):
-    def __init__(self, components: dict):
-        super().__init__(
-            components=dict(
-                example_controller_1=ExampleGenericController1(), example_controller_2=ExampleGenericController2()
-            )
-        )
+    def setup_observers(self):
+        self.button.on_click(self.adjust_custom_attribute_on_button_click)
 
 
 class TestMultiController(TestCase):
-    def test_name_collision(self):
-        pass  # TODO, simlar to generic tests but for nested controllers as well
+    def test_multi_controller_name_collision_basic(self):
+        components = dict(button=Button(), check_box=Checkbox(), custom_attribute=123)
+
+        with self.assertRaisesWith(
+            exc_type=KeyError,
+            exc_msg=(
+                "\"This Controller already has an outer attribute with the name 'custom_attribute'! "
+                'Please adjust the reference key to be unique."'
+            ),
+        ):
+            ExampleMultiController(components=components)
+
+    def test_name_collision_nested(self):
+        components = dict(
+            button=Button(),
+            check_box=Checkbox(),
+            other_controller=GenericController(components=dict(button=Button(), toggle_button=ToggleButton())),
+        )
+
+        with self.assertRaisesWith(
+            exc_type=KeyError,
+            exc_msg=(
+                "\"This Controller already has an outer attribute with the name 'button'! "
+                'Please adjust the reference key to be unique."'
+            ),
+        ):
+            MultiController(components=components)
 
     def test_multi_controller_no_components(self):
-        controller = GenericController(components=dict(button=Button(), check_box=Checkbox()))
+        multi_controller = MultiController(components=dict())
 
-        self.assertDictEqual(d1=controller.components, d2=dict())
-        self.assertDictEqual(d1=controller.get_fields(), d2=dict())
+        self.assertDictEqual(d1=multi_controller.components, d2=dict())
+        self.assertDictEqual(d1=multi_controller.get_fields(), d2=dict())
+        self.assertTupleEqual(tuple1=multi_controller.children, tuple2=())
 
-    def test_multi_controller_ipywidget_components(self):
+    def test_multi_controller_ipywidget_and_controller_components(self):
         button = Button()
+        dropdown = Dropdown()
         check_box = Checkbox()
-        components = dict(button=button, check_box=check_box)
-        controller = GenericController(components=components)
+        other_controller = GenericController(components=dict(dropdown=dropdown, check_box=check_box))
+        multi_controller = MultiController(components=dict(button=button, other_controller=other_controller))
 
-        self.assertDictEqual(d1=controller.components, d2=components)
-        self.assertDictEqual(d1=controller.get_fields(), d2=components)
-
-    def test_multi_controller_ipywidget_components_make_box(self):
-        button = Button()
-        check_box = Checkbox()
-        components = dict(button=button, check_box=check_box)
-        controller = GenericController(components=components)
-
-        box = controller.make_box(box_type=HBox)
-        assert box == HBox(children=(button, check_box))
+        expected_components = dict(button=button, other_controller=other_controller.components)
+        expected_fields = dict(button=button, dropdown=dropdown, check_box=check_box)
+        expected_children = (button, other_controller.children[0], other_controller.children[1])
+        self.assertDictEqual(d1=multi_controller.components, d2=expected_components)
+        self.assertDictEqual(d1=multi_controller.get_fields(), d2=expected_fields)
+        self.assertTupleEqual(tuple1=multi_controller.children, tuple2=expected_children)
 
     def test_multi_controller_standard_attributes(self):
+        """Non-widget attributes were not included in the children of the box."""
         button = Button()
         check_box = Checkbox()
-        components = dict(
+        some_integer = (1,)
+        some_float = (1.23,)
+        some_dict = (dict(a=5, b=6, c=7),)
+        some_string = ("test",)
+        some_list = ([1, 2, 3],)
+
+        components1 = dict(button=button, some_integer=some_integer, some_float=some_float, some_dict=some_dict)
+        controller1 = GenericController(components=components1)
+        components2 = dict(check_box=check_box, some_string=some_string, some_list=some_list)
+        controller2 = GenericController(components=components2)
+
+        multi_controller = MultiController(components=dict(controller1=controller1, controller2=controller2))
+
+        expected_components = dict(controller1=controller1.components, controller2=controller2.components)
+        expected_fields = dict(
             button=button,
+            some_integer=some_integer,
+            some_float=some_float,
+            some_dict=some_dict,
             check_box=check_box,
-            some_integer=1,
-            some_string="test",
-            some_float=1.23,
-            some_list=[1, 2, 3],
-            some_dict=dict(a=5, b=6, c=7),
+            some_string=some_string,
+            some_list=some_list,
         )
-        controller = GenericController(components=components)
+        expected_children = (button, check_box)
+        self.assertDictEqual(d1=multi_controller.components, d2=expected_components)
+        self.assertDictEqual(d1=multi_controller.get_fields(), d2=expected_fields)
+        self.assertTupleEqual(tuple1=multi_controller.children, tuple2=expected_children)
 
-        self.assertDictEqual(d1=controller.components, d2=components)
-        self.assertDictEqual(d1=controller.get_fields(), d2=components)
+    def test_multi_controller_with_observers(self):
+        multi_controller = ExampleMultiControllerWithObservers()
 
-    def test_multi_controller_standard_attributes_make_box(self):
-        button = Button()
-        check_box = Checkbox()
-        components = dict(
-            button=button,
-            check_box=check_box,
-            some_integer=1,
-            some_string="test",
-            some_float=1.23,
-            some_list=[1, 2, 3],
-            some_dict=dict(a=5, b=6, c=7),
-        )
-        controller = GenericController(components=components)
+        assert multi_controller.check_box.value is False
+        assert multi_controller.custom_attribute == "abc"
 
-        box = controller.make_box(box_type=HBox)
-        assert box == HBox(children=(button, check_box))  # Non-widget attributes were not included in the box
+        multi_controller.button.click()
 
-    # TODO: add a test with observers
+        assert multi_controller.check_box.value is True
+        assert multi_controller.custom_attribute == "def"
 
-    # def test_base_controller_other_controller_component(self):
-    #     button = Button()
-    #     secondary_controller = BaseController(components=dict(test_component=button))
+        multi_controller.button.click()
 
-    #     main_controller = BaseController(components=dict(other_controller=secondary_controller))
-
-    #     self.assertDictEqual(d1=main_controller.components, d2=dict(other_controller=secondary_controller))
-    #     self.assertDictEqual(d1=main_controller.get_fields(), d2=dict(other_controller=secondary_controller))
-
-    # def test_base_controller_other_controller_component_with_attribute(self):
-    #     def SecondaryController(BaseController):
-    #         def __init__(self):
-    #             button = Button()
-
-    #             self.some_attribute = 5  # This attribute is then mutable by observers defined in this controller...
-
-    #             super().__init__(components=dict(some_button=button))  # But is not technically a full 'component'...
-
-    #     secondary_controller = SecondaryController()
-
-    #     main_controller = BaseController(components=dict(test_component=secondary_controller))
-
-    #     self.assertDictEqual(d1=main_controller.components, d2=dict(test_component=secondary_controller))
-    #     self.assertDictEqual(
-    #         d1=main_controller.get_fields(), d2=dict(test_component=secondary_controller, some_attribute=5)
-    #     )
-
-    # def test_base_controller_nested_controller_component(self):
-    #     def SecondaryController(BaseController):
-    #         def __init__(self):
-    #             button = Button()
-
-    #             self.some_attribute = 5  # This attribute is then mutable by observers defined in this controller...
-
-    #             super().__init__(components=dict(some_button=button))  # But is not technically a full 'component'...
-
-    #     def TertiaryController(BaseController):
-    #         def __init__(self):
-    #             check_box = Checkbox()
-
-    #             self.other_attribute = "test"
-
-    #             super().__init__(components=dict(check_box=check_box))
-
-    #     tertiary_controller = TertiaryController()
-    #     secondary_controller = SecondaryController(components=dict(tertiary_controller=tertiary_controller))
-
-    #     main_controller = BaseController(components=dict(test_component=secondary_controller))
-
-    #     self.assertDictEqual(
-    #         d1=main_controller.components, d2=dict(test_component=dict(tertiary_controller=tertiary_controller))
-    #     )
-    #     self.assertDictEqual(
-    #         d1=main_controller.get_fields(),
-    #         d2=dict(
-    #             test_component=secondary_controller,
-    #             some_attribute=5,
-    #             tertiary_controller=tertiary_controller,
-    #             other_attribute="test",
-    #         ),
-    #     )
+        assert multi_controller.check_box.value is False
+        assert multi_controller.custom_attribute == "abc"

@@ -1,10 +1,9 @@
-from abc import abstractmethod, ABC
 from typing import Dict
 
 import ipywidgets as widgets
 
 
-class BaseController(ABC):
+class BaseController(widgets.Box):
     """
     Base definition of all Controllers.
 
@@ -20,24 +19,35 @@ class BaseController(ABC):
         """
         Initialize this controller given the pre-initialized set of components.
 
+        To align the children vertically, set the `layout.flex_flow = "column"` after initializing.
+
         Parameters
         ----------
         components: dictionary
             Used to map string names to widgets.
         """
+        self.layout.display = "flex"
+        self.layout.align_items = "stretch"
+
         self.setup_components(components=components)
+        self.setup_children()
         self.setup_observers()
 
-    @abstractmethod
     def setup_components(self, components: Dict[str, object]):
         """Define how to set the components given a dictionary of string mappings to arbitrary object types."""
-        raise NotImplementedError("This Controller has not defined how to construct a Box container for its children!")
+        raise NotImplementedError("This Controller has not defined how to setup its components!")
+
+    def setup_children(self):
+        """Define how to set the children using the internal components."""
+        raise NotImplementedError("This Controller has not defined how to layout its children!")
 
     def setup_observers(self):
         """
         Define observation events specific to the interactions and values of components within the same Controller.
         """
-        pass  # Instead of NotImplemented; a given widget may not need or want to use any local observers
+        # Instead of raising NotImplementedError or being an abstractmethod,
+        # a given widget may not need or want to use any local observers.
+        pass
 
     def get_fields(self) -> Dict[str, object]:
         """
@@ -52,21 +62,3 @@ class BaseController(ABC):
             These can be widgets, other controllers, or even mutable references.
         """
         return {k: v for k, v in self.__dict__.items() if not k.startswith("_") and k != "components"}
-
-    @abstractmethod
-    def make_box(self, box_type: widgets.Box) -> widgets.Box:
-        """
-        Create a widget box container for the components of this widget.
-
-        Parameters
-        ----------
-        box_type: ipywidgets.Box
-            Any subtype of an ipywidgets Box base class.
-
-        Returns
-        -------
-        boxed_controller: widget.Box
-            The box of `box_type` populated with the components of this controller, which themselves may be contained
-            in other boxes to obtain a desired layout.
-        """
-        raise NotImplementedError("This Controller has not defined how to construct a Box container for its children!")

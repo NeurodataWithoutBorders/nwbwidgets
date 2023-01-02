@@ -8,37 +8,22 @@ class ExampleSetupComponentsAbstractController(BaseController):
         pass
 
 
-class ExampleMakeBoxAbstractController(BaseController):
-    def make_box(self, box_type):
+class ExampleSetupChildrenAbstractController(BaseController):
+    def setup_children(self, box_type):
         pass
 
 
 class TestBaseController(TestCase):
     def test_setup_components_abstract(self):
         with self.assertRaisesWith(
-            exc_type=TypeError,
-            exc_msg=(
-                "Can't instantiate abstract class BaseController with abstract methods make_box, setup_components"
-            ),
+            exc_type=NotImplementedError,
+            exc_msg="This Controller has not defined how to setup its components!",
         ):
-            BaseController(components=list())
+            ExampleSetupChildrenAbstractController(components=list())
 
-    def test_setup_controller_abstract(self):
+    def test_setup_children_abstract(self):
         with self.assertRaisesWith(
-            exc_type=TypeError,
-            exc_msg=(
-                "Can't instantiate abstract class ExampleMakeBoxAbstractController "
-                "with abstract method setup_components"
-            ),
-        ):
-            ExampleMakeBoxAbstractController(components=list())
-
-    def test_make_box_abstract(self):
-        with self.assertRaisesWith(
-            exc_type=TypeError,
-            exc_msg=(
-                "Can't instantiate abstract class ExampleSetupComponentsAbstractController "
-                "with abstract method make_box"
-            ),
+            exc_type=NotImplementedError,
+            exc_msg="This Controller has not defined how to layout its children!",
         ):
             ExampleSetupComponentsAbstractController(components=list())
