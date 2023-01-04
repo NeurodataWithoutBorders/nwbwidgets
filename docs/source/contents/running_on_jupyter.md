@@ -13,7 +13,7 @@ Panel()
 ![panel](../_static/panel.gif)
 
 With `Panel` you can easily browser through local files as well as stream remote datasets from DANDI archive.
-For data streaming the default mode is [fsspec](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html#streaming-method-2-fsspec). If you would like to use [ROS3](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html#streaming-method-1-ros3) instead, you can do so with: 
+For data streaming the default mode is [fsspec](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html#streaming-method-2-fsspec). If you would like to use [ROS3](https://pynwb.readthedocs.io/en/stable/tutorials/advanced_io/streaming.html#streaming-method-1-ros3) instead, you can do so with:
 ```python
 Panel(stream_mode='ros3')
 ```

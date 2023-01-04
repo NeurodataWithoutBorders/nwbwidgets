@@ -1,31 +1,28 @@
 import unittest
-import pytest
-
 from datetime import datetime
-from dateutil.tz import tzlocal
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
+import pytest
+from dateutil.tz import tzlocal
 from ipywidgets import widgets
-
 from pynwb import NWBFile, ProcessingModule, TimeSeries
 from pynwb.behavior import Position, SpatialSeries
 from pynwb.core import DynamicTable, NWBData
 from pynwb.file import Subject
 
 from nwbwidgets.base import (
-    show_neurodata_base,
-    processing_module,
-    nwb2widget,
-    show_text_fields,
-    fig2widget,
-    vis2widget,
-    show_fields,
-    df2accordion,
-    lazy_show_over_data,
     dataset_to_sheet,
+    df2accordion,
+    fig2widget,
+    lazy_show_over_data,
+    nwb2widget,
+    processing_module,
+    show_fields,
+    show_neurodata_base,
+    show_text_fields,
+    vis2widget,
 )
 from nwbwidgets.view import default_neurodata_vis_spec, show_dynamic_table
 
@@ -43,16 +40,12 @@ def test_show_neurodata_base():
         experimenter="Dr. Pack",
     )
 
-    assert isinstance(
-        show_neurodata_base(nwbfile, default_neurodata_vis_spec), widgets.Widget
-    )
+    assert isinstance(show_neurodata_base(nwbfile, default_neurodata_vis_spec), widgets.Widget)
 
 
 def test_show_text_fields():
     data = np.random.rand(160, 3)
-    ts = TimeSeries(
-        name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0
-    )
+    ts = TimeSeries(name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0)
     assert isinstance(show_text_fields(ts), widgets.Widget)
 
 
@@ -74,9 +67,7 @@ class ProcessingModuleTestCase(unittest.TestCase):
             session_start_time=start_time,
         )
 
-        behavior_module = ProcessingModule(
-            name="behavior", description="preprocessed behavioral data"
-        )
+        behavior_module = ProcessingModule(name="behavior", description="preprocessed behavioral data")
         nwbfile.add_processing_module(behavior_module)
 
         nwbfile.processing["behavior"].add(self.position)
@@ -133,16 +124,12 @@ def test_show_subject():
 
 def test_show_dynamic_table():
     d = {"col1": [1, 2], "col2": [3, 4]}
-    dt = DynamicTable.from_dataframe(
-        df=pd.DataFrame(data=d), name="Test Dtable", table_description="no description"
-    )
+    dt = DynamicTable.from_dataframe(df=pd.DataFrame(data=d), name="Test Dtable", table_description="no description")
     show_dynamic_table(dt)
 
 
 def test_df2accordion():
-    df = pd.DataFrame(
-        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), columns=["a", "b", "c"]
-    )
+    df = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), columns=["a", "b", "c"])
 
     def func_fig(data):
         fig = plt.figure(figsize=(10, 5))

@@ -21,4 +21,3 @@ the :py:func:`~nwbwidgets.base.show_fields` function.
 .. image:: ../../_static/examples/example_subject.png
     :width: 400
     :alt: show subject metadata
-

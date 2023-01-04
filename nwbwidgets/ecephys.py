@@ -1,18 +1,19 @@
-import numpy as np
-from scipy.signal import stft
 import matplotlib.pyplot as plt
-
+import numpy as np
 import plotly.graph_objects as go
+from ipywidgets import ValueWidget, widgets
 from plotly.colors import DEFAULT_PLOTLY_COLORS
-from ipywidgets import widgets, ValueWidget
-
 from pynwb import TimeSeries
 from pynwb.base import DynamicTable
-from pynwb.ecephys import SpikeEventSeries, ElectricalSeries
+from pynwb.ecephys import ElectricalSeries, SpikeEventSeries
+from scipy.signal import stft
 
 from .base import fig2widget, lazy_tabs, render_dataframe
-from .timeseries import BaseGroupedTraceWidget
 from .brains import HumanElectrodesPlotlyWidget
+from .timeseries import BaseGroupedTraceWidget
+from .utils.dependencies import check_widget_dependencies, safe_import
+
+ccfwidget = safe_import("ccfwidget")
 
 
 def show_spectrogram(nwbobj: TimeSeries, channel=0, **kwargs):
@@ -34,9 +35,7 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
     def __init__(self, nwbobj: DynamicTable, **kwargs):
         super().__init__()
         group_names = nwbobj.group_name[:]
-        ugroups, group_pos, counts = np.unique(
-            group_names, return_inverse=True, return_counts=True
-        )
+        ugroups, group_pos, counts = np.unique(group_names, return_inverse=True, return_counts=True)
         elec_pos = np.hstack(np.arange(count).tolist() for count in counts)
 
         hovertext = []
@@ -55,9 +54,7 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
                 y=nwbobj.group_name[:],
                 mode="markers",
                 marker=dict(
-                    color=np.array(DEFAULT_PLOTLY_COLORS)[
-                        group_pos % len(DEFAULT_PLOTLY_COLORS)
-                    ],
+                    color=np.array(DEFAULT_PLOTLY_COLORS)[group_pos % len(DEFAULT_PLOTLY_COLORS)],
                     size=15,
                 ),
                 hovertext=hovertext,
@@ -99,19 +96,17 @@ def show_electrodes(electrodes_table):
     return lazy_tabs(in_dict, electrodes_table)
 
 
+@check_widget_dependencies({"ccfwidget": ccfwidget, "aiohttp": safe_import("aiohttp")})
 def show_ccf(electrodes_table=None, **kwargs):
-    from ccfwidget import CCFWidget
 
     input_kwargs = {}
     if electrodes_table is not None:
         df = electrodes_table.to_dataframe()
-        markers = [
-            idf[["x", "y", "z"]].to_numpy() for _, idf in df.groupby("group_name")
-        ]
+        markers = [idf[["x", "y", "z"]].to_numpy() for _, idf in df.groupby("group_name")]
         input_kwargs.update(markers=markers)
 
     input_kwargs.update(kwargs)
-    return CCFWidget(**input_kwargs)
+    return ccfwidget.CCFWidget(**input_kwargs)
 
 
 def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
@@ -136,9 +131,7 @@ def show_spike_event_series(ses: SpikeEventSeries, **kwargs):
     nSpikes = ses.data.shape[0]
 
     # Controls
-    field_lay = widgets.Layout(
-        max_height="40px", max_width="100px", min_height="30px", min_width="70px"
-    )
+    field_lay = widgets.Layout(max_height="40px", max_width="100px", min_height="30px", min_width="70px")
     spk_ind = widgets.BoundedIntText(value=0, min=0, max=nSpikes - 1, layout=field_lay)
     controls = {"spk_ind": spk_ind}
     out_fig = widgets.interactive_output(control_plot, controls)
@@ -170,7 +163,7 @@ class ElectricalSeriesWidget(BaseGroupedTraceWidget):
         foreign_time_window_controller=None,
         foreign_group_and_sort_controller=None,
         dynamic_table_region_name="electrodes",
-        **kwargs
+        **kwargs,
     ):
         if foreign_group_and_sort_controller is not None:
             table = None
@@ -181,5 +174,5 @@ class ElectricalSeriesWidget(BaseGroupedTraceWidget):
             table,
             foreign_time_window_controller=foreign_time_window_controller,
             foreign_group_and_sort_controller=foreign_group_and_sort_controller,
-            **kwargs
+            **kwargs,
         )

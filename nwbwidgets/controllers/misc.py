@@ -1,7 +1,5 @@
 import numpy as np
-
-from ipywidgets import widgets, Layout
-
+from ipywidgets import Layout, widgets
 from tqdm.notebook import tqdm as tqdm_notebook
 
 
@@ -17,9 +15,7 @@ def make_trial_event_controller(trials, layout=None, multiple=False):
     if not np.all(np.isnan(trials["stop_time"].data)):
         trial_events.append("stop_time")
     trial_events += [
-        x.name
-        for x in trials.columns
-        if (("_time" in x.name) and (x.name not in ("start_time", "stop_time")))
+        x.name for x in trials.columns if (("_time" in x.name) and (x.name not in ("start_time", "stop_time")))
     ]
     kwargs = {}
     if layout is not None:
@@ -27,17 +23,10 @@ def make_trial_event_controller(trials, layout=None, multiple=False):
 
     if multiple:
         trial_event_controller = widgets.SelectMultiple(
-            options=trial_events,
-            value=["start_time"],
-            description='align to:',
-            disabled=False,
-            **kwargs
+            options=trial_events, value=["start_time"], description="align to:", disabled=False, **kwargs
         )
     else:
         trial_event_controller = widgets.Dropdown(
-            options=trial_events,
-            value="start_time",
-            description="align to: ",
-            **kwargs
+            options=trial_events, value="start_time", description="align to: ", **kwargs
         )
     return trial_event_controller

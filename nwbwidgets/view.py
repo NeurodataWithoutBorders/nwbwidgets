@@ -2,102 +2,121 @@ from collections import OrderedDict
 
 import h5py
 import hdmf
-import pynwb
-
-from ipywidgets import widgets
-
-import zarr
 import ndx_grayscalevolume
+import pynwb
+import zarr
+from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
 
-from .dynamictablesummary import DynamicTableSummaryWidget
-
-from nwbwidgets import (
-    behavior,
-    misc,
-    base,
-    ecephys,
-    image,
-    ophys,
-    icephys,
-    timeseries,
-    file,
-    spectrum,
+from .base import dict2accordion
+from .base import nwb2widget as nwb2widget_base
+from .base import (
+    processing_module,
+    render_dataframe,
+    show_dset,
+    show_fields,
+    show_multi_container_interface,
+    show_neurodata_base,
+    show_text_fields,
 )
+from .behavior import route_spatial_series, show_behavioral_events
+from .dynamictablesummary import DynamicTableSummaryWidget
+from .ecephys import ElectricalSeriesWidget, show_electrodes, show_spike_event_series
+from .file import show_nwbfile
+from .icephys import IVCurveWidget, show_sweep_sequences
+from .image import (
+    ImageSeriesWidget,
+    show_grayscale_image,
+    show_index_series,
+    show_rbga_image,
+)
+from .misc import (
+    PSTHWidget,
+    RasterGridWidget,
+    RasterWidget,
+    TuningCurveExtendedWidget,
+    TuningCurveWidget,
+    show_annotations,
+    show_decomposition_series,
+)
+from .ophys import (
+    RoiResponseSeriesWidget,
+    TwoPhotonSeriesWidget,
+    route_plane_segmentation,
+    show_df_over_f,
+    show_grayscale_volume,
+    show_image_segmentation,
+)
+from .spectrum import show_spectrum
+from .timeseries import route_trialized_time_series, show_timeseries
 
 
 # def show_dynamic_table(node: DynamicTable, **kwargs):
 def show_dynamic_table(node, **kwargs) -> widgets.Widget:
     if node.name == "electrodes":
-        return ecephys.show_electrodes(node)
-    return base.render_dataframe(node)
+        return show_electrodes(node)
+    return render_dataframe(node)
 
 
 default_neurodata_vis_spec = {
-    pynwb.NWBFile: file.show_nwbfile,
-    SweepSequences: icephys.show_sweep_sequences,
-    pynwb.behavior.BehavioralEvents: behavior.show_behavioral_events,
+    pynwb.NWBFile: show_nwbfile,
+    SweepSequences: show_sweep_sequences,
+    pynwb.behavior.BehavioralEvents: show_behavioral_events,
     pynwb.misc.Units: OrderedDict(
         {
             "Summary": DynamicTableSummaryWidget,
-            "Session Raster": misc.RasterWidget,
-            "Grouped PSTH": misc.PSTHWidget,
-            "Raster Grid": misc.RasterGridWidget,
-            "Tuning Curves": misc.TuningCurveWidget,
-            "Combined": misc.TuningCurveExtendedWidget,
+            "Session Raster": RasterWidget,
+            "Grouped PSTH": PSTHWidget,
+            "Raster Grid": RasterGridWidget,
+            "Tuning Curves": TuningCurveWidget,
+            "Combined": TuningCurveExtendedWidget,
             "table": show_dynamic_table,
         }
     ),
-    pynwb.misc.DecompositionSeries: misc.show_decomposition_series,
-    pynwb.file.Subject: base.show_fields,
-    pynwb.ecephys.SpikeEventSeries: ecephys.show_spike_event_series,
-    pynwb.ophys.ImageSegmentation: ophys.show_image_segmentation,
-    pynwb.ophys.TwoPhotonSeries: ophys.TwoPhotonSeriesWidget,
-    ndx_grayscalevolume.GrayscaleVolume: ophys.show_grayscale_volume,
-    pynwb.ophys.PlaneSegmentation: ophys.route_plane_segmentation,
-    pynwb.ophys.DfOverF: ophys.show_df_over_f,
+    pynwb.misc.DecompositionSeries: show_decomposition_series,
+    pynwb.file.Subject: show_fields,
+    pynwb.ecephys.SpikeEventSeries: show_spike_event_series,
+    pynwb.ophys.ImageSegmentation: show_image_segmentation,
+    pynwb.ophys.TwoPhotonSeries: TwoPhotonSeriesWidget,
+    ndx_grayscalevolume.GrayscaleVolume: show_grayscale_volume,
+    pynwb.ophys.PlaneSegmentation: route_plane_segmentation,
+    pynwb.ophys.DfOverF: show_df_over_f,
     pynwb.ophys.RoiResponseSeries: OrderedDict(
         {
-        "trial_aligned": timeseries.route_trialized_time_series,
-        "traces": ophys.RoiResponseSeriesWidget,
+            "trial_aligned": route_trialized_time_series,
+            "traces": RoiResponseSeriesWidget,
         }
     ),
-    pynwb.misc.AnnotationSeries: OrderedDict(
-        {
-            "text": base.show_text_fields,
-            "times": misc.show_annotations
-        }
-    ),
-    pynwb.core.LabelledDict: base.dict2accordion,
-    pynwb.ProcessingModule: base.processing_module,
-    hdmf.common.DynamicTable:
-        {
+    pynwb.misc.AnnotationSeries: OrderedDict({"text": show_text_fields, "times": show_annotations}),
+    pynwb.core.LabelledDict: dict2accordion,
+    pynwb.ProcessingModule: processing_module,
+    hdmf.common.DynamicTable: {
         "Summary": DynamicTableSummaryWidget,
         "table": show_dynamic_table,
-        },
-    pynwb.ecephys.ElectricalSeries: ecephys.ElectricalSeriesWidget,
-    pynwb.behavior.SpatialSeries: behavior.route_spatial_series,
-    pynwb.image.GrayscaleImage: image.show_grayscale_image,
-    pynwb.image.RGBImage: image.show_rbga_image,
-    pynwb.image.RGBAImage: image.show_rbga_image,
-    pynwb.base.Image: image.show_rbga_image,
-    pynwb.image.ImageSeries: image.ImageSeriesWidget,
-    pynwb.image.IndexSeries: image.show_index_series,
-    pynwb.TimeSeries: timeseries.show_timeseries,
-    pynwb.core.MultiContainerInterface: base.show_multi_container_interface,
-    pynwb.core.NWBContainer: base.show_neurodata_base,
-    pynwb.core.NWBDataInterface: base.show_neurodata_base,
-    h5py.Dataset: base.show_dset,
-    zarr.core.Array: base.show_dset,
-    Spectrum: spectrum.show_spectrum,
+    },
+    pynwb.ecephys.ElectricalSeries: ElectricalSeriesWidget,
+    pynwb.behavior.SpatialSeries: route_spatial_series,
+    pynwb.image.GrayscaleImage: show_grayscale_image,
+    pynwb.image.RGBImage: show_rbga_image,
+    pynwb.image.RGBAImage: show_rbga_image,
+    pynwb.base.Image: show_rbga_image,
+    pynwb.image.ImageSeries: ImageSeriesWidget,
+    pynwb.image.IndexSeries: show_index_series,
+    pynwb.TimeSeries: show_timeseries,
+    pynwb.core.MultiContainerInterface: show_multi_container_interface,
+    pynwb.core.NWBContainer: show_neurodata_base,
+    pynwb.core.NWBDataInterface: show_neurodata_base,
+    h5py.Dataset: show_dset,
+    zarr.core.Array: show_dset,
+    Spectrum: show_spectrum,
     pynwb.icephys.SequentialRecordingsTable: {
         "Summary": DynamicTableSummaryWidget,
         "table": show_dynamic_table,
-        "I-V Analysis": icephys.IVCurveWidget
-    }
+        "I-V Analysis": IVCurveWidget,
+    },
 }
 
 
 def nwb2widget(node, neurodata_vis_spec=default_neurodata_vis_spec):
-    return base.nwb2widget(node, neurodata_vis_spec)
+    return nwb2widget_base(node, neurodata_vis_spec)

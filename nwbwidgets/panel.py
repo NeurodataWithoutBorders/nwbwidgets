@@ -1,19 +1,20 @@
-import ipywidgets as widgets
 from pathlib import Path
-import h5py
+
 import fsspec
-from fsspec.implementations.cached import CachingFileSystem
+import h5py
+import ipywidgets as widgets
 from dandi.dandiapi import DandiAPIClient
+from fsspec.implementations.cached import CachingFileSystem
+from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
 
-from pynwb import NWBHDF5IO
-from nwbwidgets import nwb2widget
-from nwbwidgets.utils.dandi import (
+from .utils.dandi import (
     get_dandiset_metadata,
-    list_dandiset_files,
     get_file_url,
     has_nwb,
+    list_dandiset_files,
 )
+from .view import nwb2widget
 
 
 class Panel(widgets.VBox):
@@ -24,7 +25,7 @@ class Panel(widgets.VBox):
         enable_dandi_source: bool = True,
         enable_s3_source: bool = True,
         enable_local_source: bool = True,
-        **kwargs
+        **kwargs,
     ):
         """
         NWB widgets Panel for visualization of NWB files.
@@ -66,14 +67,10 @@ class Panel(widgets.VBox):
             options=self.source_options_names,
             layout=widgets.Layout(width="100px", overflow=None),
         )
-        self.source_options_label = widgets.Label(
-            "Source:", layout=widgets.Layout(width="100px", overflow=None)
-        )
+        self.source_options_label = widgets.Label("Source:", layout=widgets.Layout(width="100px", overflow=None))
         self.source_options = widgets.VBox(
             children=[self.source_options_radio],
-            layout=widgets.Layout(
-                width="120px", overflow=None, padding="5px 5px 5px 10px"
-            ),
+            layout=widgets.Layout(width="120px", overflow=None, padding="5px 5px 5px 10px"),
         )
 
         self.source_changing_panel = widgets.Box()
@@ -129,9 +126,7 @@ class Panel(widgets.VBox):
             description="File:",
             layout=widgets.Layout(width="400px", overflow=None),
         )
-        self.source_dandi_file_button = widgets.Button(
-            icon="check", description="Load file"
-        )
+        self.source_dandi_file_button = widgets.Button(icon="check", description="Load file")
 
         self.source_dandi_vbox = widgets.VBox(
             children=[
@@ -144,9 +139,7 @@ class Panel(widgets.VBox):
 
         self.dandi_summary = widgets.HTML(
             value="<style>p{word-wrap: break-word}</style> <p>" + "" + "</p>",
-            layout=widgets.Layout(
-                height="100px", width="700px", padding="5px 5px 5px 10px"
-            ),
+            layout=widgets.Layout(height="100px", width="700px", padding="5px 5px 5px 10px"),
         )
 
         self.dandi_panel = widgets.HBox([self.source_dandi_vbox, self.dandi_summary])
@@ -159,7 +152,10 @@ class Panel(widgets.VBox):
 
     def create_components_s3_source(self):
         """Create widgets components for S3 option"""
-        self.source_s3_file_url = widgets.Text(value="", description="URL:",)
+        self.source_s3_file_url = widgets.Text(
+            value="",
+            description="URL:",
+        )
         self.source_s3_button = widgets.Button(icon="check", description="Load file")
         self.s3_panel = widgets.VBox(
             children=[self.source_s3_file_url, self.source_s3_button],
@@ -185,9 +181,7 @@ class Panel(widgets.VBox):
             description="Files:",
             layout=widgets.Layout(width="400px", overflow=None),
         )
-        self.local_dir_file_button = widgets.Button(
-            icon="check", description="Load file"
-        )
+        self.local_dir_file_button = widgets.Button(icon="check", description="Load file")
         self.local_dir_panel = widgets.VBox(
             children=[
                 self.local_dir_top,
@@ -220,16 +214,10 @@ class Panel(widgets.VBox):
         self.dandi_summary.value = "Loading dandiset info..."
         self.source_dandi_file_dropdown.options = []
         dandiset_id = self.source_dandi_id.value.split("-")[0].strip()
-        self.source_dandi_file_dropdown.options = list_dandiset_files(
-            dandiset_id=dandiset_id
-        )
+        self.source_dandi_file_dropdown.options = list_dandiset_files(dandiset_id=dandiset_id)
 
         metadata = get_dandiset_metadata(dandiset_id=dandiset_id)
-        self.dandi_summary.value = (
-            "<style>p{word-wrap: break-word}</style> <p>"
-            + metadata.description
-            + "</p>"
-        )
+        self.dandi_summary.value = "<style>p{word-wrap: break-word}</style> <p>" + metadata.description + "</p>"
 
     def list_local_dir_files(self, args=None):
         """List NWB files in local dir"""
@@ -272,9 +260,7 @@ class Panel(widgets.VBox):
 
     def load_local_dir_file(self, args=None):
         """Load local NWB file"""
-        full_file_path = str(
-            Path(self.local_dir_path.value) / self.local_dir_files.value
-        )
+        full_file_path = str(Path(self.local_dir_path.value) / self.local_dir_files.value)
         io = NWBHDF5IO(full_file_path, mode="r", load_namespaces=True)
         nwb = io.read()
         self.widgets_panel.children = [nwb2widget(nwb)]

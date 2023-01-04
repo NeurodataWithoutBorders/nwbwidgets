@@ -1,10 +1,9 @@
 import asyncio
 
 import matplotlib.pyplot as plt
-
+import plotly.graph_objects as go
 from ipywidgets import Output
 from ipywidgets.widgets.interaction import clear_output
-import plotly.graph_objects as go
 
 
 def clean_axes(axes):
@@ -57,14 +56,17 @@ def interactive_output(f, controls, process_controls=lambda x: x, fixed=None):
     observer(None)
     return out
 
+
 def set_plotly_callbacks(f, controls, process_controls=lambda x: x):
     fig = go.FigureWidget()
 
     def observer(change):
         return f(fig=fig, **unpack_controls(controls, process_controls))
+
     for k, w in controls.items():
         w.observe(observer, "value")
     return observer(None)
+
 
 class Timer:
     def __init__(self, timeout, callback):

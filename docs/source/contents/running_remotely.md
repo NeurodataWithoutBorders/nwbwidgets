@@ -29,4 +29,3 @@ $ docker run -p 8866:8866 -e S3_URL_NWBFILE=<s3_url_to_nwb_file> nwbwidgets-voil
 
 
 ## Using Binder
-

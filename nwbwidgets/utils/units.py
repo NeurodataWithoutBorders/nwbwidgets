@@ -1,7 +1,6 @@
-from bisect import bisect_right, bisect_left
+from bisect import bisect_left, bisect_right
 
 import numpy as np
-
 from pynwb.misc import Units
 
 
@@ -106,9 +105,7 @@ def align_by_trials(
         np.array(shape=(n_trials, n_time, ...))
     """
     trials = units.get_ancestor("NWBFile").trials
-    return align_by_time_intervals(
-        units, index, trials, start_label, stop_label, start, end
-    )
+    return align_by_time_intervals(units, index, trials, start_label, stop_label, start, end)
 
 
 def align_by_time_intervals(
@@ -169,23 +166,17 @@ def get_unobserved_intervals(units, time_window, units_select=()):
     for i_unit in units_select:
         intervals = units["obs_intervals"][i_unit]  # TODO: use bisect here
         intervals = np.array(intervals, dtype="object")
-        these_obs_intervals = intervals[
-            (intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])
-        ]
+        these_obs_intervals = intervals[(intervals[:, 1] > time_window[0]) & (intervals[:, 0] < time_window[1])]
         unobs_intervals = np.c_[these_obs_intervals[:-1, 1], these_obs_intervals[1:, 0]]
 
         if len(these_obs_intervals):
             # handle unobserved interval on lower bound of window
             if these_obs_intervals[0, 0] > time_window[0]:
-                unobs_intervals = np.vstack(
-                    ([time_window[0], these_obs_intervals[0, 0]], unobs_intervals)
-                )
+                unobs_intervals = np.vstack(([time_window[0], these_obs_intervals[0, 0]], unobs_intervals))
 
             # handle unobserved interval on lower bound of window
             if these_obs_intervals[-1, 1] < time_window[1]:
-                unobs_intervals = np.vstack(
-                    (unobs_intervals, [these_obs_intervals[-1, 1], time_window[1]])
-                )
+                unobs_intervals = np.vstack((unobs_intervals, [these_obs_intervals[-1, 1], time_window[1]]))
         else:
             unobs_intervals = [time_window]
 

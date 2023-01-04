@@ -1,3 +1,9 @@
+"""
+Base class definition of all controllers.
+
+Attempted to make the class abstract via `abc.ABC` to use `abc.abstractmethod` but ran into metaclass conflict
+issues with `ipywidgets.Box`. Undefined methods instead raise NotImplementedErrors.
+"""
 from typing import Dict
 
 import ipywidgets as widgets

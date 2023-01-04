@@ -28,5 +28,3 @@ widgets: :py:class:`~nwbwidgets.dynamictablesummary.DynamicTableSummaryWidget`
 :py:class:`~nwbwidgets.misc.TuningCurveWidget` and
 
 :py:class:`~nwbwidgets.misc.TuningCurveExtendedWidget`.
-
-
