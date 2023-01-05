@@ -1,26 +1,24 @@
 import unittest
-
 from datetime import datetime
-from dateutil.tz import tzlocal
 
-import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
+from dateutil.tz import tzlocal
 from ipywidgets import widgets
-
 from pynwb import NWBFile
-from pynwb.misc import DecompositionSeries, AnnotationSeries
+from pynwb.misc import AnnotationSeries, DecompositionSeries
 
+from nwbwidgets.base import render_dataframe
 from nwbwidgets.misc import (
-    show_psth_raster,
     PSTHWidget,
-    show_decomposition_traces,
-    show_decomposition_series,
-    RasterWidget,
-    show_session_raster,
-    show_annotations,
     RasterGridWidget,
+    RasterWidget,
     raster_grid,
+    show_annotations,
+    show_decomposition_series,
+    show_decomposition_traces,
+    show_psth_raster,
+    show_session_raster,
 )
 
 
@@ -51,9 +49,7 @@ class ShowPSTHTestCase(unittest.TestCase):
         )
 
         self.nwbfile.add_unit_column("location", "the anatomical location of this unit")
-        self.nwbfile.add_unit_column(
-            "quality", "the quality for the inference of this unit"
-        )
+        self.nwbfile.add_unit_column("quality", "the quality for the inference of this unit")
 
         self.nwbfile.add_unit(
             spike_times=[2.2, 3.0, 4.5],
@@ -74,9 +70,7 @@ class ShowPSTHTestCase(unittest.TestCase):
             quality=0.90,
         )
 
-        self.nwbfile.add_trial_column(
-            name="stim", description="the visual stimuli during the trial"
-        )
+        self.nwbfile.add_trial_column(name="stim", description="the visual stimuli during the trial")
 
         self.nwbfile.add_trial(start_time=0.0, stop_time=1.0, stim="person")
         self.nwbfile.add_trial(start_time=0.1, stop_time=2.0, stim="person")
@@ -98,7 +92,7 @@ class ShowPSTHTestCase(unittest.TestCase):
     def test_multipsth_widget(self):
         psth_widget = PSTHWidget(self.nwbfile.units)
         assert isinstance(psth_widget, widgets.Widget)
-        start_labels = ('start_time', 'stop_time')
+        start_labels = ("start_time", "stop_time")
         fig = psth_widget.update(index=0, start_labels=start_labels)
         assert len(fig.axes) == 2 * len(start_labels)
 
@@ -124,14 +118,15 @@ class ShowPSTHTestCase(unittest.TestCase):
             plt.Figure,
         )
 
+    def test_render_dataframe(self):
+        render_dataframe(self.nwbfile.units)
+
 
 class ShowDecompositionTestCase(unittest.TestCase):
     def setUp(self):
         data = np.random.rand(160, 2, 3)
 
-        self.ds = DecompositionSeries(
-            name="Test Decomposition", data=data, metric="amplitude", rate=1.0
-        )
+        self.ds = DecompositionSeries(name="Test Decomposition", data=data, metric="amplitude", rate=1.0)
 
     def test_show_decomposition_traces(self):
         assert isinstance(show_decomposition_traces(self.ds), widgets.Widget)

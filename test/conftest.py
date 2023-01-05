@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 
+
 def pytest_configure(config):
     """Set configurations to be run before all testing."""
 

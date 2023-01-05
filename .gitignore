@@ -140,3 +140,6 @@ dmypy.json
 
 # Local History for Visual Studio Code
 .history/
+
+# NWB streaming cache
+*/nwb-cache

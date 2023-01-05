@@ -1,5 +1,4 @@
 import numpy as np
-
 import plotly.graph_objects as go
 
 
@@ -24,10 +23,10 @@ def multi_trace(x, y, color, label=None, fig=None, insert_nans=False):
     if insert_nans:
         y_nans = []
         x_nans = []
-        for xx,yy in zip(x,y):
-            y_nans.append(np.append(yy,np.nan))
+        for xx, yy in zip(x, y):
+            y_nans.append(np.append(yy, np.nan))
             x_nans.append(np.append(xx, np.nan))
-        y_plot = np.concatenate(y_nans,axis=0)
+        y_plot = np.concatenate(y_nans, axis=0)
         x_plot = np.concatenate(x_nans, axis=0)
         fig.add_scattergl(
             x=x_plot,
@@ -97,9 +96,7 @@ def event_group(
             fig.add_scattergl(
                 x=times,
                 y=np.ones_like(times) * (i + offset),
-                marker=dict(
-                    color=color, line_width=line_width, symbol=marker, line_color=color
-                ),
+                marker=dict(color=color, line_width=line_width, symbol=marker, line_color=color),
                 legendgroup=str(label),
                 name=label,
                 showlegend=showlegend,
