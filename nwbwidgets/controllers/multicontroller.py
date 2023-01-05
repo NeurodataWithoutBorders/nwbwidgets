@@ -21,22 +21,25 @@ class MultiController(GenericController):
         for component_name, component in components.items():
             if isinstance(component, BaseController):
                 self._unpack_attributes(component=component)  # Unpack attributes to new outermost level
-                unpacked_components.update({component_name: component.components})  # Nested dictionary
+                unpacked_components.update({component_name: component})
                 self._propagate_setup_observers.append(component.setup_observers)
-            else:
+            elif isinstance(component, ipywidgets.Widget):
                 self._check_attribute_name_collision(name=component_name)
                 setattr(self, component_name, component)
                 unpacked_components.update({component_name: component})
+            else:
+                self._check_attribute_name_collision(name=component_name)
+                setattr(self, component_name, component)
         self.components = unpacked_components  # Maintain sub-component structure for provenance
 
     def setup_children(self):
         children = list()
-        for child in self.get_fields().values():
-            if isinstance(child, ipywidgets.Widget):
-                children.append(child)
-            elif isinstance(child, BaseController):
-                children.append(child.children)
-        self.children = children
+        for component in self.components.values():
+            if isinstance(component, BaseController):
+                children.append(component)
+            elif isinstance(component, ipywidgets.Widget):
+                children.append(component)
+        self.children = tuple(children)
 
     def setup_observers(self):
         for setup_observers in self._propagate_setup_observers:

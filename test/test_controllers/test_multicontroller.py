@@ -86,9 +86,9 @@ class TestMultiController(TestCase):
         other_controller = GenericController(components=dict(dropdown=dropdown, check_box=check_box))
         multi_controller = MultiController(components=dict(button=button, other_controller=other_controller))
 
-        expected_components = dict(button=button, other_controller=other_controller.components)
+        expected_components = dict(button=button, other_controller=other_controller)
         expected_fields = dict(button=button, dropdown=dropdown, check_box=check_box)
-        expected_children = (button, other_controller.children[0], other_controller.children[1])
+        expected_children = (button, other_controller)
         self.assertDictEqual(d1=multi_controller.components, d2=expected_components)
         self.assertDictEqual(d1=multi_controller.get_fields(), d2=expected_fields)
         self.assertTupleEqual(tuple1=multi_controller.children, tuple2=expected_children)
@@ -110,7 +110,7 @@ class TestMultiController(TestCase):
 
         multi_controller = MultiController(components=dict(controller1=controller1, controller2=controller2))
 
-        expected_components = dict(controller1=controller1.components, controller2=controller2.components)
+        expected_components = dict(controller1=controller1, controller2=controller2)
         expected_fields = dict(
             button=button,
             some_integer=some_integer,
@@ -120,7 +120,7 @@ class TestMultiController(TestCase):
             some_string=some_string,
             some_list=some_list,
         )
-        expected_children = (button, check_box)
+        expected_children = (controller1, controller2)
         self.assertDictEqual(d1=multi_controller.components, d2=expected_components)
         self.assertDictEqual(d1=multi_controller.get_fields(), d2=expected_fields)
         self.assertTupleEqual(tuple1=multi_controller.children, tuple2=expected_children)

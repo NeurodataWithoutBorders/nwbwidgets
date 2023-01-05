@@ -62,9 +62,11 @@ class TestGenericController(TestCase):
         components = dict(button=button, check_box=check_box)
         controller = GenericController(components=components)
 
+        expected_components = dict(button=button, check_box=check_box)
+        expected_fields = dict(button=button, check_box=check_box)
         expected_children = (button, check_box)
-        self.assertDictEqual(d1=controller.components, d2=components)
-        self.assertDictEqual(d1=controller.get_fields(), d2=components)
+        self.assertDictEqual(d1=controller.components, d2=expected_components)
+        self.assertDictEqual(d1=controller.get_fields(), d2=expected_fields)
         self.assertTupleEqual(tuple1=controller.children, tuple2=expected_children)
 
     def test_generic_controller_standard_attributes(self):
@@ -82,9 +84,19 @@ class TestGenericController(TestCase):
         )
         controller = GenericController(components=components)
 
+        expected_components = dict(button=button, check_box=check_box)
+        expected_fields = dict(
+            button=button,
+            check_box=check_box,
+            some_integer=1,
+            some_string="test",
+            some_float=1.23,
+            some_list=[1, 2, 3],
+            some_dict=dict(a=5, b=6, c=7),
+        )
         expected_children = (button, check_box)
-        self.assertDictEqual(d1=controller.components, d2=components)
-        self.assertDictEqual(d1=controller.get_fields(), d2=components)
+        self.assertDictEqual(d1=controller.components, d2=expected_components)
+        self.assertDictEqual(d1=controller.get_fields(), d2=expected_fields)
         assert controller.children == expected_children
         self.assertTupleEqual(tuple1=controller.children, tuple2=expected_children)
 

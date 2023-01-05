@@ -32,6 +32,7 @@ class BaseController(widgets.Box):
         components: dictionary
             Used to map string names to widgets.
         """
+        super().__init__()  # Setup Box properties
         self.layout.display = "flex"
         self.layout.align_items = "stretch"
 

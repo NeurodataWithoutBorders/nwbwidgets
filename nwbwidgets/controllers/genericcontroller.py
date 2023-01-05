@@ -24,13 +24,16 @@ class GenericController(BaseController):
                     f"Component '{component_name}' is a type of Controller! "
                     "Please use a MultiController to unpack its components."
                 )
-            else:
+            elif isinstance(component, ipywidgets.Widget):
                 self._check_attribute_name_collision(name=component_name)
                 setattr(self, component_name, component)
                 unpacked_components.update({component_name: component})
+            else:
+                self._check_attribute_name_collision(name=component_name)
+                setattr(self, component_name, component)
         self.components = unpacked_components  # Maintain sub-component structure for provenance
 
     def setup_children(self):
         # A simple default rule for generating a box layout for this Controllers components.
         # It is usually recommended to override with a custom layout for a specific visualization.
-        self.children = tuple(child for child in self.get_fields().values() if isinstance(child, ipywidgets.Widget))
+        self.children = tuple(child for child in self.components.values())
