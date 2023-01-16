@@ -1,101 +1,102 @@
-from abc import abstractmethod
+from typing import Tuple, Optional
 
-from ipywidgets import HBox, Layout, ValueWidget, link, widgets
+from ipywidgets import Layout, ValueWidget, link, widgets
 from ipywidgets.widgets.widget_description import DescriptionWidget
 
+from .basecontroller import BaseController
 
-class WindowController(HBox, ValueWidget, DescriptionWidget):
+
+class WindowController(BaseController, ValueWidget, DescriptionWidget):
     def __init__(
-        self, vmin, vmax, start_value=(None, None), description="window (s)", orientation="horizontal", **kwargs
+        self,
+        vmin: int,
+        vmax: int,
+        start_value: Optional[Tuple[Optional[int], Optional[int]]] = (None, None),
+        description: str = "window (s)",
+        orientation: str = "horizontal",  # TODO: should be Literal["horizontal", "vertical"]
+        **kwargs,
     ):
-
-        if orientation not in ("horizontal", "vertical"):
-            ValueError("Unrecognized orientation: {}".format(orientation))
-
-        super().__init__()
         self.vmin = vmin
         self.vmax = vmax
         self.start_value = start_value
         self.description = description
         self.orientation = orientation
 
+        super().__init__()
+
+    def setup_attributes(self):
         if self.orientation == "horizontal":
             self.to_start_button = widgets.Button(description="◀◀", layout=Layout(width="65px"))
             self.backwards_button = widgets.Button(description="◀", layout=Layout(width="40px"))
             self.forward_button = widgets.Button(description="▶", layout=Layout(width="40px"))
             self.to_end_button = widgets.Button(description="▶▶", layout=Layout(width="65px"))
-        else:  # vertical
+        elif self.orientation == "vertical":
             self.to_end_button = widgets.Button(description="▲▲", layout=Layout(width="50px"))
             self.forward_button = widgets.Button(description="▲", layout=Layout(width="50px"))
             self.backwards_button = widgets.Button(description="▼", layout=Layout(width="50px"))
             self.to_start_button = widgets.Button(description="▼▼", layout=Layout(width="50px"))
+        else:
+            raise ValueError(
+                f"Unrecognized orientation '{self.orientation}', should be either 'horizontal' or 'vertical'"
+            )
 
+    def move_up(self, change):
+        raise NotImplementedError("The 'move_up' method of this WindowController has not been defined.")
+
+    def move_down(self, change):
+        raise NotImplementedError("The 'move_down' method of this WindowController has not been defined.")
+
+    def move_start(self, change):
+        raise NotImplementedError("The 'move_start' method of this WindowController has not been defined.")
+
+    def move_end(self, change):
+        raise NotImplementedError("The 'move_end' method of this WindowController has not been defined.")
+
+    def setup_observers(self):
         self.to_start_button.on_click(self.move_start)
         self.backwards_button.on_click(self.move_down)
         self.forward_button.on_click(self.move_up)
         self.to_end_button.on_click(self.move_end)
 
-    # @abstractmethod
-    # @property
-    # def value(self):
-    #    """Must be window in seconds"""
-    #    pass
-
-    @abstractmethod
-    def get_children(self):
+    def get_children(self) -> widgets.Box:
         pass
 
-    @abstractmethod
-    def move_up(self, change):
-        pass
-
-    @abstractmethod
-    def move_down(self, change):
-        pass
-
-    @abstractmethod
-    def move_start(self, change):
-        pass
-
-    @abstractmethod
-    def move_end(self, change):
-        pass
+    def setup_children(self):
+        self.children = self.get_children()
 
 
 class RangeController(WindowController):
     def __init__(
         self,
-        vmin,
-        vmax,
-        start_value=None,
-        dtype="float",
-        description="time window (s)",
-        orientation="horizontal",
-        **kwargs,
+        vmin: int,
+        vmax: int,
+        start_value: Optional[Tuple[Optional[int], Optional[int]]] = None,
+        dtype: str = "float",
+        description: str = "time window (s)",
+        orientation: str = "horizontal",  # TODO: should be Literal["horizontal", "vertical"]
+        **slider_kwargs,
     ):
-        super().__init__(vmin, vmax, start_value, description, orientation, **kwargs)
-
         self.dtype = dtype
-        self.slider = self.make_range_slider(description=description, **kwargs)
+
+        super().__init__(
+            vmin=vmin,
+            vmax=vmax,
+            start_value=start_value,
+            description=description,
+            orientation=orientation,
+            **slider_kwargs,
+        )
 
         link((self.slider, "value"), (self, "value"))
         link((self.slider, "description"), (self, "description"))
 
-        self.children = self.get_children()
+    def setup_attributes(
+        self,
+        **slider_kwargs,
+    ):
+        super().setup_attributes()
 
-    def make_range_slider(self, **kwargs):
-        """
-
-        Parameters
-        ----------
-        kwargs: passed into RangeSlider constructor
-
-        Returns
-        -------
-
-        """
-
-        slider_kwargs = dict(
+        default_slider_kwargs = dict(
             value=self.start_value,
             min=self.vmin,
             max=self.vmax,
@@ -106,18 +107,18 @@ class RangeController(WindowController):
         )
 
         if self.dtype == "float":
-            slider_kwargs.update(
+            default_slider_kwargs.update(
                 readout_format=".1f",
                 step=0.1,
                 description="time window (s)",
                 layout=Layout(width="100%"),
             )
-            slider_kwargs.update(kwargs)
-            return widgets.FloatRangeSlider(**slider_kwargs)
+            default_slider_kwargs.update(slider_kwargs)
+            self.slider = widgets.FloatRangeSlider(**default_slider_kwargs)
         elif self.dtype == "int":
-            slider_kwargs.update(description="unit window", layout=Layout(height="100%"))
-            slider_kwargs.update(kwargs)
-            return widgets.IntRangeSlider(**slider_kwargs)
+            default_slider_kwargs.update(description="unit window", layout=Layout(height="100%"))
+            default_slider_kwargs.update(slider_kwargs)
+            self.slider = widgets.IntRangeSlider(**default_slider_kwargs)
         else:
             raise ValueError("Unrecognized dtype: {}".format(self.dtype))
 
@@ -143,7 +144,7 @@ class RangeController(WindowController):
         value_range = self.value[1] - self.value[0]
         self.value = (self.vmax - value_range, self.vmax)
 
-    def get_children(self):
+    def get_children(self) -> widgets.Box:
 
         if self.orientation == "horizontal":
             return [
@@ -169,15 +170,19 @@ class RangeController(WindowController):
 
 
 class StartAndDurationController(WindowController):
-    """
-    Can be used in place of the RangeController.
-    """
+    """Can be used in place of the RangeController."""
 
     DEFAULT_DURATION = 5
 
-    def __init__(self, tmax, tmin=0, start_value=None, description="start (s)", **kwargs):
+    def __init__(
+        self,
+        tmax: int,
+        tmin: int = 0,
+        start_value: Optional[Tuple[Optional[int], Optional[int]]] = None,
+        description: str = "start (s)",
+        orientation: str = "horizontal",  # TODO: should be Literal["horizontal", "vertical"]
+    ):
         """
-
         Parameters
         ----------
         tmax: float
@@ -187,39 +192,43 @@ class StartAndDurationController(WindowController):
         start_value: (float, float)
             start and stop in seconds
         description: str
-        kwargs: dict
+        orientation: str
         """
-
         if tmin > tmax:
             raise ValueError("tmax and tmin were probably entered in the wrong order. tmax should be first")
 
-        super().__init__(tmin, tmax, start_value, description, **kwargs)
+        super().__init__(
+            vmin=tmin, vmax=tmax, start_value=start_value, description=description, orientation=orientation
+        )
+
+        link((self.slider, "description"), (self, "description"))
+
+    def setup_attributes(self):
+        super().setup_attributes()
+
+        if self.start_value is None:
+            duration = min(self.DEFAULT_DURATION, self.vmax - self.vmin)
+        else:
+            duration = self.start_value[1] - self.start_value[0]
 
         self.slider = widgets.FloatSlider(
-            value=start_value,
-            min=tmin,
-            max=tmax,
+            value=self.start_value,
+            min=self.vmin,
+            max=self.vmax,
             step=0.01,
-            description=description,
+            description=self.description,
             continuous_update=False,
-            orientation="horizontal",
+            orientation=self.orientation,
             readout=True,
             readout_format=".2f",
             style={"description_width": "initial"},
             layout=Layout(width="100%", min_width="250px"),
         )
 
-        link((self.slider, "description"), (self, "description"))
-
-        if start_value is None:
-            duration = min(self.DEFAULT_DURATION, tmax - tmin)
-        else:
-            duration = start_value[1] - start_value[0]
-
         self.duration = widgets.BoundedFloatText(
             value=duration,
             min=0,
-            max=tmax - tmin,
+            max=self.vmax - self.vmin,
             step=0.1,
             description="duration (s):",
             style={"description_width": "initial"},
@@ -228,10 +237,23 @@ class StartAndDurationController(WindowController):
 
         self.value = (self.slider.value, self.slider.value + self.duration.value)
 
-        self.slider.observe(self.monitor_slider)
-        self.duration.observe(self.monitor_duration)
+    def move_up(self, change):
+        if self.slider.value + 2 * self.duration.value < self.vmax:
+            self.slider.value += self.duration.value
+        else:
+            self.move_end(change)
 
-        self.children = self.get_children()
+    def move_down(self, change):
+        if self.slider.value - self.duration.value > self.vmin:
+            self.slider.value -= self.duration.value
+        else:
+            self.move_start(change)
+
+    def move_start(self, change):
+        self.slider.value = self.vmin
+
+    def move_end(self, change):
+        self.slider.value = self.vmax - self.duration.value
 
     def monitor_slider(self, change):
         if "new" in change:
@@ -256,25 +278,13 @@ class StartAndDurationController(WindowController):
                         self.slider.value = self.vmax - value
                     self.value = (self.slider.value, self.slider.value + value)
 
-    def move_up(self, change):
-        if self.slider.value + 2 * self.duration.value < self.vmax:
-            self.slider.value += self.duration.value
-        else:
-            self.move_end(change)
+    def setup_observers(self):
+        super().setup_observers()
 
-    def move_down(self, change):
-        if self.slider.value - self.duration.value > self.vmin:
-            self.slider.value -= self.duration.value
-        else:
-            self.move_start(change)
+        self.slider.observe(self.monitor_slider)
+        self.duration.observe(self.monitor_duration)
 
-    def move_start(self, change):
-        self.slider.value = self.vmin
-
-    def move_end(self, change):
-        self.slider.value = self.vmax - self.duration.value
-
-    def get_children(self):
+    def get_children(self) -> widgets.Box:
 
         if self.orientation == "horizontal":
             return [
