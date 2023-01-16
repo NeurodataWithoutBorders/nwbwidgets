@@ -59,7 +59,7 @@ class WindowController(BaseController, ValueWidget, DescriptionWidget):
         self.to_end_button.on_click(self.move_end)
 
     def get_children(self) -> widgets.Box:
-        pass
+        raise NotImplementedError("The 'get_children' method of this WindowController has not been defined.")
 
     def setup_children(self):
         self.children = self.get_children()
