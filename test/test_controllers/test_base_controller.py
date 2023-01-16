@@ -29,7 +29,7 @@ class TestBaseController(TestCase):
             ExampleSetupComponentsAbstractController()
 
     def test_generic_controller_no_components(self):
-        class EmptyController:
+        class EmptyController(BaseController):
             def setup_attribute(self):
                 pass
 
@@ -42,7 +42,7 @@ class TestBaseController(TestCase):
         self.assertTupleEqual(tuple1=controller.children, tuple2=())
 
     def test_generic_controller_ipywidget_components(self):
-        class BasicController:
+        class BasicController(BaseController):
             def setup_attribute(self):
                 self.button = Button()
                 self.check_box = Checkbox()
