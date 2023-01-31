@@ -15,7 +15,6 @@ body:
     id: summary
     attributes:
       label: What would you like to see added to NWB Widgets?
-      description: Feel free to share any and all ideas you might have for making the NWB Widgets more convenient for visualizing the contents of NWB files.
     validations:
       required: true
   - type: dropdown
