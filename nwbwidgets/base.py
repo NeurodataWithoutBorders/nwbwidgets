@@ -182,7 +182,7 @@ def lazy_show_over_data(list_, func_, labels=None, style: GroupingWidget = widge
     children = [vis2widget(func_(list_[0]))] + [widgets.HTML("Rendering...") for _ in range(len(list_) - 1)]
     out = style(children=children)
     if labels is not None:
-        [out.set_title(i, label) for i, label in enumerate(labels)]
+        [out.set_title(i, str(label)) for i, label in enumerate(labels)]
 
     def on_selected_index(change):
         if change.new is not None and isinstance(change.owner.children[change.new], widgets.HTML):
