@@ -8,7 +8,6 @@ class WindowController(HBox, ValueWidget, DescriptionWidget):
     def __init__(
         self, vmin, vmax, start_value=(None, None), description="window (s)", orientation="horizontal", **kwargs
     ):
-
         if orientation not in ("horizontal", "vertical"):
             ValueError("Unrecognized orientation: {}".format(orientation))
 
@@ -144,7 +143,6 @@ class RangeController(WindowController):
         self.value = (self.vmax - value_range, self.vmax)
 
     def get_children(self):
-
         if self.orientation == "horizontal":
             return [
                 self.slider,
@@ -275,7 +273,6 @@ class StartAndDurationController(WindowController):
         self.slider.value = self.vmax - self.duration.value
 
     def get_children(self):
-
         if self.orientation == "horizontal":
             return [
                 self.slider,

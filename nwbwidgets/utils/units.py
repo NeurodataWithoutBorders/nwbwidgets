@@ -157,7 +157,6 @@ def align_by_time_intervals(
 
 
 def get_unobserved_intervals(units, time_window, units_select=()):
-
     if "obs_intervals" not in units:
         return []
 

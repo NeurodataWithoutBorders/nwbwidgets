@@ -37,7 +37,6 @@ def test_timeseries_widget():
 
 
 def test_show_timeseries_mpl():
-
     ts = TimeSeries(
         name="name",
         description="no description",

@@ -31,7 +31,6 @@ class AllenTuningCurveWidget(TimeIntervalsSelector):
 
 class AllenRasterGroupAndSortController(GroupAndSortController):
     def get_groups(self):
-
         self.electrodes = self.dynamic_table.get_ancestor("NWBFile").electrodes
 
         groups = super().get_groups()
