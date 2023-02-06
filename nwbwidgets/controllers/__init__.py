@@ -1,3 +1,5 @@
+from .basecontroller import BaseController
 from .group_and_sort_controllers import GroupAndSortController
 from .misc import ProgressBar, make_trial_event_controller
+from .multicontroller import MultiController
 from .time_window_controllers import RangeController, StartAndDurationController
