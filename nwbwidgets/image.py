@@ -60,7 +60,6 @@ class ImageSeriesWidget(widgets.VBox):
             return self.image_series.data[idx].T
 
     def set_out_fig(self):
-
         self.out_fig = go.FigureWidget(
             data=go.Heatmap(
                 z=self.get_frame(0),

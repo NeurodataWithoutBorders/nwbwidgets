@@ -257,7 +257,6 @@ class PSTHWidget(widgets.VBox):
         unit_controller=None,
         ntt=1000,
     ):
-
         self.units = input_data
 
         super().__init__()

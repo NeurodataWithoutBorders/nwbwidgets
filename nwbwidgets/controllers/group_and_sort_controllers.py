@@ -358,6 +358,5 @@ class GroupAndSortController(AbstractGroupAndSortController):
         return order, group_inds, labels
 
     def update_value(self):
-
         order, group_inds, labels = self.group_and_sort()
         self.value = dict(order=order, group_inds=group_inds, labels=labels)

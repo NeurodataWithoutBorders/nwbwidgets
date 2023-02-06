@@ -98,7 +98,6 @@ def show_electrodes(electrodes_table):
 
 @check_widget_dependencies({"ccfwidget": ccfwidget, "aiohttp": safe_import("aiohttp")})
 def show_ccf(electrodes_table=None, **kwargs):
-
     input_kwargs = {}
     if electrodes_table is not None:
         df = electrodes_table.to_dataframe()

@@ -178,7 +178,6 @@ class CalciumImagingTestCase(unittest.TestCase):
 
 
 def test_plane_segmentation_many_categories():
-
     ps = mock_PlaneSegmentation(n_rois=0)
     ps.add_column("category", "category")
 
