@@ -7,12 +7,16 @@ import pytest
 from dateutil.tz import tzlocal
 from pynwb import NWBFile, TimeSeries
 from pynwb.ecephys import LFP, ElectricalSeries, SpikeEventSeries
-
 from pynwb.testing.mock.ecephys import mock_ElectrodeTable
 
 from nwbwidgets import nwb2widget
 from nwbwidgets.base import show_multi_container_interface
-from nwbwidgets.ecephys import show_ccf, show_spectrogram, show_spike_event_series, show_electrodes
+from nwbwidgets.ecephys import (
+    show_ccf,
+    show_electrodes,
+    show_spectrogram,
+    show_spike_event_series,
+)
 from nwbwidgets.view import default_neurodata_vis_spec
 
 
