@@ -82,7 +82,7 @@ class ElectrodeGroupsWidget(ValueWidget, widgets.HBox):
 
 def show_electrodes(electrodes_table):
     in_dict = dict(table=render_dataframe)
-    if np.isnan(electrodes_table.x[0]):  # position is not defined
+    if not hasattr(electrodes_table, "x") or np.isnan(electrodes_table.x[0]):  # position is not defined
         in_dict.update(electrode_groups=ElectrodeGroupsWidget)
     else:
         subject = electrodes_table.get_ancestor("NWBFile").subject
