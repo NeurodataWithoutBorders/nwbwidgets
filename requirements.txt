@@ -17,3 +17,6 @@ trimesh
 dandi
 importlib-metadata <5.0
 fsspec
+requests
+aiohttp
+ipydatawidgets==4.3.2
