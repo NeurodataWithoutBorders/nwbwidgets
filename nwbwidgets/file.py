@@ -45,6 +45,8 @@ def show_nwbfile(nwbfile: NWBFile, neurodata_vis_spec: dict) -> widgets.Widget:
                 lbl_names = widgets.Label(value, layout=field_lay)
             hbox_exp = widgets.HBox(children=[lbl_experimenter, lbl_names])
             info.append(hbox_exp)
+        elif key == "trials":
+            continue
         elif (isinstance(value, Iterable) and len(value)) or value:
             neuro_data.append(value)
             if getattr(value, "description", None):
