@@ -31,11 +31,16 @@ class Panel(widgets.VBox):
         NWB widgets Panel for visualization of NWB files.
 
         Args:
-            stream_mode (str, optional): Either "fsspec" or "ros3". Defaults to "fsspec".
-            cache_path (str, optional): The path to cached data if streaming with "fsspec". If left as None, a directory "nwb-cache" is created under the current working directory. Defaults to None.
-            enable_dandi_source (bool, optional): Enable DANDI source option. Defaults to True.
-            enable_s3_source (bool, optional): Enable S3 source option. Defaults to True.
-            enable_local_source (bool, optional): Enable local source option. Defaults to True.
+            stream_mode : {'fsspec', 'ros3'}
+            cache_path : str, optional
+                The path to cached data if streaming with "fsspec". If left as None, a directory "nwb-cache" is
+                created under the current working directory. Defaults to None.
+            enable_dandi_source : bool, default: True
+                Enable DANDI source option.
+            enable_s3_source : bool, default: true
+                Enable S3 source option.
+            enable_local_source : bool, default: True
+                Enable local source option.
         """
         super().__init__(children=[], **kwargs)
 
