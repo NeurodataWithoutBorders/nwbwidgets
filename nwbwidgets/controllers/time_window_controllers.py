@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Optional
 
 from ipywidgets import HBox, Layout, ValueWidget, link, widgets
 from ipywidgets.widgets.widget_description import DescriptionWidget
@@ -173,18 +174,25 @@ class StartAndDurationController(WindowController):
 
     DEFAULT_DURATION = 5
 
-    def __init__(self, tmax, tmin=0, start_value=None, description="start (s)", **kwargs):
+    def __init__(
+            self,
+            tmax: float,
+            tmin: Optional[float] = 0.0,
+            start_value: Optional[tuple] = None,
+            description: Optional[str] = "start (s)",
+            **kwargs,
+    ):
         """
 
         Parameters
         ----------
         tmax: float
             in seconds
-        tmin: float
+        tmin: float, default: 0.0
             in seconds
-        start_value: (float, float)
+        start_value: (float, float), optional
             start and stop in seconds
-        description: str
+        description: str, default: "start (s)"
         kwargs: dict
         """
 
