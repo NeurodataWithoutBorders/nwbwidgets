@@ -102,7 +102,6 @@ def get_timeseries_in_units(node: TimeSeries, istart=None, istop=None, data_colu
         data = time_series.data[istart:istop]
 
     if time_series.conversion and np.isfinite(time_series.conversion):
-
         offset_scalar = time_series.offset
         conversion_factor_scalar = time_series.conversion
         channel_conversion_vector = (

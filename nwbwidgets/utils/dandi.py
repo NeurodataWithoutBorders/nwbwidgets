@@ -11,7 +11,7 @@ def get_dandiset_metadata(dandiset_id: str):
 def list_dandiset_files(dandiset_id: str):
     with DandiAPIClient() as client:
         dandiset = client.get_dandiset(dandiset_id=dandiset_id, version_id="draft")
-        return [i.dict().get("path") for i in dandiset.get_assets()]
+        return [i.dict().get("path") for i in dandiset.get_assets() if i.dict().get("path").endswith(".nwb")]
 
 
 def get_file_url(dandiset_id: str, file_path: str):

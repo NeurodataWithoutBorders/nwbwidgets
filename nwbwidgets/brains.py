@@ -34,7 +34,6 @@ def make_cylinder_mesh(radius, height, sections=32, position=(0, 0, 0), directio
 
 
 def make_cylinders(positions, directions, radius=1, height=1, sections=32, name="cylinders", **kwargs):
-
     return [
         make_cylinder_mesh(
             position=position,
@@ -54,7 +53,6 @@ def make_cylinders(positions, directions, radius=1, height=1, sections=32, name=
 @check_widget_dependencies({"nilearn": nilearn, "skspatial": skspatial, "trimesh": trimesh})
 class HumanElectrodesPlotlyWidget(widgets.VBox):
     def __init__(self, electrodes: DynamicTable, **kwargs):
-
         super().__init__()
         self.electrodes = electrodes
 
@@ -85,7 +83,6 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
     def find_normals(points, k=3):
         normals = []
         for point in points:
-
             distance = np.linalg.norm(points - point, axis=1)
             # closest_inds = np.argpartition(distance, 3)
             # x0, x1, x2 = points[closest_inds[:3]]
@@ -97,7 +94,6 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
         return normals
 
     def show_electrodes(self, electrodes: DynamicTable, color_by):
-
         positions = np.c_[electrodes.x[:], electrodes.y[:], electrodes.z[:]]
 
         if isinstance(electrodes[color_by][0], (bytes, str, np.bool_)):
@@ -172,7 +168,6 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
         )
 
     def plot_human_brain(self, left_opacity=1.0, right_opacity=1.0):
-
         mesh = nilearn.datasets.fetch_surf_fsaverage("fsaverage5")
 
         def create_mesh(name, **kwargs):

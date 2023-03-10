@@ -60,7 +60,6 @@ def check_widget_dependencies(dependencies):
     def wrap(func):
         @wraps(func)
         def wrapped_func(*args, **kwargs):
-
             missing = [name for name, dependency in dependencies.items() if not dependency]
             if not missing:
                 return func(*args, **kwargs)
