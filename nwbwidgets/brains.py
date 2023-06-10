@@ -101,7 +101,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
             colors = group_inv
             show_leg = True
             show_scale = False
-        elif isinstance(electrodes[color_by][0], (np.ndarray, np.float)):
+        elif isinstance(electrodes[color_by][0], (np.ndarray, float)):
             colors = np.ravel(electrodes[color_by][:])
             ugroups, group_inv = [0], np.array([0] * len(colors))
             show_leg = False
