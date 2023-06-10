@@ -193,7 +193,7 @@ class GroupAndSortController(AbstractGroupAndSortController):
             self.group_sm.layout.visibility = "visible"
             self.group_sm.layout.width = "100px"
             keep_column_values = self.column_values
-            if self.column_values.dtype == np.float:
+            if isinstance(self.column_values.dtype, (float, np.floating)):
                 keep_column_values = keep_column_values[~np.isnan(keep_column_values)]
             groups = np.unique(keep_column_values)
             self.group_sm.rows = min(len(groups), 20)
