@@ -121,7 +121,7 @@ class Panel(widgets.VBox):
             description="cache",
         )
         self.cache_path_text = widgets.Text("nwb-cache")
-        self.cache_path_text.layout.visibility = 'hidden'
+        self.cache_path_text.layout.visibility = "hidden"
         self.source_dandi_file_button = widgets.Button(icon="check", description="Load file")
 
         self.source_dandi_vbox = widgets.VBox(
@@ -162,12 +162,22 @@ class Panel(widgets.VBox):
             description="URL:",
         )
         self.source_s3_button = widgets.Button(icon="check", description="Load file")
+        self.cache_checkbox = widgets.Checkbox(
+            description="cache",
+        )
+        self.cache_path_text = widgets.Text("nwb-cache")
+        self.cache_path_text.layout.visibility = "hidden"
         self.s3_panel = widgets.VBox(
-            children=[self.source_s3_file_url, self.source_s3_button],
+            children=[
+                self.source_s3_file_url,
+                widgets.HBox([self.cache_checkbox, self.cache_path_text]),
+                self.source_s3_button,
+            ],
             layout=widgets.Layout(padding="5px 0px 5px 0px"),
         )
         self.source_changing_panel.children = [self.s3_panel]
         self.source_s3_button.on_click(self.stream_s3_file)
+        self.cache_checkbox.observe(self.toggle_cache)
 
     def create_components_local_dir_source(self):
         """Create widgets components for Loca dir option"""
