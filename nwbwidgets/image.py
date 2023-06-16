@@ -1,3 +1,6 @@
+from os import path
+
+import ipywidgets
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from ipywidgets import Layout, fixed, widgets
@@ -17,6 +20,8 @@ from .utils.timeseries import (
 class ImageSeriesWidget(widgets.VBox):
     """Widget showing ImageSeries."""
 
+    SUPPORTED_EXTERNAL_FORMATS = (".tif", ".tiff")
+
     def __init__(
         self, imageseries: ImageSeries, foreign_time_window_controller: StartAndDurationController = None, **kwargs
     ):
@@ -25,6 +30,27 @@ class ImageSeriesWidget(widgets.VBox):
         self.controls = {}
         self.out_fig = None
 
+        if imageseries.external_file and not path.exists(imageseries.external_file[0]):
+            self.children = [
+                ipywidgets.HTML(
+                    f"Could not find associated external file "
+                    f"'{imageseries.external_file[0]}'.\nIf you are running this locally, make sure that the "
+                    f"external file is in the appropriate location. NWB Widgets does not"
+                    f" yet support streaming of external files on DANDI or S3."
+                )
+            ]
+            return
+        if (
+            imageseries.external_file
+            and path.splitext(imageseries.external_file[0])[1].lower() not in self.SUPPORTED_EXTERNAL_FORMATS
+        ):
+            self.children = [
+                ipywidgets.HTML(
+                    f"Could not open associated external file "
+                    f"'{imageseries.external_file[0]}'.\n Supported external formats: {self.SUPPORTED_EXTERNAL_FORMATS}"
+                )
+            ]
+            return
         # Set controller
         if foreign_time_window_controller is None:
             tmin = get_timeseries_mint(imageseries)
