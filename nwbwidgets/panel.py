@@ -305,9 +305,9 @@ class Panel(widgets.VBox):
             all_metadata = []
             dandisets = list(client.get_dandisets())
             total_dandisets = len(dandisets)
+            pbar = tqdm(total=total_dandisets, desc="Loading dandiset metadata")
+            self.source_changing_panel.children = [pbar.container]
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                pbar = tqdm(total=total_dandisets, desc="Loading dandiset metadata")
-                self.source_changing_panel.children = [pbar.container]
                 futures = [executor.submit(self.process_dandiset, dandiset) for dandiset in dandisets]
 
                 for future in concurrent.futures.as_completed(futures):
