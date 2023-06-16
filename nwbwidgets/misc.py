@@ -782,7 +782,7 @@ def raster_grid(
     if rows_label is not None:
         row_vals = np.array(time_intervals[rows_label][:])
         urow_vals = np.unique(row_vals[trials_select])
-        if urow_vals.dtype == np.float64:
+        if isinstance(urow_vals.dtype, (float, np.floating)):
             urow_vals = urow_vals[~np.isnan(urow_vals)]
 
     else:
@@ -792,7 +792,7 @@ def raster_grid(
     if cols_label is not None:
         col_vals = np.array(time_intervals[cols_label][:])
         ucol_vals = np.unique(col_vals[trials_select])
-        if ucol_vals.dtype == np.float64:
+        if isinstance(ucol_vals.dtype, (float, np.floating)):
             ucol_vals = ucol_vals[~np.isnan(ucol_vals)]
 
     else:
