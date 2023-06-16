@@ -7,6 +7,7 @@ from dandi.dandiapi import DandiAPIClient
 from fsspec.implementations.cached import CachingFileSystem
 from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
+import concurrent.futures
 
 from .utils.dandi import (
     get_dandiset_metadata,
@@ -290,19 +291,31 @@ class Panel(widgets.VBox):
         nwb = io.read()
         self.widgets_panel.children = [nwb2widget(nwb)]
 
+    def process_dandiset(self, dandiset):
+        try:
+            metadata = dandiset.get_metadata()
+            if has_nwb(metadata):
+                return metadata
+        except:
+            pass
+        return None
+
     def get_all_dandisets_metadata(self):
         with DandiAPIClient() as client:
-            all_metadata = list()
-            dandisets_iter = tqdm(list(client.get_dandisets()), desc="Loading dandiset metadata")
-            self.source_changing_panel.children = [dandisets_iter.container]
-            for ii, dandiset in enumerate(dandisets_iter):
-                if 1 < ii < 560:
-                    try:
-                        metadata = dandiset.get_metadata()
-                        if has_nwb(metadata):
-                            all_metadata.append(metadata)
-                    except:
-                        pass
-                else:
-                    pass
+            all_metadata = []
+            dandisets = list(client.get_dandisets())
+            total_dandisets = len(dandisets)
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = []
+                pbar = tqdm(total=total_dandisets, desc="Loading dandiset metadata")
+                self.source_changing_panel.children = [pbar.container]
+                for dandiset in dandisets:
+                    futures.append(executor.submit(self.process_dandiset, dandiset))
+
+                for future in concurrent.futures.as_completed(futures):
+                    metadata = future.result()
+                    if metadata:
+                        all_metadata.append(metadata)
+                    pbar.update(1)
+                pbar.close()
         return all_metadata
