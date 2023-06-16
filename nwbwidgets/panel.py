@@ -21,7 +21,6 @@ class Panel(widgets.VBox):
     def __init__(
         self,
         stream_mode: str = "fsspec",
-        cache_path: str = None,
         enable_dandi_source: bool = True,
         enable_s3_source: bool = True,
         enable_local_source: bool = True,
@@ -37,25 +36,12 @@ class Panel(widgets.VBox):
                 created under the current working directory. Defaults to None.
             enable_dandi_source : bool, default: True
                 Enable DANDI source option.
-            enable_s3_source : bool, default: true
-                Enable S3 source option.
             enable_local_source : bool, default: True
                 Enable local source option.
         """
         super().__init__(children=[], **kwargs)
 
         self.stream_mode = stream_mode
-
-        self.cache_path = cache_path
-        if cache_path is None:
-            self.cache_path = "nwb-cache"
-
-        # Create a virtual filesystem based on the http protocol and use caching to save accessed data to RAM.
-        if enable_dandi_source or enable_s3_source:
-            self.cfs = CachingFileSystem(
-                fs=fsspec.filesystem("http"),
-                cache_storage=self.cache_path,  # Local folder for the cache
-            )
 
         self.source_options_names = list()
         if enable_local_source:
@@ -131,12 +117,18 @@ class Panel(widgets.VBox):
             description="File:",
             layout=widgets.Layout(width="400px", overflow=None),
         )
+        self.cache_checkbox = widgets.Checkbox(
+            description="cache",
+        )
+        self.cache_path_text = widgets.Text("nwb-cache")
+        self.cache_path_text.layout.visibility = "hidden"
         self.source_dandi_file_button = widgets.Button(icon="check", description="Load file")
 
         self.source_dandi_vbox = widgets.VBox(
             children=[
                 self.source_dandi_id,
                 self.source_dandi_file_dropdown,
+                widgets.HBox([self.cache_checkbox, self.cache_path_text]),
                 self.source_dandi_file_button,
             ],
             layout=widgets.Layout(padding="5px 0px 5px 0px"),
@@ -153,7 +145,15 @@ class Panel(widgets.VBox):
 
         self.source_dandi_id.observe(self.list_dandiset_files_dropdown, "value")
         self.source_dandi_file_button.on_click(self.stream_dandiset_file)
+        self.cache_checkbox.observe(self.toggle_cache)
         self.list_dandiset_files_dropdown()
+
+    def toggle_cache(self, args):
+        if isinstance(args["new"], dict):
+            if args["new"].get("value") is True:
+                self.cache_path_text.layout.visibility = "visible"
+            elif args["new"].get("value") is False:
+                self.cache_path_text.layout.visibility = "hidden"
 
     def create_components_s3_source(self):
         """Create widgets components for S3 option"""
@@ -162,12 +162,22 @@ class Panel(widgets.VBox):
             description="URL:",
         )
         self.source_s3_button = widgets.Button(icon="check", description="Load file")
+        self.cache_checkbox = widgets.Checkbox(
+            description="cache",
+        )
+        self.cache_path_text = widgets.Text("nwb-cache")
+        self.cache_path_text.layout.visibility = "hidden"
         self.s3_panel = widgets.VBox(
-            children=[self.source_s3_file_url, self.source_s3_button],
+            children=[
+                self.source_s3_file_url,
+                widgets.HBox([self.cache_checkbox, self.cache_path_text]),
+                self.source_s3_button,
+            ],
             layout=widgets.Layout(padding="5px 0px 5px 0px"),
         )
         self.source_changing_panel.children = [self.s3_panel]
         self.source_s3_button.on_click(self.stream_s3_file)
+        self.cache_checkbox.observe(self.toggle_cache)
 
     def create_components_local_dir_source(self):
         """Create widgets components for Loca dir option"""
@@ -238,25 +248,28 @@ class Panel(widgets.VBox):
         dandiset_id = self.source_dandi_id.value.split("-")[0].strip()
         file_path = self.source_dandi_file_dropdown.value
         s3_url = get_file_url(dandiset_id=dandiset_id, file_path=file_path)
-        if self.stream_mode == "ros3":
-            io = NWBHDF5IO(s3_url, mode="r", load_namespaces=True, driver="ros3")
-
-        elif self.stream_mode == "fsspec":
-            f = self.cfs.open(s3_url, "rb")
-            file = h5py.File(f)
-            io = NWBHDF5IO(file=file, load_namespaces=True)
-
-        nwbfile = io.read()
-        self.widgets_panel.children = [nwb2widget(nwbfile)]
+        self._stream_s3_file(s3_url)
 
     def stream_s3_file(self, args=None):
         """Stream NWB file from S3 url"""
         self.widgets_panel.children = [widgets.Label("loading...")]
         s3_url = self.source_s3_file_url.value
+        self._stream_s3_file(s3_url)
+
+    def _stream_s3_file(self, s3_url):
         if self.stream_mode == "ros3":
             io = NWBHDF5IO(s3_url, mode="r", load_namespaces=True, driver="ros3")
+
         elif self.stream_mode == "fsspec":
-            f = self.cfs.open(s3_url, "rb")
+            fs = fsspec.filesystem("http")
+            if not self.cache_checkbox:
+                f = fs.open(s3_url, "rb")
+            else:
+                cfs = CachingFileSystem(
+                    fs=fs,
+                    cache_storage=self.cache_path_text.value,  # Local folder for the cache
+                )
+                f = cfs.open(s3_url, "rb")
             file = h5py.File(f)
             io = NWBHDF5IO(file=file, load_namespaces=True)
 
