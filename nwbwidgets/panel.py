@@ -1,3 +1,4 @@
+import concurrent.futures
 from pathlib import Path
 
 import fsspec
@@ -7,7 +8,6 @@ from dandi.dandiapi import DandiAPIClient
 from fsspec.implementations.cached import CachingFileSystem
 from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
-import concurrent.futures
 
 from .utils.dandi import (
     get_dandiset_metadata,
