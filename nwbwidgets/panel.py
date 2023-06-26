@@ -19,7 +19,6 @@ from .view import nwb2widget
 
 
 class Panel(widgets.VBox):
-
     def __init__(
         self,
         stream_mode: str = "fsspec",
