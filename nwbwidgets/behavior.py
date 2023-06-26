@@ -1,11 +1,12 @@
 from abc import abstractmethod
 from typing import Union
+
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
 from plotly import graph_objects as go
 from pynwb import TimeSeries
-from pynwb.behavior import BehavioralEvents, SpatialSeries, BehavioralTimeSeries
+from pynwb.behavior import BehavioralEvents, BehavioralTimeSeries, SpatialSeries
 
 from .base import dict2accordion, lazy_tabs
 from .controllers import StartAndDurationController
