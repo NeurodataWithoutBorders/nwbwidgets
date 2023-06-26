@@ -19,6 +19,7 @@ from .view import nwb2widget
 
 
 class Panel(widgets.VBox):
+
     def __init__(
         self,
         stream_mode: str = "fsspec",
@@ -259,8 +260,12 @@ class Panel(widgets.VBox):
 
     def _stream_s3_file(self, s3_url):
         if self.stream_mode == "ros3":
-            io = NWBHDF5IO(s3_url, mode="r", load_namespaces=True, driver="ros3")
-
+            io_kwargs = {
+                "path": s3_url,
+                "mode": "r",
+                "load_namespaces": True,
+                "driver": "ros3",
+            }
         elif self.stream_mode == "fsspec":
             fs = fsspec.filesystem("http")
             if not self.cache_checkbox:
@@ -272,10 +277,15 @@ class Panel(widgets.VBox):
                 )
                 f = cfs.open(s3_url, "rb")
             file = h5py.File(f)
-            io = NWBHDF5IO(file=file, load_namespaces=True)
-
-        nwbfile = io.read()
-        self.widgets_panel.children = [nwb2widget(nwbfile)]
+            io_kwargs = {
+                "file": file,
+                "mode": "r",
+                "load_namespaces": True,
+            }
+        self.io = NWBHDF5IO(**io_kwargs)
+        self.nwbfile = self.io.read()
+        self.widgets_panel.children = [nwb2widget(self.nwbfile)]
+        
 
     def load_local_dir_file(self, args=None):
         """Load local NWB file"""
