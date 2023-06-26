@@ -19,7 +19,6 @@ from .view import nwb2widget
 
 
 class Panel(widgets.VBox):
-
     def __init__(
         self,
         stream_mode: str = "fsspec",
@@ -285,7 +284,6 @@ class Panel(widgets.VBox):
         self.io = NWBHDF5IO(**io_kwargs)
         self.nwbfile = self.io.read()
         self.widgets_panel.children = [nwb2widget(self.nwbfile)]
-        
 
     def load_local_dir_file(self, args=None):
         """Load local NWB file"""
