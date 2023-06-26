@@ -1,5 +1,10 @@
 # Upcoming
 
+### Fixes
+* Fix plotly Figure not showing up, pinned Plotly version [PR #297](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/297)
+* Fix BehavioralTimeSeries not showing up [PR #297](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/297)
+
+
 # v0.10.2
 
 ### Fixes
