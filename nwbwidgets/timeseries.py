@@ -146,7 +146,7 @@ def show_indexed_timeseries_plotly(
     zero_start=False,
     scatter_kwargs: dict = None,
     figure_kwargs: dict = None,
-):
+) -> go.FigureWidget:
     if istart != 0 or istop is not None:
         if time_window is not None:
             raise ValueError("input either time window or istart/stop but not both")
