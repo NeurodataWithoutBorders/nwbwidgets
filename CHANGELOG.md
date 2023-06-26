@@ -1,5 +1,10 @@
 # Upcoming
 
+### Fixes
+* Fix I/O issues when streaming data on Panel [PR #295](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/295)
+
+
+
 # v0.10.2
 
 ### Fixes
