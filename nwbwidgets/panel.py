@@ -44,6 +44,8 @@ class Panel(widgets.VBox):
         super().__init__(children=[], **kwargs)
 
         self.stream_mode = stream_mode
+        self.io = None
+        self.nwbfile = None
 
         self.source_options_names = list()
         if enable_local_source:
@@ -282,10 +284,12 @@ class Panel(widgets.VBox):
                 "mode": "r",
                 "load_namespaces": True,
             }
+        # Close previous io
+        if self.io:
+            self.io.close()
         self.io = NWBHDF5IO(**io_kwargs)
         self.nwbfile = self.io.read()
         self.widgets_panel.children = [nwb2widget(self.nwbfile)]
-        
 
     def load_local_dir_file(self, args=None):
         """Load local NWB file"""
