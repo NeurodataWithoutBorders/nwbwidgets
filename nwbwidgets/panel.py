@@ -1,11 +1,12 @@
 import concurrent.futures
 from pathlib import Path
+
 import fsspec
 import h5py
 import ipywidgets as widgets
-from ipyfilechooser import FileChooser
 from dandi.dandiapi import DandiAPIClient
 from fsspec.implementations.cached import CachingFileSystem
+from ipyfilechooser import FileChooser
 from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
 
@@ -183,8 +184,8 @@ class Panel(widgets.VBox):
         """Create widgets components for Local file option"""
         self.local_file_chooser = FileChooser()
         self.local_file_chooser.sandbox_path = str(Path.cwd())
-        self.local_file_chooser.filter_pattern = ['*.nwb']
-        self.local_file_chooser.title = '<b>Select local NWB file</b>'
+        self.local_file_chooser.filter_pattern = ["*.nwb"]
+        self.local_file_chooser.title = "<b>Select local NWB file</b>"
         self.local_file_chooser.register_callback(self.load_local_file)
         self.local_file_panel = widgets.VBox(
             children=[self.local_file_chooser],
