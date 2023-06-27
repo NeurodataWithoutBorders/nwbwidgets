@@ -51,6 +51,6 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true # Push is a shorthand for --output=type=registry
-          tags: ghcr.io/NeurodataWithoutBorders/nwbpanel:latest
+          tags: ghcr.io/NeurodataWithoutBorders/nwbwidgets-panel:latest
           context: docker
           file: docker/Dockerfile_publish

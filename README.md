@@ -51,7 +51,7 @@ nwb2widget(nwb)
 You can also run the NWB Widgets Panel using Docker:
 
 ```bash
-$ docker run -p 8866:8866 ghcr.io/NeurodataWithoutBorders/nwbwidgets-voila:latest
+$ docker run -p 8866:8866 ghcr.io/NeurodataWithoutBorders/nwbwidgets-panel:latest
 ```
 
 ## Demo
