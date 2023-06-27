@@ -1,5 +1,8 @@
 # Upcoming
 
+### New Features
+* Improvements on Panel Docker file, including path for read-only mount to access local files [PR #299](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/299)
+
 ### Fixes
 * Fix I/O issues when streaming data on Panel [PR #295](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/295)
 * Fix plotly Figure not showing up, pinned Plotly version [PR #297](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/297)
