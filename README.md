@@ -35,7 +35,7 @@ Panel()
 ```
 
 ### Using `nwb2widget`
-If you’re working directly with a NWB file object in your Jupyter notebook, you can also explore it with NWB Widgets using 
+If you’re working directly with a NWB file object in your Jupyter notebook, you can also explore it with NWB Widgets using
 
 ```python
 from pynwb import NWBHDF5IO
