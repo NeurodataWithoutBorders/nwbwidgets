@@ -43,6 +43,8 @@ class Panel(widgets.VBox):
         super().__init__(children=[], **kwargs)
 
         self.stream_mode = stream_mode
+        self.io = None
+        self.nwbfile = None
 
         self.source_options_names = list()
         if enable_local_source:
@@ -259,8 +261,12 @@ class Panel(widgets.VBox):
 
     def _stream_s3_file(self, s3_url):
         if self.stream_mode == "ros3":
-            io = NWBHDF5IO(s3_url, mode="r", load_namespaces=True, driver="ros3")
-
+            io_kwargs = {
+                "path": s3_url,
+                "mode": "r",
+                "load_namespaces": True,
+                "driver": "ros3",
+            }
         elif self.stream_mode == "fsspec":
             fs = fsspec.filesystem("http")
             if not self.cache_checkbox:
@@ -272,10 +278,17 @@ class Panel(widgets.VBox):
                 )
                 f = cfs.open(s3_url, "rb")
             file = h5py.File(f)
-            io = NWBHDF5IO(file=file, load_namespaces=True)
-
-        nwbfile = io.read()
-        self.widgets_panel.children = [nwb2widget(nwbfile)]
+            io_kwargs = {
+                "file": file,
+                "mode": "r",
+                "load_namespaces": True,
+            }
+        # Close previous io
+        if self.io:
+            self.io.close()
+        self.io = NWBHDF5IO(**io_kwargs)
+        self.nwbfile = self.io.read()
+        self.widgets_panel.children = [nwb2widget(self.nwbfile)]
 
     def load_local_dir_file(self, args=None):
         """Load local NWB file"""
