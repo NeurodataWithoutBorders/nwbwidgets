@@ -14,7 +14,7 @@ $ docker run -p 8866:8866 nwbwidgets-voila
 
 By default, the container will run to access remote files only, using `enable_local_source=False` (see [Panel](https://nwb-widgets.readthedocs.io/en/latest/contents/running_on_jupyter.html#using-panel)). To allow for local files browsering, run the container with:
 ```bash
-$ docker run -p 8866:8866 -e ENABLE_LOCAL_SOURCE=True nwbwidgets-voila
+$ docker run -p 8866:8866 -e ENABLE_LOCAL_SOURCE=True -v "$(pwd):/app/local_files:ro" nwbwidgets-voila
 ```
 
 To run for a specific remote NWB file, pass the s3 url as an ENV variable to the container:
