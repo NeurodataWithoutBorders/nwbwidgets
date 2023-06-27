@@ -24,6 +24,19 @@ you will see a list of extra modules needed for that specific widget.
 All other widgets in the file will still work.
 
 ## Usage
+
+### Using `Panel`
+The easiest way to use NWB widgets is with the interactive `Panel`:
+
+```python
+from nwbwidgets.panel import Panel
+
+Panel()
+```
+
+### Using `nwb2widget`
+If you’re working directly with a NWB file object in your Jupyter notebook, you can also explore it with NWB Widgets using 
+
 ```python
 from pynwb import NWBHDF5IO
 from nwbwidgets import nwb2widget
@@ -32,6 +45,13 @@ io = NWBHDF5IO('path/to/file.nwb', mode='r')
 nwb = io.read()
 
 nwb2widget(nwb)
+```
+
+### Using Docker
+You can also run the NWB Widgets Panel using Docker:
+
+```bash
+$ docker run -p 8866:8866 ghcr.io/NeurodataWithoutBorders/nwbwidgets-voila:latest
 ```
 
 ## Demo
