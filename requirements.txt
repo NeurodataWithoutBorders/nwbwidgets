@@ -20,3 +20,4 @@ fsspec
 requests
 aiohttp
 ipydatawidgets==4.3.2
+ipyfilechooser==0.6.0
