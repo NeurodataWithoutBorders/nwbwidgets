@@ -1,11 +1,12 @@
 from abc import abstractmethod
+from typing import Union
 
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import numpy as np
 from plotly import graph_objects as go
 from pynwb import TimeSeries
-from pynwb.behavior import BehavioralEvents, SpatialSeries
+from pynwb.behavior import BehavioralEvents, BehavioralTimeSeries, SpatialSeries
 
 from .base import dict2accordion, lazy_tabs
 from .controllers import StartAndDurationController
@@ -23,7 +24,7 @@ from .utils.timeseries import (
 )
 
 
-def show_behavioral_events(beh_events: BehavioralEvents, neurodata_vis_spec: dict):
+def show_behavioral_events(beh_events: Union[BehavioralEvents, BehavioralTimeSeries], neurodata_vis_spec: dict):
     return dict2accordion(beh_events.time_series, neurodata_vis_spec, ls="", marker="|")
 
 

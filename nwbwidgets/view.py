@@ -104,6 +104,7 @@ default_neurodata_vis_spec = {
     pynwb.image.ImageSeries: ImageSeriesWidget,
     pynwb.image.IndexSeries: show_index_series,
     pynwb.TimeSeries: show_timeseries,
+    pynwb.behavior.BehavioralTimeSeries: show_behavioral_events,
     pynwb.core.MultiContainerInterface: show_multi_container_interface,
     pynwb.core.NWBContainer: show_neurodata_base,
     pynwb.core.NWBDataInterface: show_neurodata_base,

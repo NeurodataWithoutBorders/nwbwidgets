@@ -6,6 +6,7 @@ import h5py
 import ipywidgets as widgets
 from dandi.dandiapi import DandiAPIClient
 from fsspec.implementations.cached import CachingFileSystem
+from ipyfilechooser import FileChooser
 from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
 
@@ -43,10 +44,11 @@ class Panel(widgets.VBox):
         super().__init__(children=[], **kwargs)
 
         self.stream_mode = stream_mode
+        self.io = None
+        self.nwbfile = None
 
         self.source_options_names = list()
         if enable_local_source:
-            self.source_options_names.append("Local dir")
             self.source_options_names.append("Local file")
         if enable_dandi_source:
             self.source_options_names.append("DANDI")
@@ -81,8 +83,8 @@ class Panel(widgets.VBox):
         self.source_options_radio.observe(self.updated_source, "value")
 
         if enable_local_source:
-            self.source_options_radio.value = "Local dir"
-            self.create_components_local_dir_source()
+            self.source_options_radio.value = "Local file"
+            self.create_components_local_file_source()
         elif enable_dandi_source:
             self.source_options_radio.value = "DANDI"
             self.create_components_dandi_source()
@@ -93,8 +95,6 @@ class Panel(widgets.VBox):
             self.create_components_dandi_source()
         elif args["new"] == "S3":
             self.create_components_s3_source()
-        elif args["new"] == "Local dir":
-            self.create_components_local_dir_source()
         elif args["new"] == "Local file":
             self.create_components_local_file_source()
 
@@ -180,50 +180,18 @@ class Panel(widgets.VBox):
         self.source_s3_button.on_click(self.stream_s3_file)
         self.cache_checkbox.observe(self.toggle_cache)
 
-    def create_components_local_dir_source(self):
-        """Create widgets components for Loca dir option"""
-        self.local_dir_path = widgets.Text(
-            value="",
-            description="Dir path:",
-            layout=widgets.Layout(width="400px", overflow=None),
-        )
-        self.local_dir_button = widgets.Button(description="Search")
-        self.local_dir_top = widgets.HBox(
-            children=[self.local_dir_path, self.local_dir_button],
-            layout=widgets.Layout(padding="5px 0px 5px 0px"),
-        )
-        self.local_dir_files = widgets.Dropdown(
-            options=[],
-            description="Files:",
-            layout=widgets.Layout(width="400px", overflow=None),
-        )
-        self.local_dir_file_button = widgets.Button(icon="check", description="Load file")
-        self.local_dir_panel = widgets.VBox(
-            children=[
-                self.local_dir_top,
-                self.local_dir_files,
-                self.local_dir_file_button,
-            ],
-            layout=widgets.Layout(padding="5px 0px 5px 0px"),
-        )
-        self.source_changing_panel.children = [self.local_dir_panel]
-        self.local_dir_button.on_click(self.list_local_dir_files)
-        self.local_dir_file_button.on_click(self.load_local_dir_file)
-
     def create_components_local_file_source(self):
         """Create widgets components for Local file option"""
-        self.local_file_path = widgets.Text(
-            value="",
-            description="File path:",
-            layout=widgets.Layout(width="400px", overflow=None),
-        )
-        self.local_file_button = widgets.Button(icon="check", description="Load file")
+        self.local_file_chooser = FileChooser()
+        self.local_file_chooser.sandbox_path = str(Path.cwd())
+        self.local_file_chooser.filter_pattern = ["*.nwb"]
+        self.local_file_chooser.title = "<b>Select local NWB file</b>"
+        self.local_file_chooser.register_callback(self.load_local_file)
         self.local_file_panel = widgets.VBox(
-            children=[self.local_file_path, self.local_file_button],
+            children=[self.local_file_chooser],
             layout=widgets.Layout(padding="5px 0px 5px 0px"),
         )
         self.source_changing_panel.children = [self.local_file_panel]
-        self.local_file_button.on_click(self.load_local_file)
 
     def list_dandiset_files_dropdown(self, args=None):
         """Populate dropdown with all files and text area with summary"""
@@ -231,17 +199,8 @@ class Panel(widgets.VBox):
         self.source_dandi_file_dropdown.options = []
         dandiset_id = self.source_dandi_id.value.split("-")[0].strip()
         self.source_dandi_file_dropdown.options = list_dandiset_files(dandiset_id=dandiset_id)
-
         metadata = get_dandiset_metadata(dandiset_id=dandiset_id)
         self.dandi_summary.value = "<style>p{word-wrap: break-word}</style> <p>" + metadata.description + "</p>"
-
-    def list_local_dir_files(self, args=None):
-        """List NWB files in local dir"""
-        if Path(self.local_dir_path.value).is_dir():
-            all_files = [f.name for f in Path(self.local_dir_path.value).glob("*.nwb")]
-            self.local_dir_files.options = all_files
-        else:
-            print("Invalid local dir path")
 
     def stream_dandiset_file(self, args=None):
         """Stream NWB file from DANDI"""
@@ -259,8 +218,12 @@ class Panel(widgets.VBox):
 
     def _stream_s3_file(self, s3_url):
         if self.stream_mode == "ros3":
-            io = NWBHDF5IO(s3_url, mode="r", load_namespaces=True, driver="ros3")
-
+            io_kwargs = {
+                "path": s3_url,
+                "mode": "r",
+                "load_namespaces": True,
+                "driver": "ros3",
+            }
         elif self.stream_mode == "fsspec":
             fs = fsspec.filesystem("http")
             if not self.cache_checkbox:
@@ -272,24 +235,26 @@ class Panel(widgets.VBox):
                 )
                 f = cfs.open(s3_url, "rb")
             file = h5py.File(f)
-            io = NWBHDF5IO(file=file, load_namespaces=True)
-
-        nwbfile = io.read()
-        self.widgets_panel.children = [nwb2widget(nwbfile)]
-
-    def load_local_dir_file(self, args=None):
-        """Load local NWB file"""
-        full_file_path = str(Path(self.local_dir_path.value) / self.local_dir_files.value)
-        io = NWBHDF5IO(full_file_path, mode="r", load_namespaces=True)
-        nwb = io.read()
-        self.widgets_panel.children = [nwb2widget(nwb)]
+            io_kwargs = {
+                "file": file,
+                "mode": "r",
+                "load_namespaces": True,
+            }
+        # Close previous io
+        if self.io:
+            self.io.close()
+        self.io = NWBHDF5IO(**io_kwargs)
+        self.nwbfile = self.io.read()
+        self.widgets_panel.children = [nwb2widget(self.nwbfile)]
 
     def load_local_file(self, args=None):
         """Load local NWB file"""
-        full_file_path = str(Path(self.local_file_path.value))
-        io = NWBHDF5IO(full_file_path, mode="r", load_namespaces=True)
-        nwb = io.read()
-        self.widgets_panel.children = [nwb2widget(nwb)]
+        full_file_path = str(Path(self.local_file_chooser.selected))
+        if self.io:
+            self.io.close()
+        self.io = NWBHDF5IO(full_file_path, mode="r", load_namespaces=True)
+        self.nwbfile = self.io.read()
+        self.widgets_panel.children = [nwb2widget(self.nwbfile)]
 
     def process_dandiset(self, dandiset):
         try:
