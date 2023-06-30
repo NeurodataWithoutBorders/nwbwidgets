@@ -27,7 +27,7 @@ def list_dandiset_files(dandiset_id: str):
         return [i.dict().get("path") for i in dandiset.get_assets()]
 
 
-def get_file_url(dandiset_id:str, file_path: str):
+def get_file_url(dandiset_id: str, file_path: str):
     with DandiAPIClient() as client:
-        asset = client.get_dandiset(dandiset_id, 'draft').get_asset_by_path(file_path)
+        asset = client.get_dandiset(dandiset_id, "draft").get_asset_by_path(file_path)
         return asset.get_content_url(follow_redirects=1, strip_query=True)

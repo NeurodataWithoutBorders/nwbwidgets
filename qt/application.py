@@ -1,27 +1,27 @@
-from PySide6.QtWidgets import (
-    QApplication, 
-    QMainWindow, 
-    QPushButton, 
-    QWidget,
-    QVBoxLayout, 
-    QHBoxLayout, 
-    QComboBox, 
-    QStyle,
-    QTextBrowser,
-    QLineEdit,
-    QFileDialog
-)
-from PySide6.QtCore import Qt
-from qtvoila import QtVoila
 import sys
 import webbrowser
 from pathlib import Path
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QFileDialog,
+    QHBoxLayout,
+    QLineEdit,
+    QMainWindow,
+    QPushButton,
+    QStyle,
+    QTextBrowser,
+    QVBoxLayout,
+    QWidget,
+)
+from qtvoila import QtVoila
 from utils.dandi import (
-    get_all_dandisets_metadata, 
+    get_all_dandisets_metadata,
     get_dandiset_metadata,
-    list_dandiset_files, 
-    get_file_url
+    get_file_url,
+    list_dandiset_files,
 )
 
 
@@ -29,7 +29,7 @@ class MyApp(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.resize(800, 800)
-        self.setWindowTitle('Desktop DANDI Explorer')
+        self.setWindowTitle("Desktop DANDI Explorer")
 
         try:
             self.all_dandisets_metadata = get_all_dandisets_metadata()
@@ -63,7 +63,6 @@ class MyApp(QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.show()
 
-    
     def change_data_source(self, value):
         self.delete_item_from_layout()
         if value == "DANDI archive":
@@ -72,26 +71,24 @@ class MyApp(QMainWindow):
             self.create_folder_layout()
         elif value == "Local file":
             self.create_file_layout()
-    
 
     def delete_item_from_layout(self):
         # Ref: https://stackoverflow.com/a/9899475/11483674
         child = self.layout.takeAt(1)
         child.widget().deleteLater()
 
-    
     def browser_local_folder(self):
-        folder_path = QFileDialog.getExistingDirectory(parent=self, caption='Open folder', dir=str(Path.home()))
+        folder_path = QFileDialog.getExistingDirectory(parent=self, caption="Open folder", dir=str(Path.home()))
         if folder_path:
             for f in Path(folder_path).glob("*.nwb"):
-                 self.all_folder_files.addItem(str(f))
-    
+                self.all_folder_files.addItem(str(f))
 
     def browser_local_file(self):
-        filename, filter = QFileDialog.getOpenFileName(parent=self, caption='Open file', dir=str(Path.home()), filter='NWB Files (*.nwb)')
+        filename, filter = QFileDialog.getOpenFileName(
+            parent=self, caption="Open file", dir=str(Path.home()), filter="NWB Files (*.nwb)"
+        )
         if filename:
             self.chosen_file.setText(filename)
-
 
     def create_folder_layout(self):
         browser_folder_button = QPushButton()
@@ -106,7 +103,7 @@ class MyApp(QMainWindow):
         icon_2 = self.style().standardIcon(QStyle.SP_FileDialogContentsView)
         accept_folder_file_button.setIcon(icon_2)
         accept_folder_file_button.setToolTip("Visualize NWB file")
-        accept_folder_file_button.clicked.connect(self.pass_code_to_voila_widget)        
+        accept_folder_file_button.clicked.connect(self.pass_code_to_voila_widget)
 
         hbox = QHBoxLayout()
         hbox.addWidget(browser_folder_button, stretch=0)
@@ -116,7 +113,6 @@ class MyApp(QMainWindow):
         w.setLayout(hbox)
 
         self.layout.insertWidget(1, w)
-
 
     def create_file_layout(self):
         browser_file_button = QPushButton()
@@ -142,7 +138,6 @@ class MyApp(QMainWindow):
 
         self.layout.insertWidget(1, w)
 
-    
     def create_dandi_layout(self):
         self.dandiset_choice = QComboBox()
         for m in self.all_dandisets_metadata:
@@ -198,13 +193,11 @@ class MyApp(QMainWindow):
         w.setLayout(dandi_source_layout)
 
         self.layout.insertWidget(1, w)
-    
 
     def open_webbrowser(self):
         dandiset_id = self.dandiset_choice.currentText().split("-")[0].strip()
         metadata = get_dandiset_metadata(dandiset_id=dandiset_id)
         webbrowser.open(metadata.url)
-    
 
     def list_dandiset_files(self):
         self.dandi_file_choice.clear()
@@ -216,15 +209,14 @@ class MyApp(QMainWindow):
         for f in all_files:
             self.dandi_file_choice.addItem(f)
 
-
     def pass_code_to_voila_widget(self):
         self.voila_widget.external_notebook = None
         self.voila_widget.clear()
 
         if self.source_choice.currentText() == "DANDI archive":
             file_url = get_file_url(
-                dandiset_id=self.dandiset_choice.currentText().split("-")[0].strip(), 
-                file_path=self.dandi_file_choice.currentText().strip()
+                dandiset_id=self.dandiset_choice.currentText().split("-")[0].strip(),
+                file_path=self.dandi_file_choice.currentText().strip(),
             )
             code = f"""import fsspec
 import pynwb
@@ -262,12 +254,12 @@ io = pynwb.NWBHDF5IO('{file_path}', load_namespaces=True)
 nwbfile = io.read()
 nwb2widget(nwbfile)"""
 
-        self.voila_widget.add_notebook_cell(code=code, cell_type='code')
+        self.voila_widget.add_notebook_cell(code=code, cell_type="code")
         # Run Voila
         self.voila_widget.run_voila()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     my_app = MyApp()
     sys.exit(app.exec())
