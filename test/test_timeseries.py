@@ -1,28 +1,26 @@
 import unittest
 
-import numpy as np
 import matplotlib.pyplot as plt
-
-from ipywidgets import widgets
+import numpy as np
 import plotly.graph_objects as go
-
+from ipywidgets import widgets
 from pynwb import TimeSeries
-from pynwb.epoch import TimeIntervals
 from pynwb.behavior import SpatialSeries
+from pynwb.epoch import TimeIntervals
 
 from nwbwidgets.timeseries import (
-    BaseGroupedTraceWidget,
-    show_ts_fields,
-    show_timeseries,
-    plot_traces,
-    show_indexed_timeseries_mpl,
     AlignMultiTraceTimeSeriesByTrialsConstant,
     AlignMultiTraceTimeSeriesByTrialsVariable,
-    SingleTracePlotlyWidget,
+    BaseGroupedTraceWidget,
     SeparateTracesPlotlyWidget,
+    SingleTracePlotlyWidget,
     get_timeseries_tt,
+    plot_traces,
+    show_indexed_timeseries_mpl,
     show_indexed_timeseries_plotly,
+    show_timeseries,
     show_timeseries_mpl,
+    show_ts_fields,
 )
 
 
@@ -39,7 +37,6 @@ def test_timeseries_widget():
 
 
 def test_show_timeseries_mpl():
-
     ts = TimeSeries(
         name="name",
         description="no description",
@@ -73,18 +70,15 @@ class TestTracesPlotlyWidget(unittest.TestCase):
         self.ts_single_intermittent = TimeSeries(
             name="test_timeseries_single_intermittent",
             data=data[:, 0],
-            timestamps=np.hstack([np.arange(0, 10, 10 / data.shape[0] * 2),
-                                  np.arange(20, 30, 10 / data.shape[0] * 2)]),
-            unit='m',
+            timestamps=np.hstack([np.arange(0, 10, 10 / data.shape[0] * 2), np.arange(20, 30, 10 / data.shape[0] * 2)]),
+            unit="m",
         )
         self.ts_multi_intermittent = SpatialSeries(
             name="test_timeseries_multi_intermittent",
             data=data,
-            timestamps=np.hstack([np.arange(0, 10, 10 / data.shape[0] * 2),
-                                  np.arange(20, 30, 10 / data.shape[0] * 2)]),
+            timestamps=np.hstack([np.arange(0, 10, 10 / data.shape[0] * 2), np.arange(20, 30, 10 / data.shape[0] * 2)]),
             reference_frame="lowerleft",
         )
-
 
     def test_single_trace_widget(self):
         single_wd = SingleTracePlotlyWidget(timeseries=self.ts_single)
@@ -167,9 +161,7 @@ class TestIndexTimeSeriesPlotly(unittest.TestCase):
 class ShowTimeSeriesTestCase(unittest.TestCase):
     def setUp(self):
         data = np.random.rand(160, 3)
-        self.ts = TimeSeries(
-            name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0
-        )
+        self.ts = TimeSeries(name="test_timeseries", data=data, unit="m", starting_time=0.0, rate=1.0)
 
     def test_show_ts_fields(self):
         assert isinstance(show_ts_fields(self.ts), widgets.Widget)
@@ -178,9 +170,7 @@ class ShowTimeSeriesTestCase(unittest.TestCase):
         assert isinstance(show_timeseries(self.ts, istart=5, istop=56), widgets.Widget)
 
     def test_show_indexed_timeseries_mpl(self):
-        ax = show_indexed_timeseries_mpl(
-            self.ts, zero_start=True, title="Test show_indexed_timeseries_mpl"
-        )
+        ax = show_indexed_timeseries_mpl(self.ts, zero_start=True, title="Test show_indexed_timeseries_mpl")
         assert isinstance(ax, plt.Subplot)
 
 
@@ -235,9 +225,7 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
                 stt = start_time + np.random.rand()
                 spt = stt + 7 - np.random.rand()
                 self.time_intervals.add_interval(start_time=stt, stop_time=spt)
-        self.time_intervals.add_column(
-            name="temp", description="desc", data=np.random.randint(2, size=n_intervals)
-        )
+        self.time_intervals.add_column(name="temp", description="desc", data=np.random.randint(2, size=n_intervals))
         self.time_intervals.add_column(
             name="temp2",
             description="desc",
@@ -245,20 +233,16 @@ class TestAlignMultiTraceTimeSeriesByTrials(unittest.TestCase):
         )
 
     def test_align_by_timestamps(self):
-        amt = AlignMultiTraceTimeSeriesByTrialsVariable(
-            time_series=self.ts_timestamps, trials=self.time_intervals
-        )
-        gas = amt.controls['gas']
+        amt = AlignMultiTraceTimeSeriesByTrialsVariable(time_series=self.ts_timestamps, trials=self.time_intervals)
+        gas = amt.controls["gas"]
         gas.group_dd.value = list(gas.categorical_columns.keys())[0]
         gas.group_sm.value = (gas.group_sm.options[0],)
         fig = amt.children[-1]
-        assert len(fig.data)==len(gas.group_sm.value)
+        assert len(fig.data) == len(gas.group_sm.value)
 
     def test_align_by_rate(self):
-        amt = AlignMultiTraceTimeSeriesByTrialsConstant(
-            time_series=self.ts_rate, trials=self.time_intervals
-        )
-        gas = amt.controls['gas']
+        amt = AlignMultiTraceTimeSeriesByTrialsConstant(time_series=self.ts_rate, trials=self.time_intervals)
+        gas = amt.controls["gas"]
         gas.group_dd.value = list(gas.categorical_columns)[0]
         gas.group_sm.value = (gas.group_sm.options[0],)
         fig = amt.children[-1]

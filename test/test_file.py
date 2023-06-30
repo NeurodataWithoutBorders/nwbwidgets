@@ -1,8 +1,7 @@
 from datetime import datetime
-from dateutil.tz import tzlocal
 
 import ipywidgets as widgets
-
+from dateutil.tz import tzlocal
 from pynwb import NWBFile
 
 from nwbwidgets import nwb2widget
@@ -28,7 +27,6 @@ def test_panel():
     assert isinstance(panel, widgets.Widget)
 
     # Change dropdown options for coverage
-    panel.source_options_radio.value = "Local dir"
     panel.source_options_radio.value = "Local file"
     panel.source_options_radio.value = "S3"
     panel.source_options_radio.value = "DANDI"

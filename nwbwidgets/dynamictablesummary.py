@@ -1,15 +1,11 @@
-from ipywidgets import widgets, Layout
 import plotly.express as px
-
+from ipywidgets import Layout, widgets
 from pynwb.misc import DynamicTable
 
 from .utils.dynamictable import infer_columns_to_plot
 from .utils.widgets import interactive_output
 
-
-field_lay = widgets.Layout(
-        max_height="40px", max_width="500px", min_height="30px", min_width="180px"
-    )
+field_lay = widgets.Layout(max_height="40px", max_width="500px", min_height="30px", min_width="180px")
 
 
 class DynamicTableSummaryWidget(widgets.VBox):
@@ -26,13 +22,14 @@ class DynamicTableSummaryWidget(widgets.VBox):
 
         self.name_text = widgets.Label(f"Table name: {self.dynamic_table.name}\n", layout=field_lay)
         self.entries_text = widgets.Label(f"Number of entries: {num_entries}\n", layout=field_lay)
-        self.col_text = widgets.Label(f"Number of columns: {num_columns} - real (r): {num_columns - num_categorical}, "
-                                      f"categorical (c): {num_categorical}",
-                                      layout=field_lay)
+        self.col_text = widgets.Label(
+            f"Number of columns: {num_columns} - real (r): {num_columns - num_categorical}, "
+            f"categorical (c): {num_categorical}",
+            layout=field_lay,
+        )
         self.col_plot_text = widgets.Label(f"Number of inspectable columns: {num_columns_to_plot}")
 
-        self.summary_text = widgets.VBox(
-            [self.name_text, self.entries_text, self.col_text, self.col_plot_text])
+        self.summary_text = widgets.VBox([self.name_text, self.entries_text, self.col_text, self.col_plot_text])
 
         self.col_names_display = {}
         for col in self.col_names:
@@ -42,27 +39,23 @@ class DynamicTableSummaryWidget(widgets.VBox):
                 self.col_names_display[f"(r) {col}"] = col
 
         self.column_dropdown = widgets.SelectMultiple(
-                options=list(self.col_names_display),
-                description="Inspect columns",
-                layout=Layout(max_width="400px"),
-                style={"description_width": "initial"},
-                disabled=False,
-                tooltip="Select columns to inspect. You can select at most 1 categorical and 3 real columns."
-            )
+            options=list(self.col_names_display),
+            description="Inspect columns",
+            layout=Layout(max_width="400px"),
+            style={"description_width": "initial"},
+            disabled=False,
+            tooltip="Select columns to inspect. You can select at most 1 categorical and 3 real columns.",
+        )
         self.column_dropdown.observe(self.max_selection)
 
-        self.nbins = widgets.IntText(
-            10, min=0, description="# bins", layout=Layout(max_width="400px")
-        )
+        self.nbins = widgets.IntText(10, min=0, description="# bins", layout=Layout(max_width="400px"))
         self.nbins.layout.visibility = "hidden"
 
         self.show_labels = widgets.Checkbox(value=True, description="show labels")
 
-        self.plot_controls = widgets.HBox(
-            [self.column_dropdown, self.nbins, self.show_labels])
+        self.plot_controls = widgets.HBox([self.column_dropdown, self.nbins, self.show_labels])
 
-        self.controls = dict(
-            col_names_display=self.column_dropdown, nbins=self.nbins, show_labels=self.show_labels)
+        self.controls = dict(col_names_display=self.column_dropdown, nbins=self.nbins, show_labels=self.show_labels)
 
         out_fig = interactive_output(self.plot_hist_bar, self.controls)
         bottom_panel = widgets.VBox([self.plot_controls, out_fig])
@@ -70,10 +63,12 @@ class DynamicTableSummaryWidget(widgets.VBox):
         self.children = [self.summary_text, bottom_panel]
 
     def max_selection(self, change):
-        if change['type'] == 'change' and change['name'] == 'value':
+        if change["type"] == "change" and change["name"] == "value":
             if len(self.column_dropdown.value) > 4:
-                print("Maximum number of selected items reached! "
-                      "You can select at most 4 items (1 categorical and 3 real)")
+                print(
+                    "Maximum number of selected items reached! "
+                    "You can select at most 4 items (1 categorical and 3 real)"
+                )
                 self.column_dropdown.value = ()
 
     def reset_dropdown(self):
@@ -95,11 +90,10 @@ class DynamicTableSummaryWidget(widgets.VBox):
                 col_name = self.col_names_display[col_name_display]
                 if col_name in self.categorical_cols:
                     self.nbins.layout.visibility = "hidden"
-                    fig = px.histogram(df, x=col_name, histfunc='count')
+                    fig = px.histogram(df, x=col_name, histfunc="count")
                 else:
                     self.nbins.layout.visibility = "visible"
-                    fig = px.histogram(
-                        df, x=col_name, marginal="violin", nbins=nbins)
+                    fig = px.histogram(df, x=col_name, marginal="violin", nbins=nbins)
                 fig.show()
             elif len(col_names_display) == 2:
                 # display either scatterplot (2x r) or multiple histograms (1r + 1c)
@@ -109,16 +103,16 @@ class DynamicTableSummaryWidget(widgets.VBox):
                     self.nbins.layout.visibility = "hidden"
                     col_name_0 = col_name = self.col_names_display[col_names_display[0]]
                     col_name_1 = col_name = self.col_names_display[col_names_display[1]]
-                    fig = px.scatter(df, x=col_name_0, y=col_name_1, marginal_x="violin", marginal_y="violin",
-                                     text=entry_names)
+                    fig = px.scatter(
+                        df, x=col_name_0, y=col_name_1, marginal_x="violin", marginal_y="violin", text=entry_names
+                    )
                     fig.show()
                 elif num_real == 1:
                     self.nbins.layout.visibility = "visible"
                     col_real = self.col_names_display[real_cols[0]]
                     col_cat_name = [c for c in col_names_display if c not in real_cols][0]
                     col_cat = self.col_names_display[col_cat_name]
-                    fig = px.histogram(
-                        df, x=col_real, color=col_cat, marginal="violin", nbins=nbins)
+                    fig = px.histogram(df, x=col_real, color=col_cat, marginal="violin", nbins=nbins)
                     fig.show()
                 else:
                     print("Select at least one real variable")
@@ -132,9 +126,7 @@ class DynamicTableSummaryWidget(widgets.VBox):
                     col_name_0 = col_name = self.col_names_display[col_names_display[0]]
                     col_name_1 = col_name = self.col_names_display[col_names_display[1]]
                     col_name_2 = col_name = self.col_names_display[col_names_display[2]]
-                    fig = px.scatter_3d(
-                        df, x=col_name_0, y=col_name_1, z=col_name_2,
-                        text=entry_names)
+                    fig = px.scatter_3d(df, x=col_name_0, y=col_name_1, z=col_name_2, text=entry_names)
                     fig.show()
                 elif num_real == 2:
                     self.nbins.layout.visibility = "hidden"
@@ -143,9 +135,7 @@ class DynamicTableSummaryWidget(widgets.VBox):
                     col_cat_name = [c for c in col_names_display if c not in real_cols][0]
                     col_cat = self.col_names_display[col_cat_name]
                     df[col_cat] = df[col_cat].astype("str")
-                    fig = px.scatter(df, x=col_real_0,
-                                     y=col_real_1, color=col_cat,
-                                     text=entry_names)
+                    fig = px.scatter(df, x=col_real_0, y=col_real_1, color=col_cat, text=entry_names)
                     fig.show()
                 else:
                     print("Select at most one categorical variable")
@@ -162,9 +152,7 @@ class DynamicTableSummaryWidget(widgets.VBox):
                     col_cat_name = [c for c in col_names_display if c not in real_cols][0]
                     col_cat = self.col_names_display[col_cat_name]
                     df[col_cat] = df[col_cat].astype("str")
-                    fig = px.scatter_3d(df, x=col_name_0,
-                                        y=col_name_1, z=col_name_2, color=col_cat,
-                                        text=entry_names)
+                    fig = px.scatter_3d(df, x=col_name_0, y=col_name_1, z=col_name_2, color=col_cat, text=entry_names)
                     fig.show()
                 else:
                     print("Select 3 real and one categorical variables")

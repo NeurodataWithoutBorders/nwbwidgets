@@ -1,22 +1,21 @@
-import numpy as np
-
 import ipywidgets as widgets
+import numpy as np
 import plotly.graph_objects as go
-
 from pynwb.base import DynamicTable
 
-import trimesh
-
 from .base import df_to_hover_text
+from .utils.dependencies import check_widget_dependencies, safe_import
+
+nilearn = safe_import("nilearn")
+skspatial = safe_import("skspatial")
+trimesh = safe_import("trimesh")
 
 
-def make_cylinder_mesh(
-    radius, height, sections=32, position=(0, 0, 0), direction=(1, 0, 0), **kwargs
-):
+def make_cylinder_mesh(radius, height, sections=32, position=(0, 0, 0), direction=(1, 0, 0), **kwargs):
     new_normal = direction / np.linalg.norm(direction)
     cosx, cosy = new_normal[:2]
-    sinx = np.sqrt(1 - cosx ** 2)
-    siny = np.sqrt(1 - cosy ** 2)
+    sinx = np.sqrt(1 - cosx**2)
+    siny = np.sqrt(1 - cosy**2)
 
     yaw = [[cosx, -sinx, 0, 0], [sinx, cosx, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
 
@@ -26,9 +25,7 @@ def make_cylinder_mesh(
 
     transform[:3, 3] = position
 
-    cylinder = trimesh.primitives.Cylinder(
-        radius=radius, height=height, sections=sections, transform=transform
-    )
+    cylinder = trimesh.primitives.Cylinder(radius=radius, height=height, sections=sections, transform=transform)
 
     x, y, z = cylinder.vertices.T
     i, j, k = cylinder.faces.T
@@ -36,10 +33,7 @@ def make_cylinder_mesh(
     return go.Mesh3d(x=x, y=y, z=z, i=i, j=j, k=k, **kwargs)
 
 
-def make_cylinders(
-    positions, directions, radius=1, height=1, sections=32, name="cylinders", **kwargs
-):
-
+def make_cylinders(positions, directions, radius=1, height=1, sections=32, name="cylinders", **kwargs):
     return [
         make_cylinder_mesh(
             position=position,
@@ -50,29 +44,23 @@ def make_cylinders(
             showlegend=not i,
             legendgroup=name,
             name=name,
-            **kwargs
+            **kwargs,
         )
         for i, (position, direction) in enumerate(zip(positions, directions))
     ]
 
 
+@check_widget_dependencies({"nilearn": nilearn, "skspatial": skspatial, "trimesh": trimesh})
 class HumanElectrodesPlotlyWidget(widgets.VBox):
     def __init__(self, electrodes: DynamicTable, **kwargs):
-
         super().__init__()
         self.electrodes = electrodes
 
-        slider_kwargs = dict(
-            value=1.0, min=0.0, max=1.0, style={"description_width": "initial"}
-        )
+        slider_kwargs = dict(value=1.0, min=0.0, max=1.0, style={"description_width": "initial"})
 
-        left_opacity_slider = widgets.FloatSlider(
-            description="left hemi opacity", **slider_kwargs
-        )
+        left_opacity_slider = widgets.FloatSlider(description="left hemi opacity", **slider_kwargs)
 
-        right_opacity_slider = widgets.FloatSlider(
-            description="right hemi opacity", **slider_kwargs
-        )
+        right_opacity_slider = widgets.FloatSlider(description="right hemi opacity", **slider_kwargs)
 
         color_by_dropdown = widgets.Dropdown(
             options=list(electrodes.colnames),
@@ -95,20 +83,17 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
     def find_normals(points, k=3):
         normals = []
         for point in points:
-            from skspatial.objects import Points, Plane
-
             distance = np.linalg.norm(points - point, axis=1)
             # closest_inds = np.argpartition(distance, 3)
             # x0, x1, x2 = points[closest_inds[:3]]
             # normal = np.cross((x1 - x0), (x2 - x0))
             closest_inds = np.argpartition(distance, k)
             close_points = points[closest_inds[:k]]
-            normal = np.asarray(Plane.best_fit(close_points).normal)
+            normal = np.asarray(skspatial.objects.Plane.best_fit(close_points).normal)
             normals.append(normal)
         return normals
 
     def show_electrodes(self, electrodes: DynamicTable, color_by):
-
         positions = np.c_[electrodes.x[:], electrodes.y[:], electrodes.z[:]]
 
         if isinstance(electrodes[color_by][0], (bytes, str, np.bool_)):
@@ -116,7 +101,7 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
             colors = group_inv
             show_leg = True
             show_scale = False
-        elif isinstance(electrodes[color_by][0], (np.ndarray, np.float)):
+        elif isinstance(electrodes[color_by][0], (np.ndarray, float)):
             colors = np.ravel(electrodes[color_by][:])
             ugroups, group_inv = [0], np.array([0] * len(colors))
             show_leg = False
@@ -183,13 +168,10 @@ class HumanElectrodesPlotlyWidget(widgets.VBox):
         )
 
     def plot_human_brain(self, left_opacity=1.0, right_opacity=1.0):
-
-        from nilearn import datasets, surface
-
-        mesh = datasets.fetch_surf_fsaverage("fsaverage5")
+        mesh = nilearn.datasets.fetch_surf_fsaverage("fsaverage5")
 
         def create_mesh(name, **kwargs):
-            vertices, triangles = surface.load_surf_mesh(mesh[name])
+            vertices, triangles = nilearn.surface.load_surf_mesh(mesh[name])
             x, y, z = vertices.T
             i, j, k = triangles.T
 

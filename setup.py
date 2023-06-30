@@ -1,6 +1,7 @@
 import os
-from setuptools import setup
 from pathlib import Path
+
+from setuptools import setup
 
 root = Path(__file__).parent
 
@@ -30,6 +31,11 @@ setup(
     description="This is nwbwidgets, widgets for viewing the contents of a "
     "NWB-file in Jupyter Notebooks using ipywidgets.",
     install_requires=requirements,
+    extras_require={
+        "human_electrodes": ["nilearn", "trimesh"],
+        "mouse_electrodes": ["ccfwidget", "aiohttp"],
+        "full": ["ccfwidget", "aiohttp", "nilearn", "trimesh"],
+    },
     license="BSD",
     keywords=["jupyter", "hdf5", "notebook", "nwb"],
     long_description=long_description,

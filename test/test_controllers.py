@@ -1,12 +1,14 @@
 import unittest
 
 import numpy as np
-
 from hdmf.common import DynamicTable, VectorData
-from pynwb.ecephys import ElectrodeGroup, Device
+from pynwb.ecephys import Device, ElectrodeGroup
 
-from nwbwidgets.controllers import (RangeController, GroupAndSortController,
-                                    StartAndDurationController)
+from nwbwidgets.controllers import (
+    GroupAndSortController,
+    RangeController,
+    StartAndDurationController,
+)
 
 
 class FloatRangeControllerTestCase(unittest.TestCase):
@@ -39,18 +41,12 @@ class TestGroupAndSortController(unittest.TestCase):
         data1 = np.array([1, 2, 2, 3, 1, 1, 3, 2, 3])
         data2 = np.array([3, 4, 2, 4, 3, 2, 2, 4, 4])
         device = Device(name="device")
-        eg_1 = ElectrodeGroup(
-            name="electrodegroup1", description="desc", location="brain", device=device
-        )
-        eg_2 = ElectrodeGroup(
-            name="electrodegroup2", description="desc", location="brain", device=device
-        )
+        eg_1 = ElectrodeGroup(name="electrodegroup1", description="desc", location="brain", device=device)
+        eg_2 = ElectrodeGroup(name="electrodegroup2", description="desc", location="brain", device=device)
         data3 = [eg_1, eg_2, eg_1, eg_1, eg_1, eg_1, eg_1, eg_1, eg_1]
         vd1 = VectorData("Data1", "vector data for creating a DynamicTable", data=data1)
         vd2 = VectorData("Data2", "vector data for creating a DynamicTable", data=data2)
-        vd3 = VectorData(
-            "ElectrodeGroup", "vector data for creating a DynamicTable", data=data3
-        )
+        vd3 = VectorData("ElectrodeGroup", "vector data for creating a DynamicTable", data=data3)
         vd = [vd1, vd2, vd3]
 
         self.dynamic_table = DynamicTable(
@@ -75,6 +71,7 @@ class TestGroupAndSortController(unittest.TestCase):
 
         gas.order_dd.value = "Data1"
         gas.order_dd.value = None
+
 
 class TestStartAndDurationController(unittest.TestCase):
     def setUp(self) -> None:
