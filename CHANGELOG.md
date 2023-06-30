@@ -1,6 +1,8 @@
 # Upcoming
 
 
+# v0.11.0
+
 ### New Features
 * Improvements on Panel Docker file, including path for read-only mount to access local files [PR #299](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/299)
 * Improved browsing and reading local NWB files with Panel, using ipyfilechooser [PR #300](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/300)
