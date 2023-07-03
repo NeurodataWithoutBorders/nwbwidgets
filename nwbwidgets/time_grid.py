@@ -92,7 +92,7 @@ def extract_timing_information_from_nwbfile(nwbfile: NWBFile, verbose: bool = Fa
 def generate_epoch_guides_trace(temporal_data_dict):
     if "epochs" not in temporal_data_dict:
         return []
-    
+
     epoch_dict = temporal_data_dict["epochs"]
     intervals = epoch_dict["intervals"]
     x_epoch = []
