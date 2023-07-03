@@ -1,7 +1,7 @@
-import plotly.graph_objects as go
 import matplotlib.cm as mplcm
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from hdmf.common import DynamicTable, VectorData
 from pynwb import NWBFile, TimeSeries
 
