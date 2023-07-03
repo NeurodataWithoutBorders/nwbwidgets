@@ -90,6 +90,9 @@ def extract_timing_information_from_nwbfile(nwbfile: NWBFile, verbose: bool = Fa
 
 
 def generate_epoch_guides_trace(temporal_data_dict):
+    if "epochs" not in temporal_data_dict:
+        return []
+    
     epoch_dict = temporal_data_dict["epochs"]
     intervals = epoch_dict["intervals"]
     x_epoch = []
@@ -210,7 +213,8 @@ def generate_time_grid_widget(temporal_data_dict: dict) -> go.FigureWidget:
         fig.add_trace(trace)
 
     epoch_guide_trace = generate_epoch_guides_trace(temporal_data_dict)
-    fig.add_trace(epoch_guide_trace)
+    if epoch_guide_trace:
+        fig.add_trace(epoch_guide_trace)
 
     annotation_dict_list = generate_epoch_annotations(temporal_data_dict)
     # Button for toggling epoch guides
@@ -229,7 +233,10 @@ def generate_time_grid_widget(temporal_data_dict: dict) -> go.FigureWidget:
         x=0.10,  # Position from left (0 to 1)
         y=-0.15,  # Position from bottom (0 to 1)
     )
-
+    if epoch_guide_trace:
+        updatemenus = [epoch_guide_button]
+    else:
+        updatemenus = None
     ticktext = list(styling_dict.keys())
     tickvals = list(range(1, len(temporal_data_dict) + 1))
     fig.update_layout(
@@ -244,7 +251,7 @@ def generate_time_grid_widget(temporal_data_dict: dict) -> go.FigureWidget:
             showgrid=True,
             gridwidth=0.1,
         ),
-        updatemenus=[epoch_guide_button],
+        updatemenus=updatemenus,
     )
 
     return fig
