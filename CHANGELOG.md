@@ -2,6 +2,7 @@
 
 ### New features
 * Improved browsing and reading local NWB files with Panel, using ipyfilechooser [PR #300](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/300)
+* Improve readibility of dandisets and files dropdown lists [PR #301](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/301)
 
 ### Fixes
 * Fix I/O issues when streaming data on Panel [PR #295](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/295)
