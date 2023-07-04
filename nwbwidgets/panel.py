@@ -109,7 +109,7 @@ class Panel(widgets.VBox):
             dandiset_options.append(item_name)
 
         self.source_dandi_id = widgets.Dropdown(
-            options=dandiset_options,
+            options=sorted(dandiset_options),
             description="Dandiset:",
             layout=widgets.Layout(width="400px", overflow=None),
         )
