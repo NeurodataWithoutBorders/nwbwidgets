@@ -1,5 +1,7 @@
 import concurrent.futures
+import warnings
 from pathlib import Path
+
 import fsspec
 import h5py
 import ipywidgets as widgets
@@ -8,7 +10,6 @@ from fsspec.implementations.cached import CachingFileSystem
 from ipyfilechooser import FileChooser
 from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
-import warnings
 
 from .utils.dandi import (
     get_dandiset_metadata,
