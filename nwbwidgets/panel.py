@@ -1,6 +1,5 @@
 import concurrent.futures
 from pathlib import Path
-
 import fsspec
 import h5py
 import ipywidgets as widgets
@@ -9,6 +8,7 @@ from fsspec.implementations.cached import CachingFileSystem
 from ipyfilechooser import FileChooser
 from pynwb import NWBHDF5IO
 from tqdm.notebook import tqdm
+import warnings
 
 from .utils.dandi import (
     get_dandiset_metadata,
@@ -26,6 +26,7 @@ class Panel(widgets.VBox):
         enable_dandi_source: bool = True,
         enable_s3_source: bool = True,
         enable_local_source: bool = True,
+        show_warnings: bool = False,
         **kwargs,
     ):
         """
@@ -38,14 +39,21 @@ class Panel(widgets.VBox):
                 created under the current working directory. Defaults to None.
             enable_dandi_source : bool, default: True
                 Enable DANDI source option.
+            enable_s3_source : bool, default: True
+                Enable S3 source option.
             enable_local_source : bool, default: True
                 Enable local source option.
+            show_warnings : bool, default: False
+                Show warnings.
         """
         super().__init__(children=[], **kwargs)
 
         self.stream_mode = stream_mode
         self.io = None
         self.nwbfile = None
+
+        if not show_warnings:
+            warnings.filterwarnings("ignore")
 
         self.source_options_names = list()
         if enable_local_source:
@@ -207,14 +215,20 @@ class Panel(widgets.VBox):
         self.widgets_panel.children = [widgets.Label("loading...")]
         dandiset_id = self.source_dandi_id.value.split("-")[0].strip()
         file_path = self.source_dandi_file_dropdown.value
-        s3_url = get_file_url(dandiset_id=dandiset_id, file_path=file_path)
-        self._stream_s3_file(s3_url)
+        try:
+            s3_url = get_file_url(dandiset_id=dandiset_id, file_path=file_path)
+            self._stream_s3_file(s3_url)
+        except Exception as e:
+            self.widgets_panel.children = [widgets.Label(str(e))]
 
     def stream_s3_file(self, args=None):
         """Stream NWB file from S3 url"""
-        self.widgets_panel.children = [widgets.Label("loading...")]
+        self.widgets_panel.children = [widgets.Label("loading file...")]
         s3_url = self.source_s3_file_url.value
-        self._stream_s3_file(s3_url)
+        try:
+            self._stream_s3_file(s3_url)
+        except Exception as e:
+            self.widgets_panel.children = [widgets.Label(str(e))]
 
     def _stream_s3_file(self, s3_url):
         if self.stream_mode == "ros3":

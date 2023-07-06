@@ -13,7 +13,7 @@ def list_dandiset_files(dandiset_id: str):
         dandiset = client.get_dandiset(dandiset_id=dandiset_id, version_id="draft")
         return sorted(
             [
-                i.dict().get("path").split("/")[-1]
+                i.dict().get("path")
                 for i in dandiset.get_assets()
                 if i.dict().get("path").endswith(".nwb")
             ]
