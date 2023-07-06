@@ -4,7 +4,7 @@
 You can easily run NWB widgets Panel using Docker.
 
 ```bash
-$ docker pull ghcr.io/NeurodataWithoutBorders/nwbwidgets-panel:latest 
+$ docker pull ghcr.io/NeurodataWithoutBorders/nwbwidgets-panel:latest
 $ docker run -p 8866:8866 nwbwidgets-panel
 ```
 
