@@ -7,6 +7,7 @@ You can easily run NWB widgets Panel using Docker.
 $ docker pull ghcr.io/NeurodataWithoutBorders/nwbwidgets-panel:latest
 $ docker run -p 8866:8866 nwbwidgets-panel
 ```
+then navigate to `http://localhost:8866/` in your browser.
 
 By default, the container will run to access remote files only, using `enable_local_source=False` (see [Panel](https://nwb-widgets.readthedocs.io/en/latest/contents/quickstart.html#basic-usage-with-panel)). To allow for local files browsering, run the container with:
 ```bash
