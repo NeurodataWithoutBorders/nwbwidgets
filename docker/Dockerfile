@@ -1,9 +1,13 @@
-FROM python:3.10
+FROM python:3.10.12-slim
+LABEL org.opencontainers.image.source=https://github.com/NeurodataWithoutBorders/nwbwidgets
 
 COPY requirements.txt .
 RUN pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && pip install git+https://github.com/NeurodataWithoutBorders/nwbwidgets.git
+    && pip install nwbwidgets
+
+# python slim image does not have git, leaving this here only for reference for now
+# && pip install git+https://github.com/NeurodataWithoutBorders/nwbwidgets.git
 
 WORKDIR /app
 RUN mkdir local_files
