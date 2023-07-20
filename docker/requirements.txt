@@ -28,7 +28,7 @@ jupyterlab_server==2.15.2
 jupyterlab-widgets==1.1.1
 tqdm>=4.36.0
 zarr==2.13.3
-aiohttp==3.8.3
+aiohttp==3.8.5
 tifffile==2022.10.10
 trimesh==3.15.4
 importlib-metadata<5.0
