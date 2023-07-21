@@ -4,8 +4,11 @@
 name: Upload Package to PyPI and Publish NWBPanel Docker Image
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - panel-fixes-and-improvements
+  # release:
+  #   types: [published]
 
 jobs:
   publish-pypi:
@@ -45,8 +48,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.REPO_GITHUB_USERNAME }}
+          password: ${{ secrets.REPO_GITHUB_TOKEN }}
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
