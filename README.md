@@ -8,7 +8,7 @@
   <h3 align="center">Explore NWB data in Jupyter</h3>
 </p>
 <p align="center">
-   <a href="https://nwbwidgets.readthedocs.io/"><strong>Explore our documentation »</strong></a>
+   <a href="https://nwb-widgets.readthedocs.io/"><strong>Explore our documentation »</strong></a>
 </p>
 
 <!-- TABLE OF CONTENTS -->
