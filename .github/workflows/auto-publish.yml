@@ -4,11 +4,11 @@
 name: Upload Package to PyPI and Publish NWBPanel Docker Image
 
 on:
-  push:
-    branches:
-      - panel-fixes-and-improvements
-  # release:
-  #   types: [published]
+  # push:
+  #   branches:
+  #     - panel-fixes-and-improvements
+  release:
+    types: [published]
 
 jobs:
   publish-pypi:
