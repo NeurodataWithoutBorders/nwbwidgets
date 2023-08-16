@@ -6,7 +6,7 @@ ipympl
 ipydatagrid
 ipyvolume>=0.6.0a10
 ipywidgets>=8.0.0
-plotly
+plotly==5.13.1
 tqdm>=4.36.0
 zarr
 tifffile
@@ -14,9 +14,10 @@ ndx-spectrum
 ndx-icephys-meta
 ndx-grayscalevolume
 trimesh
-dandi
+dandi>=0.55.0
 importlib-metadata <5.0
 fsspec
 requests
 aiohttp
 ipydatawidgets==4.3.2
+ipyfilechooser==0.6.0

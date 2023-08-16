@@ -1,5 +1,21 @@
 # Upcoming
 
+
+# v0.11.0
+
+### New Features
+* Improvements on Panel Docker file, including path for read-only mount to access local files [PR #299](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/299)
+* Panel error handling with message output [PR #299](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/299)
+* New flag argument on Panel to enable/disable warnings [PR #299](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/299)
+* Improved browsing and reading local NWB files with Panel, using ipyfilechooser [PR #300](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/300)
+* Improve readibility of dandisets and files dropdown lists [PR #301](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/301)
+
+### Fixes
+* Fix I/O issues when streaming data on Panel [PR #295](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/295)
+* Fix plotly Figure not showing up, pinned Plotly version [PR #297](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/297)
+* Fix BehavioralTimeSeries not showing up [PR #297](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/297)
+
+
 # v0.10.2
 
 ### Fixes
