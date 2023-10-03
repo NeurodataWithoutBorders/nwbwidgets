@@ -18,7 +18,7 @@ def compute_smoothed_firing_rate(spike_times, tt, sigma_in_secs):
         return np.zeros_like(tt)
     binned_spikes = np.zeros_like(tt)
     # find bin indices for spike times
-    spike_idx = np.searchsorted(tt, spike_times, side='right') - 1
+    spike_idx = np.searchsorted(tt, spike_times, side="right") - 1
     # filter out negative spike idxs, though there shouldn't be any
     spike_idx = spike_idx[spike_idx >= 0].astype(int)
     # increment binned spike count at bin indices
