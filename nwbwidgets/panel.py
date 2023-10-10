@@ -147,12 +147,8 @@ class Panel(widgets.VBox):
 
         self.create_cache_row()
         self.source_dandi_file_button = widgets.Button(icon="check", description="Load file")
-        
-        children_list = [
-            self.source_dandi_id,
-            self.source_dandi_file_dropdown,
-            self.source_dandi_file_button
-        ]
+
+        children_list = [self.source_dandi_id, self.source_dandi_file_dropdown, self.source_dandi_file_button]
         if self.cache_row is not None:
             children_list.insert(2, self.cache_row)
 
