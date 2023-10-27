@@ -11,13 +11,13 @@ from pynwb.ophys import (
     ImagingPlane,
     OpticalChannel,
     PlaneSegmentation,
-    TwoPhotonSeries,
+    TwoPhotonSeries, OnePhotonSeries,
 )
 from pynwb.testing.mock.ophys import mock_PlaneSegmentation
 
 from nwbwidgets.ophys import (
     PlaneSegmentation2DWidget,
-    TwoPhotonSeriesWidget,
+    PhotonSeriesWidget,
     show_df_over_f,
     show_grayscale_volume,
     show_image_segmentation,
@@ -61,6 +61,16 @@ class CalciumImagingTestCase(unittest.TestCase):
             rate=1.0,
             unit="n.a",
         )
+
+        self.one_photon_series = OnePhotonSeries(
+            name="test_one_photon_series",
+            data=np.random.randn(100, 5, 5),
+            imaging_plane=self.imaging_plane,
+            starting_frame=[0],
+            rate=1.0,
+            unit="n.a.",
+        )
+
         self.img_seg = ImageSegmentation()
         self.ps2 = self.img_seg.create_plane_segmentation(
             "output from segmenting my favorite imaging plane",
@@ -105,7 +115,7 @@ class CalciumImagingTestCase(unittest.TestCase):
         self.df_over_f = DfOverF(rrs)
 
     def test_show_two_photon_series(self):
-        wid = TwoPhotonSeriesWidget(self.image_series, default_neurodata_vis_spec)
+        wid = PhotonSeriesWidget(self.image_series, default_neurodata_vis_spec)
         assert isinstance(wid, widgets.Widget)
         wid.controls["slider"].value = 50
 
@@ -118,7 +128,12 @@ class CalciumImagingTestCase(unittest.TestCase):
             rate=1.0,
             unit="n.a",
         )
-        wid = TwoPhotonSeriesWidget(image_series3, default_neurodata_vis_spec)
+        wid = PhotonSeriesWidget(image_series3, default_neurodata_vis_spec)
+        assert isinstance(wid, widgets.Widget)
+        wid.controls["slider"].value = 50
+
+    def test_show_one_photon_series(self):
+        wid = PhotonSeriesWidget(self.one_photon_series, default_neurodata_vis_spec)
         assert isinstance(wid, widgets.Widget)
         wid.controls["slider"].value = 50
 
