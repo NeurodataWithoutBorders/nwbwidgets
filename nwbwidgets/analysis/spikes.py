@@ -14,10 +14,16 @@ def compute_smoothed_firing_rate(spike_times, tt, sigma_in_secs):
     Returns:
           Gaussian smoothing evaluated at array t
     """
-    if len(spike_times) < 2:
+    if len(spike_times) < 1:
         return np.zeros_like(tt)
     binned_spikes = np.zeros_like(tt)
-    binned_spikes[np.searchsorted(tt, spike_times)] += 1
+    # find bin indices for spike times
+    spike_idx = np.searchsorted(tt, spike_times, side="right") - 1
+    # filter out negative spike idxs, though there shouldn't be any
+    spike_idx = spike_idx[spike_idx >= 0].astype(int)
+    # increment binned spike count at bin indices
+    np.add.at(binned_spikes, spike_idx, 1)
+    # smooth data
     dt = np.diff(tt[:2])[0]
     sigma_in_samps = sigma_in_secs / dt
     smooth_fr = scipy.ndimage.gaussian_filter1d(binned_spikes, sigma_in_samps) / dt
