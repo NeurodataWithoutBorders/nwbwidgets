@@ -1,7 +1,8 @@
 import concurrent.futures
+import os
 import warnings
 from pathlib import Path
-import os
+
 import fsspec
 import h5py
 import ipywidgets as widgets
