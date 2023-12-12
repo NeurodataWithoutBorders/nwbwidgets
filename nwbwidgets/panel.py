@@ -1,7 +1,7 @@
 import concurrent.futures
 import warnings
 from pathlib import Path
-
+import os
 import fsspec
 import h5py
 import ipywidgets as widgets
@@ -292,6 +292,9 @@ class Panel(widgets.VBox):
 
     def get_all_dandisets_metadata(self):
         with DandiAPIClient() as client:
+            api_key = os.environ.get("DANDI_API_KEY", None)
+            if api_key:
+                client.dandi_authenticate()
             all_metadata = []
             dandisets = list(client.get_dandisets())
             total_dandisets = len(dandisets)
