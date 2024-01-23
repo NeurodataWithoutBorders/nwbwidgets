@@ -49,7 +49,7 @@ setup(
         "nwbwidgets/analysis",
         "nwbwidgets/controllers",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     setup_requires=["setuptools>=38.6.0", "setuptools_scm"],
     url="https://github.com/NeurodataWithoutBorders/nwb-jupyter-widgets",
 )
