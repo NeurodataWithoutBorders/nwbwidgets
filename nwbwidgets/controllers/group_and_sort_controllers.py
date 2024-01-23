@@ -136,8 +136,9 @@ class GroupAndSortController(AbstractGroupAndSortController):
                 "TimeIntervals": "trials",
                 "Units": "units",
                 "PlaneSegmentation": "image_planes",
+                "FibersTable": "traces",
             }
-            desc = dt_desc_map[dynamic_table.neurodata_type] if dynamic_table is not None else "traces"
+            desc = dt_desc_map.get(dynamic_table.neurodata_type, "traces") if dynamic_table is not None else "traces"
             self.range_controller = RangeController(
                 0,
                 self.nitems,
