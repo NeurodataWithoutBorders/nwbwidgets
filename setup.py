@@ -24,9 +24,11 @@ setup(
         "Development Status :: 3 - Alpha",
         "Framework :: Jupyter",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     description="This is nwbwidgets, widgets for viewing the contents of a "
     "NWB-file in Jupyter Notebooks using ipywidgets.",
