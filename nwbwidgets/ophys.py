@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Union
 
 import ipywidgets as widgets
 import numpy as np
@@ -11,6 +12,7 @@ from pynwb.ophys import (
     ImageSegmentation,
     PlaneSegmentation,
     RoiResponseSeries,
+    OnePhotonSeries,
     TwoPhotonSeries,
 )
 from skimage import measure
@@ -25,10 +27,10 @@ from .utils.dynamictable import infer_categorical_columns
 color_wheel = px.colors.qualitative.Dark24
 
 
-class TwoPhotonSeriesWidget(widgets.VBox):
-    """Widget showing Image stack recorded over time from 2-photon microscope."""
+class PhotonSeriesWidget(widgets.VBox):
+    """Widget showing Image stack recorded over time from 2-photon or 1-photon microscope."""
 
-    def __init__(self, indexed_timeseries: TwoPhotonSeries, neurodata_vis_spec: dict):
+    def __init__(self, indexed_timeseries: Union[TwoPhotonSeries, OnePhotonSeries], neurodata_vis_spec: dict):
         super().__init__()
 
         def _add_fig_trace(img_fig: go.Figure, index):

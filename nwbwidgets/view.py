@@ -42,7 +42,7 @@ from .misc import (
 )
 from .ophys import (
     RoiResponseSeriesWidget,
-    TwoPhotonSeriesWidget,
+    PhotonSeriesWidget,
     route_plane_segmentation,
     show_df_over_f,
     show_grayscale_volume,
@@ -78,7 +78,8 @@ default_neurodata_vis_spec = {
     pynwb.file.Subject: show_fields,
     pynwb.ecephys.SpikeEventSeries: show_spike_event_series,
     pynwb.ophys.ImageSegmentation: show_image_segmentation,
-    pynwb.ophys.TwoPhotonSeries: TwoPhotonSeriesWidget,
+    pynwb.ophys.TwoPhotonSeries: PhotonSeriesWidget,
+    pynwb.ophys.OnePhotonSeries: PhotonSeriesWidget,
     ndx_grayscalevolume.GrayscaleVolume: show_grayscale_volume,
     pynwb.ophys.PlaneSegmentation: route_plane_segmentation,
     pynwb.ophys.DfOverF: show_df_over_f,
