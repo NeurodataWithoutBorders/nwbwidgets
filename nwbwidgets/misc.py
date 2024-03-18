@@ -322,7 +322,7 @@ class PSTHWidget(widgets.VBox):
             gas=self.gas,
             plot_type=self.psth_type_radio,
             sigma_in_secs=self.gaussian_sd_ft,
-            nbins=self.bins_ft
+            nbins=self.bins_ft,
             # progress_bar=fixed(progress_bar)
         )
 

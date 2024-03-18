@@ -1,6 +1,7 @@
 """
 Taken from https://github.com/maartenbreddels/ipyvolume/pull/178
 """
+
 import matplotlib.cm
 import matplotlib.colors
 import numpy as np
