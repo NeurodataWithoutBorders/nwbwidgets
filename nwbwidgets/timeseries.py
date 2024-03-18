@@ -423,10 +423,15 @@ def _prep_timeseries(time_series: TimeSeries, time_window=None, order=None):
         t_ind_stop = timeseries_time_to_ind(time_series, time_window[1])
 
     tt = get_timeseries_tt(time_series, t_ind_start, t_ind_stop)
-    unique_sorted_order, inverse_sort = np.unique(order, return_inverse=True)
 
     if len(time_series.data.shape) > 1:
-        mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][:, inverse_sort]
+        unique_sorted_order, inverse_sort = np.unique(order, return_inverse=True)
+        # fancy indexing is not supported in zarr, so we use slice when possible
+        if np.all(np.diff(unique_sorted_order) == 1):
+            unique_sorted_order = slice(unique_sorted_order[0], unique_sorted_order[-1] + 1)
+            mini_data = time_series.data[t_ind_start:t_ind_stop, unique_sorted_order][:, inverse_sort]
+        else:
+            mini_data = np.array(time_series.data[t_ind_start:t_ind_stop])[:, unique_sorted_order][:, inverse_sort]
         if np.all(np.isnan(mini_data)):
             return None, tt, None
         gap = np.median(np.nanstd(mini_data, axis=0)) * 20
