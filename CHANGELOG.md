@@ -1,5 +1,10 @@
 # Upcoming
 
+# v0.12.0
+
+### New Features
+* Enable / disable caching option on Panel [PR #316](https://github.com/NeurodataWithoutBorders/nwbwidgets/pull/316)
+
 
 # v0.11.0
 

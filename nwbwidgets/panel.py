@@ -27,6 +27,7 @@ class Panel(widgets.VBox):
         enable_dandi_source: bool = True,
         enable_s3_source: bool = True,
         enable_local_source: bool = True,
+        enable_cache: bool = True,
         show_warnings: bool = False,
         **kwargs,
     ):
@@ -44,6 +45,8 @@ class Panel(widgets.VBox):
                 Enable S3 source option.
             enable_local_source : bool, default: True
                 Enable local source option.
+            enable_cache : bool, default: True
+                Enable caching data.
             show_warnings : bool, default: False
                 Show warnings.
         """
@@ -64,6 +67,7 @@ class Panel(widgets.VBox):
         if enable_s3_source:
             self.source_options_names.append("S3")
 
+        self.enable_cache = enable_cache
         self.all_dandisets_metadata = None
 
         self.source_options_radio = widgets.RadioButtons(
@@ -107,6 +111,19 @@ class Panel(widgets.VBox):
         elif args["new"] == "Local file":
             self.create_components_local_file_source()
 
+    def create_cache_row(self):
+        """Create cache row"""
+        if self.enable_cache:
+            self.cache_checkbox = widgets.Checkbox(description="cache")
+            self.cache_checkbox.observe(self.toggle_cache)
+            self.cache_path_text = widgets.Text("nwb-cache")
+            self.cache_path_text.layout.visibility = "hidden"
+            self.cache_row = widgets.HBox([self.cache_checkbox, self.cache_path_text])
+        else:
+            self.cache_checkbox = None
+            self.cache_path_text = None
+            self.cache_row = None
+
     def create_components_dandi_source(self, args=None):
         """Create widgets components for DANDI option"""
         if self.all_dandisets_metadata is None:
@@ -127,20 +144,16 @@ class Panel(widgets.VBox):
             description="File:",
             layout=widgets.Layout(width="400px", overflow=None),
         )
-        self.cache_checkbox = widgets.Checkbox(
-            description="cache",
-        )
-        self.cache_path_text = widgets.Text("nwb-cache")
-        self.cache_path_text.layout.visibility = "hidden"
+
+        self.create_cache_row()
         self.source_dandi_file_button = widgets.Button(icon="check", description="Load file")
 
+        children_list = [self.source_dandi_id, self.source_dandi_file_dropdown, self.source_dandi_file_button]
+        if self.cache_row is not None:
+            children_list.insert(2, self.cache_row)
+
         self.source_dandi_vbox = widgets.VBox(
-            children=[
-                self.source_dandi_id,
-                self.source_dandi_file_dropdown,
-                widgets.HBox([self.cache_checkbox, self.cache_path_text]),
-                self.source_dandi_file_button,
-            ],
+            children=children_list,
             layout=widgets.Layout(padding="5px 0px 5px 0px"),
         )
 
@@ -150,12 +163,10 @@ class Panel(widgets.VBox):
         )
 
         self.dandi_panel = widgets.HBox([self.source_dandi_vbox, self.dandi_summary])
-
         self.source_changing_panel.children = [self.dandi_panel]
 
         self.source_dandi_id.observe(self.list_dandiset_files_dropdown, "value")
         self.source_dandi_file_button.on_click(self.stream_dandiset_file)
-        self.cache_checkbox.observe(self.toggle_cache)
         self.list_dandiset_files_dropdown()
 
     def toggle_cache(self, args):
@@ -172,22 +183,21 @@ class Panel(widgets.VBox):
             description="URL:",
         )
         self.source_s3_button = widgets.Button(icon="check", description="Load file")
-        self.cache_checkbox = widgets.Checkbox(
-            description="cache",
-        )
-        self.cache_path_text = widgets.Text("nwb-cache")
-        self.cache_path_text.layout.visibility = "hidden"
+
+        self.create_cache_row()
+        children_list = [
+            self.source_s3_file_url,
+            self.source_s3_button,
+        ]
+        if self.cache_row is not None:
+            children_list.insert(1, self.cache_row)
+
         self.s3_panel = widgets.VBox(
-            children=[
-                self.source_s3_file_url,
-                widgets.HBox([self.cache_checkbox, self.cache_path_text]),
-                self.source_s3_button,
-            ],
+            children=children_list,
             layout=widgets.Layout(padding="5px 0px 5px 0px"),
         )
         self.source_changing_panel.children = [self.s3_panel]
         self.source_s3_button.on_click(self.stream_s3_file)
-        self.cache_checkbox.observe(self.toggle_cache)
 
     def create_components_local_file_source(self):
         """Create widgets components for Local file option"""
