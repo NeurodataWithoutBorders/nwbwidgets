@@ -56,4 +56,7 @@ def show_nwbfile(nwbfile: NWBFile, neurodata_vis_spec: dict) -> widgets.Widget:
     func_ = partial(view.nwb2widget, neurodata_vis_spec=neurodata_vis_spec)
     accordion = lazy_show_over_data(neuro_data, func_, labels=labels, style=widgets.Accordion)
 
-    return widgets.VBox(info + [accordion])
+    from .time_grid import TimeGrid
+
+    time_grid_widget = TimeGrid(nwbfile)
+    return widgets.VBox(info + [time_grid_widget] + [accordion])
