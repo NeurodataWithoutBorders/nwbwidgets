@@ -1,0 +1,4 @@
+qtvoila
+PySide6
+nwbwidgets
+dandi
