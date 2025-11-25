@@ -8,7 +8,7 @@
   <h3 align="center">Explore NWB data in Jupyter</h3>
 </p>
 <p align="center">
-   <a href="https://nwbwidgets.readthedocs.io/"><strong>Explore our documentation »</strong></a>
+   <a href="https://nwb-widgets.readthedocs.io/"><strong>Explore our documentation »</strong></a>
 </p>
 
 <!-- TABLE OF CONTENTS -->
@@ -41,6 +41,19 @@ you will see a list of extra modules needed for that specific widget.
 All other widgets in the file will still work.
 
 ## Usage
+
+### Using `Panel`
+The easiest way to use NWB widgets is with the interactive `Panel`:
+
+```python
+from nwbwidgets.panel import Panel
+
+Panel()
+```
+
+### Using `nwb2widget`
+If you’re working directly with a NWB file object in your Jupyter notebook, you can also explore it with NWB Widgets using
+
 ```python
 from pynwb import NWBHDF5IO
 from nwbwidgets import nwb2widget
@@ -51,11 +64,18 @@ nwb = io.read()
 nwb2widget(nwb)
 ```
 
+### Using Docker
+You can also run the NWB Widgets Panel using Docker:
+
+```bash
+$ docker run -p 8866:8866 ghcr.io/NeurodataWithoutBorders/nwbwidgets-panel:latest
+```
+
 ## Demo
 ![](https://drive.google.com/uc?export=download&id=1JtI2KtT8MielIMvvtgxRzFfBTdc41LiE)
 
 ## Documentation
-See our [ReadTheDocs page](https://nwbwidgets.readthedocs.io/en/main/) for full documentation, including a gallery of all supported formats.
+See our [ReadTheDocs page](https://nwb-widgets.readthedocs.io) for full documentation, including a gallery of all supported formats.
 
 ## How it works
 All visualizations are controlled by the dictionary `neurodata_vis_spec`. The keys of this dictionary are pynwb neurodata types, and the values are functions that take as input that neurodata_type and output a visualization. The visualizations may be of type `Widget` or `matplotlib.Figure`. When you enter a neurodata_type instance into `nwb2widget`, it searches the `neurodata_vis_spec` for that instance's neurodata_type, progressing backwards through the parent classes of the neurodata_type to find the most specific neurodata_type in `neurodata_vis_spec`. Some of these types are containers for other types, and create accordian UI elements for its contents, which are then passed into the `neurodata_vis_spec` and rendered accordingly.

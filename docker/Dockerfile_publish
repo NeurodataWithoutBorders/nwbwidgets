@@ -1,0 +1,18 @@
+FROM python:3.10.12-slim
+LABEL org.opencontainers.image.source=https://github.com/NeurodataWithoutBorders/nwbwidgets
+
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && pip install nwbwidgets
+
+WORKDIR /app
+RUN mkdir local_files
+RUN mkdir nwb-cache
+
+COPY favicon.ico .
+COPY NWB_Panel.ipynb .
+COPY run.sh .
+
+EXPOSE 8866
+CMD ["./run.sh"]

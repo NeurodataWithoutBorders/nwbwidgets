@@ -1,5 +1,5 @@
 
-# Running NWB widgets on Jupyter
+# Running on Jupyter
 
 ## Using `Panel`
 

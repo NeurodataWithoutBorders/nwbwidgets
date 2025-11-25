@@ -29,7 +29,7 @@ NWB Widgets is a library of widgets for visualization NWB data in a Jupyter note
 
    contents/installation
    contents/running_on_jupyter
-   contents/running_remotely
+   contents/running_with_docker
    contents/developer_guide
 
 .. toctree::
