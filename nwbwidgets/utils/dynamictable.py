@@ -10,7 +10,7 @@ def extract_data_from_intervals(dynamic_table: DynamicTable):
     # solution: https://stackoverflow.com/a/50297200/11483674
     # data = [x if x == x else 'NaN' for x in dynamic_table[:]]
     data = [x for x in dynamic_table[:] if x == x]
-    classes = pd.unique(data).tolist()
+    classes = pd.unique(np.asarray(data)).tolist()
     try:
         data = [float(i) for i in data]
         classes = [float(i) for i in classes]
