@@ -9,7 +9,9 @@ from ipywidgets import widgets
 from ndx_icephys_meta.icephys import SweepSequences
 from ndx_spectrum import Spectrum
 
-from .base import dict2accordion
+from .base import (
+    dict2accordion,
+)
 from .base import nwb2widget as nwb2widget_base
 from .base import (
     processing_module,
